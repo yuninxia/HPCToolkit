@@ -31,6 +31,8 @@
 #include "level0-debug.h"
 #include "level0-fence-map.h"
 #include "level0-kernel-module-map.h"
+#include "level0-command-queue-map.h"
+#include "pcsampling/level0_pcsampling.h"
 
 #include "../../../../utilities/linuxtimer.h"
 
@@ -541,6 +543,7 @@ hpcrun_zeInit
 
   // Exit action
   get_gpu_driver_and_device(dispatch);
+  levelzero_pcsampling_enable();
   return ret;
 }
 
@@ -893,6 +896,7 @@ level0_init
     gtpin_instrumentation_options(inst_options);
 #endif
   }
+  levelzero_pcsampling_init();
   if (!gtpin_instrumentation) {
     gpu_kernel_table_init();
   }
@@ -905,16 +909,20 @@ level0_fini
  int how
 )
 {
+#if 0
   if (!GPU_FLUSH_ALARM_FIRED()) {
     GPU_FLUSH_ALARM_SET("hpcrun: warning: some Level 0 events not marked"
                         " complete; some GPU event data may be lost.");
-
-    gpu_operation_multiplexer_fini();
-
+#endif
+    gpu_operation_multiplexer_fini(); 
+    levelzero_pcsampling_fini();
+#if 0
     GPU_FLUSH_ALARM_TEST();
-    GPU_FLUSH_ALARM_CLEAR();
+    GPU_FLUSH_ALARM_CLEAR(); 
   }
+#endif
 }
+
 
 void
 level0_flush
