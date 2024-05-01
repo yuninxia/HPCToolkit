@@ -18,6 +18,8 @@
 // local includes
 //*****************************************************************************
 
+#include "../../common/gpu-binary.h"
+
 #include "../../../../messages/messages.h"
 
 #include "../../../../../common/lean/crypto-hash.h"
@@ -116,6 +118,9 @@ level0_binary_process
     &size,
     buf
   );
+
+  uint32_t loadmap_module_id;
+  gpu_binary_save(buf, size, true /* mark_used */, &loadmap_module_id);
 
   // Generate a hash for the binary
   char *hash_buf = (char *) malloc(CRYPTO_HASH_STRING_LENGTH);
