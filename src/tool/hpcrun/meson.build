@@ -443,12 +443,14 @@ if level0_dep.found()
     'gpu/api/intel/level0/level0-kernel-module-map.c',
     'gpu/api/intel/level0/level0-fence-map.c',
     'gpu/api/intel/level0/level0-command-queue-map.c',
+    'gpu/api/intel/level0/pcsampling/level0_pcsampling.cpp',
+    'gpu/api/intel/level0/pcsampling/unimemory.cpp',
   )
 
   _hpcrun_libs += shared_module('hpcrun_level0',
     'foil/level0-preload.c',
     gnu_symbol_visibility: 'hidden',
-    link_language: 'c',
+    link_language: 'cpp',
     implicit_include_directories: false,
     dependencies: level0_dep,
     install: true, install_dir: 'lib' / meson.project_name()

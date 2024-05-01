@@ -481,6 +481,12 @@ int main(int argc, char* argv[]) {
         std::cerr << "hpcrun: HPCToolkit was not compiled with Level0 support enabled" << diemsg;
         return 1;
 #endif
+      } else if (strstartswith(ev, "gpu=level0,pc")) {
+        preload_list.emplace_back(hpcrun_dir / "libhpcrun_level0.so");        
+        env["ZE_ENABLE_TRACING_LAYER"] = "1";
+        env["ZET_ENABLE_METRICS"] = "1";
+        env["HPCRUN_AUDIT_FAKE_AUDITOR"] = "1";
+        namespace_default = NsDefault::single_if_auditing;
       } else if (strstartswith(ev, "gpu=level0,inst")) {
 #ifdef USE_LEVEL0
 #ifdef USE_GTPIN

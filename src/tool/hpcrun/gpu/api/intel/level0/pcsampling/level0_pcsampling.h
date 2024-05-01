@@ -41,47 +41,21 @@
 //
 // ******************************************************* EndRiceCopyright *
 
-#ifndef gpu_instrumentation_h
-#define gpu_instrumentation_h
-
-
+#ifndef level0_pcsampling_h
+#define level0_pcsampling_h
 
 //******************************************************************************
-// system includes
+// interface operations
 //******************************************************************************
 
-#include <stdbool.h>
-
-
-
-//******************************************************************************
-// type declarations
-//******************************************************************************
-
-typedef struct {
-  bool count_instructions;
-  bool analyze_simd;
-  bool attribute_latency;
-  bool silent; // no warnings to stderr from a binary instrumentation tool
-  bool pc_sampling;
-} gpu_instrumentation_t;
-
-
-void
-gpu_instrumentation_options_set
-(
- const char *str,
- const char *prefix,
- gpu_instrumentation_t *options
-);
-
-
-bool
-gpu_instrumentation_enabled
-(
- gpu_instrumentation_t *o
-);
-
-
+#if defined(__cplusplus)
+extern "C" {
+#endif
+    void levelzero_pcsampling_init();
+    void levelzero_pcsampling_enable();
+    void levelzero_pcsampling_fini();
+#if defined(__cplusplus)
+}
+#endif
 
 #endif

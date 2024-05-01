@@ -74,6 +74,8 @@
 #define INST_SIMD     "simd"
 #define INST_SILENT   "silent"
 
+#define PC_SAMPLING "pc"
+
 #define ENABLE_SIMD_ANALYSIS 0
 #define ENABLE_LATENCY_ANALYSIS 1
 
@@ -111,7 +113,6 @@ gpu_instrumentation_options_set
   if (len > match_len) {
     ostr = opt + match_len;
 
-#ifdef ENABLE_GTPIN
     // match comma separator
     if (*ostr != ',') {
       fprintf(stderr, "hpcrun ERROR: while parsing GPU instrumentation knobs, expected ',' separator but found '%s'\n", ostr);
@@ -120,56 +121,63 @@ gpu_instrumentation_options_set
     ostr++;
 
     // match instrumentation prefix
-    match_len = strlen(INST_PREFIX);
-    if (strncmp(ostr, INST_PREFIX, match_len) != 0) {
-      fprintf(stderr, "hpcrun ERROR: while parsing GPU instrumentation knobs, expected 'inst' but found '%s'\n", ostr);
-      exit(-1);
-    }
-    ostr += match_len;
-
-    switch(*ostr) {
-    case 0:
-      // default instrumentation
-      options->count_instructions = true;
-      break;
-
-    case '=':
-      ostr++;
-      char *token = strtok(ostr, delimiter);
-
-      // analyze options
-      while(token) {
-        if (strcmp(token, INST_COUNT) == 0) {
-          options->count_instructions = true;
-  #if ENABLE_LATENCY_ANALYSIS
-        } else if (strcmp(token, INST_LATENCY) == 0) {
-          options->attribute_latency = true;
-  #endif
-  #if ENABLE_SIMD_ANALYSIS
-        } else if (strcmp(token, INST_SIMD) == 0) {
-          options->analyze_simd = true;
-  #endif
-        } else if (strcmp(token, INST_SILENT) == 0) {
-          options->silent = true;
-        } else {
-          fprintf(stderr, "hpcrun ERROR: while parsing GPU instrumentation knobs, unrecognized knob '%s'\n", token);
-          exit(-1);
-        }
-        token = strtok(NULL, delimiter);
+    match_len = strlen(PC_SAMPLING);
+    if (strncmp(ostr, PC_SAMPLING, match_len) == 0) {
+      options->pc_sampling = true;
+      ostr += match_len;
+    } else {
+#ifdef ENABLE_GTPIN
+      // match instrumentation prefix
+      match_len = strlen(INST_PREFIX);
+      if (strncmp(ostr, INST_PREFIX, match_len) != 0) {
+        fprintf(stderr, "hpcrun ERROR: while parsing GPU instrumentation knobs, expected 'inst' but found '%s'\n", ostr);
+        exit(-1);
       }
-      break;
+      ostr += match_len;
 
-    default:
-      fprintf(stderr, "hpcrun ERROR: unexpected text encountered parsing GPU instrumentation knobs '%s'\n", ostr);
-      exit(-1);
+      switch(*ostr) {
+      case 0:
+        // default instrumentation
+        options->count_instructions = true;
+        break;
+
+      case '=':
+        ostr++;
+        char *token = strtok(ostr, delimiter);
+
+        // analyze options
+        while(token) {
+          if (strcmp(token, INST_COUNT) == 0) {
+            options->count_instructions = true;
+    #if ENABLE_LATENCY_ANALYSIS
+          } else if (strcmp(token, INST_LATENCY) == 0) {
+            options->attribute_latency = true;
+    #endif
+    #if ENABLE_SIMD_ANALYSIS
+          } else if (strcmp(token, INST_SIMD) == 0) {
+            options->analyze_simd = true;
+    #endif
+          } else if (strcmp(token, INST_SILENT) == 0) {
+            options->silent = true;
+          } else {
+            fprintf(stderr, "hpcrun ERROR: while parsing GPU instrumentation knobs, unrecognized knob '%s'\n", token);
+            exit(-1);
+          }
+          token = strtok(NULL, delimiter);
+        }
+        break;
+
+      default:
+        fprintf(stderr, "hpcrun ERROR: unexpected text encountered parsing GPU instrumentation knobs '%s'\n", ostr);
+        exit(-1);
+      }
+#endif
     }
-#else
     if (*ostr) {
       fprintf(stderr, "hpcrun ERROR: unexpected text encountered parsing GPU"
               " setting '%s'\n", ostr);
       exit(-1);
     }
-#endif
   }
 
 #if DEBUG
