@@ -451,7 +451,6 @@ if level0_dep.found()
     'gpu/api/intel/level0/level0-fence-map.c',
     'gpu/api/intel/level0/level0-command-queue-map.c',
     'gpu/api/intel/level0/pcsampling/level0_pcsampling.cpp',
-    'gpu/api/intel/level0/pcsampling/unimemory.cpp',
   )
 
   _hpcrun_libs += shared_module('hpcrun_level0',
