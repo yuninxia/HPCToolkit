@@ -16,7 +16,6 @@
 #include <string>
 
 #include "ze_collector.h"
-#include "unimemory.h"
 
 class UniTracer {
  public:
@@ -27,8 +26,6 @@ class UniTracer {
     PTI_ASSERT(status == ZE_RESULT_SUCCESS);
 #endif
     UniTracer* tracer = new UniTracer();
-    UniMemory::ExitIfOutOfMemory((void *)tracer);
-
     ZeCollector* ze_collector = nullptr;
     ze_collector = ZeCollector::Create();
     if (ze_collector == nullptr) {

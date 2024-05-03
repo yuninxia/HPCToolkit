@@ -24,8 +24,7 @@
 #include "utils.h"
 #include "ze_utils.h"
 #include "unikernel.h"
-#include "unimemory.h"
-#include "demangle.h"
+#include "../../../../../../../lib/support-lean/hpctoolkit_demangle.h"
 
 
 struct ZeKernelCommandProperties {
@@ -74,10 +73,8 @@ class ZeCollector {
         ZE_MAJOR_VERSION(version) >= 1 &&
         ZE_MINOR_VERSION(version) >= 2);
 
-    std::string data_dir_name = utils::GetEnv("UNITRACE_DataDir");
+    std::string data_dir_name = utils::GetEnv("Intel_PCSampling_DataDir");
     ZeCollector* collector = new ZeCollector(data_dir_name);
-
-    UniMemory::ExitIfOutOfMemory((void *)(collector));
 
     ze_result_t status = ZE_RESULT_SUCCESS;
     zel_tracer_desc_t tracer_desc = {
@@ -134,7 +131,6 @@ class ZeCollector {
     kernel_command_properties_mutex_.lock();
     if (kernel_command_properties_ == nullptr) {
       kernel_command_properties_ = new std::map<uint64_t, ZeKernelCommandProperties>;
-      UniMemory::ExitIfOutOfMemory((void *)(kernel_command_properties_));
     }
     kernel_command_properties_mutex_.unlock();
   }
@@ -142,7 +138,6 @@ class ZeCollector {
   void EnumerateAndSetupDevices() {
     if (devices_ == nullptr) {
       devices_ = new std::map<ze_device_handle_t, ZeDevice>;
-      UniMemory::ExitIfOutOfMemory((void *)(devices_));
     }
 
     ze_result_t status = ZE_RESULT_SUCCESS;
@@ -234,7 +229,7 @@ class ZeCollector {
       uint64_t prev_base = 0;
       for (auto it = props.second.crbegin(); it != props.second.crend(); it++) {
         // quote kernel name which may contain "," 
-        kpfs << "\"" << utils::Demangle(it->second->name_.c_str()) << "\"" << std::endl;
+        kpfs << "\"" << hpctoolkit_demangle(it->second->name_.c_str()) << "\"" << std::endl;
         kpfs << it->second->base_addr_ << std::endl;
         if (prev_base == 0) {
           kpfs << it->second->size_ << std::endl;

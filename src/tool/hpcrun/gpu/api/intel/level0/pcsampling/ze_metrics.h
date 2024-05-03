@@ -21,7 +21,6 @@
 #include <thread>
 
 #include "logger.h"
-#include "unimemory.h"
 #include "utils.h"
 #include "ze_utils.h"
 #include "pti_assert.h"
@@ -61,7 +60,6 @@ class ZeMetricProfiler {
  public:
   static ZeMetricProfiler* Create(char *dir, std::string& logfilename) {
     ZeMetricProfiler* profiler = new ZeMetricProfiler(dir, logfilename);
-    UniMemory::ExitIfOutOfMemory((void *)(profiler));
 
     profiler->StartProfilingMetrics();
 
@@ -117,8 +115,7 @@ class ZeMetricProfiler {
 
   void EnumerateDevices(char *dir) {
 
-    std::string metric_group = utils::GetEnv("UNITRACE_MetricGroup");
-    std::string output_dir = utils::GetEnv("UNITRACE_TraceOutputDir");
+    std::string metric_group = "EuStallSampling";
 
     bool stall_sampling = false;
     if (metric_group == "EuStallSampling") {
@@ -156,7 +153,6 @@ class ZeMetricProfiler {
 
       
             ZeDeviceDescriptor *desc = new ZeDeviceDescriptor;
-            UniMemory::ExitIfOutOfMemory((void *)(desc));
 
             desc->stall_sampling_ = stall_sampling;
 
@@ -215,7 +211,6 @@ class ZeMetricProfiler {
 
               for (uint32_t j = 0; j < num_sub_devices; j++) {
                 ZeDeviceDescriptor *sub_desc = new ZeDeviceDescriptor;
-                UniMemory::ExitIfOutOfMemory((void *)(sub_desc));
   
                 sub_desc->stall_sampling_ = stall_sampling;
 
@@ -501,12 +496,19 @@ class ZeMetricProfiler {
             if ((rit->first <= it->first) && ((it->first - rit->first) < rit->second.second)) {
               std::string line;
 
-              char offset[128];
-              snprintf(offset, sizeof(offset), "0x%08lx", (it->first - rit->first));
+              // char offset[128];
+              // snprintf(offset, sizeof(offset), "0x%08lx", (it->first - rit->first));
+
+              uint64_t base_addr = rit->first;
+              uint64_t ip_offset = it->first - rit->first;
+              uint64_t abs_addr = base_addr + ip_offset;
+              char ip_addr[32];
+              snprintf(ip_addr, sizeof(ip_addr), "8%011lx", abs_addr);
+
               line = std::string(std::max(int(field_sizes[0] - rit->second.first.length()), 0), ' ') +
                      rit->second.first + ", " +
-                     std::string(std::max(int(field_sizes[1] - std::string(offset).length()), 0), ' ') +
-                     std::string(offset) + ", " +
+                     std::string(std::max(int(field_sizes[1] - std::string(ip_addr).length()), 0), ' ') +
+                     std::string(ip_addr) + ", " +
                      std::string(std::max(int(field_sizes[2] - std::to_string(it->second.active_).length()), 0), ' ') +
                      std::to_string(it->second.active_) + ", " +
                      std::string(std::max(int(field_sizes[3] - std::to_string(it->second.control_).length()), 0), ' ') +
@@ -671,7 +673,7 @@ class ZeMetricProfiler {
     PTI_ASSERT(status == ZE_RESULT_SUCCESS);
   
     zet_metric_streamer_handle_t streamer = nullptr;
-    uint32_t interval = std::stoi(utils::GetEnv("UNITRACE_SamplingInterval")) * 1000;	// convert us to ns
+    uint32_t interval = 50 * 1000;	// convert us to ns
 
     zet_metric_streamer_desc_t streamer_desc = {ZET_STRUCTURE_TYPE_METRIC_STREAMER_DESC, nullptr, max_metric_samples, interval};
     status = zetMetricStreamerOpen(context, device, group, &streamer_desc, event, &streamer);
