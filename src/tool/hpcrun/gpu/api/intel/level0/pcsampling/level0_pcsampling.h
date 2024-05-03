@@ -51,9 +51,9 @@
 #if defined(__cplusplus)
 extern "C" {
 #endif
-    void levelzero_pcsampling_init();
-    void levelzero_pcsampling_enable();
-    void levelzero_pcsampling_fini();
+    void level0_pcsampling_init();
+    void level0_pcsampling_enable();
+    void level0_pcsampling_fini();
 #if defined(__cplusplus)
 }
 #endif
