@@ -543,7 +543,7 @@ hpcrun_zeInit
 
   // Exit action
   get_gpu_driver_and_device(dispatch);
-  levelzero_pcsampling_enable();
+  level0_pcsampling_enable();
   return ret;
 }
 
@@ -896,7 +896,7 @@ level0_init
     gtpin_instrumentation_options(inst_options);
 #endif
   }
-  levelzero_pcsampling_init();
+  level0_pcsampling_init();
   if (!gtpin_instrumentation) {
     gpu_kernel_table_init();
   }
@@ -915,7 +915,7 @@ level0_fini
                         " complete; some GPU event data may be lost.");
 #endif
     gpu_operation_multiplexer_fini(); 
-    levelzero_pcsampling_fini();
+    level0_pcsampling_fini();
 #if 0
     GPU_FLUSH_ALARM_TEST();
     GPU_FLUSH_ALARM_CLEAR(); 
