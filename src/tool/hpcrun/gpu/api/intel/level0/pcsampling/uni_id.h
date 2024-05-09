@@ -19,4 +19,15 @@ class UniKernelId{
     inline static std::atomic<uint64_t> kernel_id_ = 1;	//start with 1
 };
 
+class UniModuleId {
+public:
+    static uint64_t GetModuleId(void) {
+        return module_id_.fetch_add(1, std::memory_order::memory_order_relaxed);
+    }
+
+private:
+    inline static std::atomic<uint64_t> module_id_ = 1; // Start with 1
+};
+
+
 #endif // PTI_TOOLS_UNITRACE_UNIKERNEL_H

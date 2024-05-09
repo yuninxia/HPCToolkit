@@ -23,9 +23,15 @@
 
 #include "utils.h"
 #include "ze_utils.h"
-#include "unikernel.h"
+#include "uni_id.h"
 #include "../../../../../../../lib/support-lean/hpctoolkit_demangle.h"
 
+
+struct ZeKernelGroupSize {
+  uint32_t x;
+  uint32_t y;
+  uint32_t z;
+};
 
 struct ZeKernelCommandProperties {
   uint64_t id_;		// unique identidier
@@ -33,7 +39,17 @@ struct ZeKernelCommandProperties {
   uint64_t base_addr_;	// kernel base address
   ze_device_handle_t device_;
   int32_t device_id_;
+  uint32_t simd_width_;	// SIMD
+  uint32_t nargs_;	// number of kernel arguments
+  uint32_t nsubgrps_;	// maximal number of subgroups
+  uint32_t slmsize_;	// SLM size
+  uint32_t private_mem_size_;	// private memory size for each thread
+  uint32_t spill_mem_size_;	// spill memory size for each thread
+  ZeKernelGroupSize group_size_;	// group size
+  uint32_t regsize_;	// GRF size per thread
+  bool aot_;		// AOT or JIT
   std::string name_;	// kernel or command name
+  uint64_t module_id_; // module id
 };
 
 // these will not go away when ZeCollector is destructed
@@ -42,7 +58,9 @@ static std::map<uint64_t, ZeKernelCommandProperties> *kernel_command_properties_
 
 struct ZeModule {
   ze_device_handle_t device_;
+  uint64_t module_id_;
   size_t size_;
+  bool aot_;	// AOT or JIT
 };
 
 static std::shared_mutex modules_on_devices_mutex_;
@@ -264,6 +282,7 @@ class ZeCollector {
       
       m.device_ = device;
       m.size_ = binary_size;
+      m.module_id_ = UniModuleId::GetModuleId();
     
       modules_on_devices_mutex_.lock();
       modules_on_devices_.insert({mod, std::move(m)});
@@ -291,16 +310,20 @@ typedef struct _zex_kernel_register_file_size_exp_t {
 
   static void OnExitKernelCreate(ze_kernel_create_params_t *params, ze_result_t result, void* global_data) {
     if (result == ZE_RESULT_SUCCESS) {
-      ze_kernel_handle_t kernel = **(params->pphKernel);
-
+      
       ze_module_handle_t mod = *(params->phModule);
       ze_device_handle_t device = nullptr;
       size_t module_binary_size = (size_t)(-1);
+      bool aot = false;
+      uint64_t module_id = 0;
+
       modules_on_devices_mutex_.lock_shared();
       auto mit = modules_on_devices_.find(mod);
       if (mit != modules_on_devices_.end()) {
         device = mit->second.device_; 
         module_binary_size = mit->second.size_;
+        aot = mit->second.aot_;
+        module_id = mit->second.module_id_;
       }
       modules_on_devices_mutex_.unlock_shared();
 
@@ -317,35 +340,37 @@ typedef struct _zex_kernel_register_file_size_exp_t {
 
       ZeKernelCommandProperties desc;
 
-      ze_result_t status;
+      ze_kernel_handle_t kernel = **(params->pphKernel);
+
+      size_t name_len = 0;
+      ze_result_t status = zeKernelGetName(kernel, &name_len, nullptr);
+      std::vector<char> kernel_name(name_len);
+      if (status == ZE_RESULT_SUCCESS && name_len > 0) {
+        status = zeKernelGetName(kernel, &name_len, kernel_name.data());
+      }
+      desc.name_ = name_len > 0 ? std::string(kernel_name.begin(), kernel_name.end()) : "UnknownKernel";
 
       desc.id_ = UniKernelId::GetKernelId();
-
-      if ((*(params->pdesc) != nullptr) && ((*(params->pdesc))->pKernelName != nullptr)) {
-        desc.name_ = std::string((*(params->pdesc))->pKernelName);
-      }
-      else {
-        // try one more time
-        size_t kname_size = 0;
-        status = zeKernelGetName(kernel, &kname_size, nullptr);
-        if ((status == ZE_RESULT_SUCCESS) && (kname_size > 0)) {
-          char kname[kname_size];
-          status = zeKernelGetName(kernel, &kname_size, kname);
-          PTI_ASSERT(status == ZE_RESULT_SUCCESS);
-          desc.name_ = std::string(kname);
-        }
-        else {
-          desc.name_ = "UnknownKernel";
-        }
-      }
-
+      desc.module_id_ = module_id;
+      desc.aot_ = aot;
       desc.device_id_ = did;
       desc.device_ = device;
 
       ze_kernel_properties_t kprops{};  
+      zex_kernel_register_file_size_exp_t regsize{};
+      kprops.pNext = (void *)&regsize;
 
       status = zeKernelGetProperties(kernel, &kprops);
       PTI_ASSERT(status == ZE_RESULT_SUCCESS);
+      desc.simd_width_ = kprops.maxSubgroupSize;
+      desc.nargs_ = kprops.numKernelArgs;
+      desc.nsubgrps_ = kprops.maxNumSubgroups;
+      desc.slmsize_ = kprops.localMemSize;
+      desc.private_mem_size_ = kprops.privateMemSize;
+      desc.spill_mem_size_ = kprops.spillMemSize;
+      ZeKernelGroupSize group_size{kprops.requiredGroupSizeX, kprops.requiredGroupSizeY, kprops.requiredGroupSizeZ};
+      desc.group_size_ = group_size;
+      desc.regsize_ = regsize.registerFileSize;
 
       // for stall sampling
       uint64_t base_addr = 0;
@@ -370,7 +395,7 @@ typedef struct _zex_kernel_register_file_size_exp_t {
       ze_result_t result,
       void* global_user_data,
       void** instance_user_data) {
-    OnExitModuleCreate(params, result, global_user_data); 
+    OnExitModuleCreate(params, result, global_user_data);
   }
 
   static void zeModuleDestroyOnEnter(
@@ -379,7 +404,7 @@ typedef struct _zex_kernel_register_file_size_exp_t {
       void* global_user_data,
       void** instance_user_data) {
     OnEnterModuleDestroy(params, global_user_data); 
-  }
+  } 
 
   static void zeKernelCreateOnExit(
       ze_kernel_create_params_t* params,
