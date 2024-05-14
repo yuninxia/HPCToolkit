@@ -23,7 +23,7 @@
 
 #include "utils.h"
 #include "ze_utils.h"
-#include "uni_id.h"
+#include "../../../../../../../lib/prof-lean/crypto-hash.h"
 #include "../../../../../../../lib/support-lean/hpctoolkit_demangle.h"
 
 
@@ -34,7 +34,7 @@ struct ZeKernelGroupSize {
 };
 
 struct ZeKernelCommandProperties {
-  uint64_t id_;		// unique identidier
+  std::string id_;		// unique identidier
   uint64_t size_;	// kernel binary size
   uint64_t base_addr_;	// kernel base address
   ze_device_handle_t device_;
@@ -49,16 +49,16 @@ struct ZeKernelCommandProperties {
   uint32_t regsize_;	// GRF size per thread
   bool aot_;		// AOT or JIT
   std::string name_;	// kernel or command name
-  uint64_t module_id_; // module id
+  std::string module_id_; // module id
 };
 
 // these will not go away when ZeCollector is destructed
 static std::shared_mutex kernel_command_properties_mutex_;
-static std::map<uint64_t, ZeKernelCommandProperties> *kernel_command_properties_ = nullptr;
+static std::map<std::string, ZeKernelCommandProperties> *kernel_command_properties_ = nullptr;
 
 struct ZeModule {
   ze_device_handle_t device_;
-  uint64_t module_id_;
+  std::string module_id_;
   size_t size_;
   bool aot_;	// AOT or JIT
 };
@@ -148,7 +148,7 @@ class ZeCollector {
   void InitializeKernelCommandProperties(void) {
     kernel_command_properties_mutex_.lock();
     if (kernel_command_properties_ == nullptr) {
-      kernel_command_properties_ = new std::map<uint64_t, ZeKernelCommandProperties>;
+      kernel_command_properties_ = new std::map<std::string, ZeKernelCommandProperties>;
     }
     kernel_command_properties_mutex_.unlock();
   }
@@ -267,6 +267,19 @@ class ZeCollector {
     kernel_command_properties_mutex_.unlock();
   }
 
+  std::string GenerateModuleId(const uint8_t* binary_data, size_t binary_size) const {
+    char hash_string[CRYPTO_HASH_STRING_LENGTH] = {0};
+    crypto_compute_hash_string(binary_data, binary_size, hash_string, CRYPTO_HASH_STRING_LENGTH);
+    return std::string(hash_string);
+  }
+
+  std::string GenerateKernelId(const std::string& kernel_name) const {
+    std::string input = kernel_name;
+    char hash_string[CRYPTO_HASH_STRING_LENGTH] = {0};
+    crypto_compute_hash_string(input.c_str(), input.size(), hash_string, CRYPTO_HASH_STRING_LENGTH);
+    return std::string(hash_string);
+  }
+
  private: // Callbacks
 
   static void OnExitModuleCreate(ze_module_create_params_t* params, ze_result_t result, void* global_data) {
@@ -278,12 +291,20 @@ class ZeCollector {
         binary_size = (size_t)(-1);
       }
 
+      std::vector<uint8_t> binary(binary_size);
+      if (zeModuleGetNativeBinary(mod, &binary_size, binary.data()) != ZE_RESULT_SUCCESS) {
+        binary_size = (size_t)(-1);
+      }
+
+      ZeCollector* collector = static_cast<ZeCollector*>(global_data);
+      std::string module_id = collector->GenerateModuleId(binary.data(), binary_size);
+
       ZeModule m;
       
       m.device_ = device;
       m.size_ = binary_size;
-      m.module_id_ = UniModuleId::GetModuleId();
-    
+      m.module_id_ = module_id;
+
       modules_on_devices_mutex_.lock();
       modules_on_devices_.insert({mod, std::move(m)});
       modules_on_devices_mutex_.unlock();
@@ -315,7 +336,7 @@ typedef struct _zex_kernel_register_file_size_exp_t {
       ze_device_handle_t device = nullptr;
       size_t module_binary_size = (size_t)(-1);
       bool aot = false;
-      uint64_t module_id = 0;
+      std::string module_id;
 
       modules_on_devices_mutex_.lock_shared();
       auto mit = modules_on_devices_.find(mod);
@@ -350,8 +371,11 @@ typedef struct _zex_kernel_register_file_size_exp_t {
       }
       desc.name_ = name_len > 0 ? std::string(kernel_name.begin(), kernel_name.end()) : "UnknownKernel";
 
-      desc.id_ = UniKernelId::GetKernelId();
+      ZeCollector* collector = static_cast<ZeCollector*>(global_data);
+      std::string kernel_id = collector->GenerateKernelId(desc.name_);
+      desc.id_ = kernel_id;
       desc.module_id_ = module_id;
+
       desc.aot_ = aot;
       desc.device_id_ = did;
       desc.device_ = device;
