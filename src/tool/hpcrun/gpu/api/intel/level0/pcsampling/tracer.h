@@ -7,27 +7,17 @@
 #ifndef PTI_TOOLS_UNITRACE_UNIFIED_TRACER_H_
 #define PTI_TOOLS_UNITRACE_UNIFIED_TRACER_H_
 
-#include <chrono>
-#include <cstdint>
-#include <fstream>
-#include <iomanip>
 #include <iostream>
-#include <sstream>
 #include <string>
 
 #include "ze_collector.h"
 
 class UniTracer {
  public:
-  static UniTracer* Create() {
-#if 0
-    ze_result_t status = ZE_RESULT_SUCCESS;
-    status = zeInit(ZE_INIT_FLAG_GPU_ONLY);
-    PTI_ASSERT(status == ZE_RESULT_SUCCESS);
-#endif
+  static UniTracer* Create(const std::string& data_dir_name) {
     UniTracer* tracer = new UniTracer();
     ZeCollector* ze_collector = nullptr;
-    ze_collector = ZeCollector::Create();
+    ze_collector = ZeCollector::Create(data_dir_name);
     if (ze_collector == nullptr) {
       std::cerr <<
         "[WARNING] Unable to create kernel collector for L0 backend" <<

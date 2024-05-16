@@ -7,25 +7,21 @@
 #ifndef PTI_TOOLS_UNITRACE_LEVEL_ZERO_COLLECTOR_H_
 #define PTI_TOOLS_UNITRACE_LEVEL_ZERO_COLLECTOR_H_
 
-#include <atomic>
+#include <fstream>
 #include <iostream>
-#include <map>
-#include <mutex>
-#include <shared_mutex>
-#include <sstream>
-#include <string>
-#include <vector>
-#include <dlfcn.h>
-
 #include <level_zero/ze_api.h>
 #include <level_zero/zet_api.h>
 #include <level_zero/layers/zel_tracing_api.h>
+#include <map>
+#include <mutex>
+#include <shared_mutex>
+#include <string>
+#include <unistd.h>
+#include <vector>
 
-#include "utils.h"
-#include "ze_utils.h"
 #include "../../../../../../../lib/prof-lean/crypto-hash.h"
 #include "../../../../../../../lib/support-lean/hpctoolkit_demangle.h"
-
+#include "ze_utils.h"
 
 struct ZeKernelGroupSize {
   uint32_t x;
@@ -85,13 +81,12 @@ ze_result_t (*zexKernelGetBaseAddress)(ze_kernel_handle_t hKernel, uint64_t *bas
 class ZeCollector {
  public: // Interface
 
-  static ZeCollector* Create() {
+  static ZeCollector* Create(const std::string& data_dir_name) {
     ze_api_version_t version = utils::ze::GetVersion();
     PTI_ASSERT(
         ZE_MAJOR_VERSION(version) >= 1 &&
         ZE_MINOR_VERSION(version) >= 2);
 
-    std::string data_dir_name = utils::GetEnv("Intel_PCSampling_DataDir");
     ZeCollector* collector = new ZeCollector(data_dir_name);
 
     ze_result_t status = ZE_RESULT_SUCCESS;
@@ -139,8 +134,7 @@ class ZeCollector {
 
  private: // Implementation
 
-  ZeCollector(std::string& data_dir_name) {
-    data_dir_name_ = data_dir_name;
+  ZeCollector(const std::string& data_dir_name) : data_dir_name_(data_dir_name) {
     EnumerateAndSetupDevices();
     InitializeKernelCommandProperties();
   }
@@ -242,7 +236,7 @@ class ZeCollector {
 
     for (auto& props : device_kprops) {
       // kernel properties file path: data_dir/.kprops.<device_id>.<pid>.txt
-      std::string fpath = data_dir_name_ + "/.kprops."  + std::to_string(props.first) + "." + std::to_string(utils::GetPid()) + ".txt";
+      std::string fpath = data_dir_name_ + "/.kprops."  + std::to_string(props.first) + "." + std::to_string(getpid()) + ".txt";
       std::ofstream kpfs = std::ofstream(fpath, std::ios::out | std::ios::trunc);
       uint64_t prev_base = 0;
       for (auto it = props.second.crbegin(); it != props.second.crend(); it++) {

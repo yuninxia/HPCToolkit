@@ -7,14 +7,12 @@
 #ifndef PTI_UTILS_ZE_UTILS_H_
 #define PTI_UTILS_ZE_UTILS_H_
 
-#include <string.h>
-
 #include <chrono>
+#include <level_zero/ze_api.h>
 #include <string>
+#include <string.h>
 #include <thread>
 #include <vector>
-
-#include <level_zero/ze_api.h>
 
 #include "pti_assert.h"
 
