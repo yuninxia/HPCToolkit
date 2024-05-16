@@ -4,15 +4,9 @@
 // SPDX-License-Identifier: MIT
 // =============================================================
 
-#include <array>
-#include <csignal>
 #include <filesystem>
 #include <iostream>
 #include <pthread.h>
-#include <sys/types.h>
-#include <sys/wait.h>
-#include <sys/time.h>
-#include <sys/resource.h>
 
 #include "level0_pcsampling.h"
 #include "tracer.h"
@@ -24,9 +18,11 @@ static ZeMetricProfiler* metric_profiler = nullptr;
 
 static pthread_once_t level0_pcsampling_init_once = PTHREAD_ONCE_INIT;
 static std::string level0_pcsampling_enabled = utils::GetEnv("ZET_ENABLE_METRICS");
-static char pattern[] = "/tmp/intelpc/tmpdir.XXXXXX";
-static char *data_dir = nullptr;
+
+static const std::string base_path = "/tmp/hpcrun_level0_pc";
 static std::string logfile;
+static char pattern[256];
+static char* data_dir_name = nullptr;
 
 static bool is_level0_pcsampling_enabled() {
     return level0_pcsampling_enabled == "1";
@@ -44,25 +40,25 @@ static void DisableProfiling() {
 
 void level0_pcsampling_init() {
   if (is_level0_pcsampling_enabled()) {
-    std::filesystem::path logDir = "/tmp/intelpc/";
+    std::filesystem::path logDir = base_path;
     if (!std::filesystem::exists(logDir)) {
         std::filesystem::create_directories(logDir);
     }
 
-    data_dir = mkdtemp(pattern);
-    if (data_dir == nullptr) {
+    std::snprintf(pattern, sizeof(pattern), "%s/tmpdir.XXXXXX", base_path.c_str());
+    data_dir_name = mkdtemp(pattern);
+    if (data_dir_name == nullptr) {
       std::cerr << "[ERROR] Failed to create data folder" << std::endl;
       exit(-1);
     }
-    utils::SetEnv("Intel_PCSampling_DataDir", data_dir);
 
     logfile = logDir.string();
   }
 }
 
 static void level0_pcsampling_enable_helper() {
-  EnableProfiling(data_dir, logfile);
-  tracer = UniTracer::Create(); // kernel collector
+  EnableProfiling(data_dir_name, logfile);
+  tracer = UniTracer::Create(data_dir_name); // kernel collector
 }
 
 void level0_pcsampling_enable() {
@@ -75,11 +71,11 @@ void level0_pcsampling_fini() {
   if (is_level0_pcsampling_enabled()) {
     delete tracer;
     DisableProfiling();
-    for (const auto& e: std::filesystem::directory_iterator(std::filesystem::path(data_dir))) {
+    for (const auto& e: std::filesystem::directory_iterator(std::filesystem::path(data_dir_name))) {
       std::filesystem::remove_all(e.path());
     }
-    if (remove(data_dir)) {
-      std::cerr << "[WARNING] " << data_dir << " is not removed. Please manually remove it." << std::endl;
+    if (remove(data_dir_name)) {
+      std::cerr << "[WARNING] " << data_dir_name << " is not removed. Please manually remove it." << std::endl;
     }
   }
 }

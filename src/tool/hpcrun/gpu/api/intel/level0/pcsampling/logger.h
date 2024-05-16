@@ -7,8 +7,8 @@
 #ifndef PTI_TOOLS_UTILS_LOGGER_H_
 #define PTI_TOOLS_UTILS_LOGGER_H_
 
-#include <iostream>
 #include <fstream>
+#include <iostream>
 #include <mutex>
 #include <string>
 
