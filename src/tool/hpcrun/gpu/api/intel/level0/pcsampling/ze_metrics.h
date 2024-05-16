@@ -7,26 +7,21 @@
 #ifndef PTI_TOOLS_UNITRACE_LEVEL_ZERO_METRICS_H_
 #define PTI_TOOLS_UNITRACE_LEVEL_ZERO_METRICS_H_
 
-
-#include <string.h>
-
+#include <atomic>
+#include <iostream>
 #include <level_zero/ze_api.h>
 #include <level_zero/zet_api.h>
-
-#include <iostream>
 #include <map>
 #include <vector>
-#include <atomic>
 #include <sstream>
 #include <thread>
-
-#include "logger.h"
-#include "utils.h"
-#include "ze_utils.h"
-#include "pti_assert.h"
+#include <string.h>
 
 #include "../../../../../libmonitor/monitor.h"
-
+#include "logger.h"
+#include "pti_assert.h"
+#include "utils.h"
+#include "ze_utils.h"
 
 constexpr static uint32_t max_metric_size = 512;
 static uint32_t max_metric_samples = 32768;
@@ -91,7 +86,7 @@ class ZeMetricProfiler {
         filename = logfile.substr(0, pos);
       }
 
-      filename = filename + ".metrics." + std::to_string(utils::GetPid());
+      filename = filename + "/" + ".metrics." + std::to_string(getpid());
 
       std::string rank = (utils::GetEnv("PMI_RANK").empty()) ? utils::GetEnv("PMIX_RANK") : utils::GetEnv("PMI_RANK");
       if (!rank.empty()) {
@@ -197,7 +192,7 @@ class ZeMetricProfiler {
             desc->profiling_thread_ = nullptr;
             desc->profiling_state_.store(PROFILER_DISABLED, std::memory_order_release);
 
-            desc->metric_file_name_ = std::string(dir) + "/." + std::to_string(did) + "." + metric_group + "." + std::to_string(utils::GetPid()) + ".t";
+            desc->metric_file_name_ = std::string(dir) + "/." + std::to_string(did) + "." + metric_group + "." + std::to_string(getpid()) + ".t";
 
             desc->metric_file_stream_ = std::ofstream(desc->metric_file_name_, std::ios::out | std::ios::trunc | std::ios::binary);
 
@@ -233,7 +228,7 @@ class ZeMetricProfiler {
                 sub_desc->profiling_state_.store(PROFILER_DISABLED, std::memory_order_release);
 
 #if 0
-                sub_desc->metric_file_name_ = std::string(dir) + "/." + std::to_string(did) + "." + std::to_string(j) + "." + metric_group + "." + std::to_string(utils::GetPid()) + ".t";
+                sub_desc->metric_file_name_ = std::string(dir) + "/." + std::to_string(did) + "." + std::to_string(j) + "." + metric_group + "." + std::to_string(getpid()) + ".t";
                 sub_desc->metric_file_stream_ = std::ofstream(sub_desc->metric_file_name_, std::ios::out | std::ios::trunc | std::ios::binary);
 #endif /* 0 */
 
