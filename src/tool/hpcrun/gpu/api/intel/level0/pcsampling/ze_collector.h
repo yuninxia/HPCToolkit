@@ -48,19 +48,12 @@ struct ZeKernelCommandProperties {
   std::string module_id_; // module id
 };
 
-// these will not go away when ZeCollector is destructed
-static std::shared_mutex kernel_command_properties_mutex_;
-static std::map<std::string, ZeKernelCommandProperties> *kernel_command_properties_ = nullptr;
-
 struct ZeModule {
   ze_device_handle_t device_;
   std::string module_id_;
   size_t size_;
   bool aot_;	// AOT or JIT
 };
-
-static std::shared_mutex modules_on_devices_mutex_;
-static std::map<ze_module_handle_t, ZeModule> modules_on_devices_; //module to ZeModule map
 
 struct ZeDevice {
   ze_device_handle_t device_;
@@ -72,22 +65,26 @@ struct ZeDevice {
   int32_t num_subdevices_;
 };
 
+// these will not go away when ZeCollector is destructed
+static std::shared_mutex kernel_command_properties_mutex_;
+static std::map<std::string, ZeKernelCommandProperties> *kernel_command_properties_ = nullptr;
+static std::shared_mutex modules_on_devices_mutex_;
+static std::map<ze_module_handle_t, ZeModule> modules_on_devices_; //module to ZeModule map
 // these will no go away when ZeCollector is destructed
 static std::shared_mutex devices_mutex_;
 static std::map<ze_device_handle_t, ZeDevice> *devices_;
-
-ze_result_t (*zexKernelGetBaseAddress)(ze_kernel_handle_t hKernel, uint64_t *baseAddress) = nullptr;
+static ze_result_t (*zexKernelGetBaseAddress)(ze_kernel_handle_t hKernel, uint64_t *baseAddress) = nullptr;
 
 class ZeCollector {
  public: // Interface
 
-  static ZeCollector* Create(const std::string& data_dir_name) {
+  static ZeCollector* Create(const std::string& data_dir) {
     ze_api_version_t version = utils::ze::GetVersion();
     PTI_ASSERT(
         ZE_MAJOR_VERSION(version) >= 1 &&
         ZE_MINOR_VERSION(version) >= 2);
 
-    ZeCollector* collector = new ZeCollector(data_dir_name);
+    ZeCollector* collector = new ZeCollector(data_dir);
 
     ze_result_t status = ZE_RESULT_SUCCESS;
     zel_tracer_desc_t tracer_desc = {
@@ -134,7 +131,7 @@ class ZeCollector {
 
  private: // Implementation
 
-  ZeCollector(const std::string& data_dir_name) : data_dir_name_(data_dir_name) {
+  ZeCollector(const std::string& data_dir) : data_dir_(data_dir) {
     EnumerateAndSetupDevices();
     InitializeKernelCommandProperties();
   }
@@ -236,7 +233,7 @@ class ZeCollector {
 
     for (auto& props : device_kprops) {
       // kernel properties file path: data_dir/.kprops.<device_id>.<pid>.txt
-      std::string fpath = data_dir_name_ + "/.kprops."  + std::to_string(props.first) + "." + std::to_string(getpid()) + ".txt";
+      std::string fpath = data_dir_ + "/.kprops."  + std::to_string(props.first) + "." + std::to_string(getpid()) + ".txt";
       std::ofstream kpfs = std::ofstream(fpath, std::ios::out | std::ios::trunc);
       uint64_t prev_base = 0;
       for (auto it = props.second.crbegin(); it != props.second.crend(); it++) {
@@ -261,16 +258,9 @@ class ZeCollector {
     kernel_command_properties_mutex_.unlock();
   }
 
-  std::string GenerateModuleId(const uint8_t* binary_data, size_t binary_size) const {
+  std::string GenerateUniqueId(const uint8_t* binary_data, size_t binary_size) const {
     char hash_string[CRYPTO_HASH_STRING_LENGTH] = {0};
     crypto_compute_hash_string(binary_data, binary_size, hash_string, CRYPTO_HASH_STRING_LENGTH);
-    return std::string(hash_string);
-  }
-
-  std::string GenerateKernelId(const std::string& kernel_name) const {
-    std::string input = kernel_name;
-    char hash_string[CRYPTO_HASH_STRING_LENGTH] = {0};
-    crypto_compute_hash_string(input.c_str(), input.size(), hash_string, CRYPTO_HASH_STRING_LENGTH);
     return std::string(hash_string);
   }
 
@@ -280,18 +270,32 @@ class ZeCollector {
     if (result == ZE_RESULT_SUCCESS) {
       ze_module_handle_t mod = **(params->pphModule);
       ze_device_handle_t device = *(params->phDevice);
-      size_t binary_size;
-      if (zeModuleGetNativeBinary(mod, &binary_size, nullptr) != ZE_RESULT_SUCCESS) {
-        binary_size = (size_t)(-1);
+
+      size_t binary_size = 0;
+      ze_result_t status = ZE_RESULT_SUCCESS;
+      status = zetModuleGetDebugInfo(
+        mod, 
+        ZET_MODULE_DEBUG_INFO_FORMAT_ELF_DWARF,
+        &binary_size, 
+        nullptr
+      );
+      PTI_ASSERT(status == ZE_RESULT_SUCCESS);
+      if (binary_size == 0) {
+        std::cerr << "[WARNING] Unable to find kernel symbols" << std::endl;
+        return;
       }
 
       std::vector<uint8_t> binary(binary_size);
-      if (zeModuleGetNativeBinary(mod, &binary_size, binary.data()) != ZE_RESULT_SUCCESS) {
-        binary_size = (size_t)(-1);
-      }
+      status = zetModuleGetDebugInfo(
+        mod, 
+        ZET_MODULE_DEBUG_INFO_FORMAT_ELF_DWARF,
+        &binary_size, 
+        binary.data()
+      );
+      PTI_ASSERT(status == ZE_RESULT_SUCCESS);
 
       ZeCollector* collector = static_cast<ZeCollector*>(global_data);
-      std::string module_id = collector->GenerateModuleId(binary.data(), binary_size);
+      std::string module_id = collector->GenerateUniqueId(binary.data(), binary_size);
 
       ZeModule m;
       
@@ -366,7 +370,8 @@ typedef struct _zex_kernel_register_file_size_exp_t {
       desc.name_ = name_len > 0 ? std::string(kernel_name.begin(), kernel_name.end()) : "UnknownKernel";
 
       ZeCollector* collector = static_cast<ZeCollector*>(global_data);
-      std::string kernel_id = collector->GenerateKernelId(desc.name_);
+      std::string kernel_id = collector->GenerateUniqueId(reinterpret_cast<const uint8_t*>(desc.name_.data()), name_len);
+      
       desc.id_ = kernel_id;
       desc.module_id_ = module_id;
 
@@ -401,8 +406,7 @@ typedef struct _zex_kernel_register_file_size_exp_t {
       desc.base_addr_ = base_addr;
       desc.size_ = binary_size;
 
-      ZeKernelCommandProperties desc2 = desc;
-      kernel_command_properties_->insert({desc2.id_, std::move(desc2)});
+      kernel_command_properties_->insert({desc.id_, std::move(desc)});
 
       kernel_command_properties_mutex_.unlock();
     }
@@ -451,7 +455,7 @@ typedef struct _zex_kernel_register_file_size_exp_t {
 
  private: // Data
   zel_tracer_handle_t tracer_ = nullptr;
-  std::string data_dir_name_;
+  std::string data_dir_;
 };
 
 #endif // PTI_TOOLS_UNITRACE_LEVEL_ZERO_COLLECTOR_H_
