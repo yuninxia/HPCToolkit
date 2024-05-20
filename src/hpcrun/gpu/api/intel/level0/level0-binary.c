@@ -26,6 +26,8 @@
 
 #include "level0-binary.h"
 #include "level0-handle-map.h"
+#include "level0-id-map.h"
+#include "level0-kernel-module-map.h"
 
 
 //*****************************************************************************
@@ -103,32 +105,46 @@ level0_binary_process
 )
 {
   // Get the debug binary
-  size_t size;
+  size_t debug_zebin_size;
   f_zetModuleGetDebugInfo(
     module,
     ZET_MODULE_DEBUG_INFO_FORMAT_ELF_DWARF,
-    &size,
+    &debug_zebin_size,
     NULL,
     dispatch
   );
 
-  uint8_t* buf = (uint8_t*) malloc(size);
+  uint8_t* debug_zebin = (uint8_t*) malloc(debug_zebin_size);
   f_zetModuleGetDebugInfo(
     module,
     ZET_MODULE_DEBUG_INFO_FORMAT_ELF_DWARF,
-    &size,
-    buf,
+    &debug_zebin_size,
+    debug_zebin,
     dispatch
   );
 
   uint32_t loadmap_module_id;
-  gpu_binary_save(buf, size, true /* mark_used */, &loadmap_module_id);
+  gpu_binary_save(debug_zebin, debug_zebin_size, true /* mark_used */, &loadmap_module_id);
 
   // Generate a hash for the binary
-  char *hash_buf = (char *) malloc(CRYPTO_HASH_STRING_LENGTH);
-  crypto_compute_hash_string(buf, size, hash_buf, CRYPTO_HASH_STRING_LENGTH);
+  char zebin_id[CRYPTO_HASH_STRING_LENGTH];
+  crypto_compute_hash_string(debug_zebin, debug_zebin_size, zebin_id, CRYPTO_HASH_STRING_LENGTH);
+     
+  TMSG(LEVEL0, "zebin_id %d -> loadmap_module_id %d", zebin_id, loadmap_module_id);
 
-  gpu_binary_kind_t bkind = gpu_binary_kind((const char *) buf, size);
+  uint32_t zebin_id_uint32;
+  sscanf(zebin_id, "%8x", &zebin_id_uint32);
+
+  zebin_id_map_entry_t *entry = zebin_id_map_lookup(zebin_id_uint32);
+  if (entry == NULL) {
+    SymbolVector *symbols = collectZebinSymbols(debug_zebin, debug_zebin_size);
+    zebin_id_map_insert(zebin_id_uint32, loadmap_module_id, symbols);
+    free(symbols->symbolValue);
+    free(symbols->symbolName);
+    free(symbols);
+  }
+
+  gpu_binary_kind_t bkind = gpu_binary_kind((const char *) debug_zebin, debug_zebin_size);
 
   switch (bkind){
   case gpu_binary_kind_intel_patch_token:
@@ -143,7 +159,7 @@ level0_binary_process
     break;
   case gpu_binary_kind_unknown:
     {
-    const char *magic = (const char *) buf;
+    const char *magic = (const char *) debug_zebin;
     TMSG(LEVEL0, "WARNING: hpcrun: Level Zero presented unknown binary kind: magic number='%c%c%c%c'\n"
          "Instruction-level may not be possible for kernels in this binary",
           magic[0], magic[1], magic[2], magic[3]);
@@ -155,7 +171,9 @@ level0_binary_process
     break;
   }
 
-  level0_module_handle_map_insert(module, hash_buf, bkind);
+  level0_module_handle_map_insert(module, zebin_id, bkind);
+
+  free(debug_zebin);
 }
 
 
@@ -195,4 +213,64 @@ level0_module_handle_map_delete
   );
 
   spinlock_unlock(&module_lock);
+}
+
+ip_normalized_t
+level0_func_ip_resolve
+(
+  ze_kernel_handle_t hKernel
+)
+{
+  // Kernel Name
+  size_t name_len = 0;
+  ze_result_t status = zeKernelGetName(hKernel, &name_len, NULL);
+  if (status != ZE_RESULT_SUCCESS || name_len == 0) {
+    fprintf(stderr, "zeKernelGetName failed or returned zero length\n");
+    ip_normalized_t ip = {0, 0};
+    return ip;
+  }
+
+  char* kernel_name = (char*) malloc(name_len);
+  status = zeKernelGetName(hKernel, &name_len, kernel_name);
+  if (status != ZE_RESULT_SUCCESS) {
+    fprintf(stderr, "zeKernelGetName failed\n");
+    free(kernel_name);
+    ip_normalized_t ip = {0, 0};
+    return ip;
+  }
+  
+  // Module ID
+  ze_module_handle_t hModule = level0_kernel_module_map_lookup(hKernel);
+  
+  // Get the debug binary
+  size_t debug_zebin_size;
+  zetModuleGetDebugInfo(
+    hModule,
+    ZET_MODULE_DEBUG_INFO_FORMAT_ELF_DWARF,
+    &debug_zebin_size,
+    NULL
+  );
+
+  uint8_t* debug_zebin = (uint8_t*) malloc(debug_zebin_size);
+  zetModuleGetDebugInfo(
+    hModule,
+    ZET_MODULE_DEBUG_INFO_FORMAT_ELF_DWARF,
+    &debug_zebin_size,
+    debug_zebin
+  );
+
+  char module_id[CRYPTO_HASH_STRING_LENGTH];
+  crypto_compute_hash_string(debug_zebin, debug_zebin_size, module_id, CRYPTO_HASH_STRING_LENGTH);
+
+  uint32_t module_id_uint32;
+  sscanf(module_id, "%8x", &module_id_uint32);
+
+  ip_normalized_t ip_norm = zebin_id_transform(module_id_uint32, kernel_name, 0);
+
+  TMSG(LEVEL0, "Decode kernel_id %s module_id %s", kernel_name, module_id);
+
+  free(kernel_name);
+  free(debug_zebin);
+
+  return ip_norm;
 }
