@@ -370,8 +370,8 @@ typedef struct _zex_kernel_register_file_size_exp_t {
       desc.name_ = name_len > 0 ? std::string(kernel_name.begin(), kernel_name.end()) : "UnknownKernel";
 
       ZeCollector* collector = static_cast<ZeCollector*>(global_data);
-      std::string kernel_id = collector->GenerateUniqueId(reinterpret_cast<const uint8_t*>(desc.name_.data()), name_len);
-      
+      std::string kernel_id = collector->GenerateUniqueId(reinterpret_cast<const uint8_t*>(&kernel), sizeof(kernel));
+
       desc.id_ = kernel_id;
       desc.module_id_ = module_id;
 
