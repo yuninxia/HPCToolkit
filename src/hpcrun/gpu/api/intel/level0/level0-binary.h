@@ -28,4 +28,25 @@ level0_binary_process
   const struct hpcrun_foil_appdispatch_level0* dispatch
 );
 
+void
+level0_module_handle_map_lookup
+(
+  ze_module_handle_t module,
+  const char **hash_string,
+  gpu_binary_kind_t *bkind
+);
+
+void
+level0_module_handle_map_delete
+(
+  ze_module_handle_t module
+);
+
+ip_normalized_t
+level0_func_ip_resolve
+(
+  ze_kernel_handle_t hKernel,
+  const struct hpcrun_foil_appdispatch_level0* dispatch
+);
+
 #endif

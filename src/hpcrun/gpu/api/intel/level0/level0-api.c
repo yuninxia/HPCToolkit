@@ -819,6 +819,11 @@ hpcrun_zeKernelCreate
 {
   ze_result_t ret = f_zeKernelCreate(hModule, desc, phKernel, dispatch);
   PRINT("foilbase_zeKernelCreate: module handle %p, kernel handle %p\n",hModule, *phKernel);
+  // Exit action
+  level0_kernel_module_map_insert(*phKernel, hModule);
+  ip_normalized_t kernel_ip;
+  kernel_ip = level0_func_ip_resolve(*phKernel, dispatch);
+  
   return ret;
 }
 
