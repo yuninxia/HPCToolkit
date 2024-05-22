@@ -46,6 +46,7 @@ struct ZeKernelCommandProperties {
   bool aot_;		// AOT or JIT
   std::string name_;	// kernel or command name
   std::string module_id_; // module id
+  void* function_pointer_; // function pointer
 };
 
 struct ZeModule {
@@ -53,6 +54,7 @@ struct ZeModule {
   std::string module_id_;
   size_t size_;
   bool aot_;	// AOT or JIT
+  std::vector<std::string> kernel_names_; // List of kernel names
 };
 
 struct ZeDevice {
@@ -303,6 +305,23 @@ class ZeCollector {
       m.size_ = binary_size;
       m.module_id_ = module_id;
 
+      // Retrieve kernel names
+      uint32_t kernel_count = 0;
+      status = zeModuleGetKernelNames(mod, &kernel_count, nullptr);
+      if (status == ZE_RESULT_SUCCESS && kernel_count > 0) {
+        std::vector<const char*> kernel_names(kernel_count);
+        status = zeModuleGetKernelNames(mod, &kernel_count, kernel_names.data());
+        if (status == ZE_RESULT_SUCCESS) {
+          for (uint32_t i = 0; i < kernel_count; ++i) {
+            m.kernel_names_.emplace_back(kernel_names[i]);
+          }
+        } else {
+          std::cerr << "[WARNING] Unable to get kernel names, status: " << status << std::endl;
+        }
+      } else {
+        std::cerr << "[WARNING] Unable to get kernel count, status: " << status << std::endl;
+      }
+
       modules_on_devices_mutex_.lock();
       modules_on_devices_.insert({mod, std::move(m)});
       modules_on_devices_mutex_.unlock();
@@ -405,6 +424,15 @@ typedef struct _zex_kernel_register_file_size_exp_t {
 
       desc.base_addr_ = base_addr;
       desc.size_ = binary_size;
+
+      // Retrieve the function pointer
+      void* function_pointer = nullptr;
+      if (zeModuleGetFunctionPointer(mod, kernel_name.data(), &function_pointer) == ZE_RESULT_SUCCESS) {
+        desc.function_pointer_ = function_pointer;
+      } else {
+        desc.function_pointer_ = nullptr;
+        std::cerr << "[WARNING] Unable to get function pointer for kernel: " << desc.name_ << std::endl;
+      }
 
       kernel_command_properties_->insert({desc.id_, std::move(desc)});
 
