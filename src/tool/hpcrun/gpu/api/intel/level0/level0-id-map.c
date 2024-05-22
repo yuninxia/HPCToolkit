@@ -232,30 +232,101 @@ zebin_id_map_entry_elf_vector_get
   return entry->elf_vector;
 }
 
+char* 
+level0_kernel_name_get
+(
+  ze_kernel_handle_t hKernel
+) 
+{
+  size_t name_len = 0;
+  ze_result_t status = zeKernelGetName(hKernel, &name_len, NULL);
+  if (status != ZE_RESULT_SUCCESS || name_len == 0) {
+    fprintf(stderr, "zeKernelGetName failed or returned zero length\n");
+    return NULL;
+  }
+
+  char* kernel_name = (char*) malloc(name_len);
+  status = zeKernelGetName(hKernel, &name_len, kernel_name);
+  if (status != ZE_RESULT_SUCCESS) {
+    fprintf(stderr, "zeKernelGetName failed\n");
+    free(kernel_name);
+    return NULL;
+  }
+  
+  return kernel_name;
+}
+
+uint8_t* 
+level0_module_debug_zebin_get
+(
+  ze_module_handle_t hModule, 
+  size_t* zebin_size
+) 
+{
+  zetModuleGetDebugInfo(
+    hModule,
+    ZET_MODULE_DEBUG_INFO_FORMAT_ELF_DWARF,
+    zebin_size,
+    NULL
+  );
+
+  uint8_t* debug_zebin = (uint8_t*) malloc(*zebin_size);
+  zetModuleGetDebugInfo(
+    hModule,
+    ZET_MODULE_DEBUG_INFO_FORMAT_ELF_DWARF,
+    zebin_size,
+    debug_zebin
+  );
+
+  return debug_zebin;
+}
 
 //--------------------------------------------------------------------------
-// Transform a <zebin_id, function_index, offset> tuple to a pc address by
-// looking up elf symbols inside a zebin
+// Transform a <hModule, hKernel, offset> tuple to a pc address by
+// using level0 api zeModuleGetFunctionPointer
 //--------------------------------------------------------------------------
-ip_normalized_t
-zebin_id_transform(uint32_t zebin_id, char* function_name, uint64_t offset)
+ip_normalized_t 
+zebin_id_transform
+(
+  ze_module_handle_t hModule, 
+  ze_kernel_handle_t hKernel, 
+  uint64_t offset
+) 
 {
   ip_normalized_t ip = {0, 0};
-  zebin_id_map_entry_t *entry = zebin_id_map_lookup(zebin_id);
+  
+  char* function_name = level0_kernel_name_get(hKernel);
+  if (!function_name) {
+    return ip;
+  }
 
-  TMSG(LEVEL0, "zebin_id %d", zebin_id);
+  size_t debug_zebin_size;
+  uint8_t* debug_zebin = level0_module_debug_zebin_get(hModule, &debug_zebin_size);
+
+  char module_id[CRYPTO_HASH_STRING_LENGTH];
+  crypto_compute_hash_string(debug_zebin, debug_zebin_size, module_id, CRYPTO_HASH_STRING_LENGTH);
+  
+  uint32_t module_id_uint32;
+  sscanf(module_id, "%8x", &module_id_uint32);
+  
+  zebin_id_map_entry_t *entry = zebin_id_map_lookup(module_id_uint32);
+  TMSG(LEVEL0, "zebin_id %d", module_id_uint32);
   if (entry != NULL) {
     uint32_t hpctoolkit_module_id = zebin_id_map_entry_hpctoolkit_id_get(entry);
     TMSG(LEVEL0, "get hpctoolkit_module_id %d", hpctoolkit_module_id);
-    const SymbolVector *vector = zebin_id_map_entry_elf_vector_get(entry);
     ip.lm_id = (uint16_t)hpctoolkit_module_id;
-    // ip.lm_ip = (uintptr_t)(vector->symbols[function_index] + offset);
-    for (int i = 0; i < vector->nsymbols; i++) {
-      if (strcmp(vector->symbolName[i], function_name) == 0) {
-        ip.lm_ip = (uintptr_t)(vector->symbolValue[i] + offset);
-        break;
-      }
+
+    void* function_pointer = NULL;
+    ze_result_t status = zeModuleGetFunctionPointer(hModule, function_name, &function_pointer);
+    if (status == ZE_RESULT_SUCCESS && function_pointer != NULL) {
+      ip.lm_ip = (uintptr_t)function_pointer + offset;
+    } else {
+      fprintf(stderr, "zeModuleGetFunctionPointer failed for function %s\n", function_name);
+      free(function_name);
+      free(debug_zebin);
+      return ip;
     }
+
     if (entry->load_module_unused) {
       hpcrun_loadmap_lock();
       load_module_t *lm = hpcrun_loadmap_findById(ip.lm_id);
@@ -266,9 +337,11 @@ zebin_id_transform(uint32_t zebin_id, char* function_name, uint64_t offset)
       hpcrun_loadmap_unlock();
     }
   }
+
+  free(function_name);
+  free(debug_zebin);
   return ip;
 }
-
 
 
 //*****************************************************************************

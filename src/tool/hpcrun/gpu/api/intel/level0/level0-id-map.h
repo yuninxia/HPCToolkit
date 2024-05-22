@@ -8,11 +8,14 @@
 //*****************************************************************************
 
 #include <stdint.h>
+#include <level_zero/ze_api.h>
+#include <level_zero/zet_api.h>
 
 //*****************************************************************************
 // local includes
 //*****************************************************************************
 
+#include "../../../../../../lib/prof-lean/crypto-hash.h"
 #include "../../../../sample_event.h"
 #include "../binaries/zebinSymbols.h"
 
@@ -67,12 +70,12 @@ zebin_id_map_entry_elf_vector_get
 );
 
 
-ip_normalized_t
+ip_normalized_t 
 zebin_id_transform
 (
- uint32_t zebin_id,
- char* function_id,
- uint64_t offset
+  ze_module_handle_t hModule, 
+  ze_kernel_handle_t hKernel, 
+  uint64_t offset
 );
 
 
