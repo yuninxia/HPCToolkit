@@ -104,22 +104,8 @@ level0_binary_process
   ze_module_handle_t module
 )
 {
-  // Get the debug binary
   size_t debug_zebin_size;
-  zetModuleGetDebugInfo(
-    module,
-    ZET_MODULE_DEBUG_INFO_FORMAT_ELF_DWARF,
-    &debug_zebin_size,
-    NULL
-  );
-
-  uint8_t* debug_zebin = (uint8_t*) malloc(debug_zebin_size);
-  zetModuleGetDebugInfo(
-    module,
-    ZET_MODULE_DEBUG_INFO_FORMAT_ELF_DWARF,
-    &debug_zebin_size,
-    debug_zebin
-  );
+  uint8_t* debug_zebin = level0_module_debug_zebin_get(module, &debug_zebin_size);
 
   uint32_t loadmap_module_id;
   gpu_binary_save(debug_zebin, debug_zebin_size, true /* mark_used */, &loadmap_module_id);
