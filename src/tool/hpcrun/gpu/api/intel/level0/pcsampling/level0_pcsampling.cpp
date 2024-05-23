@@ -20,7 +20,6 @@ static pthread_once_t level0_pcsampling_init_once = PTHREAD_ONCE_INIT;
 static std::string level0_pcsampling_enabled = utils::GetEnv("ZET_ENABLE_METRICS");
 
 static const std::string base_path = "/tmp/hpcrun_level0_pc";
-static std::string logfile;
 static char pattern[256];
 static char* data_dir_name = nullptr;
 
@@ -28,8 +27,8 @@ static bool is_level0_pcsampling_enabled() {
     return level0_pcsampling_enabled == "1";
 }
 
-static void EnableProfiling(char *dir, std::string& logfile) {
-  metric_profiler = ZeMetricProfiler::Create(dir, logfile);
+static void EnableProfiling(char *dir) {
+  metric_profiler = ZeMetricProfiler::Create(dir);
 }
 
 static void DisableProfiling() {
@@ -40,9 +39,8 @@ static void DisableProfiling() {
 
 void level0_pcsampling_init() {
   if (is_level0_pcsampling_enabled()) {
-    std::filesystem::path logDir = base_path;
-    if (!std::filesystem::exists(logDir)) {
-        std::filesystem::create_directories(logDir);
+    if (!std::filesystem::exists(base_path)) {
+        std::filesystem::create_directories(base_path);
     }
 
     std::snprintf(pattern, sizeof(pattern), "%s/tmpdir.XXXXXX", base_path.c_str());
@@ -51,13 +49,11 @@ void level0_pcsampling_init() {
       std::cerr << "[ERROR] Failed to create data folder" << std::endl;
       exit(-1);
     }
-
-    logfile = logDir.string();
   }
 }
 
 static void level0_pcsampling_enable_helper() {
-  EnableProfiling(data_dir_name, logfile);
+  EnableProfiling(data_dir_name);
   tracer = UniTracer::Create(data_dir_name); // kernel collector
 }
 

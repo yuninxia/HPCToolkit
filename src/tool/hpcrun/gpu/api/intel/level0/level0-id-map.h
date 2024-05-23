@@ -69,6 +69,20 @@ zebin_id_map_entry_elf_vector_get
  zebin_id_map_entry_t *entry
 );
 
+uint8_t* 
+level0_module_debug_zebin_get
+(
+  ze_module_handle_t hModule, 
+  size_t* zebin_size
+);
+
+
+char* 
+level0_kernel_name_get
+(
+  ze_kernel_handle_t hKernel
+);
+
 
 ip_normalized_t 
 zebin_id_transform

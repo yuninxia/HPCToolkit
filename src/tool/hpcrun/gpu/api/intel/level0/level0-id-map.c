@@ -232,6 +232,7 @@ zebin_id_map_entry_elf_vector_get
   return entry->elf_vector;
 }
 
+
 char* 
 level0_kernel_name_get
 (
@@ -255,6 +256,7 @@ level0_kernel_name_get
   
   return kernel_name;
 }
+
 
 uint8_t* 
 level0_module_debug_zebin_get
@@ -280,6 +282,7 @@ level0_module_debug_zebin_get
 
   return debug_zebin;
 }
+
 
 //--------------------------------------------------------------------------
 // Transform a <hModule, hKernel, offset> tuple to a pc address by
