@@ -407,6 +407,10 @@ typedef void (*gpu_activity_attribute_fn_t)(gpu_activity_t *a);
 // interface functions
 //******************************************************************************
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 void
 gpu_activity_init
 (
@@ -443,5 +447,9 @@ gpu_type_to_string
 (
  gpu_mem_type_t type
 );
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif
