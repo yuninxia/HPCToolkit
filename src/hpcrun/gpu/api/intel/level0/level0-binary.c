@@ -104,7 +104,6 @@ level0_binary_process
   const struct hpcrun_foil_appdispatch_level0* dispatch
 )
 {
-  // Get the debug binary
   size_t debug_zebin_size;
   f_zetModuleGetDebugInfo(
     module,

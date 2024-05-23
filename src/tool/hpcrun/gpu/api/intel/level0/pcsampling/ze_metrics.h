@@ -8,6 +8,7 @@
 #define PTI_TOOLS_UNITRACE_LEVEL_ZERO_METRICS_H_
 
 #include <atomic>
+#include <deque>
 #include <iostream>
 #include <level_zero/ze_api.h>
 #include <level_zero/zet_api.h>
@@ -16,9 +17,10 @@
 #include <sstream>
 #include <thread>
 #include <string.h>
-
+#include <filesystem>
+#include <fstream>
 #include "../../../../../libmonitor/monitor.h"
-#include "logger.h"
+#include "../../../../activity/gpu-activity.h"
 #include "pti_assert.h"
 #include "utils.h"
 #include "ze_utils.h"
@@ -26,7 +28,7 @@
 constexpr static uint32_t max_metric_size = 512;
 static uint32_t max_metric_samples = 32768;
 
-#define MAX_METRIC_BUFFER  (max_metric_samples * max_metric_size* 2)
+#define MAX_METRIC_BUFFER  (max_metric_samples * max_metric_size * 2)
 
 enum ZeProfilerState {
   PROFILER_DISABLED = 0,
@@ -43,7 +45,7 @@ struct ZeDeviceDescriptor {
   int32_t subdevice_id_;
   int32_t num_sub_devices_;
   zet_metric_group_handle_t metric_group_;
-  std::thread *profiling_thread_; 
+  std::thread *profiling_thread_;
   std::atomic<ZeProfilerState> profiling_state_;
   std::string metric_file_name_;
   std::ofstream metric_file_stream_;
@@ -53,8 +55,8 @@ struct ZeDeviceDescriptor {
 
 class ZeMetricProfiler {
  public:
-  static ZeMetricProfiler* Create(char *dir, std::string& logfilename) {
-    ZeMetricProfiler* profiler = new ZeMetricProfiler(dir, logfilename);
+  static ZeMetricProfiler* Create(char *dir) {
+    ZeMetricProfiler* profiler = new ZeMetricProfiler(dir);
 
     profiler->StartProfilingMetrics();
 
@@ -64,47 +66,15 @@ class ZeMetricProfiler {
   ~ZeMetricProfiler() {
     StopProfilingMetrics();
     ComputeMetrics();
-    delete logger_;
-    if (!log_name_.empty()) {
-      std::cerr << "[INFO] Device metrics are stored in " << log_name_ << std::endl;
-    }
   }
 
   ZeMetricProfiler(const ZeMetricProfiler& that) = delete;
   ZeMetricProfiler& operator=(const ZeMetricProfiler& that) = delete;
 
  private:
-  ZeMetricProfiler(char *dir, std::string& logfile) {
+  ZeMetricProfiler(char *dir) {
     data_dir_name_ = std::string(dir);
-    if (!logfile.empty()) {
-      size_t pos = logfile.find_first_of('.');
 
-      std::string filename;
-      if (pos == std::string::npos) {
-        filename = logfile;
-      } else {
-        filename = logfile.substr(0, pos);
-      }
-
-      filename = filename + "/" + ".metrics." + std::to_string(getpid());
-
-      std::string rank = (utils::GetEnv("PMI_RANK").empty()) ? utils::GetEnv("PMIX_RANK") : utils::GetEnv("PMI_RANK");
-      if (!rank.empty()) {
-        filename = filename + "." + rank;
-      }
-
-      if (pos != std::string::npos) {
-        filename = filename + logfile.substr(pos);
-      }
-
-      log_name_ = std::move(filename);
-    }
-    else {
-      log_name_ = logfile;
-    }
-
-    logger_ = new Logger(log_name_, true, true);
-     
     EnumerateDevices(dir);
   }
 
@@ -146,16 +116,16 @@ class ZeMetricProfiler {
             status = zeDeviceGetSubDevices(device, &num_sub_devices, nullptr);
             PTI_ASSERT(status == ZE_RESULT_SUCCESS);
 
-      
+
             ZeDeviceDescriptor *desc = new ZeDeviceDescriptor;
 
             desc->stall_sampling_ = stall_sampling;
 
             desc->device_ = device;
             desc->device_id_ = did;
-            desc->parent_device_id_ = -1;	// no parent device
+            desc->parent_device_id_ = -1;    // no parent device
             desc->parent_device_ = nullptr;
-            desc->subdevice_id_ = -1;		// not a subdevice
+            desc->subdevice_id_ = -1;        // not a subdevice
             desc->num_sub_devices_ = num_sub_devices;
 
             zet_metric_group_handle_t group = nullptr;
@@ -188,42 +158,32 @@ class ZeMetricProfiler {
             desc->driver_ = driver;
             desc->context_ = context;
             desc->metric_group_ = group;
-
             desc->profiling_thread_ = nullptr;
             desc->profiling_state_.store(PROFILER_DISABLED, std::memory_order_release);
-
             desc->metric_file_name_ = std::string(dir) + "/." + std::to_string(did) + "." + metric_group + "." + std::to_string(getpid()) + ".t";
-
             desc->metric_file_stream_ = std::ofstream(desc->metric_file_name_, std::ios::out | std::ios::trunc | std::ios::binary);
-
             device_descriptors_.insert({device, desc});
 
             if (num_sub_devices > 0) {
               std::vector<ze_device_handle_t> sub_devices(num_sub_devices);
-
               status = zeDeviceGetSubDevices(device, &num_sub_devices, sub_devices.data());
               PTI_ASSERT(status == ZE_RESULT_SUCCESS);
 
               for (uint32_t j = 0; j < num_sub_devices; j++) {
                 ZeDeviceDescriptor *sub_desc = new ZeDeviceDescriptor;
-  
                 sub_desc->stall_sampling_ = stall_sampling;
-
                 sub_desc->device_ = sub_devices[j];
-                sub_desc->device_id_ = did;		// subdevice
-                sub_desc->parent_device_id_ = did;	// parent device
+                sub_desc->device_id_ = did;        // subdevice
+                sub_desc->parent_device_id_ = did;    // parent device
                 sub_desc->parent_device_ = device;
-                sub_desc->subdevice_id_ = j;		// a subdevice
+                sub_desc->subdevice_id_ = j;        // a subdevice
                 sub_desc->num_sub_devices_ = 0;
-
                 sub_desc->driver_ = driver;
                 sub_desc->context_ = context;
                 sub_desc->metric_group_ = group;
-  
                 sub_desc->driver_ = driver;
                 sub_desc->context_ = context;
                 sub_desc->metric_group_ = group;
-            
                 sub_desc->profiling_thread_ = nullptr;
                 sub_desc->profiling_state_.store(PROFILER_DISABLED, std::memory_order_release);
 
@@ -283,10 +243,10 @@ class ZeMetricProfiler {
   }
 
   void StopProfilingMetrics() {
-   
+
     for (auto it = device_descriptors_.begin(); it != device_descriptors_.end(); ++it) {
       if (it->second->parent_device_ != nullptr) {
-        // subdevice 
+        // subdevice
         continue;
       }
       PTI_ASSERT(it->second->profiling_thread_ != nullptr);
@@ -306,22 +266,119 @@ class ZeMetricProfiler {
     std::string kernel_name;
   };
 
- static  bool CompareInterval(ZeKernelInfo& iv1, ZeKernelInfo& iv2) {
+  struct EuStalls {
+    uint64_t active_;
+    uint64_t control_;
+    uint64_t pipe_;
+    uint64_t send_;
+    uint64_t dist_;
+    uint64_t sbid_;
+    uint64_t sync_;
+    uint64_t insfetch_;
+    uint64_t other_;
+  };
+
+  struct KernelProperties {
+    std::string name;
+    uint64_t base_address;
+    std::string kernel_id;
+    std::string module_id;
+    size_t size;
+  };
+
+  static void AddGpuActivity(std::deque<gpu_activity_t*>& activities, uint64_t offset, const ZeMetricProfiler::EuStalls& stall, uint64_t correlation_id) {
+    gpu_activity_t* activity = new gpu_activity_t();
+    gpu_activity_init(activity);
+    
+    activity->kind = GPU_ACTIVITY_PC_SAMPLING;
+
+    activity->details.pc_sampling.correlation_id = correlation_id;
+
+    ip_normalized_t normalized_ip;
+    normalized_ip.lm_id = 0;
+    normalized_ip.lm_ip = offset;
+    activity->details.pc_sampling.pc = normalized_ip;
+
+    activity->details.pc_sampling.samples = stall.active_ + stall.control_ + stall.pipe_ + stall.send_ + stall.dist_ + stall.sbid_ + stall.sync_ + stall.insfetch_ + stall.other_;
+
+    activity->details.pc_sampling.latencySamples = activity->details.pc_sampling.samples - stall.active_;
+    
+    // Set stall reason
+    gpu_inst_stall_t max_stall_reason = GPU_INST_STALL_NONE;
+    uint64_t max_value = 0;
+
+    if (stall.control_ > max_value) {
+      max_value = stall.control_;
+      max_stall_reason = GPU_INST_STALL_PIPE_BUSY; // TBD
+    }
+    if (stall.pipe_ > max_value) {
+      max_value = stall.pipe_;
+      max_stall_reason = GPU_INST_STALL_PIPE_BUSY;
+    }
+    if (stall.send_ > max_value) {
+      max_value = stall.send_;
+      max_stall_reason = GPU_INST_STALL_GMEM; // TBD
+    }
+    if (stall.dist_ > max_value) {
+      max_value = stall.dist_;
+      max_stall_reason = GPU_INST_STALL_TMEM; // TBD
+    }
+    if (stall.sbid_ > max_value) {
+      max_value = stall.sbid_;
+      max_stall_reason = GPU_INST_STALL_SYNC; // TBD
+    }
+    if (stall.sync_ > max_value) {
+      max_value = stall.sync_;
+      max_stall_reason = GPU_INST_STALL_SYNC;
+    }
+    if (stall.insfetch_ > max_value) {
+      max_value = stall.insfetch_;
+      max_stall_reason = GPU_INST_STALL_IFETCH;
+    }
+    if (stall.other_ > max_value) {
+      max_value = stall.other_;
+      max_stall_reason = GPU_INST_STALL_OTHER;
+    }
+
+    activity->details.pc_sampling.stallReason = max_stall_reason;
+
+    activities.push_back(activity);
+  }
+
+  static uint64_t ConvertToCorrelationId(const std::string& kernel_id, const std::string& module_id) {
+    uint32_t kernel_id_uint32 = 0, module_id_uint32 = 0;
+    std::stringstream ss;
+
+    ss << std::hex << kernel_id.substr(0, 8);
+    ss >> kernel_id_uint32;
+    ss.clear();
+    ss.str("");
+    
+    ss << std::hex << module_id.substr(0, 8);
+    ss >> module_id_uint32;
+
+    return ((uint64_t)module_id_uint32 << 32) | (uint64_t)kernel_id_uint32;
+  }
+
+  static bool CompareInterval(ZeKernelInfo& iv1, ZeKernelInfo& iv2) {
     return (iv1.metric_start < iv2.metric_start);
   }
 
   void ComputeMetrics() {
+    std::deque<gpu_activity_t*> activities;
+
     for (auto it = device_descriptors_.begin(); it != device_descriptors_.end(); ++it) {
       if (it->second->parent_device_ != nullptr) {
         // subdevice
         continue;
       }
- 
+
       if (it->second->stall_sampling_) {
-        std::map<uint64_t, std::pair<std::string, size_t>> kprops;
+        // std::map<uint64_t, std::pair<std::string, size_t>> kprops;
+        std::map<uint64_t, KernelProperties> kprops;
         int max_kname_size = 0;
-        // enumberate all kernel property files
-        for (const auto& e: std::filesystem::directory_iterator(std::filesystem::path(data_dir_name_))) {
+        // enumerate all kernel property files
+        for (const auto& e : std::filesystem::directory_iterator(std::filesystem::path(data_dir_name_))) {
           // kernel properties file path: <data_dir>/.kprops.<device_id>.<pid>.txt
           if (e.path().filename().string().find(".kprops." + std::to_string(it->second->device_id_)) == 0) {
             std::ifstream kpf = std::ifstream(e.path());
@@ -330,12 +387,10 @@ class ZeMetricProfiler {
             }
 
             while (!kpf.eof()) {
-              std::string kname;
+              KernelProperties props;
               std::string line;
-              size_t size;
-              uint64_t base_addr;
 
-              std::getline(kpf, kname);
+              std::getline(kpf, props.name);
               if (kpf.eof()) {
                 break;
               }
@@ -344,16 +399,19 @@ class ZeMetricProfiler {
               if (kpf.eof()) {
                 break;
               }
-              base_addr = std::strtol(line.c_str(), nullptr, 0);
+              props.base_address = std::strtol(line.c_str(), nullptr, 0);
 
+              std::getline(kpf, props.kernel_id);
+              std::getline(kpf, props.module_id);
+              
               line.clear();
               std::getline(kpf, line);
-              size = std::strtol(line.c_str(), nullptr, 0);
+              props.size = std::strtol(line.c_str(), nullptr, 0);
 
-              if (kname.size() > static_cast<std::string::size_type>(max_kname_size)) {
-                max_kname_size = kname.size();
+              if (props.name.size() > static_cast<std::string::size_type>(max_kname_size)) {
+                max_kname_size = props.name.size();
               }
-              kprops.insert({base_addr, {std::move(kname), size}});
+              kprops.insert({props.base_address, std::move(props)});
             }
             kpf.close();
           }
@@ -361,34 +419,22 @@ class ZeMetricProfiler {
         if (kprops.size() == 0) {
           continue;
         }
-       
-        struct EuStalls {
-          uint64_t active_;
-          uint64_t control_;
-          uint64_t pipe_;
-          uint64_t send_;
-          uint64_t dist_;
-          uint64_t sbid_;
-          uint64_t sync_;
-          uint64_t insfetch_;
-          uint64_t other_;
-        };
 
         std::map<uint64_t, EuStalls> eustalls;
 
         std::vector<std::string> metric_list;
         metric_list = GetMetricList(it->second->metric_group_);
         PTI_ASSERT(!metric_list.empty());
-  
+
         uint32_t ip_idx = GetMetricId(metric_list, "IP");
         if (ip_idx >= metric_list.size()) {
           // no IP metric 
           continue;
         }
-  
+
         std::ifstream inf = std::ifstream(it->second->metric_file_name_, std::ios::in | std::ios::binary);
         std::vector<uint8_t> raw_metrics(MAX_METRIC_BUFFER + 512);
-  
+
         if (!inf.is_open()) {
           continue;
         }
@@ -424,9 +470,9 @@ class ZeMetricProfiler {
             const zet_typed_value_t *value = metrics.data();
             for (uint32_t i = 0; i < num_samples; ++i) {
               std::string str;
-  
+
               uint32_t size = samples[i];
-                  
+
               for (uint32_t j = 0; j < size; j += metric_list.size()) {
                 uint64_t ip;
                 ip = (value[j + 0].value.ui64 << 3);
@@ -454,8 +500,7 @@ class ZeMetricProfiler {
                   eit->second.sync_ += stall.sync_;
                   eit->second.insfetch_ += stall.insfetch_;
                   eit->second.other_ += stall.other_;
-                }
-                else {
+                } else {
                   eustalls.insert({ip, std::move(stall)});
                 }
               }
@@ -469,71 +514,26 @@ class ZeMetricProfiler {
           continue;
         }
 
-        std::string header("\n=== Device #");
-
-        header += std::to_string(it->second->device_id_) + " Metrics ===\n\n";
-        int field_sizes[11];
-        field_sizes[0] = max_kname_size; 
-        field_sizes[1] = std::max(sizeof("0x00000000") - 1, metric_list[0].size());
-        header += std::string(std::max(int(field_sizes[0] + 1 - sizeof("Kernel")), 0), ' ') + "Kernel, ";
-        header += std::string(std::max(int(field_sizes[1] - metric_list[0].length()), 0), ' ') + metric_list[0] + ", ";
-        for (std::vector<std::string>::size_type i = 1; i <  metric_list.size(); i++) {
-          field_sizes[i + 1] = metric_list[i].size();
-          header += metric_list[i] + ", ";
-        }
-        
-        header += "\n";
-        
-        logger_->Log(header);
-
-        for (auto it = eustalls.begin(); it != eustalls.end(); it++) {
+        for (auto it = eustalls.begin(); it != eustalls.end(); ++it) {
           for (auto rit = kprops.crbegin(); rit != kprops.crend(); ++rit) {
-            if ((rit->first <= it->first) && ((it->first - rit->first) < rit->second.second)) {
-              std::string line;
-
-              // char offset[128];
-              // snprintf(offset, sizeof(offset), "0x%08lx", (it->first - rit->first));
-
-              uint64_t base_addr = rit->first;
-              uint64_t ip_offset = it->first - rit->first;
-              uint64_t abs_addr = base_addr + ip_offset;
-              char ip_addr[32];
-              snprintf(ip_addr, sizeof(ip_addr), "8%011lx", abs_addr);
-
-              line = std::string(std::max(int(field_sizes[0] - rit->second.first.length()), 0), ' ') +
-                     rit->second.first + ", " +
-                     std::string(std::max(int(field_sizes[1] - std::string(ip_addr).length()), 0), ' ') +
-                     std::string(ip_addr) + ", " +
-                     std::string(std::max(int(field_sizes[2] - std::to_string(it->second.active_).length()), 0), ' ') +
-                     std::to_string(it->second.active_) + ", " +
-                     std::string(std::max(int(field_sizes[3] - std::to_string(it->second.control_).length()), 0), ' ') +
-                     std::to_string(it->second.control_) + ", " +
-                     std::string(std::max(int(field_sizes[4] - std::to_string(it->second.pipe_).length()), 0), ' ') +
-                     std::to_string(it->second.pipe_) + ", " +
-                     std::string(std::max(int(field_sizes[5] - std::to_string(it->second.send_).length()), 0), ' ') +
-                     std::to_string(it->second.send_) + ", " +
-                     std::string(std::max(int(field_sizes[6] - std::to_string(it->second.dist_).length()), 0), ' ') +
-                     std::to_string(it->second.dist_) + ", " +
-                     std::string(std::max(int(field_sizes[7] - std::to_string(it->second.sbid_).length()), 0), ' ') +
-                     std::to_string(it->second.sbid_) + ", " +
-                     std::string(std::max(int(field_sizes[8] - std::to_string(it->second.sync_).length()), 0), ' ') +
-                     std::to_string(it->second.sync_) + ", " +
-                     std::string(std::max(int(field_sizes[9] - std::to_string(it->second.insfetch_).length()), 0), ' ') +
-                     std::to_string(it->second.insfetch_) + ", " +
-                     std::string(std::max(int(field_sizes[10] - std::to_string(it->second.other_).length()), 0), ' ') +
-                     std::to_string(it->second.other_) + ", \n";  
-              logger_->Log(line);
+            if ((rit->first <= it->first) && ((it->first - rit->first) < rit->second.size)) {
+              uint64_t offset = it->first - rit->first;
+              uint64_t correlation_id = ConvertToCorrelationId(rit->second.kernel_id, rit->second.module_id);
+              AddGpuActivity(activities, offset, it->second, correlation_id);
               break;
             }
           }
         }
       }
     }
+
+    for (auto activity : activities) {
+      delete activity;
+    }
   }
 
  private:
-
-    static std::string PrintTypedValue(const zet_typed_value_t& typed_value) {
+  static std::string PrintTypedValue(const zet_typed_value_t& typed_value) {
     switch (typed_value.type) {
       case ZET_VALUE_TYPE_UINT32:
         return std::to_string(typed_value.value.ui32);
@@ -602,7 +602,8 @@ class ZeMetricProfiler {
     std::vector<std::string> name_list;
     for (auto metric : metric_list) {
       zet_metric_properties_t metric_props{
-          ZET_STRUCTURE_TYPE_METRIC_PROPERTIES, };
+        ZET_STRUCTURE_TYPE_METRIC_PROPERTIES,
+      };
       status = zetMetricGetProperties(metric, &metric_props);
       PTI_ASSERT(status == ZE_RESULT_SUCCESS);
 
@@ -617,7 +618,7 @@ class ZeMetricProfiler {
     return name_list;
   }
 
-  static uint64_t ReadMetrics(ze_event_handle_t event, zet_metric_streamer_handle_t  streamer, std::vector<uint8_t>& storage) {
+  static uint64_t ReadMetrics(ze_event_handle_t event, zet_metric_streamer_handle_t streamer, std::vector<uint8_t>& storage) {
     ze_result_t status = ZE_RESULT_SUCCESS;
 
     //status = zeEventHostSynchronize(event, 0);
@@ -626,8 +627,7 @@ class ZeMetricProfiler {
     if (status == ZE_RESULT_SUCCESS) {
       status = zeEventHostReset(event);
       PTI_ASSERT(status == ZE_RESULT_SUCCESS);
-    }
-    else {
+    } else {
       return 0;
     }
 
@@ -647,7 +647,6 @@ class ZeMetricProfiler {
   }
 
   static void MetricProfilingThread(ZeDeviceDescriptor *desc) {
-
     ze_result_t status = ZE_RESULT_SUCCESS;
 
     ze_context_handle_t context = desc->context_;
@@ -658,19 +657,19 @@ class ZeMetricProfiler {
     PTI_ASSERT(status == ZE_RESULT_SUCCESS);
 
     ze_event_pool_handle_t event_pool = nullptr;
-    ze_event_pool_desc_t event_pool_desc = {ZE_STRUCTURE_TYPE_EVENT_POOL_DESC, nullptr, ZE_EVENT_POOL_FLAG_HOST_VISIBLE, 1};
+    ze_event_pool_desc_t event_pool_desc = { ZE_STRUCTURE_TYPE_EVENT_POOL_DESC, nullptr, ZE_EVENT_POOL_FLAG_HOST_VISIBLE, 1 };
     status = zeEventPoolCreate(context, &event_pool_desc, 1, &device, &event_pool);
     PTI_ASSERT(status == ZE_RESULT_SUCCESS);
-  
+
     ze_event_handle_t event = nullptr;
-    ze_event_desc_t event_desc = {ZE_STRUCTURE_TYPE_EVENT_DESC, nullptr, 0, ZE_EVENT_SCOPE_FLAG_HOST, ZE_EVENT_SCOPE_FLAG_HOST};
+    ze_event_desc_t event_desc = { ZE_STRUCTURE_TYPE_EVENT_DESC, nullptr, 0, ZE_EVENT_SCOPE_FLAG_HOST, ZE_EVENT_SCOPE_FLAG_HOST };
     status = zeEventCreate(event_pool, &event_desc, &event);
     PTI_ASSERT(status == ZE_RESULT_SUCCESS);
-  
-    zet_metric_streamer_handle_t streamer = nullptr;
-    uint32_t interval = 50 * 1000;	// convert us to ns
 
-    zet_metric_streamer_desc_t streamer_desc = {ZET_STRUCTURE_TYPE_METRIC_STREAMER_DESC, nullptr, max_metric_samples, interval};
+    zet_metric_streamer_handle_t streamer = nullptr;
+    uint32_t interval = 50 * 1000;    // convert us to ns
+
+    zet_metric_streamer_desc_t streamer_desc = { ZET_STRUCTURE_TYPE_METRIC_STREAMER_DESC, nullptr, max_metric_samples, interval };
     status = zetMetricStreamerOpen(context, device, group, &streamer_desc, event, &streamer);
     if (status != ZE_RESULT_SUCCESS) {
       std::cerr << "[ERROR] Failed to open metric streamer (" << status << "). The sampling interval might be too small." << std::endl;
@@ -685,11 +684,11 @@ class ZeMetricProfiler {
       desc->profiling_state_.store(PROFILER_ENABLED, std::memory_order_release);
       return;
     }
-  
+
     if (streamer_desc.notifyEveryNReports > max_metric_samples) {
       max_metric_samples = streamer_desc.notifyEveryNReports;
     }
-  
+
     std::vector<std::string> metrics_list;
     metrics_list = GetMetricList(group);
     PTI_ASSERT(!metrics_list.empty());
@@ -735,8 +734,6 @@ class ZeMetricProfiler {
   std::vector<ze_context_handle_t> metric_contexts_;
   std::map<ze_device_handle_t, ZeDeviceDescriptor *> device_descriptors_;
   std::string data_dir_name_;
-  Logger* logger_; 
-  std::string log_name_;
 };
 
 #endif // PTI_TOOLS_UNITRACE_LEVEL_ZERO_METRICS_H_

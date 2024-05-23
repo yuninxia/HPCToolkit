@@ -242,6 +242,8 @@ class ZeCollector {
         // quote kernel name which may contain "," 
         kpfs << "\"" << hpctoolkit_demangle(it->second->name_.c_str()) << "\"" << std::endl;
         kpfs << it->second->base_addr_ << std::endl;
+        kpfs << it->second->id_ << std::endl;
+        kpfs << it->second->module_id_ << std::endl;
         if (prev_base == 0) {
           kpfs << it->second->size_ << std::endl;
         }
