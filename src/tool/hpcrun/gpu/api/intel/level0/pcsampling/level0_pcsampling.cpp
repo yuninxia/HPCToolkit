@@ -10,14 +10,13 @@
 
 #include "level0_pcsampling.h"
 #include "tracer.h"
-#include "utils.h"
 #include "ze_metrics.h"
 
 static UniTracer* tracer = nullptr;
 static ZeMetricProfiler* metric_profiler = nullptr;
 
 static pthread_once_t level0_pcsampling_init_once = PTHREAD_ONCE_INIT;
-static std::string level0_pcsampling_enabled = utils::GetEnv("ZET_ENABLE_METRICS");
+static std::string level0_pcsampling_enabled = (std::getenv("ZET_ENABLE_METRICS") ? std::getenv("ZET_ENABLE_METRICS") : "");
 
 static const std::string base_path = "/tmp/hpcrun_level0_pc";
 static char pattern[256];
