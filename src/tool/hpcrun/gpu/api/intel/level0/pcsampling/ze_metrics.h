@@ -7,28 +7,49 @@
 #ifndef PTI_TOOLS_UNITRACE_LEVEL_ZERO_METRICS_H_
 #define PTI_TOOLS_UNITRACE_LEVEL_ZERO_METRICS_H_
 
+//*****************************************************************************
+// system includes
+//*****************************************************************************
+
 #include <atomic>
 #include <deque>
-#include <iostream>
-#include <level_zero/ze_api.h>
-#include <level_zero/zet_api.h>
-#include <map>
-#include <vector>
-#include <sstream>
-#include <thread>
-#include <string.h>
 #include <filesystem>
 #include <fstream>
+#include <iostream>
+#include <map>
+#include <sstream>
+#include <string.h>
+#include <thread>
+#include <vector>
+
+//******************************************************************************
+// level0 includes
+//******************************************************************************
+
+#include <level_zero/ze_api.h>
+#include <level_zero/zet_api.h>
+
+//*****************************************************************************
+// local includes
+//*****************************************************************************
+
 #include "../../../../../libmonitor/monitor.h"
 #include "../../../../activity/gpu-activity.h"
 #include "pti_assert.h"
-#include "utils.h"
 #include "ze_utils.h"
+
+//*****************************************************************************
+// macros
+//*****************************************************************************
 
 constexpr static uint32_t max_metric_size = 512;
 static uint32_t max_metric_samples = 32768;
 
 #define MAX_METRIC_BUFFER  (max_metric_samples * max_metric_size * 2)
+
+//*****************************************************************************
+// type definitions
+//*****************************************************************************
 
 enum ZeProfilerState {
   PROFILER_DISABLED = 0,
@@ -53,13 +74,34 @@ struct ZeDeviceDescriptor {
   bool stall_sampling_;
 };
 
+struct EuStalls {
+  uint64_t active_;
+  uint64_t control_;
+  uint64_t pipe_;
+  uint64_t send_;
+  uint64_t dist_;
+  uint64_t sbid_;
+  uint64_t sync_;
+  uint64_t insfetch_;
+  uint64_t other_;
+};
+
+struct KernelProperties {
+  std::string name;
+  uint64_t base_address;
+  std::string kernel_id;
+  std::string module_id;
+  size_t size;
+};
+
+//*****************************************************************************
+// class definition
+//*****************************************************************************
 class ZeMetricProfiler {
  public:
   static ZeMetricProfiler* Create(char *dir) {
     ZeMetricProfiler* profiler = new ZeMetricProfiler(dir);
-
     profiler->StartProfilingMetrics();
-
     return profiler;
   }
 
@@ -74,18 +116,43 @@ class ZeMetricProfiler {
  private:
   ZeMetricProfiler(char *dir) {
     data_dir_name_ = std::string(dir);
-
     EnumerateDevices(dir);
   }
 
-  void EnumerateDevices(char *dir) {
-
-    std::string metric_group = "EuStallSampling";
-
-    bool stall_sampling = false;
-    if (metric_group == "EuStallSampling") {
-      stall_sampling = true;
+  void StartProfilingMetrics() {
+    for (auto it = device_descriptors_.begin(); it != device_descriptors_.end(); ++it) {
+      if (it->second->parent_device_ != nullptr) {
+        // subdevice
+        continue;
+      }
+      monitor_disable_new_threads();
+      it->second->profiling_thread_ = new std::thread(MetricProfilingThread, it->second);
+      monitor_enable_new_threads();
+      while (it->second->profiling_state_.load(std::memory_order_acquire) != PROFILER_ENABLED) {
+        std::this_thread::sleep_for(std::chrono::milliseconds(1));
+      }
     }
+  }
+
+  void StopProfilingMetrics() {
+    for (auto it = device_descriptors_.begin(); it != device_descriptors_.end(); ++it) {
+      if (it->second->parent_device_ != nullptr) {
+        // subdevice
+        continue;
+      }
+      PTI_ASSERT(it->second->profiling_thread_ != nullptr);
+      PTI_ASSERT(it->second->profiling_state_ == PROFILER_ENABLED);
+      it->second->profiling_state_.store(PROFILER_DISABLED, std::memory_order_release);
+      it->second->profiling_thread_->join();
+      delete it->second->profiling_thread_;
+      it->second->profiling_thread_ = nullptr;
+      it->second->metric_file_stream_.close();
+    }
+  }
+
+  void EnumerateDevices(char *dir) {
+    std::string metric_group = "EuStallSampling";
+    bool stall_sampling = (metric_group == "EuStallSampling");
 
     ze_result_t status = ZE_RESULT_SUCCESS;
     uint32_t num_drivers = 0;
@@ -116,11 +183,9 @@ class ZeMetricProfiler {
             status = zeDeviceGetSubDevices(device, &num_sub_devices, nullptr);
             PTI_ASSERT(status == ZE_RESULT_SUCCESS);
 
-
             ZeDeviceDescriptor *desc = new ZeDeviceDescriptor;
 
             desc->stall_sampling_ = stall_sampling;
-
             desc->device_ = device;
             desc->device_id_ = did;
             desc->parent_device_id_ = -1;    // no parent device
@@ -187,11 +252,6 @@ class ZeMetricProfiler {
                 sub_desc->profiling_thread_ = nullptr;
                 sub_desc->profiling_state_.store(PROFILER_DISABLED, std::memory_order_release);
 
-#if 0
-                sub_desc->metric_file_name_ = std::string(dir) + "/." + std::to_string(did) + "." + std::to_string(j) + "." + metric_group + "." + std::to_string(getpid()) + ".t";
-                sub_desc->metric_file_stream_ = std::ofstream(sub_desc->metric_file_name_, std::ios::out | std::ios::trunc | std::ios::binary);
-#endif /* 0 */
-
                 device_descriptors_.insert({sub_devices[j], sub_desc});
               }
             }
@@ -226,70 +286,7 @@ class ZeMetricProfiler {
     return nullptr;
   }
 
-  void StartProfilingMetrics(void) {
-
-    for (auto it = device_descriptors_.begin(); it != device_descriptors_.end(); ++it) {
-      if (it->second->parent_device_ != nullptr) {
-        // subdevice
-        continue;
-      }
-      monitor_disable_new_threads();
-      it->second->profiling_thread_ = new std::thread(MetricProfilingThread, it->second);
-      monitor_enable_new_threads();
-      while (it->second->profiling_state_.load(std::memory_order_acquire) != PROFILER_ENABLED) {
-        std::this_thread::sleep_for(std::chrono::milliseconds(1));
-      }
-    }
-  }
-
-  void StopProfilingMetrics() {
-
-    for (auto it = device_descriptors_.begin(); it != device_descriptors_.end(); ++it) {
-      if (it->second->parent_device_ != nullptr) {
-        // subdevice
-        continue;
-      }
-      PTI_ASSERT(it->second->profiling_thread_ != nullptr);
-      PTI_ASSERT(it->second->profiling_state_ == PROFILER_ENABLED);
-      it->second->profiling_state_.store(PROFILER_DISABLED, std::memory_order_release);
-      it->second->profiling_thread_->join();
-      delete it->second->profiling_thread_;
-      it->second->profiling_thread_ = nullptr;
-      it->second->metric_file_stream_.close();
-    }
-  }
-
-  struct ZeKernelInfo {
-    int32_t subdevice_id;
-    uint64_t metric_start;
-    uint64_t metric_end;
-    std::string kernel_name;
-  };
-
-  struct EuStalls {
-    uint64_t active_;
-    uint64_t control_;
-    uint64_t pipe_;
-    uint64_t send_;
-    uint64_t dist_;
-    uint64_t sbid_;
-    uint64_t sync_;
-    uint64_t insfetch_;
-    uint64_t other_;
-  };
-
-  struct KernelProperties {
-    std::string name;
-    uint64_t base_address;
-    std::string kernel_id;
-    std::string module_id;
-    size_t size;
-  };
-
-  static void AddGpuActivity(std::deque<gpu_activity_t*>& activities, uint64_t offset, const ZeMetricProfiler::EuStalls& stall, uint64_t correlation_id) {
-    gpu_activity_t* activity = new gpu_activity_t();
-    gpu_activity_init(activity);
-    
+  static bool level0_convert_pcsampling(gpu_activity_t* activity, uint64_t offset, const EuStalls& stall, uint64_t correlation_id) {
     activity->kind = GPU_ACTIVITY_PC_SAMPLING;
 
     activity->details.pc_sampling.correlation_id = correlation_id;
@@ -302,50 +299,64 @@ class ZeMetricProfiler {
     activity->details.pc_sampling.samples = stall.active_ + stall.control_ + stall.pipe_ + stall.send_ + stall.dist_ + stall.sbid_ + stall.sync_ + stall.insfetch_ + stall.other_;
 
     activity->details.pc_sampling.latencySamples = activity->details.pc_sampling.samples - stall.active_;
-    
-    // Set stall reason
-    gpu_inst_stall_t max_stall_reason = GPU_INST_STALL_NONE;
+
+    activity->details.pc_sampling.stallReason = level0_convert_stall_reason(stall);
+
+    return true;
+  }
+
+  static void level0_activity_translate(std::deque<gpu_activity_t*>& activities, uint64_t offset, const EuStalls& stall, uint64_t correlation_id) {
+    gpu_activity_t* activity = new gpu_activity_t();
+    gpu_activity_init(activity);
+
+    if (level0_convert_pcsampling(activity, offset, stall, correlation_id)) {
+      activities.push_back(activity);
+    } else {
+      delete activity;
+    }
+  }
+
+  static gpu_inst_stall_t level0_convert_stall_reason(const EuStalls& stall) {
+    gpu_inst_stall_t stall_reason = GPU_INST_STALL_NONE;
     uint64_t max_value = 0;
 
     if (stall.control_ > max_value) {
       max_value = stall.control_;
-      max_stall_reason = GPU_INST_STALL_PIPE_BUSY; // TBD
+      stall_reason = GPU_INST_STALL_PIPE_BUSY; // TBD
     }
     if (stall.pipe_ > max_value) {
       max_value = stall.pipe_;
-      max_stall_reason = GPU_INST_STALL_PIPE_BUSY;
+      stall_reason = GPU_INST_STALL_PIPE_BUSY;
     }
     if (stall.send_ > max_value) {
       max_value = stall.send_;
-      max_stall_reason = GPU_INST_STALL_GMEM; // TBD
+      stall_reason = GPU_INST_STALL_GMEM; // TBD
     }
     if (stall.dist_ > max_value) {
       max_value = stall.dist_;
-      max_stall_reason = GPU_INST_STALL_TMEM; // TBD
+      stall_reason = GPU_INST_STALL_TMEM; // TBD
     }
     if (stall.sbid_ > max_value) {
       max_value = stall.sbid_;
-      max_stall_reason = GPU_INST_STALL_SYNC; // TBD
+      stall_reason = GPU_INST_STALL_SYNC; // TBD
     }
     if (stall.sync_ > max_value) {
       max_value = stall.sync_;
-      max_stall_reason = GPU_INST_STALL_SYNC;
+      stall_reason = GPU_INST_STALL_SYNC;
     }
     if (stall.insfetch_ > max_value) {
       max_value = stall.insfetch_;
-      max_stall_reason = GPU_INST_STALL_IFETCH;
+      stall_reason = GPU_INST_STALL_IFETCH;
     }
     if (stall.other_ > max_value) {
       max_value = stall.other_;
-      max_stall_reason = GPU_INST_STALL_OTHER;
+      stall_reason = GPU_INST_STALL_OTHER;
     }
 
-    activity->details.pc_sampling.stallReason = max_stall_reason;
-
-    activities.push_back(activity);
+    return stall_reason;
   }
 
-  static uint64_t ConvertToCorrelationId(const std::string& kernel_id, const std::string& module_id) {
+  static uint64_t level0_generate_correlation_id(const std::string& kernel_id, const std::string& module_id) { 
     uint32_t kernel_id_uint32 = 0, module_id_uint32 = 0;
     std::stringstream ss;
 
@@ -360,10 +371,6 @@ class ZeMetricProfiler {
     return ((uint64_t)module_id_uint32 << 32) | (uint64_t)kernel_id_uint32;
   }
 
-  static bool CompareInterval(ZeKernelInfo& iv1, ZeKernelInfo& iv2) {
-    return (iv1.metric_start < iv2.metric_start);
-  }
-
   void ComputeMetrics() {
     std::deque<gpu_activity_t*> activities;
 
@@ -374,7 +381,6 @@ class ZeMetricProfiler {
       }
 
       if (it->second->stall_sampling_) {
-        // std::map<uint64_t, std::pair<std::string, size_t>> kprops;
         std::map<uint64_t, KernelProperties> kprops;
         int max_kname_size = 0;
         // enumerate all kernel property files
@@ -469,8 +475,6 @@ class ZeMetricProfiler {
 
             const zet_typed_value_t *value = metrics.data();
             for (uint32_t i = 0; i < num_samples; ++i) {
-              std::string str;
-
               uint32_t size = samples[i];
 
               for (uint32_t j = 0; j < size; j += metric_list.size()) {
@@ -518,8 +522,8 @@ class ZeMetricProfiler {
           for (auto rit = kprops.crbegin(); rit != kprops.crend(); ++rit) {
             if ((rit->first <= it->first) && ((it->first - rit->first) < rit->second.size)) {
               uint64_t offset = it->first - rit->first;
-              uint64_t correlation_id = ConvertToCorrelationId(rit->second.kernel_id, rit->second.module_id);
-              AddGpuActivity(activities, offset, it->second, correlation_id);
+              uint64_t correlation_id = level0_generate_correlation_id(rit->second.kernel_id, rit->second.module_id);
+              level0_activity_translate(activities, offset, it->second, correlation_id);
               break;
             }
           }
@@ -533,23 +537,6 @@ class ZeMetricProfiler {
   }
 
  private:
-  static std::string PrintTypedValue(const zet_typed_value_t& typed_value) {
-    switch (typed_value.type) {
-      case ZET_VALUE_TYPE_UINT32:
-        return std::to_string(typed_value.value.ui32);
-      case ZET_VALUE_TYPE_UINT64:
-        return std::to_string(typed_value.value.ui64);
-      case ZET_VALUE_TYPE_FLOAT32:
-        return std::to_string(typed_value.value.fp32);
-      case ZET_VALUE_TYPE_FLOAT64:
-        return std::to_string(typed_value.value.fp64);
-      case ZET_VALUE_TYPE_BOOL8:
-        return std::to_string(static_cast<uint32_t>(typed_value.value.b8));
-      default:
-        PTI_ASSERT(0);
-        break;
-    }
-  }
 
   inline static std::string GetMetricUnits(const char* units) {
     PTI_ASSERT(units != nullptr);
@@ -621,7 +608,6 @@ class ZeMetricProfiler {
   static uint64_t ReadMetrics(ze_event_handle_t event, zet_metric_streamer_handle_t streamer, std::vector<uint8_t>& storage) {
     ze_result_t status = ZE_RESULT_SUCCESS;
 
-    //status = zeEventHostSynchronize(event, 0);
     status = zeEventQueryStatus(event);
     PTI_ASSERT(status == ZE_RESULT_SUCCESS || status == ZE_RESULT_NOT_READY);
     if (status == ZE_RESULT_SUCCESS) {
