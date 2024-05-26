@@ -19,8 +19,8 @@
 #include <unistd.h>
 #include <vector>
 
-#include "../../../../../../../lib/prof-lean/crypto-hash.h"
-#include "../../../../../../../lib/support-lean/hpctoolkit_demangle.h"
+#include "../../../../../../common/lean/crypto-hash.h"
+#include "../../../../../../common/lean/hpctoolkit_demangle.h"
 #include "ze_utils.h"
 
 struct ZeKernelGroupSize {
