@@ -35,6 +35,7 @@
 
 #include "../../../../../libmonitor/monitor.h"
 #include "../../../../activity/gpu-activity.h"
+#include "../level0-id-map.h"
 #include "pti_assert.h"
 #include "ze_utils.h"
 
@@ -286,36 +287,6 @@ class ZeMetricProfiler {
     return nullptr;
   }
 
-  static bool level0_convert_pcsampling(gpu_activity_t* activity, uint64_t offset, const EuStalls& stall, uint64_t correlation_id) {
-    activity->kind = GPU_ACTIVITY_PC_SAMPLING;
-
-    activity->details.pc_sampling.correlation_id = correlation_id;
-
-    ip_normalized_t normalized_ip;
-    normalized_ip.lm_id = 0;
-    normalized_ip.lm_ip = offset;
-    activity->details.pc_sampling.pc = normalized_ip;
-
-    activity->details.pc_sampling.samples = stall.active_ + stall.control_ + stall.pipe_ + stall.send_ + stall.dist_ + stall.sbid_ + stall.sync_ + stall.insfetch_ + stall.other_;
-
-    activity->details.pc_sampling.latencySamples = activity->details.pc_sampling.samples - stall.active_;
-
-    activity->details.pc_sampling.stallReason = level0_convert_stall_reason(stall);
-
-    return true;
-  }
-
-  static void level0_activity_translate(std::deque<gpu_activity_t*>& activities, uint64_t offset, const EuStalls& stall, uint64_t correlation_id) {
-    gpu_activity_t* activity = new gpu_activity_t();
-    gpu_activity_init(activity);
-
-    if (level0_convert_pcsampling(activity, offset, stall, correlation_id)) {
-      activities.push_back(activity);
-    } else {
-      delete activity;
-    }
-  }
-
   static gpu_inst_stall_t level0_convert_stall_reason(const EuStalls& stall) {
     gpu_inst_stall_t stall_reason = GPU_INST_STALL_NONE;
     uint64_t max_value = 0;
@@ -356,19 +327,54 @@ class ZeMetricProfiler {
     return stall_reason;
   }
 
-  static uint64_t level0_generate_correlation_id(const std::string& kernel_id, const std::string& module_id) { 
-    uint32_t kernel_id_uint32 = 0, module_id_uint32 = 0;
-    std::stringstream ss;
+  template <typename T>
+  static T hex_string_to_uint(const std::string& hex_str) {
+      std::stringstream ss;
+      T num = 0;
+      ss << std::hex << hex_str;
+      ss >> num;
+      return num;
+  }
 
-    ss << std::hex << kernel_id.substr(0, 8);
-    ss >> kernel_id_uint32;
-    ss.clear();
-    ss.str("");
+  static bool level0_convert_pcsampling(gpu_activity_t* activity, uint64_t offset, const EuStalls& stall, const KernelProperties& kernel_props) {
+    activity->kind = GPU_ACTIVITY_PC_SAMPLING;
+
+    uint32_t kernel_id_uint32 = hex_string_to_uint<uint32_t>(kernel_props.kernel_id.substr(0, 8));
+    uint32_t module_id_uint32 = hex_string_to_uint<uint32_t>(kernel_props.module_id.substr(0, 8));
+
+    uint64_t correlation_id = ((uint64_t)module_id_uint32 << 32) | (uint64_t)kernel_id_uint32;
+    activity->details.pc_sampling.correlation_id = correlation_id;
+
+    ip_normalized_t normalized_ip = {0, 0};
+
+    zebin_id_map_entry_t *entry = zebin_id_map_lookup(module_id_uint32);
+    if (entry != nullptr) {
+      uint32_t hpctoolkit_module_id = zebin_id_map_entry_hpctoolkit_id_get(entry);
+      normalized_ip.lm_id = (uint16_t)hpctoolkit_module_id;
+    }
+
+    normalized_ip.lm_ip = offset;
     
-    ss << std::hex << module_id.substr(0, 8);
-    ss >> module_id_uint32;
+    activity->details.pc_sampling.pc = normalized_ip;
 
-    return ((uint64_t)module_id_uint32 << 32) | (uint64_t)kernel_id_uint32;
+    activity->details.pc_sampling.samples = stall.active_ + stall.control_ + stall.pipe_ + stall.send_ + stall.dist_ + stall.sbid_ + stall.sync_ + stall.insfetch_ + stall.other_;
+
+    activity->details.pc_sampling.latencySamples = activity->details.pc_sampling.samples - stall.active_;
+
+    activity->details.pc_sampling.stallReason = level0_convert_stall_reason(stall);
+
+    return true;
+  }
+
+  static void level0_activity_translate(std::deque<gpu_activity_t*>& activities, uint64_t offset, const EuStalls& stall, const KernelProperties& kernel_props) {
+    gpu_activity_t* activity = new gpu_activity_t();
+    gpu_activity_init(activity);
+
+    if (level0_convert_pcsampling(activity, offset, stall, kernel_props)) {
+      activities.push_back(activity);
+    } else {
+      delete activity;
+    }
   }
 
   void ComputeMetrics() {
@@ -522,8 +528,7 @@ class ZeMetricProfiler {
           for (auto rit = kprops.crbegin(); rit != kprops.crend(); ++rit) {
             if ((rit->first <= it->first) && ((it->first - rit->first) < rit->second.size)) {
               uint64_t offset = it->first - rit->first;
-              uint64_t correlation_id = level0_generate_correlation_id(rit->second.kernel_id, rit->second.module_id);
-              level0_activity_translate(activities, offset, it->second, correlation_id);
+              level0_activity_translate(activities, offset, it->second, rit->second);
               break;
             }
           }

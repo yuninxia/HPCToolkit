@@ -11,6 +11,8 @@
 // local includes
 //*****************************************************************************
 
+#include "../../../../utilities/ip-normalized.h"
+
 #include "../../common/gpu-binary.h"
 
 #include "level0-api.h"
