@@ -11,9 +11,10 @@
 
 #define _GNU_SOURCE
 
-#include "../../../../../../lib/prof-lean/hpcrun-fmt.h"
-#include "../../../../../../lib/prof-lean/spinlock.h"
-#include "../../../../../../lib/prof-lean/splay-macros.h"
+#include "../../../../../common/lean/hpcrun-fmt.h"
+#include "../../../../../common/lean/spinlock.h"
+#include "../../../../../common/lean/splay-macros.h"
+
 #include "../../../../messages/messages.h"
 #include "../../../../memory/hpcrun-malloc.h"
 
