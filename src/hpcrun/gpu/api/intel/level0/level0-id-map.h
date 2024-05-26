@@ -15,7 +15,7 @@
 // local includes
 //*****************************************************************************
 
-#include "../../../../../../lib/prof-lean/crypto-hash.h"
+#include "../../../../../common/lean/crypto-hash.h"
 #include "../../../../sample_event.h"
 #include "../binaries/zebinSymbols.h"
 
@@ -32,6 +32,10 @@ typedef struct zebin_id_map_entry_s zebin_id_map_entry_t;
 //*****************************************************************************
 // interface operations
 //*****************************************************************************
+
+#ifdef __cplusplus
+extern "C" {
+#endif
 
 zebin_id_map_entry_t *
 zebin_id_map_lookup
@@ -93,6 +97,9 @@ zebin_id_transform
 );
 
 
+#ifdef __cplusplus
+}
+#endif
 
 
 #endif

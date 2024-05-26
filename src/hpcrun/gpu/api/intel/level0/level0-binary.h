@@ -11,6 +11,8 @@
 // local includes
 //*****************************************************************************
 
+#include "../../../../utilities/ip-normalized.h"
+
 #include "../../common/gpu-binary.h"
 
 #include "level0-api.h"
@@ -42,6 +44,13 @@ void
 level0_module_handle_map_delete
 (
   ze_module_handle_t module
+);
+
+
+ip_normalized_t
+level0_func_ip_resolve
+(
+  ze_kernel_handle_t hKernel
 );
 
 #endif
