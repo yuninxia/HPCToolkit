@@ -123,9 +123,6 @@ level0_binary_process
   if (entry == NULL) {
     SymbolVector *symbols = collectZebinSymbols(debug_zebin, debug_zebin_size);
     zebin_id_map_insert(zebin_id_uint32, loadmap_module_id, symbols);
-    free(symbols->symbolValue);
-    free(symbols->symbolName);
-    free(symbols);
   }
 
   gpu_binary_kind_t bkind = gpu_binary_kind((const char *) debug_zebin, debug_zebin_size);

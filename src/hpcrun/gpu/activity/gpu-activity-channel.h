@@ -28,6 +28,11 @@ typedef struct gpu_activity_channel_t gpu_activity_channel_t;
 // interface operations
 //******************************************************************************
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
+
 /**
  * Generate a correlation ID associated with the thread-local channel
  */
@@ -92,6 +97,12 @@ gpu_activity_channel_receive_all
 (
  void (*receive_fn)(gpu_activity_t *)
 );
+
+
+
+#ifdef __cplusplus
+}
+#endif
 
 
 #endif

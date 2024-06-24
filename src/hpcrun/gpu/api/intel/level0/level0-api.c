@@ -11,6 +11,7 @@
 
 #define _GNU_SOURCE
 
+#include <pthread.h>
 #include <stdlib.h>
 #include <stdio.h>
 
@@ -98,6 +99,10 @@ ze_driver_handle_t hDriver = NULL;
 ze_device_handle_t hDevice = NULL;
 
 static bool gtpin_instrumentation = false;
+
+static bool level0_pcsampling = false;
+
+static pthread_mutex_t level0_kernel_launch_mutex = PTHREAD_MUTEX_INITIALIZER;
 
 //----------------------------------------------------------
 // level0 function pointers for late binding
@@ -592,6 +597,12 @@ level0_command_list_append_launch_kernel_entry
     level0_data_node_t * data_for_kernel = level0_commandlist_alloc_kernel(kernel, event, event_pool);;
     // Associate the data entry with the event
     level0_event_map_insert(event, data_for_kernel);
+
+    if (level0_pcsampling_enabled()) {
+      // For immediate command list, the kernel is dispatched to GPU at this point.
+      // So, we attribute GPU metrics to the current CPU calling context.
+      level0_command_begin(data_for_kernel);
+    }
   }
   return event;
 }
@@ -633,6 +644,12 @@ level0_command_list_append_launch_memcpy_entry
     level0_data_node_t * data_for_memcpy = level0_commandlist_alloc_memcpy(src_type, dst_type, mem_copy_size, event, event_pool);
     // Associate the data entry with the event
     level0_event_map_insert(event, data_for_memcpy);
+
+    if (level0_pcsampling_enabled()) {
+      // For immediate command list, the kernel is dispatched to GPU at this point.
+      // So, we attribute GPU metrics to the current CPU calling context.
+      level0_command_begin(data_for_memcpy);
+    }
   }
   return event;
 }
@@ -737,9 +754,11 @@ level0_process_immediate_command_list
     // This is a GPU activity to an immediate command list
     level0_data_node_t* data_for_act = level0_event_map_lookup(event);
 
-    // For immediate command list, the kernel is dispatched to GPU at this point.
-    // So, we attribute GPU metrics to the current CPU calling context.
-    level0_command_begin(data_for_act);
+    if (!level0_pcsampling_enabled()) {
+      // For immediate command list, the kernel is dispatched to GPU at this point.
+      // So, we attribute GPU metrics to the current CPU calling context.
+      level0_command_begin(data_for_act);
+    }
 
     level0_attribute_event(event);
 
@@ -826,6 +845,11 @@ foilbase_zeCommandListAppendLaunchKernel
 )
 {
   PRINT("Enter zeCommandListAppendLaunchKernel wrapper: command list %p\n", hCommandList);
+
+  if (level0_pcsampling_enabled()) {
+    pthread_mutex_lock(&level0_kernel_launch_mutex);
+  }
+  
   // Entry action:
   // We need to create a new event for querying time stamps
   // if the user appends the kernel with an empty event parameter
@@ -839,6 +863,11 @@ foilbase_zeCommandListAppendLaunchKernel
 
   // Exit action
   level0_process_immediate_command_list(new_event_handle, hCommandList);
+  
+  if (level0_pcsampling_enabled()) {
+    pthread_mutex_unlock(&level0_kernel_launch_mutex);
+  }
+
   return ret;
 }
 
@@ -901,10 +930,16 @@ foilbase_zeCommandListCreateImmediate
   ze_command_list_handle_t* phCommandList         ///< [out] pointer to handle of command list object created
 )
 {
+  ze_command_queue_desc_t desc = *altdesc;
+
+  if (level0_pcsampling_enabled()) {
+    desc.mode = ZE_COMMAND_QUEUE_MODE_SYNCHRONOUS; 
+  }
+
   // Entry action
   // Execute the real level0 API
   ze_result_t ret = HPCRUN_LEVEL0_CALL(zeCommandListCreateImmediate,
-    (hContext, hDevice, altdesc, phCommandList));
+    (hContext, hDevice, &desc, phCommandList));
 
   // Exit action
   level0_command_list_create_exit(*phCommandList, hContext, 1);
@@ -1081,8 +1116,6 @@ foilbase_zeKernelCreate
   PRINT("foilbase_zeKernelCreate: module handle %p, kernel handle %p\n",hModule, *phKernel);
   // Exit action
   level0_kernel_module_map_insert(*phKernel, hModule);
-  ip_normalized_t kernel_ip;
-  kernel_ip = level0_func_ip_resolve(*phKernel);
   
   return ret;
 }
@@ -1170,7 +1203,13 @@ level0_init
     gtpin_instrumentation_options(inst_options);
 #endif
   }
-  level0_pcsampling_init();
+
+  const char* is_level0_pcsampling_enabled  = getenv("ZET_ENABLE_METRICS");
+  if (is_level0_pcsampling_enabled != NULL && strcmp(is_level0_pcsampling_enabled, "1") == 0) {
+    level0_pcsampling_init();
+    level0_pcsampling = true;
+  }
+
   if (!gtpin_instrumentation) {
     gpu_kernel_table_init();
   }
@@ -1221,4 +1260,13 @@ level0_gtpin_enabled
 )
 {
   return gtpin_instrumentation;
+}
+
+bool
+level0_pcsampling_enabled
+(
+  void
+)
+{
+  return level0_pcsampling;
 }
