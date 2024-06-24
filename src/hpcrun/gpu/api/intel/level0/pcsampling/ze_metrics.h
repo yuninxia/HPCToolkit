@@ -17,6 +17,7 @@
 #include <fstream>
 #include <iostream>
 #include <map>
+#include <mutex>
 #include <sstream>
 #include <string.h>
 #include <thread>
@@ -35,7 +36,10 @@
 
 #include "../../../../../libmonitor/monitor.h"
 #include "../../../../activity/gpu-activity.h"
+#include "../../../../activity/gpu-activity-channel.h"
+#include "../../../../activity/correlation/gpu-correlation-channel.h"
 #include "../level0-id-map.h"
+#include "../level0-command-process.h"
 #include "pti_assert.h"
 #include "ze_utils.h"
 
@@ -44,7 +48,7 @@
 //*****************************************************************************
 
 constexpr static uint32_t max_metric_size = 512;
-static uint32_t max_metric_samples = 32768;
+static uint32_t max_metric_samples = 65536;
 
 #define MAX_METRIC_BUFFER  (max_metric_samples * max_metric_size * 2)
 
@@ -93,6 +97,7 @@ struct KernelProperties {
   std::string kernel_id;
   std::string module_id;
   size_t size;
+  size_t sample_count;
 };
 
 //*****************************************************************************
@@ -108,7 +113,6 @@ class ZeMetricProfiler {
 
   ~ZeMetricProfiler() {
     StopProfilingMetrics();
-    ComputeMetrics();
   }
 
   ZeMetricProfiler(const ZeMetricProfiler& that) = delete;
@@ -127,7 +131,7 @@ class ZeMetricProfiler {
         continue;
       }
       monitor_disable_new_threads();
-      it->second->profiling_thread_ = new std::thread(MetricProfilingThread, it->second);
+      it->second->profiling_thread_ = new std::thread(MetricProfilingThread, this, it->second);
       monitor_enable_new_threads();
       while (it->second->profiling_state_.load(std::memory_order_acquire) != PROFILER_ENABLED) {
         std::this_thread::sleep_for(std::chrono::milliseconds(1));
@@ -226,7 +230,7 @@ class ZeMetricProfiler {
             desc->metric_group_ = group;
             desc->profiling_thread_ = nullptr;
             desc->profiling_state_.store(PROFILER_DISABLED, std::memory_order_release);
-            desc->metric_file_name_ = std::string(dir) + "/." + std::to_string(did) + "." + metric_group + "." + std::to_string(getpid()) + ".t";
+            desc->metric_file_name_ = std::string(dir) + "/." + std::to_string(did) + "." + metric_group + "." + std::to_string(getpid()) + "." + std::to_string(correlation_id_);
             desc->metric_file_stream_ = std::ofstream(desc->metric_file_name_, std::ios::out | std::ios::trunc | std::ios::binary);
             device_descriptors_.insert({device, desc});
 
@@ -336,204 +340,215 @@ class ZeMetricProfiler {
       return num;
   }
 
-  static bool level0_convert_pcsampling(gpu_activity_t* activity, uint64_t offset, const EuStalls& stall, const KernelProperties& kernel_props) {
+  static bool level0_convert_pcsampling(gpu_activity_t* activity, uint64_t offset, std::map<uint64_t, EuStalls>::iterator it, std::map<uint64_t, KernelProperties>::const_reverse_iterator rit, uint64_t correlation_id) {
     activity->kind = GPU_ACTIVITY_PC_SAMPLING;
 
-    uint32_t kernel_id_uint32 = hex_string_to_uint<uint32_t>(kernel_props.kernel_id.substr(0, 8));
+    KernelProperties kernel_props = rit->second;
+    EuStalls stall = it->second;
+
     uint32_t module_id_uint32 = hex_string_to_uint<uint32_t>(kernel_props.module_id.substr(0, 8));
-
-    uint64_t correlation_id = ((uint64_t)module_id_uint32 << 32) | (uint64_t)kernel_id_uint32;
-    activity->details.pc_sampling.correlation_id = correlation_id;
-
-    ip_normalized_t normalized_ip = {0, 0};
-
     zebin_id_map_entry_t *entry = zebin_id_map_lookup(module_id_uint32);
     if (entry != nullptr) {
       uint32_t hpctoolkit_module_id = zebin_id_map_entry_hpctoolkit_id_get(entry);
-      normalized_ip.lm_id = (uint16_t)hpctoolkit_module_id;
+      activity->details.pc_sampling.pc.lm_id = (uint16_t)hpctoolkit_module_id;
     }
 
-    normalized_ip.lm_ip = offset;
-    
-    activity->details.pc_sampling.pc = normalized_ip;
-
+    activity->details.pc_sampling.pc.lm_ip = it->first + 0x800000000000; // real = it->first; base = rit->first; offset = real - base;
+    activity->details.pc_sampling.correlation_id = correlation_id;
     activity->details.pc_sampling.samples = stall.active_ + stall.control_ + stall.pipe_ + stall.send_ + stall.dist_ + stall.sbid_ + stall.sync_ + stall.insfetch_ + stall.other_;
-
     activity->details.pc_sampling.latencySamples = activity->details.pc_sampling.samples - stall.active_;
-
     activity->details.pc_sampling.stallReason = level0_convert_stall_reason(stall);
+
+    activity->details.instruction.pc.lm_id = activity->details.pc_sampling.pc.lm_id;
+    activity->details.instruction.pc.lm_ip = it->first + 0x800000000000;
+    activity->details.instruction.correlation_id = correlation_id;
+
+    // activity->details.kernel.correlation_id = correlation_id;
+    // activity->details.kernel.kernel_first_pc.lm_id = activity->details.pc_sampling.pc.lm_id;
+    // activity->details.kernel.kernel_first_pc.lm_ip = rit->first + 0x800000000000;
 
     return true;
   }
 
-  static void level0_activity_translate(std::deque<gpu_activity_t*>& activities, uint64_t offset, const EuStalls& stall, const KernelProperties& kernel_props) {
+  static void level0_activity_translate(std::deque<gpu_activity_t*>& activities, uint64_t offset, std::map<uint64_t, EuStalls>::iterator it, std::map<uint64_t, KernelProperties>::const_reverse_iterator rit, uint64_t correlation_id) {
     gpu_activity_t* activity = new gpu_activity_t();
     gpu_activity_init(activity);
 
-    if (level0_convert_pcsampling(activity, offset, stall, kernel_props)) {
+    if (level0_convert_pcsampling(activity, offset, it, rit, correlation_id)) {
       activities.push_back(activity);
     } else {
       delete activity;
     }
   }
 
-  void ComputeMetrics() {
+  void ComputeMetrics(ZeDeviceDescriptor* desc) {
     std::deque<gpu_activity_t*> activities;
 
-    for (auto it = device_descriptors_.begin(); it != device_descriptors_.end(); ++it) {
-      if (it->second->parent_device_ != nullptr) {
-        // subdevice
-        continue;
-      }
-
-      if (it->second->stall_sampling_) {
-        std::map<uint64_t, KernelProperties> kprops;
-        int max_kname_size = 0;
-        // enumerate all kernel property files
-        for (const auto& e : std::filesystem::directory_iterator(std::filesystem::path(data_dir_name_))) {
-          // kernel properties file path: <data_dir>/.kprops.<device_id>.<pid>.txt
-          if (e.path().filename().string().find(".kprops." + std::to_string(it->second->device_id_)) == 0) {
-            std::ifstream kpf = std::ifstream(e.path());
-            if (!kpf.is_open()) {
-              continue;
-            }
-
-            while (!kpf.eof()) {
-              KernelProperties props;
-              std::string line;
-
-              std::getline(kpf, props.name);
-              if (kpf.eof()) {
-                break;
-              }
-
-              std::getline(kpf, line);
-              if (kpf.eof()) {
-                break;
-              }
-              props.base_address = std::strtol(line.c_str(), nullptr, 0);
-
-              std::getline(kpf, props.kernel_id);
-              std::getline(kpf, props.module_id);
-              
-              line.clear();
-              std::getline(kpf, line);
-              props.size = std::strtol(line.c_str(), nullptr, 0);
-
-              if (props.name.size() > static_cast<std::string::size_type>(max_kname_size)) {
-                max_kname_size = props.name.size();
-              }
-              kprops.insert({props.base_address, std::move(props)});
-            }
-            kpf.close();
+    if (desc->stall_sampling_) {
+      std::map<uint64_t, KernelProperties> kprops;
+      // enumerate all kernel property files
+      for (const auto& e : std::filesystem::directory_iterator(std::filesystem::path(data_dir_name_))) {
+        // kernel properties file path: <data_dir>/.kprops.<device_id>.<pid>.txt
+        if (e.path().filename().string().find(".kprops." + std::to_string(desc->device_id_)) == 0) {
+          std::ifstream kpf = std::ifstream(e.path());
+          if (!kpf.is_open()) {
+            continue;
           }
-        }
-        if (kprops.size() == 0) {
-          continue;
-        }
 
-        std::map<uint64_t, EuStalls> eustalls;
+          while (!kpf.eof()) {
+            KernelProperties props;
+            std::string line;
 
-        std::vector<std::string> metric_list;
-        metric_list = GetMetricList(it->second->metric_group_);
-        PTI_ASSERT(!metric_list.empty());
-
-        uint32_t ip_idx = GetMetricId(metric_list, "IP");
-        if (ip_idx >= metric_list.size()) {
-          // no IP metric 
-          continue;
-        }
-
-        std::ifstream inf = std::ifstream(it->second->metric_file_name_, std::ios::in | std::ios::binary);
-        std::vector<uint8_t> raw_metrics(MAX_METRIC_BUFFER + 512);
-
-        if (!inf.is_open()) {
-          continue;
-        }
-
-        while (!inf.eof()) {
-          inf.read(reinterpret_cast<char *>(raw_metrics.data()), MAX_METRIC_BUFFER + 512);
-          int raw_size = inf.gcount();
-          if (raw_size > 0) {
-            uint32_t num_samples = 0;
-            uint32_t num_metrics = 0;
-            ze_result_t status = zetMetricGroupCalculateMultipleMetricValuesExp(
-              it->second->metric_group_, ZET_METRIC_GROUP_CALCULATION_TYPE_METRIC_VALUES,
-              raw_size, raw_metrics.data(), &num_samples, &num_metrics,
-              nullptr, nullptr);
-            if ((status != ZE_RESULT_SUCCESS) || (num_samples == 0) || (num_metrics == 0)) {
-              std::cerr << "[WARNING] Unable to calculate metrics" << std::endl;
-              continue;
-            }
-
-            std::vector<uint32_t> samples(num_samples);
-            std::vector<zet_typed_value_t> metrics(num_metrics);
-
-            status = zetMetricGroupCalculateMultipleMetricValuesExp(
-              it->second->metric_group_, ZET_METRIC_GROUP_CALCULATION_TYPE_METRIC_VALUES,
-              raw_size, raw_metrics.data(), &num_samples, &num_metrics,
-              samples.data(), metrics.data());
-
-            if ((status != ZE_RESULT_SUCCESS) && (status != ZE_RESULT_WARNING_DROPPED_DATA)) {
-              std::cerr << "[WARNING] Unable to calculate metrics" << std::endl;
-              continue;
-            }
-
-            const zet_typed_value_t *value = metrics.data();
-            for (uint32_t i = 0; i < num_samples; ++i) {
-              uint32_t size = samples[i];
-
-              for (uint32_t j = 0; j < size; j += metric_list.size()) {
-                uint64_t ip;
-                ip = (value[j + 0].value.ui64 << 3);
-                if (ip == 0) {
-                  continue;
-                }
-                EuStalls stall;
-                stall.active_ = value[j + 1].value.ui64;
-                stall.control_ = value[j + 2].value.ui64;
-                stall.pipe_ = value[j + 3].value.ui64;
-                stall.send_ = value[j + 4].value.ui64;
-                stall.dist_ = value[j + 5].value.ui64;
-                stall.sbid_ = value[j + 6].value.ui64;
-                stall.sync_ = value[j + 7].value.ui64;
-                stall.insfetch_ = value[j + 8].value.ui64;
-                stall.other_ = value[j + 9].value.ui64;
-                auto eit = eustalls.find(ip);
-                if (eit != eustalls.end()) {
-                  eit->second.active_ += stall.active_;
-                  eit->second.control_ += stall.control_;
-                  eit->second.pipe_ += stall.pipe_;
-                  eit->second.send_ += stall.send_;
-                  eit->second.dist_ += stall.dist_;
-                  eit->second.sbid_ += stall.sbid_;
-                  eit->second.sync_ += stall.sync_;
-                  eit->second.insfetch_ += stall.insfetch_;
-                  eit->second.other_ += stall.other_;
-                } else {
-                  eustalls.insert({ip, std::move(stall)});
-                }
-              }
-              value += samples[i];
-            }
-          }
-        }
-        inf.close();
-
-        if (eustalls.size() == 0) {
-          continue;
-        }
-
-        for (auto it = eustalls.begin(); it != eustalls.end(); ++it) {
-          for (auto rit = kprops.crbegin(); rit != kprops.crend(); ++rit) {
-            if ((rit->first <= it->first) && ((it->first - rit->first) < rit->second.size)) {
-              uint64_t offset = it->first - rit->first;
-              level0_activity_translate(activities, offset, it->second, rit->second);
+            std::getline(kpf, props.name);
+            if (kpf.eof()) {
               break;
             }
+
+            std::getline(kpf, line);
+            if (kpf.eof()) {
+              break;
+            }
+            props.base_address = std::strtol(line.c_str(), nullptr, 0);
+
+            std::getline(kpf, props.kernel_id);
+            std::getline(kpf, props.module_id);
+
+            line.clear();
+            std::getline(kpf, line);
+            props.size = std::strtol(line.c_str(), nullptr, 0);
+
+            kprops.insert({props.base_address, std::move(props)});
+          }
+          kpf.close();
+        }
+      }
+      if (kprops.size() == 0) {
+        return;
+      }
+
+      std::map<uint64_t, EuStalls> eustalls;
+
+      std::vector<std::string> metric_list;
+      metric_list = GetMetricList(desc->metric_group_);
+      PTI_ASSERT(!metric_list.empty());
+
+      uint32_t ip_idx = GetMetricId(metric_list, "IP");
+      if (ip_idx >= metric_list.size()) {
+        // no IP metric 
+        return;
+      }
+
+      std::ifstream inf = std::ifstream(desc->metric_file_name_, std::ios::in | std::ios::binary);
+      std::vector<uint8_t> raw_metrics(MAX_METRIC_BUFFER + 512);
+
+      if (!inf.is_open()) {
+        return;
+      }
+
+      while (!inf.eof()) {
+        inf.read(reinterpret_cast<char *>(raw_metrics.data()), MAX_METRIC_BUFFER + 512);
+        int raw_size = inf.gcount();
+        if (raw_size > 0) {
+          uint32_t num_samples = 0;
+          uint32_t num_metrics = 0;
+          ze_result_t status = zetMetricGroupCalculateMultipleMetricValuesExp(
+            desc->metric_group_, ZET_METRIC_GROUP_CALCULATION_TYPE_METRIC_VALUES,
+            raw_size, raw_metrics.data(), &num_samples, &num_metrics,
+            nullptr, nullptr);
+          if ((status != ZE_RESULT_SUCCESS) || (num_samples == 0) || (num_metrics == 0)) {
+            std::cerr << "[WARNING] Unable to calculate metrics" << std::endl;
+            continue;
+          }
+
+          std::vector<uint32_t> samples(num_samples);
+          std::vector<zet_typed_value_t> metrics(num_metrics);
+
+          status = zetMetricGroupCalculateMultipleMetricValuesExp(
+            desc->metric_group_, ZET_METRIC_GROUP_CALCULATION_TYPE_METRIC_VALUES,
+            raw_size, raw_metrics.data(), &num_samples, &num_metrics,
+            samples.data(), metrics.data());
+
+          if ((status != ZE_RESULT_SUCCESS) && (status != ZE_RESULT_WARNING_DROPPED_DATA)) {
+            std::cerr << "[WARNING] Unable to calculate metrics" << std::endl;
+            continue;
+          }
+
+          const zet_typed_value_t *value = metrics.data();
+          for (uint32_t i = 0; i < num_samples; ++i) {
+            uint32_t size = samples[i];
+
+            for (uint32_t j = 0; j < size; j += metric_list.size()) {
+              uint64_t ip;
+              ip = (value[j + 0].value.ui64 << 3);
+              if (ip == 0) {
+                continue;
+              }
+              EuStalls stall;
+              stall.active_ = value[j + 1].value.ui64;
+              stall.control_ = value[j + 2].value.ui64;
+              stall.pipe_ = value[j + 3].value.ui64;
+              stall.send_ = value[j + 4].value.ui64;
+              stall.dist_ = value[j + 5].value.ui64;
+              stall.sbid_ = value[j + 6].value.ui64;
+              stall.sync_ = value[j + 7].value.ui64;
+              stall.insfetch_ = value[j + 8].value.ui64;
+              stall.other_ = value[j + 9].value.ui64;
+              auto eit = eustalls.find(ip);
+              if (eit != eustalls.end()) {
+                eit->second.active_ += stall.active_;
+                eit->second.control_ += stall.control_;
+                eit->second.pipe_ += stall.pipe_;
+                eit->second.send_ += stall.send_;
+                eit->second.dist_ += stall.dist_;
+                eit->second.sbid_ += stall.sbid_;
+                eit->second.sync_ += stall.sync_;
+                eit->second.insfetch_ += stall.insfetch_;
+                eit->second.other_ += stall.other_;
+              } else {
+                eustalls.insert({ip, std::move(stall)});
+              }
+            }
+            value += samples[i];
           }
         }
       }
+      inf.close();
+
+      if (eustalls.size() == 0) {
+        return;
+      }
+
+      std::unordered_map<std::string, uint64_t> kernel_cids;
+      for (auto rit = kprops.crbegin(); rit != kprops.crend(); ++rit) {
+        if (kernel_cids.find(rit->second.name) == kernel_cids.end()) {
+          kernel_cids[rit->second.name] = correlation_id_;
+        }
+      }
+
+      for (auto it = eustalls.begin(); it != eustalls.end(); ++it) {
+        for (auto rit = kprops.crbegin(); rit != kprops.crend(); ++rit) {
+          if ((rit->first <= it->first) && ((it->first - rit->first) < rit->second.size)) {
+            uint64_t cid = kernel_cids[rit->second.name];
+            uint64_t offset = it->first - rit->first;
+            level0_activity_translate(activities, offset, it, rit, cid);
+            break;
+          }
+        }
+      }
+    }
+
+    std::unordered_map<uint32_t, int> cid_count;
+
+    for (auto activity : activities) {
+      uint32_t cid = activity->details.pc_sampling.correlation_id;
+      cid_count[cid]++;
+      uint32_t thread_id = gpu_activity_channel_correlation_id_get_thread_id(activity->details.instruction.correlation_id);
+      gpu_activity_channel_t *channel = gpu_activity_channel_lookup(thread_id);
+      gpu_activity_channel_send(channel, activity);
+    }
+
+    for (const auto& pair : cid_count) {
+        std::cout << "Correlation ID: " << pair.first << " Count: " << pair.second << std::endl;
     }
 
     for (auto activity : activities) {
@@ -543,7 +558,7 @@ class ZeMetricProfiler {
 
  private:
 
-  inline static std::string GetMetricUnits(const char* units) {
+  static std::string GetMetricUnits(const char* units) {
     PTI_ASSERT(units != nullptr);
 
     std::string result = units;
@@ -556,7 +571,7 @@ class ZeMetricProfiler {
     return result;
   }
 
-  inline uint32_t GetMetricId(const std::vector<std::string>& metric_list, const std::string& metric_name) {
+  static uint32_t GetMetricId(const std::vector<std::string>& metric_list, const std::string& metric_name) {
     PTI_ASSERT(!metric_list.empty());
     PTI_ASSERT(!metric_name.empty());
 
@@ -610,8 +625,30 @@ class ZeMetricProfiler {
     return name_list;
   }
 
-  static uint64_t ReadMetrics(ze_event_handle_t event, zet_metric_streamer_handle_t streamer, std::vector<uint8_t>& storage) {
+  static uint64_t ReadMetrics(ze_event_handle_t event, ze_event_handle_t kernel_event, zet_metric_streamer_handle_t streamer, std::vector<uint8_t>& storage) {
     ze_result_t status = ZE_RESULT_SUCCESS;
+
+    if (kernel_event != nullptr) {
+      status = zeEventQueryStatus(kernel_event);
+      if (status == ZE_RESULT_SUCCESS) {
+        size_t data_size = 0;
+        status = zetMetricStreamerReadData(streamer, UINT32_MAX, &data_size, nullptr);
+        PTI_ASSERT(status == ZE_RESULT_SUCCESS);
+        PTI_ASSERT(data_size > 0);
+        if (data_size > storage.size()) {
+          data_size = storage.size();
+          std::cerr << "[WARNING] Metric samples dropped." << std::endl;
+        }
+        status = zetMetricStreamerReadData(streamer, UINT32_MAX, &data_size, storage.data());
+        PTI_ASSERT(status == ZE_RESULT_SUCCESS);
+
+        kernel_event = nullptr;
+
+        std::cerr << "kernel data_size: " << data_size << std::endl;
+
+        return data_size;
+      }
+    }
 
     status = zeEventQueryStatus(event);
     PTI_ASSERT(status == ZE_RESULT_SUCCESS || status == ZE_RESULT_NOT_READY);
@@ -637,7 +674,25 @@ class ZeMetricProfiler {
     return data_size;
   }
 
-  static void MetricProfilingThread(ZeDeviceDescriptor *desc) {
+  static void OpenNewMetricFile(uint64_t new_correlation_id, ZeDeviceDescriptor *desc) {
+    std::string base_file_name = desc->metric_file_name_.substr(0, desc->metric_file_name_.find_last_of('.'));
+    std::string new_file_name = base_file_name + "." + std::to_string(new_correlation_id);
+    std::ofstream new_metric_file_stream(new_file_name, std::ios::out | std::ios::trunc | std::ios::binary);
+    if (!new_metric_file_stream) {
+        std::cerr << "Failed to open file: " << new_file_name << std::endl;
+        return;
+    }
+    desc->metric_file_stream_.close();
+    desc->metric_file_stream_ = std::move(new_metric_file_stream);
+    desc->metric_file_name_ = new_file_name;
+    last_correlation_id_ = new_correlation_id;
+  }
+
+  static void process_correlation(uint64_t cid, gpu_activity_channel_t *channel, void *arg) {
+    correlation_id_ = cid;
+  }
+
+  static void MetricProfilingThread(ZeMetricProfiler* profiler, ZeDeviceDescriptor *desc) {
     ze_result_t status = ZE_RESULT_SUCCESS;
 
     ze_context_handle_t context = desc->context_;
@@ -658,9 +713,10 @@ class ZeMetricProfiler {
     PTI_ASSERT(status == ZE_RESULT_SUCCESS);
 
     zet_metric_streamer_handle_t streamer = nullptr;
-    uint32_t interval = 50 * 1000;    // convert us to ns
+    uint32_t interval = 50; // ns
+    uint32_t notifyEveryNReports = 1024;
 
-    zet_metric_streamer_desc_t streamer_desc = { ZET_STRUCTURE_TYPE_METRIC_STREAMER_DESC, nullptr, max_metric_samples, interval };
+    zet_metric_streamer_desc_t streamer_desc = { ZET_STRUCTURE_TYPE_METRIC_STREAMER_DESC, nullptr, notifyEveryNReports, interval };
     status = zetMetricStreamerOpen(context, device, group, &streamer_desc, event, &streamer);
     if (status != ZE_RESULT_SUCCESS) {
       std::cerr << "[ERROR] Failed to open metric streamer (" << status << "). The sampling interval might be too small." << std::endl;
@@ -689,7 +745,41 @@ class ZeMetricProfiler {
     auto it = raw_metrics.begin();
     desc->profiling_state_.store(PROFILER_ENABLED, std::memory_order_release);
     while (desc->profiling_state_.load(std::memory_order_acquire) != PROFILER_DISABLED) {
-      uint64_t size = ReadMetrics(event, streamer, raw_metrics);
+      
+      // wait for the kernel completion event to be signaled
+      if (kernel_event != nullptr) {
+        ze_result_t kernel_event_status = zeEventQueryStatus(kernel_event);
+        if (kernel_event_status == ZE_RESULT_SUCCESS) {
+          uint64_t size = ReadMetrics(event, kernel_event, streamer, raw_metrics);
+          desc->metric_data_.insert(desc->metric_data_.end(), it, it + size);          
+          if (!desc->metric_data_.empty()) {
+            desc->metric_file_stream_.write(reinterpret_cast<char*>(desc->metric_data_.data()), desc->metric_data_.size());
+            desc->metric_data_.clear();
+          }
+          raw_metrics.clear();
+          raw_metrics.resize(MAX_METRIC_BUFFER + 512);
+
+          if (profiler != nullptr) {
+            profiler->ComputeMetrics(desc);
+          }
+
+          kernel_event = nullptr;
+
+          // Notify the app thread that data processing is complete
+          pthread_mutex_lock(&gpu_activity_mtx);
+          data_processed = true;
+          pthread_cond_signal(&cv);
+          pthread_mutex_unlock(&gpu_activity_mtx);
+        }
+      }
+
+      gpu_correlation_channel_receive(1, process_correlation, NULL);
+      uint64_t current_id = correlation_id_;
+      if (current_id != last_correlation_id_) {
+        OpenNewMetricFile(current_id, desc);
+      }
+
+      uint64_t size = ReadMetrics(event, kernel_event, streamer, raw_metrics);
       if (size == 0) {
         if (!desc->metric_data_.empty()) {
           desc->metric_file_stream_.write(reinterpret_cast<char*>(desc->metric_data_.data()), desc->metric_data_.size());
@@ -698,14 +788,8 @@ class ZeMetricProfiler {
         continue;
       }
       desc->metric_data_.insert(desc->metric_data_.end(), it, it + size);
+      
     }
-    auto size = ReadMetrics(event, streamer, raw_metrics);
-    desc->metric_data_.insert(desc->metric_data_.end(), it, it + size);
-    if (!desc->metric_data_.empty()) {
-      desc->metric_file_stream_.write(reinterpret_cast<char*>(desc->metric_data_.data()), desc->metric_data_.size());
-      desc->metric_data_.clear();
-    }
-    raw_metrics.clear();
 
     status = zetMetricStreamerClose(streamer);
     PTI_ASSERT(status == ZE_RESULT_SUCCESS);
@@ -725,7 +809,12 @@ class ZeMetricProfiler {
   std::vector<ze_context_handle_t> metric_contexts_;
   std::map<ze_device_handle_t, ZeDeviceDescriptor *> device_descriptors_;
   std::string data_dir_name_;
+  static uint64_t correlation_id_;
+  static uint64_t last_correlation_id_;
 };
+
+uint64_t ZeMetricProfiler::last_correlation_id_ = 0;
+uint64_t ZeMetricProfiler::correlation_id_ = 0;
 
 #endif // PTI_TOOLS_UNITRACE_LEVEL_ZERO_METRICS_H_
 

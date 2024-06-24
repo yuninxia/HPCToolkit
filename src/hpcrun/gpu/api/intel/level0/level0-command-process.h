@@ -21,6 +21,15 @@
 #include "level0-data-node.h"
 
 //*****************************************************************************
+// global variables
+//*****************************************************************************
+
+extern pthread_mutex_t gpu_activity_mtx;
+extern pthread_cond_t cv;
+extern bool data_processed;
+extern ze_event_handle_t kernel_event;
+
+//*****************************************************************************
 // interface operations
 //*****************************************************************************
 

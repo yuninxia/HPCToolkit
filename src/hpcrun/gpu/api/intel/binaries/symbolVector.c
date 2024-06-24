@@ -45,6 +45,7 @@ symbolVectorNew
   SymbolVector *v = (SymbolVector *) malloc(sizeof(SymbolVector));
   v->nsymbols = 0;
   v->symbolValue = (unsigned long *) calloc(nsymbols, sizeof(unsigned long));
+  v->symbolSize = (unsigned long *) calloc(nsymbols, sizeof(unsigned long));
   v->symbolName = (char **) calloc(nsymbols, sizeof(const char *));
   return v;
 }
@@ -68,6 +69,25 @@ symbolVectorAppend
 
 
 void
+symbolVectorAppendLevel0
+(
+  SymbolVector *v,
+  const char *symbolName,
+  unsigned long symbolValue,
+  unsigned long symbolSize
+)
+{
+  unsigned int i = v->nsymbols;
+
+  v->symbolValue[i] = symbolValue;
+  v->symbolSize[i] = symbolSize;
+  v->symbolName[i] = strdup(symbolName);
+
+  v->nsymbols++;
+}
+
+
+void
 symbolVectorFree
 (
   SymbolVector *v
@@ -78,6 +98,7 @@ symbolVectorFree
   }
   free(v->symbolName);
   free(v->symbolValue);
+  free(v->symbolSize);
   free(v);
 }
 
