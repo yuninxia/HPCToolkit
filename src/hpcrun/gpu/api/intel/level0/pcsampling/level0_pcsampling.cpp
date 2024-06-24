@@ -16,14 +16,14 @@ static UniTracer* tracer = nullptr;
 static ZeMetricProfiler* metric_profiler = nullptr;
 
 static pthread_once_t level0_pcsampling_init_once = PTHREAD_ONCE_INIT;
-static std::string level0_pcsampling_enabled = (std::getenv("ZET_ENABLE_METRICS") ? std::getenv("ZET_ENABLE_METRICS") : "");
+static std::string level0_pcsampling_enabled_str = (std::getenv("ZET_ENABLE_METRICS") ? std::getenv("ZET_ENABLE_METRICS") : "");
 
 static const std::string base_path = "/tmp/hpcrun_level0_pc";
 static char pattern[256];
 static char* data_dir_name = nullptr;
 
 static bool is_level0_pcsampling_enabled() {
-    return level0_pcsampling_enabled == "1";
+    return level0_pcsampling_enabled_str == std::string("1");
 }
 
 static void EnableProfiling(char *dir) {

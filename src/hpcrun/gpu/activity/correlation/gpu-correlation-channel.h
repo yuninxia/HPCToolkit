@@ -31,6 +31,10 @@ typedef struct gpu_activity_channel_t gpu_activity_channel_t;
 // interface operations
 //******************************************************************************
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 void
 gpu_correlation_channel_send
 (
@@ -48,5 +52,8 @@ gpu_correlation_channel_receive
  void *arg
 );
 
+#ifdef __cplusplus
+}
+#endif
 
 #endif

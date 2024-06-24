@@ -182,7 +182,8 @@ collectSymbolsHelper
             {
               const char *name = getSymbolString(zebin_ptr, elf, sections, symbolSectionOffset, sym.st_name);
               if (strcmp(name, "_entry") == 0) break; // ignore symbols named _entry
-              symbolVectorAppend(symbols, name, sym.st_value);
+              // symbolVectorAppend(symbols, name, sym.st_value);
+              symbolVectorAppendLevel0(symbols, name, sym.st_value, sym.st_size);
               break;
             }
           default:

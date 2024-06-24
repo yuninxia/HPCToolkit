@@ -17,10 +17,12 @@
 #include <shared_mutex>
 #include <string>
 #include <unistd.h>
+#include <unordered_map>
 #include <vector>
 
 #include "../../../../../../common/lean/crypto-hash.h"
 #include "../../../../../../common/lean/hpctoolkit_demangle.h"
+#include "../level0-id-map.h"
 #include "ze_utils.h"
 
 struct ZeKernelGroupSize {
@@ -268,6 +270,26 @@ class ZeCollector {
     return std::string(hash_string);
   }
 
+  void FillFunctionSizeMap(zebin_id_map_entry_t *entry) {
+    SymbolVector* symbols = entry->elf_vector;
+    if (symbols) {
+      for (int i = 0; i < symbols->nsymbols; ++i) {
+        function_size_map_[symbols->symbolName[i]] = symbols->symbolSize[i];
+      }
+    }
+  }
+    
+  size_t GetFunctionSize(std::string& function_name) const {
+    if (!function_name.empty() && function_name.back() == '\0') {
+      function_name.pop_back();
+    }
+    auto it = function_size_map_.find(function_name);
+    if (it != function_size_map_.end()) {
+      return it->second;
+    }
+    return -1;
+  }
+
  private: // Callbacks
 
   static void OnExitModuleCreate(ze_module_create_params_t* params, ze_result_t result, void* global_data) {
@@ -353,7 +375,7 @@ typedef struct _zex_kernel_register_file_size_exp_t {
       
       ze_module_handle_t mod = *(params->phModule);
       ze_device_handle_t device = nullptr;
-      size_t module_binary_size = (size_t)(-1);
+      // size_t module_binary_size = (size_t)(-1);
       bool aot = false;
       std::string module_id;
 
@@ -361,11 +383,20 @@ typedef struct _zex_kernel_register_file_size_exp_t {
       auto mit = modules_on_devices_.find(mod);
       if (mit != modules_on_devices_.end()) {
         device = mit->second.device_; 
-        module_binary_size = mit->second.size_;
+        // module_binary_size = mit->second.size_;
         aot = mit->second.aot_;
         module_id = mit->second.module_id_;
       }
       modules_on_devices_mutex_.unlock_shared();
+
+      // Fill function size map
+      ZeCollector* collector = static_cast<ZeCollector*>(global_data);
+      uint32_t zebin_id_uint32;
+      sscanf(module_id.c_str(), "%8x", &zebin_id_uint32);
+      zebin_id_map_entry_t *entry = zebin_id_map_lookup(zebin_id_uint32);
+      if (entry != nullptr) {
+        collector->FillFunctionSizeMap(entry);
+      }
 
       int did = -1;
       if (device != nullptr) {
@@ -390,7 +421,6 @@ typedef struct _zex_kernel_register_file_size_exp_t {
       }
       desc.name_ = name_len > 0 ? std::string(kernel_name.begin(), kernel_name.end()) : "UnknownKernel";
 
-      ZeCollector* collector = static_cast<ZeCollector*>(global_data);
       std::string kernel_id = collector->GenerateUniqueId(reinterpret_cast<const uint8_t*>(&kernel), sizeof(kernel));
 
       desc.id_ = kernel_id;
@@ -418,14 +448,15 @@ typedef struct _zex_kernel_register_file_size_exp_t {
 
       // for stall sampling
       uint64_t base_addr = 0;
-      uint64_t binary_size = 0;
+      // uint64_t binary_size = 0;
       if ((zexKernelGetBaseAddress != nullptr) && (zexKernelGetBaseAddress(kernel, &base_addr) == ZE_RESULT_SUCCESS)) {
         base_addr &= 0xFFFFFFFF;
-        binary_size = module_binary_size;	// store module binary size. only an upper bound is needed
+        // binary_size = module_binary_size;	// store module binary size. only an upper bound is needed
       }
 
       desc.base_addr_ = base_addr;
-      desc.size_ = binary_size;
+      // desc.size_ = binary_size;
+      desc.size_ = collector->GetFunctionSize(desc.name_);
 
       // Retrieve the function pointer
       void* function_pointer = nullptr;
@@ -464,6 +495,8 @@ typedef struct _zex_kernel_register_file_size_exp_t {
       void* global_user_data,
       void** instance_user_data) {
     OnExitKernelCreate(params, result, global_user_data); 
+    ZeCollector* collector = static_cast<ZeCollector*>(global_user_data);
+    collector->DumpKernelProfiles();
   }
 
   void EnableTracing(zel_tracer_handle_t tracer) {
@@ -486,6 +519,7 @@ typedef struct _zex_kernel_register_file_size_exp_t {
  private: // Data
   zel_tracer_handle_t tracer_ = nullptr;
   std::string data_dir_;
+  std::unordered_map<std::string, size_t> function_size_map_;
 };
 
 #endif // PTI_TOOLS_UNITRACE_LEVEL_ZERO_COLLECTOR_H_
