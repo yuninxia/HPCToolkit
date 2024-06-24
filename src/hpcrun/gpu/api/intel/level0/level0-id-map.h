@@ -25,8 +25,21 @@
 // type definitions
 //*****************************************************************************
 
+struct zebin_id_map_entry_s {
+  uint32_t zebin_id;
+  uint32_t hpctoolkit_module_id;
+  bool load_module_unused;
+  SymbolVector *elf_vector;
+  struct zebin_id_map_entry_s *left;
+  struct zebin_id_map_entry_s *right;
+};
+
 typedef struct zebin_id_map_entry_s zebin_id_map_entry_t;
 
+typedef struct {
+  uint32_t zebin_id;
+  zebin_id_map_entry_t *entry;
+} zebin_id_map_hash_entry_t;
 
 
 //*****************************************************************************

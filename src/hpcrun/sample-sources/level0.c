@@ -49,6 +49,7 @@
 #include "../logical/common.h"
 #include "../gpu/activity/gpu-activity.h"
 #include "../gpu/api/common/gpu-kernel-table.h"
+#include "../gpu/common/gpu-monitoring.h"
 #include "../gpu/gpu-metrics.h"
 #include "../gpu/trace/gpu-trace-api.h"
 #include "../gpu/api/common/gpu-instrumentation.h"
@@ -75,6 +76,7 @@
 //******************************************************************************
 
 #define LEVEL0 "gpu=level0"
+#define LEVEL0_PC_SAMPLING "gpu=level0,pc"
 
 #define NO_THRESHOLD  1L
 
@@ -165,6 +167,16 @@ METHOD_FN(process_event_list)
   long th;
   hpcrun_extract_ev_thresh(event, sizeof(event_name), event_name,
     &th, NO_THRESHOLD);
+
+  if (hpcrun_ev_is(event, LEVEL0_PC_SAMPLING)) {
+
+    uint32_t sampling_interval_microseconds = 50;
+    double sampling_frequency = 1e9 / sampling_interval_microseconds;
+    gpu_monitoring_instruction_sample_frequency_set(sampling_frequency);
+
+    gpu_metrics_GPU_INST_enable(); // instruction counts
+    gpu_metrics_GPU_INST_STALL_enable();
+  }
 
   gpu_instrumentation_options_set(event_name, LEVEL0, &level0_instrumentation_options);
   if (gpu_instrumentation_enabled(&level0_instrumentation_options)) {

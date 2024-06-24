@@ -10,6 +10,7 @@
 
 #define _GNU_SOURCE
 
+#include <pthread.h>
 #include <stdlib.h>
 #include <stdio.h>
 
@@ -71,6 +72,7 @@ ze_driver_handle_t hDriver = NULL;
 ze_device_handle_t hDevice = NULL;
 
 static bool gtpin_instrumentation = false;
+static bool level0_pcsampling = false;
 
 //******************************************************************************
 // private operations
@@ -560,6 +562,7 @@ hpcrun_zeCommandListAppendLaunchKernel
 )
 {
   PRINT("Enter zeCommandListAppendLaunchKernel wrapper: command list %p\n", hCommandList);
+  
   // Entry action:
   // We need to create a new event for querying time stamps
   // if the user appends the kernel with an empty event parameter
@@ -635,6 +638,12 @@ hpcrun_zeCommandListCreateImmediate
   const struct hpcrun_foil_appdispatch_level0* dispatch
 )
 {
+  ze_command_queue_desc_t desc = *altdesc;
+
+  if (level0_pcsampling_enabled()) {
+    desc.mode = ZE_COMMAND_QUEUE_MODE_SYNCHRONOUS; 
+  }
+
   // Entry action
   // Execute the real level0 API
 
@@ -891,7 +900,13 @@ level0_init
     gtpin_instrumentation_options(inst_options);
 #endif
   }
-  level0_pcsampling_init();
+
+  const char* is_level0_pcsampling_enabled  = getenv("ZET_ENABLE_METRICS");
+  if (is_level0_pcsampling_enabled != NULL && strcmp(is_level0_pcsampling_enabled, "1") == 0) {
+    level0_pcsampling_init();
+    level0_pcsampling = true;
+  }
+
   if (!gtpin_instrumentation) {
     gpu_kernel_table_init();
   }
@@ -942,4 +957,13 @@ level0_gtpin_enabled
 )
 {
   return gtpin_instrumentation;
+}
+
+bool
+level0_pcsampling_enabled
+(
+  void
+)
+{
+  return level0_pcsampling;
 }
