@@ -21,10 +21,11 @@
 
 #include "../../../../cct/cct.h"
 #include "../../../activity/gpu-activity-channel.h"
-#ifndef __cplusplus
-#include <stdatomic.h>
-#else
+#ifdef __cplusplus
 #include <atomic>
+using atomic_int = std::atomic<int>;
+#else
+#include <stdatomic.h>
 #endif
 
 //******************************************************************************

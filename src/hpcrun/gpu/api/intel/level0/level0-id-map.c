@@ -29,37 +29,12 @@
 
 #define LEVEL0_ZEBIN_ID_MAP_HASH_TABLE_SIZE 127
 
-
-
-//*****************************************************************************
-// type definitions
-//*****************************************************************************
-
-struct zebin_id_map_entry_s {
-  uint32_t zebin_id;
-  uint32_t hpctoolkit_module_id;
-  bool load_module_unused;
-  SymbolVector *elf_vector;
-  struct zebin_id_map_entry_s *left;
-  struct zebin_id_map_entry_s *right;
-};
-
-
-typedef struct {
-  uint32_t zebin_id;
-  zebin_id_map_entry_t *entry;
-} zebin_id_map_hash_entry_t;
-
-
-
 //*****************************************************************************
 // global data
 //*****************************************************************************
 
 static zebin_id_map_entry_t *zebin_id_map_root = NULL;
 static spinlock_t zebin_id_map_lock = SPINLOCK_UNLOCKED;
-
-
 
 //*****************************************************************************
 // private operations

@@ -21,6 +21,7 @@
 typedef struct SymbolVector {
   int nsymbols;
   unsigned long *symbolValue;
+  unsigned long *symbolSize;
   char **symbolName;
 } SymbolVector;
 
@@ -43,6 +44,16 @@ symbolVectorAppend
   SymbolVector *v,
   const char *symbolName,
   unsigned long symbolValue
+);
+
+
+void
+symbolVectorAppendLevel0
+(
+  SymbolVector *v,
+  const char *symbolName,
+  unsigned long symbolValue,
+  unsigned long symbolSize
 );
 
 

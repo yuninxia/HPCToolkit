@@ -21,6 +21,7 @@
 #include "../../../activity/correlation/gpu-correlation-channel.h"
 #include "../../../api/nvidia/cuda-correlation-id-map.h"
 #include "../../../activity/correlation/gpu-host-correlation-map.h"
+#include "../../../activity/gpu-op-ccts-map.h"
 #include "../../../gpu-monitoring-thread-api.h"
 #include "../../../gpu-application-thread-api.h"
 #include "../../../activity/gpu-op-placeholders.h"
@@ -48,6 +49,15 @@
 #include "../../../common/gpu-print.h"
 
 //*****************************************************************************
+// global variables
+//*****************************************************************************
+
+pthread_mutex_t gpu_activity_mtx = PTHREAD_MUTEX_INITIALIZER;
+pthread_cond_t cv = PTHREAD_COND_INITIALIZER;
+bool data_processed = false;
+ze_event_handle_t kernel_event = NULL;
+
+//*****************************************************************************
 // local variables
 //*****************************************************************************
 
@@ -57,6 +67,33 @@ static __thread atomic_int level0_self_pending_operations = 0;
 //*****************************************************************************
 // private operations
 //*****************************************************************************
+
+static void 
+level0_pcsamples_sync
+(
+  level0_data_node_t* command_node, 
+  pthread_mutex_t* mtx, 
+  pthread_cond_t* cv, 
+  bool* processed_flag
+) 
+{
+  if (command_node && command_node->type == LEVEL0_KERNEL) {
+    // Notify the profile thread to process the data
+    kernel_event = command_node->event;
+
+    // Lock until data is processed
+    pthread_mutex_lock(mtx);
+    while (!(*processed_flag)) {
+        pthread_cond_wait(cv, mtx);
+    }
+    pthread_mutex_unlock(mtx);
+
+    // Reset the flag
+    pthread_mutex_lock(mtx);
+    *processed_flag = false;
+    pthread_mutex_unlock(mtx);
+  }
+}
 
 static void
 level0_kernel_translate
@@ -200,7 +237,13 @@ level0_command_begin
       break;
   }
 
-  uint64_t correlation_id = (uint64_t)(command_node->event);
+  uint64_t correlation_id = 0;
+  if (level0_pcsampling_enabled() && command_node->type == LEVEL0_KERNEL) {
+    correlation_id = gpu_activity_channel_generate_correlation_id();
+  } else {
+    correlation_id = (uint64_t)(command_node->event);
+  }
+  
   cct_node_t *api_node =
     gpu_application_thread_correlation_callback(correlation_id);
 
@@ -221,7 +264,11 @@ level0_command_begin
     } else
 #endif  // ENABLE_GTPIN
     {
-      kernel_ip = gpu_kernel_table_get(kernel_name, LOGICAL_MANGLING_CPP);
+      if (level0_pcsampling_enabled()) {
+        kernel_ip = level0_func_ip_resolve(kernel);
+      } else {
+        kernel_ip = gpu_kernel_table_get(kernel_name, LOGICAL_MANGLING_CPP);
+      }
     }
     free(kernel_name);
 
@@ -237,10 +284,18 @@ level0_command_begin
 
   hpcrun_safe_exit();
 
-  gpu_application_thread_process_activities();
-
   // Generate host side operation timestamp
   command_node->submit_time = hpcrun_nanotime();
+
+  if (level0_pcsampling_enabled() && command_node->type == LEVEL0_KERNEL) {
+      gpu_activity_channel_t *channel = gpu_activity_channel_get_local();
+      gpu_correlation_channel_send(1, correlation_id, channel);
+      printf("level0_command_begin: correlation_id %lu\n", correlation_id, ", channel %p\n", channel);
+      gpu_op_ccts_map_insert(correlation_id, (gpu_op_ccts_map_entry_value_t) {
+        .gpu_op_ccts = gpu_op_ccts,
+        .cpu_submit_time = command_node->submit_time
+      });
+  }
 
 #ifdef ENABLE_GTPIN
   if (command_node->type == LEVEL0_KERNEL && level0_gtpin_enabled()) {
@@ -258,6 +313,12 @@ level0_command_end
   uint64_t end
 )
 {
+  if (level0_pcsampling_enabled() && command_node->type == LEVEL0_KERNEL) {
+    level0_pcsamples_sync(command_node, &gpu_activity_mtx, &cv, &data_processed);
+  }
+  
+  gpu_application_thread_process_activities();
+
   gpu_monitoring_thread_activities_ready();
   gpu_activity_t gpu_activity;
   gpu_activity_t* ga = &gpu_activity;
