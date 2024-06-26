@@ -108,7 +108,11 @@ level0_kernel_translate
   PRINT("level0_kernel_translate: submit_time %llu, start %llu, end %llu\n", c->submit_time, start, end);
   ga->kind = GPU_ACTIVITY_KERNEL;
   ga->details.kernel.kernel_first_pc = ip_normalized_NULL;
-  ga->details.kernel.correlation_id = (uint64_t)(c->event);
+  if (level0_pcsampling_enabled()) {
+    ga->details.kernel.correlation_id = c->correlation_id;
+  } else {
+    ga->details.kernel.correlation_id = (uint64_t)(c->event);
+  }
   ga->details.kernel.submit_time = c->submit_time;
   gpu_interval_set(&ga->details.interval, start, end);
 }
@@ -129,7 +133,11 @@ level0_memcpy_translate
 
   ga->kind = GPU_ACTIVITY_MEMCPY;
   ga->details.memcpy.bytes = c->details.memcpy.copy_size;
-  ga->details.memcpy.correlation_id = (uint64_t)(c->event);
+  if (level0_pcsampling_enabled()) {
+    ga->details.memcpy.correlation_id = c->correlation_id;
+  } else {
+    ga->details.memcpy.correlation_id = (uint64_t)(c->event);
+  }
   ga->details.memcpy.submit_time = c->submit_time;
 
   // Switch on memory src and dst types
@@ -239,11 +247,13 @@ level0_command_begin
   }
 
   uint64_t correlation_id = 0;
-  if (level0_pcsampling_enabled() && command_node->type == LEVEL0_KERNEL) {
+  if (level0_pcsampling_enabled()) {
     correlation_id = gpu_activity_channel_generate_correlation_id();
   } else {
     correlation_id = (uint64_t)(command_node->event);
   }
+
+  command_node->correlation_id = correlation_id;
   
   cct_node_t *api_node =
     gpu_application_thread_correlation_callback(correlation_id);
