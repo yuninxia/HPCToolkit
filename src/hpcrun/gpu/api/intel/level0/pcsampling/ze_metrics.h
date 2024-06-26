@@ -146,6 +146,13 @@ class ZeMetricProfiler {
   static uint64_t ReadMetrics(ze_event_handle_t event, ze_event_handle_t kernel_event, 
                               zet_metric_streamer_handle_t streamer, std::vector<uint8_t>& storage);
   static void OpenNewMetricFile(uint64_t new_correlation_id, ZeDeviceDescriptor *desc);
+  static zet_metric_streamer_handle_t flushStreamerBuffer(
+    zet_metric_streamer_handle_t old_streamer, 
+    ze_context_handle_t context, 
+    ze_device_handle_t device, 
+    zet_metric_group_handle_t group, 
+    ze_event_handle_t event,
+    ze_event_pool_handle_t event_pool);
   static void process_correlation(uint64_t cid, gpu_activity_channel_t *channel, void *arg);
   static void MetricProfilingThread(ZeMetricProfiler* profiler, ZeDeviceDescriptor *desc);
 
@@ -404,10 +411,6 @@ bool ZeMetricProfiler::level0_convert_pcsampling(gpu_activity_t* activity, uint6
   activity->details.instruction.pc.lm_id = activity->details.pc_sampling.pc.lm_id;
   activity->details.instruction.pc.lm_ip = it->first + 0x800000000000;
   activity->details.instruction.correlation_id = correlation_id;
-
-  // activity->details.kernel.correlation_id = correlation_id;
-  // activity->details.kernel.kernel_first_pc.lm_id = activity->details.pc_sampling.pc.lm_id;
-  // activity->details.kernel.kernel_first_pc.lm_ip = rit->first + 0x800000000000;
 
   return true;
 }
@@ -683,6 +686,7 @@ uint64_t ZeMetricProfiler::ReadMetrics(ze_event_handle_t event, ze_event_handle_
         data_size = storage.size();
         std::cerr << "[WARNING] Metric samples dropped." << std::endl;
       }
+
       status = zetMetricStreamerReadData(streamer, UINT32_MAX, &data_size, storage.data());
       PTI_ASSERT(status == ZE_RESULT_SUCCESS);
 
@@ -734,6 +738,44 @@ void ZeMetricProfiler::OpenNewMetricFile(uint64_t new_correlation_id, ZeDeviceDe
 
 void ZeMetricProfiler::process_correlation(uint64_t cid, gpu_activity_channel_t *channel, void *arg) {
   correlation_id_ = cid;
+}
+
+zet_metric_streamer_handle_t ZeMetricProfiler::flushStreamerBuffer(
+    zet_metric_streamer_handle_t old_streamer, 
+    ze_context_handle_t context, 
+    ze_device_handle_t device, 
+    zet_metric_group_handle_t group, 
+    ze_event_handle_t event,
+    ze_event_pool_handle_t event_pool) 
+{
+  ze_result_t status = ZE_RESULT_SUCCESS;
+
+  // Close the old streamer
+  status = zetMetricStreamerClose(old_streamer);
+  PTI_ASSERT(status == ZE_RESULT_SUCCESS);
+
+  // Open a new streamer
+  zet_metric_streamer_handle_t new_streamer = nullptr;
+  uint32_t interval = 50 * 1000000; // ns
+  zet_metric_streamer_desc_t streamer_desc = { ZET_STRUCTURE_TYPE_METRIC_STREAMER_DESC, nullptr, max_metric_samples, interval };
+  status = zetMetricStreamerOpen(context, device, group, &streamer_desc, event, &new_streamer);
+  if (status != ZE_RESULT_SUCCESS) {
+    std::cerr << "[ERROR] Failed to open metric streamer (" << status << "). The sampling interval might be too small." << std::endl;
+
+    status = zeEventDestroy(event);
+    PTI_ASSERT(status == ZE_RESULT_SUCCESS);
+
+    status = zeEventPoolDestroy(event_pool);
+    PTI_ASSERT(status == ZE_RESULT_SUCCESS);
+
+    return nullptr;
+  }
+
+  if (streamer_desc.notifyEveryNReports > max_metric_samples) {
+    max_metric_samples = streamer_desc.notifyEveryNReports;
+  }
+
+  return new_streamer;
 }
 
 void ZeMetricProfiler::MetricProfilingThread(ZeMetricProfiler* profiler, ZeDeviceDescriptor *desc) {
@@ -790,7 +832,7 @@ void ZeMetricProfiler::MetricProfilingThread(ZeMetricProfiler* profiler, ZeDevic
   desc->profiling_state_.store(PROFILER_ENABLED, std::memory_order_release);
   while (desc->profiling_state_.load(std::memory_order_acquire) != PROFILER_DISABLED) {
     
-    // wait for the kernel completion event to be signaled
+    // Wait for the kernel completion event to be signaled
     if (kernel_event != nullptr) {
       ze_result_t kernel_event_status = zeEventQueryStatus(kernel_event);
       if (kernel_event_status == ZE_RESULT_SUCCESS) {
@@ -808,7 +850,8 @@ void ZeMetricProfiler::MetricProfilingThread(ZeMetricProfiler* profiler, ZeDevic
         }
 
         kernel_event = nullptr;
-
+        streamer = flushStreamerBuffer(streamer, context, device, group, event, event_pool);
+        
         // Notify the app thread that data processing is complete
         pthread_mutex_lock(&gpu_activity_mtx);
         data_processed = true;
