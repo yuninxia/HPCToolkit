@@ -149,6 +149,34 @@ gpu_unknown_process
   PRINT("Unknown activity kind %d\n", activity->kind);
 }
 
+#if 0
+// 4-2m
+typedef struct {
+    uint64_t base;
+    int count;
+    const char *name;
+    size_t size;
+} IPRange;
+
+const IPRange ranges[5] = {
+    {0x8000fff60000, 1, "*ZTSZZ5tworkiiENKUlRN4sycl3*V17handlerEE_clES2_EUlT_E_", 2768},
+    {0x8000fff20000, 2, "*ZTSZZ6twork2iiENKUlRN4sycl3*V17handlerEE_clES2_EUlT_E_", 2768},
+    {0x8000fff00000, 1, "*ZTSZZ6twork2iiENKUlRN4sycl3*V17handlerEE0_clES2_EUlT_E_", 2768},
+    {0x8000ffee0000, 2, "*ZTSZZ6twork3iiENKUlRN4sycl3*V17handlerEE_clES2_EUlT_E_", 2768},
+    {0x8000ffec0000, 1, "*ZTSZZ6twork3iiENKUlRN4sycl3*V17handlerEE0_clES2_EUlT_E_", 2768}
+};
+
+void check_ip_and_print_function(uint64_t ip) {
+    for (int i = 0; i < 5; i++) {
+        if (ip >= ranges[i].base && ip < ranges[i].base + ranges[i].size) {
+            printf("IP 0x%lx is in range of function: %s\n", ip, ranges[i].name);
+            return;
+        }
+    }
+    printf("IP 0x%lx is not in any known function range\n", ip);
+}
+#endif
+
 static void
 gpu_sample_process
 (
@@ -166,6 +194,7 @@ gpu_sample_process
   cct_node_t *host_op_node =
     gpu_op_ccts_get(&entry->gpu_op_ccts, gpu_placeholder_type_kernel);
   ip_normalized_t ip = sample->details.pc_sampling.pc;
+  // check_ip_and_print_function(ip.lm_ip);
 
   cct_node_t *cct_child = hpcrun_cct_insert_ip_norm(host_op_node, ip, false);
   if (cct_child) {
