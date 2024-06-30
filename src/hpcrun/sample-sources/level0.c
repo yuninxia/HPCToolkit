@@ -174,8 +174,8 @@ METHOD_FN(process_event_list, int lush_metrics)
 
   if (hpcrun_ev_is(event, LEVEL0_PC_SAMPLING)) {
 
-    uint32_t sampling_interval_microseconds = 50;
-    double sampling_frequency = 1e9 / sampling_interval_microseconds;
+    uint32_t sampling_interval_nanoseconds = 50 * 1000;
+    double sampling_frequency = 1e9 / sampling_interval_nanoseconds;
     gpu_monitoring_instruction_sample_frequency_set(sampling_frequency);
 
     gpu_metrics_GPU_INST_enable(); // instruction counts
