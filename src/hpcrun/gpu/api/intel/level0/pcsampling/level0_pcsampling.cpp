@@ -22,21 +22,41 @@ static const std::string base_path = "/tmp/hpcrun_level0_pc";
 static char pattern[256];
 static char* data_dir_name = nullptr;
 
-static bool is_level0_pcsampling_enabled() {
-    return level0_pcsampling_enabled_str == std::string("1");
+static bool 
+is_level0_pcsampling_enabled
+(
+  void
+) 
+{
+  return level0_pcsampling_enabled_str == std::string("1");
 }
 
-static void EnableProfiling(char *dir) {
+static void 
+EnableProfiling
+(
+  char *dir
+) 
+{
   metric_profiler = ZeMetricProfiler::Create(dir);
 }
 
-static void DisableProfiling() {
+static void 
+DisableProfiling
+(
+  void
+) 
+{
   if (metric_profiler != nullptr) {
     delete metric_profiler;
   }
 }
 
-void level0_pcsampling_init() {
+void 
+level0_pcsampling_init
+(
+  void
+) 
+{
   if (is_level0_pcsampling_enabled()) {
     if (!std::filesystem::exists(base_path)) {
         std::filesystem::create_directories(base_path);
@@ -51,18 +71,33 @@ void level0_pcsampling_init() {
   }
 }
 
-static void level0_pcsampling_enable_helper() {
+static void 
+level0_pcsampling_enable_helper
+(
+  void
+) 
+{
   EnableProfiling(data_dir_name);
   tracer = UniTracer::Create(data_dir_name); // kernel collector
 }
 
-void level0_pcsampling_enable() {
+void 
+level0_pcsampling_enable
+(
+  void
+) 
+{
   if (is_level0_pcsampling_enabled()) {
     pthread_once(&level0_pcsampling_init_once, level0_pcsampling_enable_helper);
   }  
 }
 
-void level0_pcsampling_fini() {
+void 
+level0_pcsampling_fini
+(
+  void
+) 
+{
   if (is_level0_pcsampling_enabled()) {
     delete tracer;
     DisableProfiling();

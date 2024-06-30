@@ -124,7 +124,12 @@ class ZeCollector {
 };
 
 // Member function implementations
-ZeCollector* ZeCollector::Create(const std::string& data_dir) {
+ZeCollector*
+ZeCollector::Create
+(
+  const std::string& data_dir
+) 
+{
   ze_api_version_t version = utils::ze::GetVersion();
   PTI_ASSERT(
     ZE_MAJOR_VERSION(version) >= 1 &&
@@ -158,12 +163,20 @@ ZeCollector* ZeCollector::Create(const std::string& data_dir) {
   return collector;
 }
 
-ZeCollector::ZeCollector(const std::string& data_dir) : data_dir_(data_dir) {
+ZeCollector::ZeCollector
+(
+  const std::string& data_dir
+) : data_dir_(data_dir) 
+{
   EnumerateAndSetupDevices();
   InitializeKernelCommandProperties();
 }
 
-ZeCollector::~ZeCollector() {
+ZeCollector::~ZeCollector
+(
+  void
+) 
+{
   if (tracer_ != nullptr) {
     ze_result_t status = zelTracerDestroy(tracer_);
     PTI_ASSERT(status == ZE_RESULT_SUCCESS);
@@ -171,12 +184,22 @@ ZeCollector::~ZeCollector() {
   DumpKernelProfiles();
 }
 
-void ZeCollector::DisableTracing() {
+void 
+ZeCollector::DisableTracing
+(
+  void
+) 
+{
   ze_result_t status = zelTracerSetEnabled(tracer_, false);
   PTI_ASSERT(status == ZE_RESULT_SUCCESS);
 }
 
-void ZeCollector::InitializeKernelCommandProperties() {
+void 
+ZeCollector::InitializeKernelCommandProperties
+(
+  void
+) 
+{
   kernel_command_properties_mutex_.lock();
   if (kernel_command_properties_ == nullptr) {
     kernel_command_properties_ = new std::map<std::string, ZeKernelCommandProperties>;
@@ -184,7 +207,12 @@ void ZeCollector::InitializeKernelCommandProperties() {
   kernel_command_properties_mutex_.unlock();
 }
 
-void ZeCollector::EnumerateAndSetupDevices() {
+void 
+ZeCollector::EnumerateAndSetupDevices
+(
+  void
+) 
+{
   if (devices_ == nullptr) {
     devices_ = new std::map<ze_device_handle_t, ZeDevice>;
   }
@@ -252,7 +280,12 @@ void ZeCollector::EnumerateAndSetupDevices() {
   }
 }
 
-void ZeCollector::DumpKernelProfiles() {
+void 
+ZeCollector::DumpKernelProfiles
+(
+  void
+) 
+{
   kernel_command_properties_mutex_.lock();
   std::map<int32_t, std::map<uint64_t, ZeKernelCommandProperties *>> device_kprops; // sorted by device id then base address;
   for (auto it = kernel_command_properties_->begin(); it != kernel_command_properties_->end(); it++) {
@@ -300,13 +333,24 @@ void ZeCollector::DumpKernelProfiles() {
   kernel_command_properties_mutex_.unlock();
 }
 
-std::string ZeCollector::GenerateUniqueId(const uint8_t* binary_data, size_t binary_size) const {
+std::string 
+ZeCollector::GenerateUniqueId
+(
+  const uint8_t* binary_data, 
+  size_t binary_size
+) const 
+{
   char hash_string[CRYPTO_HASH_STRING_LENGTH] = {0};
   crypto_compute_hash_string(binary_data, binary_size, hash_string, CRYPTO_HASH_STRING_LENGTH);
   return std::string(hash_string);
 }
 
-void ZeCollector::FillFunctionSizeMap(zebin_id_map_entry_t *entry) {
+void 
+ZeCollector::FillFunctionSizeMap
+(
+  zebin_id_map_entry_t *entry
+) 
+{
   SymbolVector* symbols = entry->elf_vector;
   if (symbols) {
     for (int i = 0; i < symbols->nsymbols; ++i) {
@@ -315,7 +359,12 @@ void ZeCollector::FillFunctionSizeMap(zebin_id_map_entry_t *entry) {
   }
 }
 
-size_t ZeCollector::GetFunctionSize(std::string& function_name) const {
+size_t 
+ZeCollector::GetFunctionSize
+(
+  std::string& function_name
+) const 
+{
   if (!function_name.empty() && function_name.back() == '\0') {
     function_name.pop_back();
   }
@@ -326,7 +375,14 @@ size_t ZeCollector::GetFunctionSize(std::string& function_name) const {
   return -1;
 }
 
-void ZeCollector::OnExitModuleCreate(ze_module_create_params_t* params, ze_result_t result, void* global_data) {
+void 
+ZeCollector::OnExitModuleCreate
+(
+  ze_module_create_params_t* params, 
+  ze_result_t result, 
+  void* global_data
+) 
+{
   if (result == ZE_RESULT_SUCCESS) {
     ze_module_handle_t mod = **(params->pphModule);
     ze_device_handle_t device = *(params->phDevice);
@@ -386,14 +442,27 @@ void ZeCollector::OnExitModuleCreate(ze_module_create_params_t* params, ze_resul
   }
 }
 
-void ZeCollector::OnEnterModuleDestroy(ze_module_destroy_params_t* params, void* global_data) {
+void 
+ZeCollector::OnEnterModuleDestroy
+(
+  ze_module_destroy_params_t* params, 
+  void* global_data
+) 
+{
   ze_module_handle_t mod = *(params->phModule);
   modules_on_devices_mutex_.lock();
   modules_on_devices_.erase(mod);
   modules_on_devices_mutex_.unlock();
 }
 
-void ZeCollector::OnExitKernelCreate(ze_kernel_create_params_t *params, ze_result_t result, void* global_data) {
+void 
+ZeCollector::OnExitKernelCreate
+(
+  ze_kernel_create_params_t *params, 
+  ze_result_t result, 
+  void* global_data
+) 
+{
   if (result == ZE_RESULT_SUCCESS) {
     
     ze_module_handle_t mod = *(params->phModule);
@@ -496,21 +565,50 @@ void ZeCollector::OnExitKernelCreate(ze_kernel_create_params_t *params, ze_resul
   }
 }
 
-void ZeCollector::zeModuleCreateOnExit(ze_module_create_params_t* params, ze_result_t result, void* global_user_data, void** instance_user_data) {
-    OnExitModuleCreate(params, result, global_user_data);
+void 
+ZeCollector::zeModuleCreateOnExit
+(
+  ze_module_create_params_t* params, 
+  ze_result_t result, 
+  void* global_user_data, 
+  void** instance_user_data
+) 
+{
+  OnExitModuleCreate(params, result, global_user_data);
 }
 
-void ZeCollector::zeModuleDestroyOnEnter(ze_module_destroy_params_t* params, ze_result_t result, void* global_user_data, void** instance_user_data) {
-    OnEnterModuleDestroy(params, global_user_data); 
+void
+ZeCollector::zeModuleDestroyOnEnter
+(
+  ze_module_destroy_params_t* params, 
+  ze_result_t result, 
+  void* global_user_data, 
+  void** instance_user_data
+) 
+{
+  OnEnterModuleDestroy(params, global_user_data); 
 }
 
-void ZeCollector::zeKernelCreateOnExit(ze_kernel_create_params_t* params, ze_result_t result, void* global_user_data, void** instance_user_data) {
-    OnExitKernelCreate(params, result, global_user_data); 
-    ZeCollector* collector = static_cast<ZeCollector*>(global_user_data);
-    collector->DumpKernelProfiles();
+void 
+ZeCollector::zeKernelCreateOnExit
+(
+  ze_kernel_create_params_t* params, 
+  ze_result_t result, 
+  void* global_user_data, 
+  void** instance_user_data
+) 
+{
+  OnExitKernelCreate(params, result, global_user_data); 
+  ZeCollector* collector = static_cast<ZeCollector*>(global_user_data);
+  collector->DumpKernelProfiles();
 }
 
-void ZeCollector::EnableTracing(zel_tracer_handle_t tracer) {
+void 
+ZeCollector::EnableTracing
+(
+  zel_tracer_handle_t tracer
+) 
+{
   zet_core_callbacks_t prologue = {};
   zet_core_callbacks_t epilogue = {};
 
