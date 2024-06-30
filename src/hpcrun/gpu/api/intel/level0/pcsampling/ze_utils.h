@@ -19,7 +19,12 @@
 namespace utils {
 namespace ze {
 
-inline std::vector<ze_driver_handle_t> GetDriverList() {
+inline std::vector<ze_driver_handle_t> 
+GetDriverList
+(
+  void
+) 
+{
   ze_result_t status = ZE_RESULT_SUCCESS;
 
   uint32_t driver_count = 0;
@@ -37,7 +42,12 @@ inline std::vector<ze_driver_handle_t> GetDriverList() {
   return driver_list;
 }
 
-inline ze_api_version_t GetDriverVersion(ze_driver_handle_t driver) {
+inline ze_api_version_t
+GetDriverVersion
+(
+  ze_driver_handle_t driver
+) 
+{
   PTI_ASSERT(driver != nullptr);
 
   ze_api_version_t version = ZE_API_VERSION_FORCE_UINT32;
@@ -47,7 +57,12 @@ inline ze_api_version_t GetDriverVersion(ze_driver_handle_t driver) {
   return version;
 }
 
-inline ze_api_version_t GetVersion() {
+inline ze_api_version_t 
+GetVersion
+(
+  void
+) 
+{
   auto driver_list = GetDriverList();
   if (driver_list.empty()) {
     return ZE_API_VERSION_FORCE_UINT32;
