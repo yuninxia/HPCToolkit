@@ -25,7 +25,12 @@ class UniTracer {
   ZeCollector* ze_collector_ = nullptr;
 };
 
-UniTracer* UniTracer::Create(const std::string& data_dir_name) {
+UniTracer* 
+UniTracer::Create
+(
+  const std::string& data_dir_name
+) 
+{
   UniTracer* tracer = new UniTracer();
   ZeCollector* ze_collector = nullptr;
   ze_collector = ZeCollector::Create(data_dir_name);
@@ -39,7 +44,11 @@ UniTracer* UniTracer::Create(const std::string& data_dir_name) {
   return tracer;
 }
 
-UniTracer::~UniTracer() {
+UniTracer::~UniTracer
+(
+  void
+) 
+{
   if (ze_collector_ != nullptr) {
     ze_collector_->DisableTracing();
     delete ze_collector_;
