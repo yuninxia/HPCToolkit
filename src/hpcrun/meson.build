@@ -498,7 +498,7 @@ _hpcrun_libs += shared_module('hpcrun',
   common_lean_srcs,
   'utilities/last_func.c',
   gnu_symbol_visibility: 'hidden',
-  link_language: 'c',
+  link_language: 'cpp',
   implicit_include_directories: false,
   dependencies: [
     _my_include_dirs_deps,
