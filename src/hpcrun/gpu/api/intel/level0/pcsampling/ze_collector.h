@@ -104,6 +104,8 @@ class ZeCollector {
   void InitializeKernelCommandProperties();
   void EnumerateAndSetupDevices();
   void DumpKernelProfiles();
+  void LogKernelProfiles(const ZeKernelCommandProperties* kernel, size_t size);
+ 
   std::string GenerateUniqueId(const uint8_t* binary_data, size_t binary_size) const;
   void FillFunctionSizeMap(zebin_id_map_entry_t *entry);
   size_t GetFunctionSize(std::string& function_name) const;
@@ -281,6 +283,22 @@ ZeCollector::EnumerateAndSetupDevices
 }
 
 void 
+ZeCollector::LogKernelProfiles
+(
+  const ZeKernelCommandProperties* kernel, 
+  size_t size
+  ) 
+{
+  std::cerr << "Kernel properties:" << std::endl;
+  std::cerr << "name=\"" << kernel->name_ 
+            << "\", base_addr=" << kernel->base_addr_ 
+            << ", size=" << size
+            << ", module_id=" << kernel->module_id_ 
+            << ", kernel_id=" << kernel->id_
+            << std::endl;
+}
+
+void 
 ZeCollector::DumpKernelProfiles
 (
   void
@@ -311,21 +329,25 @@ ZeCollector::DumpKernelProfiles
     uint64_t prev_base = 0;
     for (auto it = props.second.crbegin(); it != props.second.crend(); it++) {
       // quote kernel name which may contain "," 
-      kpfs << "\"" << hpctoolkit_demangle(it->second->name_.c_str()) << "\"" << std::endl;
+      kpfs << "\"" << it->second->name_.c_str() << "\"" << std::endl;
       kpfs << it->second->base_addr_ << std::endl;
       kpfs << it->second->id_ << std::endl;
       kpfs << it->second->module_id_ << std::endl;
+
+      size_t size;
       if (prev_base == 0) {
-        kpfs << it->second->size_ << std::endl;
+        size = it->second->size_;
       }
       else {
-        size_t size = prev_base - it->second->base_addr_;
+        size = prev_base - it->second->base_addr_;
         if (size > it->second->size_) {
           size = it->second->size_;
         }
-        kpfs << size << std::endl;
       }
+      kpfs << size << std::endl;
       prev_base = it->second->base_addr_;
+
+      LogKernelProfiles(it->second, size);
     }
     kpfs.close();
   }
@@ -603,6 +625,52 @@ ZeCollector::zeKernelCreateOnExit
   collector->DumpKernelProfiles();
 }
 
+static void 
+OnEnterCommandListAppendLaunchKernel
+(
+  ze_command_list_append_launch_kernel_params_t* params,
+  void* global_data, 
+  void** instance_data
+) 
+{
+  std::cerr << "OnEnterCommandListAppendLaunchKernel" << std::endl;
+}
+
+static void 
+zeCommandListAppendLaunchKernelOnEnter
+(
+  ze_command_list_append_launch_kernel_params_t* params,
+  ze_result_t result,
+  void* global_user_data,
+  void** instance_user_data
+) 
+{
+  OnEnterCommandListAppendLaunchKernel(params, global_user_data, instance_user_data); 
+}
+
+static void 
+OnExitCommandListAppendLaunchKernel
+(
+  ze_command_list_append_launch_kernel_params_t* params,
+  ze_result_t result, 
+  void* global_data, 
+  void** instance_data
+) 
+{
+  std::cerr << "OnExitCommandListAppendLaunchKernel" << std::endl;
+}
+
+static void zeCommandListAppendLaunchKernelOnExit
+(
+  ze_command_list_append_launch_kernel_params_t* params,
+  ze_result_t result,
+  void* global_user_data,
+  void** instance_user_data
+) 
+{
+  OnExitCommandListAppendLaunchKernel(params, result, global_user_data, instance_user_data); 
+}
+
 void 
 ZeCollector::EnableTracing
 (
@@ -615,6 +683,8 @@ ZeCollector::EnableTracing
   epilogue.Module.pfnCreateCb = zeModuleCreateOnExit;
   prologue.Module.pfnDestroyCb = zeModuleDestroyOnEnter;
   epilogue.Kernel.pfnCreateCb = zeKernelCreateOnExit;
+  prologue.CommandList.pfnAppendLaunchKernelCb = zeCommandListAppendLaunchKernelOnEnter;
+  epilogue.CommandList.pfnAppendLaunchKernelCb = zeCommandListAppendLaunchKernelOnExit;
 
   ze_result_t status = ZE_RESULT_SUCCESS;
   status = zelTracerSetPrologues(tracer, &prologue);

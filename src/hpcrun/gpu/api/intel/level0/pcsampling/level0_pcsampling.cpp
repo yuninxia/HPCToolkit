@@ -60,6 +60,7 @@ level0_pcsampling_init
   if (is_level0_pcsampling_enabled()) {
     if (!std::filesystem::exists(base_path)) {
         std::filesystem::create_directories(base_path);
+        std::filesystem::permissions(base_path, std::filesystem::perms::all, std::filesystem::perm_options::add);
     }
 
     std::snprintf(pattern, sizeof(pattern), "%s/tmpdir.XXXXXX", base_path.c_str());
