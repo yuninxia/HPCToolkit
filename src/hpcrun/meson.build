@@ -503,7 +503,8 @@ main_hpcrun_lib = shared_library(
   srcs,
   common_lean_srcs,
   gnu_symbol_visibility: 'hidden',
-  link_language: 'c',
+  link_language: 'cpp',
+  override_options: ['b_lundef=false'],
   implicit_include_directories: false,
   dependencies: [
     common_lean_deps,

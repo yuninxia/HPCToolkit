@@ -73,9 +73,6 @@ struct ZeDeviceDescriptor {
   zet_metric_group_handle_t metric_group_;
   std::thread *profiling_thread_;
   std::atomic<ZeProfilerState> profiling_state_;
-  std::string metric_file_name_;
-  std::ofstream metric_file_stream_;
-  std::vector<uint8_t> metric_data_;
   bool stall_sampling_;
 };
 
@@ -115,8 +112,9 @@ class ZeMetricProfiler {
   ZeMetricProfiler(char *dir);
   void StartProfilingMetrics();
   void StopProfilingMetrics();
-  ZeDeviceDescriptor* CreateDeviceDescriptor(ze_device_handle_t device, int32_t did, ze_driver_handle_t driver, ze_context_handle_t context, 
-  bool stall_sampling, const std::string& metric_group, char* dir);
+
+  // Device enumeration
+  ZeDeviceDescriptor* CreateDeviceDescriptor(ze_device_handle_t device, int32_t did, ze_driver_handle_t driver, ze_context_handle_t context, bool stall_sampling, const std::string& metric_group, char* dir);
   uint32_t GetSubDeviceCount(ze_device_handle_t device);
   zet_metric_group_handle_t GetMetricGroup(ze_device_handle_t device, const std::string& metric_group_name);
   void HandleSubDevices(ZeDeviceDescriptor* parent_desc);
@@ -124,8 +122,11 @@ class ZeMetricProfiler {
   int GetDeviceId(ze_device_handle_t sub_device) const;
   int GetSubDeviceId(ze_device_handle_t sub_device) const;
   ze_device_handle_t GetParentDevice(ze_device_handle_t sub_device) const;
-  static gpu_inst_stall_t level0_convert_stall_reason(const EuStalls& stall);
   
+  // GPU activity translation
+  static gpu_inst_stall_t level0_convert_stall_reason(const EuStalls& stall);
+  static bool level0_convert_pcsampling(gpu_activity_t* activity, std::map<uint64_t, EuStalls>::iterator it, std::map<uint64_t, KernelProperties>::const_reverse_iterator rit, uint64_t correlation_id);
+  static void level0_activity_translate(std::deque<gpu_activity_t*>& activities, std::map<uint64_t, EuStalls>::iterator it, std::map<uint64_t, KernelProperties>::const_reverse_iterator rit, uint64_t correlation_id);
   template <typename T>
   static T hex_string_to_uint(const std::string& hex_str) {
     std::stringstream ss;
@@ -135,56 +136,41 @@ class ZeMetricProfiler {
     return num;
   }
   
-  static bool level0_convert_pcsampling(gpu_activity_t* activity, uint64_t offset, 
-                                        std::map<uint64_t, EuStalls>::iterator it, 
-                                        std::map<uint64_t, KernelProperties>::const_reverse_iterator rit, 
-                                        uint64_t correlation_id);
-  static void level0_activity_translate(std::deque<gpu_activity_t*>& activities, uint64_t offset, 
-                                        std::map<uint64_t, EuStalls>::iterator it, 
-                                        std::map<uint64_t, KernelProperties>::const_reverse_iterator rit, 
-                                        uint64_t correlation_id);
-  std::map<uint64_t, KernelProperties> ReadKernelProperties(const ZeDeviceDescriptor* desc);
-  std::map<uint64_t, EuStalls> CalculateEuStalls(const ZeDeviceDescriptor* desc);
-  std::deque<gpu_activity_t*> GenerateActivities(const std::map<uint64_t, KernelProperties>& kprops, std::map<uint64_t, EuStalls>& eustalls);
-  void ProcessActivities(std::deque<gpu_activity_t*>& activities); 
-  void ComputeMetrics(ZeDeviceDescriptor* desc);
+  // Metric information
   static std::string GetMetricUnits(const char* units);
   static uint32_t GetMetricId(const std::vector<std::string>& metric_list, const std::string& metric_name);
   static uint32_t GetMetricCount(zet_metric_group_handle_t group);
   static std::vector<std::string> GetMetricList(zet_metric_group_handle_t group);
-  static uint64_t ReadMetrics(zet_metric_streamer_handle_t streamer, std::vector<uint8_t>& storage);
-  static uint64_t ReadAllAvailableMetrics(ze_event_handle_t event, ze_event_handle_t kernel_event,
-                                                   zet_metric_streamer_handle_t streamer, std::vector<uint8_t>& storage);
-  static uint64_t ReadMetricsOnEventCompletion(ze_event_handle_t event, 
-                              zet_metric_streamer_handle_t streamer, std::vector<uint8_t>& storage);
-  static void OpenNewMetricFile(uint64_t new_correlation_id, ZeDeviceDescriptor *desc);
-  static zet_metric_streamer_handle_t FlushStreamerBuffer(
-    zet_metric_streamer_handle_t old_streamer, 
-    ze_context_handle_t context, 
-    ze_device_handle_t device, 
-    zet_metric_group_handle_t group, 
-    ze_event_handle_t event,
-    ze_event_pool_handle_t event_pool);
-  static void UpdateCorrelationID(uint64_t cid, gpu_activity_channel_t *channel, void *arg);
-  static void HandleKernelEvent(ZeMetricProfiler* profiler, ZeDeviceDescriptor* desc, 
-                                ze_event_handle_t event, 
-                                ze_event_pool_handle_t event_pool,
-                                zet_metric_streamer_handle_t& streamer, 
-                                std::vector<uint8_t>& raw_metrics);
-  static void RunProfilingLoop(ZeMetricProfiler* profiler, ZeDeviceDescriptor* desc, 
-                              ze_event_handle_t event, ze_event_pool_handle_t event_pool,
-                              zet_metric_streamer_handle_t& streamer);
+
+  // Process raw metrics
+  static std::map<uint64_t, EuStalls> CalculateEuStalls(const ZeDeviceDescriptor* desc, int raw_size, const std::vector<uint8_t>& raw_metrics);
+  static std::map<uint64_t, KernelProperties> ReadKernelProperties(const ZeDeviceDescriptor* desc);
+  static std::deque<gpu_activity_t*> GenerateActivities(const std::map<uint64_t, KernelProperties>& kprops, std::map<uint64_t, EuStalls>& eustalls);
+  static void ProcessActivities(std::deque<gpu_activity_t*>& activities); 
+  static void LogActivities(const std::deque<gpu_activity_t*>& activities, const std::map<uint64_t, KernelProperties>& kprops); 
+
+  // Collect and process metrics
+  static uint64_t CollectMetrics(zet_metric_streamer_handle_t streamer, std::vector<uint8_t>& storage);
+  static void ProcessRawMetrics(ZeMetricProfiler* profiler, ZeDeviceDescriptor* desc, const std::vector<uint8_t>& raw_metrics, int raw_size); 
+  
+  // Loop profiling
+  static void CollectAndProcessMetrics(ZeMetricProfiler* profiler, ZeDeviceDescriptor* desc, zet_metric_streamer_handle_t& streamer);
+  static zet_metric_streamer_handle_t FlushStreamerBuffer(zet_metric_streamer_handle_t old_streamer, ZeDeviceDescriptor* desc, ze_event_handle_t event, ze_event_pool_handle_t event_pool);
   static void NotifyDataProcessingComplete();
+  static void UpdateCorrelationID(uint64_t cid, gpu_activity_channel_t *channel, void *arg);
+
+  static void RunProfilingLoop(ZeMetricProfiler* profiler, ZeDeviceDescriptor* desc, ze_event_handle_t event, ze_event_pool_handle_t event_pool, zet_metric_streamer_handle_t& streamer);
   static void MetricProfilingThread(ZeMetricProfiler* profiler, ZeDeviceDescriptor *desc);
 
  private: // Data
   std::vector<ze_context_handle_t> metric_contexts_;
   std::map<ze_device_handle_t, ZeDeviceDescriptor *> device_descriptors_;
-  std::string data_dir_name_;
+  static std::string data_dir_name_;
   static uint64_t correlation_id_;
   static uint64_t last_correlation_id_;
 };
 
+std::string ZeMetricProfiler::data_dir_name_;
 uint64_t ZeMetricProfiler::last_correlation_id_ = 0;
 uint64_t ZeMetricProfiler::correlation_id_ = 0;
 
@@ -253,7 +239,6 @@ ZeMetricProfiler::StopProfilingMetrics
     it->second->profiling_thread_->join();
     delete it->second->profiling_thread_;
     it->second->profiling_thread_ = nullptr;
-    it->second->metric_file_stream_.close();
   }
 }
 
@@ -326,8 +311,6 @@ ZeMetricProfiler::CreateDeviceDescriptor
   desc->metric_group_ = GetMetricGroup(device, metric_group);
   desc->profiling_thread_ = nullptr;
   desc->profiling_state_.store(PROFILER_DISABLED, std::memory_order_release);
-  desc->metric_file_name_ = std::string(dir) + "/." + std::to_string(did) + "." + metric_group + "." + std::to_string(getpid()) + "." + std::to_string(ZeMetricProfiler::correlation_id_);
-  desc->metric_file_stream_ = std::ofstream(desc->metric_file_name_, std::ios::out | std::ios::trunc | std::ios::binary);
 
   return desc;
 }
@@ -515,7 +498,6 @@ bool
 ZeMetricProfiler::level0_convert_pcsampling
 (
   gpu_activity_t* activity, 
-  uint64_t offset,
   std::map<uint64_t, EuStalls>::iterator it,
   std::map<uint64_t, KernelProperties>::const_reverse_iterator rit,
   uint64_t correlation_id
@@ -539,10 +521,6 @@ ZeMetricProfiler::level0_convert_pcsampling
   activity->details.pc_sampling.latencySamples = activity->details.pc_sampling.samples - stall.active_;
   activity->details.pc_sampling.stallReason = level0_convert_stall_reason(stall);
 
-  activity->details.instruction.pc.lm_id = activity->details.pc_sampling.pc.lm_id;
-  activity->details.instruction.pc.lm_ip = it->first + 0x800000000000;
-  activity->details.instruction.correlation_id = correlation_id;
-
   return true;
 }
 
@@ -550,7 +528,6 @@ void
 ZeMetricProfiler::level0_activity_translate
 (
   std::deque<gpu_activity_t*>& activities, 
-  uint64_t offset,
   std::map<uint64_t, EuStalls>::iterator it,
   std::map<uint64_t, KernelProperties>::const_reverse_iterator rit,
   uint64_t correlation_id
@@ -559,7 +536,7 @@ ZeMetricProfiler::level0_activity_translate
   gpu_activity_t* activity = new gpu_activity_t();
   gpu_activity_init(activity);
 
-  if (level0_convert_pcsampling(activity, offset, it, rit, correlation_id)) {
+  if (level0_convert_pcsampling(activity, it, rit, correlation_id)) {
     activities.push_back(activity);
   } else {
     delete activity;
@@ -612,104 +589,6 @@ ZeMetricProfiler::ReadKernelProperties
   return kprops;
 }
 
-std::map<uint64_t, EuStalls>
-ZeMetricProfiler::CalculateEuStalls
-(
-  const ZeDeviceDescriptor* desc
-)
-{
-  std::map<uint64_t, EuStalls> eustalls;
-
-  std::vector<std::string> metric_list = GetMetricList(desc->metric_group_);
-  PTI_ASSERT(!metric_list.empty());
-
-  uint32_t ip_idx = GetMetricId(metric_list, "IP");
-  if (ip_idx >= metric_list.size()) {
-    // no IP metric 
-    return eustalls;
-  }
-
-  std::ifstream inf = std::ifstream(desc->metric_file_name_, std::ios::in | std::ios::binary);
-  std::vector<uint8_t> raw_metrics(MAX_METRIC_BUFFER + 512);
-
-  if (!inf.is_open()) {
-    return eustalls;
-  }
-
-  while (!inf.eof()) {
-    inf.read(reinterpret_cast<char *>(raw_metrics.data()), MAX_METRIC_BUFFER + 512);
-    int raw_size = inf.gcount();
-    if (raw_size <= 0) {
-      continue;
-    }
-
-    uint32_t num_samples = 0;
-    uint32_t num_metrics = 0;
-    ze_result_t status = zetMetricGroupCalculateMultipleMetricValuesExp(
-      desc->metric_group_, ZET_METRIC_GROUP_CALCULATION_TYPE_METRIC_VALUES,
-      raw_size, raw_metrics.data(), &num_samples, &num_metrics,
-      nullptr, nullptr);
-    if ((status != ZE_RESULT_SUCCESS) || (num_samples == 0) || (num_metrics == 0)) {
-      std::cerr << "[WARNING] Unable to calculate metrics" << std::endl;
-      continue;
-    }
-
-    std::vector<uint32_t> samples(num_samples);
-    std::vector<zet_typed_value_t> metrics(num_metrics);
-
-    status = zetMetricGroupCalculateMultipleMetricValuesExp(
-      desc->metric_group_, ZET_METRIC_GROUP_CALCULATION_TYPE_METRIC_VALUES,
-      raw_size, raw_metrics.data(), &num_samples, &num_metrics,
-      samples.data(), metrics.data());
-
-    if ((status != ZE_RESULT_SUCCESS) && (status != ZE_RESULT_WARNING_DROPPED_DATA)) {
-      std::cerr << "[WARNING] Unable to calculate metrics" << std::endl;
-      continue;
-    }
-
-    const zet_typed_value_t *value = metrics.data();
-    for (uint32_t i = 0; i < num_samples; ++i) {
-      uint32_t size = samples[i];
-
-      for (uint32_t j = 0; j < size; j += metric_list.size()) {
-        uint64_t ip;
-        ip = (value[j + 0].value.ui64 << 3);
-        if (ip == 0) {
-          continue;
-        }
-        EuStalls stall;
-        stall.active_ = value[j + 1].value.ui64;
-        stall.control_ = value[j + 2].value.ui64;
-        stall.pipe_ = value[j + 3].value.ui64;
-        stall.send_ = value[j + 4].value.ui64;
-        stall.dist_ = value[j + 5].value.ui64;
-        stall.sbid_ = value[j + 6].value.ui64;
-        stall.sync_ = value[j + 7].value.ui64;
-        stall.insfetch_ = value[j + 8].value.ui64;
-        stall.other_ = value[j + 9].value.ui64;
-        auto eit = eustalls.find(ip);
-        if (eit != eustalls.end()) {
-          eit->second.active_ += stall.active_;
-          eit->second.control_ += stall.control_;
-          eit->second.pipe_ += stall.pipe_;
-          eit->second.send_ += stall.send_;
-          eit->second.dist_ += stall.dist_;
-          eit->second.sbid_ += stall.sbid_;
-          eit->second.sync_ += stall.sync_;
-          eit->second.insfetch_ += stall.insfetch_;
-          eit->second.other_ += stall.other_;
-        } else {
-          eustalls.insert({ip, std::move(stall)});
-        }
-      }
-      value += samples[i];
-    }
-  }
-  inf.close();
-
-  return eustalls;
-}
-
 std::deque<gpu_activity_t*>
 ZeMetricProfiler::GenerateActivities
 (
@@ -729,8 +608,7 @@ ZeMetricProfiler::GenerateActivities
     for (auto rit = kprops.crbegin(); rit != kprops.crend(); ++rit) {
       if ((rit->first <= it->first) && ((it->first - rit->first) < rit->second.size)) {
         uint64_t cid = kernel_cids[rit->second.name];
-        uint64_t offset = it->first - rit->first;
-        level0_activity_translate(activities, offset, it, rit, cid);
+        level0_activity_translate(activities, it, rit, cid);
         break;
       }
     }
@@ -745,43 +623,10 @@ ZeMetricProfiler::ProcessActivities
   std::deque<gpu_activity_t*>& activities
 ) 
 {
-  std::unordered_map<uint32_t, int> cid_count;
-
   for (auto activity : activities) {
-    uint32_t cid = activity->details.pc_sampling.correlation_id;
-    cid_count[cid]++;
     uint32_t thread_id = gpu_activity_channel_correlation_id_get_thread_id(activity->details.instruction.correlation_id);
     gpu_activity_channel_t *channel = gpu_activity_channel_lookup(thread_id);
     gpu_activity_channel_send(channel, activity);
-  }
-
-  for (const auto& pair : cid_count) {
-      std::cout << "Correlation ID: " << pair.first << " Count: " << pair.second << std::endl;
-  }
-}
-
-void 
-ZeMetricProfiler::ComputeMetrics
-(
-  ZeDeviceDescriptor* desc
-) 
-{
-  std::map<uint64_t, KernelProperties> kprops = ReadKernelProperties(desc);
-  if (kprops.size() == 0) {
-    return;
-  }
-
-  std::map<uint64_t, EuStalls> eustalls = CalculateEuStalls(desc);
-  if (eustalls.size() == 0) {
-    return;
-  }
-
-  std::deque<gpu_activity_t*> activities = GenerateActivities(kprops, eustalls);
-
-  ProcessActivities(activities);
-
-  for (auto activity : activities) {
-    delete activity;
   }
 }
 
@@ -874,7 +719,7 @@ ZeMetricProfiler::GetMetricList
 }
 
 uint64_t 
-ZeMetricProfiler::ReadMetrics
+ZeMetricProfiler::CollectMetrics
 (
   zet_metric_streamer_handle_t streamer, 
   std::vector<uint8_t>& storage
@@ -898,68 +743,6 @@ ZeMetricProfiler::ReadMetrics
   return data_size;
 }
 
-uint64_t 
-ZeMetricProfiler::ReadAllAvailableMetrics
-(
-  ze_event_handle_t event, 
-  ze_event_handle_t kernel_event,
-  zet_metric_streamer_handle_t streamer, 
-  std::vector<uint8_t>& storage
-) 
-{
-  ze_result_t status = zeEventQueryStatus(kernel_event);
-  if (status == ZE_RESULT_SUCCESS) {
-    uint64_t data_size = ReadMetrics(streamer, storage);
-    kernel_event = nullptr;
-    std::cerr << "kernel data_size: " << data_size << std::endl;
-    return data_size;
-  } else {
-    return 0;
-  }
-}
-
-uint64_t
-ZeMetricProfiler::ReadMetricsOnEventCompletion
-(
-  ze_event_handle_t event,
-  zet_metric_streamer_handle_t streamer, 
-  std::vector<uint8_t>& storage
-) 
-{
-  ze_result_t status = zeEventQueryStatus(event);
-  PTI_ASSERT(status == ZE_RESULT_SUCCESS || status == ZE_RESULT_NOT_READY);
-  if (status == ZE_RESULT_SUCCESS) {
-    status = zeEventHostReset(event);
-    PTI_ASSERT(status == ZE_RESULT_SUCCESS);
-  } else {
-    return 0;
-  }
-
-  uint64_t data_size = ReadMetrics(streamer, storage);
-
-  return data_size;
-}
-
-void 
-ZeMetricProfiler::OpenNewMetricFile
-(
-  uint64_t new_correlation_id, 
-  ZeDeviceDescriptor *desc
-) 
-{
-  std::string base_file_name = desc->metric_file_name_.substr(0, desc->metric_file_name_.find_last_of('.'));
-  std::string new_file_name = base_file_name + "." + std::to_string(new_correlation_id);
-  std::ofstream new_metric_file_stream(new_file_name, std::ios::out | std::ios::trunc | std::ios::binary);
-  if (!new_metric_file_stream) {
-      std::cerr << "Failed to open file: " << new_file_name << std::endl;
-      return;
-  }
-  desc->metric_file_stream_.close();
-  desc->metric_file_stream_ = std::move(new_metric_file_stream);
-  desc->metric_file_name_ = new_file_name;
-  last_correlation_id_ = new_correlation_id;
-}
-
 void 
 ZeMetricProfiler::UpdateCorrelationID
 (
@@ -975,9 +758,7 @@ zet_metric_streamer_handle_t
 ZeMetricProfiler::FlushStreamerBuffer
 (
   zet_metric_streamer_handle_t old_streamer, 
-  ze_context_handle_t context, 
-  ze_device_handle_t device, 
-  zet_metric_group_handle_t group, 
+  ZeDeviceDescriptor* desc,
   ze_event_handle_t event,
   ze_event_pool_handle_t event_pool
 ) 
@@ -992,16 +773,13 @@ ZeMetricProfiler::FlushStreamerBuffer
   zet_metric_streamer_handle_t new_streamer = nullptr;
   uint32_t interval = 50 * 1000; // ns
   zet_metric_streamer_desc_t streamer_desc = { ZET_STRUCTURE_TYPE_METRIC_STREAMER_DESC, nullptr, max_metric_samples, interval };
-  status = zetMetricStreamerOpen(context, device, group, &streamer_desc, event, &new_streamer);
+  status = zetMetricStreamerOpen(desc->context_, desc->device_, desc->metric_group_, &streamer_desc, event, &new_streamer);
   if (status != ZE_RESULT_SUCCESS) {
     std::cerr << "[ERROR] Failed to open metric streamer (" << status << "). The sampling interval might be too small." << std::endl;
-
     status = zeEventDestroy(event);
     PTI_ASSERT(status == ZE_RESULT_SUCCESS);
-
     status = zeEventPoolDestroy(event_pool);
     PTI_ASSERT(status == ZE_RESULT_SUCCESS);
-
     return nullptr;
   }
 
@@ -1013,43 +791,182 @@ ZeMetricProfiler::FlushStreamerBuffer
 }
 
 void 
-ZeMetricProfiler::HandleKernelEvent
+ZeMetricProfiler::LogActivities
+(
+  const std::deque<gpu_activity_t*>& activities,
+  const std::map<uint64_t, KernelProperties>& kprops
+)
+{
+  std::map<uint64_t, std::pair<std::string, uint64_t>> kernel_info;
+  for (const auto& [base, prop] : kprops) {
+    uint64_t adjusted_base = base + 0x800000000000;
+    kernel_info[adjusted_base] = {prop.name, adjusted_base};
+  }
+
+  std::cout << std::endl;
+
+  std::unordered_map<uint64_t, int> cid_count;
+
+  for (const auto* activity : activities) {
+    uint64_t instruction_pc_lm_ip = activity->details.instruction.pc.lm_ip;
+    uint64_t cid = activity->details.pc_sampling.correlation_id;
+    uint16_t lm_id = activity->details.pc_sampling.pc.lm_id;
+    
+    auto it = kernel_info.upper_bound(instruction_pc_lm_ip);
+    if (it != kernel_info.begin()) {
+      --it;
+    }
+    const auto& [kernel_name, kernel_base] = (it != kernel_info.end()) ? it->second : std::pair<std::string, uint64_t>("Unknown", 0);
+
+    uint64_t offset = (kernel_base != 0) ? (instruction_pc_lm_ip - kernel_base) : 0;
+
+    std::cerr << "PC Sample" << std::endl;
+    std::cerr << "PC sampling: sample(pc=0x" << std::hex << activity->details.pc_sampling.pc.lm_ip
+              << ", cid=" << cid
+              << ", kernel_name=" << kernel_name
+              << ")" << std::endl;
+    std::cerr << "PC sampling: normalize 0x" << std::hex << instruction_pc_lm_ip
+              << " --> [" << std::dec << lm_id << ", 0x" 
+              << std::hex << offset << "]" << std::endl;
+
+    cid_count[cid]++;
+  }
+
+  std::cout << std::dec << std::endl;
+  std::cout << "Correlation ID Statistics:" << std::endl;
+  for (const auto& [cid, count] : cid_count) {
+    std::cout << "Correlation ID: " << cid << " Count: " << count << std::endl;
+  }
+}
+
+std::map<uint64_t, EuStalls>
+ZeMetricProfiler::CalculateEuStalls
+(
+  const ZeDeviceDescriptor* desc,
+  int raw_size,
+  const std::vector<uint8_t>& raw_metrics
+)
+{
+  std::map<uint64_t, EuStalls> eustalls;
+
+  std::vector<std::string> metric_list = GetMetricList(desc->metric_group_);
+  PTI_ASSERT(!metric_list.empty());
+
+  uint32_t ip_idx = GetMetricId(metric_list, "IP");
+  if (ip_idx >= metric_list.size()) {
+    // no IP metric 
+    return eustalls;
+  }
+
+  uint32_t num_samples = 0;
+  uint32_t num_metrics = 0;
+
+  ze_result_t status = zetMetricGroupCalculateMultipleMetricValuesExp(
+    desc->metric_group_, ZET_METRIC_GROUP_CALCULATION_TYPE_METRIC_VALUES,
+    raw_size, raw_metrics.data(), &num_samples, &num_metrics,
+    nullptr, nullptr);
+
+  if ((status != ZE_RESULT_SUCCESS) || (num_samples == 0) || (num_metrics == 0)) {
+    std::cerr << "[WARNING] Unable to calculate metrics" << std::endl;
+    return eustalls;
+  }
+
+  std::vector<uint32_t> samples(num_samples);
+  std::vector<zet_typed_value_t> metrics(num_metrics);
+  status = zetMetricGroupCalculateMultipleMetricValuesExp(
+    desc->metric_group_, ZET_METRIC_GROUP_CALCULATION_TYPE_METRIC_VALUES,
+    raw_size, raw_metrics.data(), &num_samples, &num_metrics,
+    samples.data(), metrics.data());
+
+  if ((status != ZE_RESULT_SUCCESS) && (status != ZE_RESULT_WARNING_DROPPED_DATA)) {
+    std::cerr << "[WARNING] Unable to calculate metrics" << std::endl;
+    return eustalls;
+  }
+
+  const zet_typed_value_t *value = metrics.data();
+
+  for (uint32_t i = 0; i < num_samples; ++i) {
+    uint32_t size = samples[i];
+    for (uint32_t j = 0; j < size; j += metric_list.size()) {
+      uint64_t ip = (value[j + 0].value.ui64 << 3);
+      if (ip == 0) {
+        continue;
+      }
+      EuStalls stall;
+      stall.active_ = value[j + 1].value.ui64;
+      stall.control_ = value[j + 2].value.ui64;
+      stall.pipe_ = value[j + 3].value.ui64;
+      stall.send_ = value[j + 4].value.ui64;
+      stall.dist_ = value[j + 5].value.ui64;
+      stall.sbid_ = value[j + 6].value.ui64;
+      stall.sync_ = value[j + 7].value.ui64;
+      stall.insfetch_ = value[j + 8].value.ui64;
+      stall.other_ = value[j + 9].value.ui64;
+      auto [it, inserted] = eustalls.try_emplace(ip, stall);
+      if (!inserted) {
+        EuStalls& existing = it->second;
+        existing.active_ += stall.active_;
+        existing.control_ += stall.control_;
+        existing.pipe_ += stall.pipe_;
+        existing.send_ += stall.send_;
+        existing.dist_ += stall.dist_;
+        existing.sbid_ += stall.sbid_;
+        existing.sync_ += stall.sync_;
+        existing.insfetch_ += stall.insfetch_;
+        existing.other_ += stall.other_;
+      }
+    }
+    value += samples[i];
+  }
+
+  return eustalls;
+}
+
+void 
+ZeMetricProfiler::ProcessRawMetrics
+(
+  ZeMetricProfiler* profiler,
+  ZeDeviceDescriptor* desc, 
+  const std::vector<uint8_t>& raw_metrics, 
+  int raw_size
+) 
+{
+
+  std::map<uint64_t, EuStalls> eustalls = CalculateEuStalls(desc, raw_size, raw_metrics);
+  if (eustalls.size() == 0) {
+    return;
+  }
+
+  std::map<uint64_t, KernelProperties> kprops = ReadKernelProperties(desc);
+  if (kprops.size() == 0) {
+    return;
+  }
+
+  std::deque<gpu_activity_t*> activities = GenerateActivities(kprops, eustalls);
+  ProcessActivities(activities);
+#if 1
+  LogActivities(activities, kprops);
+#endif
+  for (auto activity : activities) {
+    delete activity;
+  }
+}
+
+void 
+ZeMetricProfiler::CollectAndProcessMetrics
 (
   ZeMetricProfiler* profiler, 
   ZeDeviceDescriptor* desc, 
-  ze_event_handle_t event, 
-  ze_event_pool_handle_t event_pool,
-  zet_metric_streamer_handle_t& streamer, 
-  std::vector<uint8_t>& raw_metrics
+  zet_metric_streamer_handle_t& streamer
 )
 {
-  if (kernel_event == nullptr) {
-    return;
-  } 
+  std::vector<uint8_t> raw_metrics(MAX_METRIC_BUFFER + 512);
 
-  ze_result_t kernel_event_status = zeEventQueryStatus(kernel_event);
-  if (kernel_event_status != ZE_RESULT_SUCCESS) {
-    return;
+  uint64_t size = CollectMetrics(streamer, raw_metrics);
+
+  if (size > 0) {
+    ProcessRawMetrics(profiler, desc, raw_metrics, size);
   }
-
-  uint64_t size = ReadAllAvailableMetrics(event, kernel_event, streamer, raw_metrics);
-  desc->metric_data_.insert(desc->metric_data_.end(), raw_metrics.begin(), raw_metrics.begin() + size);          
-  if (!desc->metric_data_.empty()) {
-    desc->metric_file_stream_.write(reinterpret_cast<char*>(desc->metric_data_.data()), desc->metric_data_.size());
-    desc->metric_data_.clear();
-  }
-  raw_metrics.clear();
-  raw_metrics.resize(MAX_METRIC_BUFFER + 512);
-
-  if (profiler != nullptr) {
-    profiler->ComputeMetrics(desc);
-  }
-
-  kernel_event = nullptr;
-  streamer = FlushStreamerBuffer(streamer, desc->context_, desc->device_, desc->metric_group_, event, event_pool);
-  
-  // Notify the app thread that data processing is complete
-  NotifyDataProcessingComplete();
 }
 
 void 
@@ -1064,7 +981,7 @@ ZeMetricProfiler::NotifyDataProcessingComplete
   pthread_mutex_unlock(&gpu_activity_mtx);
 }
 
-void
+void 
 ZeMetricProfiler::RunProfilingLoop
 (
   ZeMetricProfiler* profiler, 
@@ -1075,28 +992,70 @@ ZeMetricProfiler::RunProfilingLoop
 ) 
 {
   std::vector<uint8_t> raw_metrics(MAX_METRIC_BUFFER + 512);
-
   desc->profiling_state_.store(PROFILER_ENABLED, std::memory_order_release);
+  
   while (desc->profiling_state_.load(std::memory_order_acquire) != PROFILER_DISABLED) {
+    pthread_mutex_lock(&kernel_mutex);
+    struct timespec ts;
+    clock_gettime(CLOCK_REALTIME, &ts);
+    ts.tv_sec += 1;
     
-    // Wait for the kernel completion event to be signaled
-    HandleKernelEvent(profiler, desc, event, event_pool, streamer, raw_metrics);
-
-    gpu_correlation_channel_receive(1, UpdateCorrelationID, NULL);
-    uint64_t current_id = correlation_id_;
-    if (current_id != last_correlation_id_) {
-      OpenNewMetricFile(current_id, desc);
-    }
-
-    uint64_t size = ReadMetricsOnEventCompletion(event, streamer, raw_metrics);
-    if (size == 0) {
-      if (!desc->metric_data_.empty()) {
-        desc->metric_file_stream_.write(reinterpret_cast<char*>(desc->metric_data_.data()), desc->metric_data_.size());
-        desc->metric_data_.clear();
+    // Wait for the kernel to start running
+    while (!kernel_running) {
+      int rc = pthread_cond_timedwait(&kernel_cond, &kernel_mutex, &ts);
+      if (rc == ETIMEDOUT) {
+        // Check if profiling should be terminated
+        if (desc->profiling_state_.load(std::memory_order_acquire) == PROFILER_DISABLED) {
+          pthread_mutex_unlock(&kernel_mutex);
+          return;
+        }
+        // Reset timeout
+        clock_gettime(CLOCK_REALTIME, &ts);
+        ts.tv_sec += 1;
+      } else if (rc != 0) {
+        // Handle unexpected errors
+        fprintf(stderr, "pthread_cond_timedwait error: %d\n", rc);
+        pthread_mutex_unlock(&kernel_mutex);
+        return;
       }
-      continue;
     }
-    desc->metric_data_.insert(desc->metric_data_.end(), raw_metrics.begin(), raw_metrics.begin() + size);
+    pthread_mutex_unlock(&kernel_mutex);
+
+    // Kernel is running, enter sampling loop
+    while (true) {
+      // Update correlation ID
+      gpu_correlation_channel_receive(1, UpdateCorrelationID, NULL);
+      
+      // Wait for the event with a timeout
+      ze_result_t status = zeEventHostSynchronize(event, 50000000 /* wait delay in nanoseconds */);
+      PTI_ASSERT(status == ZE_RESULT_SUCCESS || status == ZE_RESULT_NOT_READY);
+      
+      if (status == ZE_RESULT_SUCCESS) {
+        // Event is signaled, process it
+        status = zeEventHostReset(event);
+        PTI_ASSERT(status == ZE_RESULT_SUCCESS);
+        CollectAndProcessMetrics(profiler, desc, streamer);
+        streamer = FlushStreamerBuffer(streamer, desc, event, event_pool);
+      }
+
+      // Check if the kernel has finished
+      pthread_mutex_lock(&kernel_mutex);
+      bool is_kernel_finished = !kernel_running;
+      pthread_mutex_unlock(&kernel_mutex);
+
+      if (is_kernel_finished) {
+        break;  // Exit sampling loop
+      }
+    }
+
+    // Kernel has finished, perform final sampling and cleanup
+    ze_result_t status = zeEventHostReset(event);
+    PTI_ASSERT(status == ZE_RESULT_SUCCESS);
+    CollectAndProcessMetrics(profiler, desc, streamer);
+    streamer = FlushStreamerBuffer(streamer, desc, event, event_pool);
+    
+    // Notify the app thread that data processing is complete
+    NotifyDataProcessingComplete();
   }
 }
 
