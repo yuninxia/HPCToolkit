@@ -56,7 +56,10 @@
 pthread_mutex_t gpu_activity_mtx = PTHREAD_MUTEX_INITIALIZER;
 pthread_cond_t cv = PTHREAD_COND_INITIALIZER;
 bool data_processed = false;
-ze_event_handle_t kernel_event = NULL;
+
+pthread_mutex_t kernel_mutex = PTHREAD_MUTEX_INITIALIZER;
+pthread_cond_t kernel_cond = PTHREAD_COND_INITIALIZER;
+int kernel_running = 0;
 
 //*****************************************************************************
 // local variables
@@ -69,6 +72,20 @@ static __thread atomic_int level0_self_pending_operations = 0;
 // private operations
 //*****************************************************************************
 
+void notify_kernel_start() {
+  pthread_mutex_lock(&kernel_mutex);
+  kernel_running = 1;
+  pthread_cond_signal(&kernel_cond);
+  pthread_mutex_unlock(&kernel_mutex);
+}
+
+void notify_kernel_end() {
+  pthread_mutex_lock(&kernel_mutex);
+  kernel_running = 0;
+  pthread_cond_signal(&kernel_cond);
+  pthread_mutex_unlock(&kernel_mutex);
+}
+
 static void 
 level0_pcsamples_sync
 (
@@ -79,9 +96,6 @@ level0_pcsamples_sync
 ) 
 {
   if (command_node && command_node->type == LEVEL0_KERNEL) {
-    // Notify the profile thread to process the data
-    kernel_event = command_node->event;
-
     // Lock until data is processed
     pthread_mutex_lock(mtx);
     while (!(*processed_flag)) {
@@ -299,13 +313,17 @@ level0_command_begin
   command_node->submit_time = hpcrun_nanotime();
 
   if (level0_pcsampling_enabled() && command_node->type == LEVEL0_KERNEL) {
-      gpu_activity_channel_t *channel = gpu_activity_channel_get_local();
-      gpu_correlation_channel_send(1, correlation_id, channel);
-      printf("level0_command_begin: correlation_id %lu\n", correlation_id, ", channel %p\n", channel);
-      gpu_op_ccts_map_insert(correlation_id, (gpu_op_ccts_map_entry_value_t) {
-        .gpu_op_ccts = gpu_op_ccts,
-        .cpu_submit_time = command_node->submit_time
-      });
+    notify_kernel_start();
+      
+    gpu_activity_channel_t *channel = gpu_activity_channel_get_local();
+    gpu_correlation_channel_send(1, correlation_id, channel);
+#if 1
+    printf("App Thread (cmd begin): correlation_id 0x%lx\n", correlation_id);
+#endif
+    gpu_op_ccts_map_insert(correlation_id, (gpu_op_ccts_map_entry_value_t) {
+      .gpu_op_ccts = gpu_op_ccts,
+      .cpu_submit_time = command_node->submit_time
+    });
   }
 
 #ifdef ENABLE_GTPIN
@@ -325,6 +343,7 @@ level0_command_end
 )
 {
   if (level0_pcsampling_enabled() && command_node->type == LEVEL0_KERNEL) {
+    notify_kernel_end();
     level0_pcsamples_sync(command_node, &gpu_activity_mtx, &cv, &data_processed);
   }
   
