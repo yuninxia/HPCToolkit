@@ -9,7 +9,7 @@
 
 #include <iostream>
 #include <string>
-#include "ze_collector.h"
+#include "level0-kernel-profile.h"
 
 class UniTracer {
  public:
