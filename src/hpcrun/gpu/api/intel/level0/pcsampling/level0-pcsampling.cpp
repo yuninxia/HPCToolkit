@@ -8,9 +8,9 @@
 #include <iostream>
 #include <pthread.h>
 
-#include "level0_pcsampling.h"
+#include "level0-pcsampling.h"
 #include "tracer.h"
-#include "ze_metrics.h"
+#include "level0-metric-profiler.h"
 
 static UniTracer* tracer = nullptr;
 static ZeMetricProfiler* metric_profiler = nullptr;
