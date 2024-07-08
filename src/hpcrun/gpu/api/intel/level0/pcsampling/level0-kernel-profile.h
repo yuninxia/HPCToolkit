@@ -23,7 +23,8 @@
 #include "../../../../../../common/lean/crypto-hash.h"
 #include "../../../../../../common/lean/hpctoolkit_demangle.h"
 #include "../level0-id-map.h"
-#include "ze_utils.h"
+#include "level0-driver.h"
+#include "pti_assert.h"
 
 struct ZeKernelGroupSize {
   uint32_t x;
@@ -132,7 +133,7 @@ ZeCollector::Create
   const std::string& data_dir
 ) 
 {
-  ze_api_version_t version = utils::ze::GetVersion();
+  ze_api_version_t version = l0_driver::GetVersion();
   PTI_ASSERT(
     ZE_MAJOR_VERSION(version) >= 1 &&
     ZE_MINOR_VERSION(version) >= 2);

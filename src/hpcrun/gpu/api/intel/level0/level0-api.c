@@ -32,7 +32,7 @@
 #include "level0-fence-map.h"
 #include "level0-kernel-module-map.h"
 #include "level0-command-queue-map.h"
-#include "pcsampling/level0_pcsampling.h"
+#include "pcsampling/level0-pcsampling.h"
 
 #include "../../../../utilities/linuxtimer.h"
 
