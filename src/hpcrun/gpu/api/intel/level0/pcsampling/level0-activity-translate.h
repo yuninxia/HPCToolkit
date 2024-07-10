@@ -2,34 +2,37 @@
 #define LEVEL0_ACTIVITY_TRANSLATE_H
 
 #include <deque>
-#include <map>
-#include <string>
-#include <sstream>
 #include <iomanip>
-#include "../../../../activity/gpu-activity.h"
-#include "level0-metric.h"
-#include "level0-kernel-properties.h"
+#include <map>
+#include <sstream>
+#include <string>
 
-gpu_inst_stall_t
-level0_convert_stall_reason
+#include "../../../../activity/gpu-activity.h"
+#include "../level0-id-map.h"
+#include "level0-kernel-properties.h"
+#include "level0-metric.h"
+
+void
+zeroConvertStallReason
 (
-  const l0_metric::EuStalls& stall
+  const EuStalls& stall,
+  gpu_inst_stall_t& stall_reason
 );
 
 bool
-level0_convert_pcsampling
+zeroConvertPCSampling
 (
   gpu_activity_t* activity, 
-  std::map<uint64_t, l0_metric::EuStalls>::iterator it,
+  std::map<uint64_t, EuStalls>::iterator it,
   std::map<uint64_t, KernelProperties>::const_reverse_iterator rit, 
   uint64_t correlation_id
 );
 
 void
-level0_activity_translate
+zeroActivityTranslate
 (
   std::deque<gpu_activity_t*>& activities, 
-  std::map<uint64_t, l0_metric::EuStalls>::iterator it,
+  std::map<uint64_t, EuStalls>::iterator it,
   std::map<uint64_t, KernelProperties>::const_reverse_iterator rit, 
   uint64_t correlation_id
 );
