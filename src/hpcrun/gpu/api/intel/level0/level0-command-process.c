@@ -53,13 +53,6 @@
 // global variables
 //*****************************************************************************
 
-pthread_mutex_t gpu_activity_mtx = PTHREAD_MUTEX_INITIALIZER;
-pthread_cond_t cv = PTHREAD_COND_INITIALIZER;
-bool data_processed = false;
-
-pthread_mutex_t kernel_mutex = PTHREAD_MUTEX_INITIALIZER;
-pthread_cond_t kernel_cond = PTHREAD_COND_INITIALIZER;
-int kernel_running = 0;
 
 //*****************************************************************************
 // local variables
@@ -71,44 +64,6 @@ static __thread atomic_int level0_self_pending_operations = 0;
 //*****************************************************************************
 // private operations
 //*****************************************************************************
-
-void notify_kernel_start() {
-  pthread_mutex_lock(&kernel_mutex);
-  kernel_running = 1;
-  pthread_cond_signal(&kernel_cond);
-  pthread_mutex_unlock(&kernel_mutex);
-}
-
-void notify_kernel_end() {
-  pthread_mutex_lock(&kernel_mutex);
-  kernel_running = 0;
-  pthread_cond_signal(&kernel_cond);
-  pthread_mutex_unlock(&kernel_mutex);
-}
-
-static void 
-level0_pcsamples_sync
-(
-  level0_data_node_t* command_node, 
-  pthread_mutex_t* mtx, 
-  pthread_cond_t* cv, 
-  bool* processed_flag
-) 
-{
-  if (command_node && command_node->type == LEVEL0_KERNEL) {
-    // Lock until data is processed
-    pthread_mutex_lock(mtx);
-    while (!(*processed_flag)) {
-        pthread_cond_wait(cv, mtx);
-    }
-    pthread_mutex_unlock(mtx);
-
-    // Reset the flag
-    pthread_mutex_lock(mtx);
-    *processed_flag = false;
-    pthread_mutex_unlock(mtx);
-  }
-}
 
 static void
 level0_kernel_translate
@@ -312,9 +267,7 @@ level0_command_begin
   // Generate host side operation timestamp
   command_node->submit_time = hpcrun_nanotime();
 
-  if (level0_pcsampling_enabled() && command_node->type == LEVEL0_KERNEL) {
-    notify_kernel_start();
-      
+  if (level0_pcsampling_enabled() && command_node->type == LEVEL0_KERNEL) {      
     gpu_activity_channel_t *channel = gpu_activity_channel_get_local();
     gpu_correlation_channel_send(1, correlation_id, channel);
 #if 1
@@ -342,11 +295,6 @@ level0_command_end
   uint64_t end
 )
 {
-  if (level0_pcsampling_enabled() && command_node->type == LEVEL0_KERNEL) {
-    notify_kernel_end();
-    level0_pcsamples_sync(command_node, &gpu_activity_mtx, &cv, &data_processed);
-  }
-  
   gpu_application_thread_process_activities();
 
   gpu_monitoring_thread_activities_ready();

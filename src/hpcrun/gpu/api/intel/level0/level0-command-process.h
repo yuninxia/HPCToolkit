@@ -24,13 +24,6 @@
 // global variables
 //*****************************************************************************
 
-extern pthread_mutex_t gpu_activity_mtx;
-extern pthread_cond_t cv;
-extern bool data_processed;
-
-extern pthread_mutex_t kernel_mutex;
-extern pthread_cond_t kernel_cond;
-extern int kernel_running;
 
 //*****************************************************************************
 // interface operations
