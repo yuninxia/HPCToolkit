@@ -8,28 +8,28 @@
 #define LEVEL0_DRIVER_H_
 
 #include <level_zero/ze_api.h>
+
 #include <vector>
 
-namespace l0_driver {
+#include "pti_assert.h"
 
-std::vector<ze_driver_handle_t>
-GetDriverList
+void
+zeroGetDriverList
 (
-  void
+  std::vector<ze_driver_handle_t>& driver_list
 );
 
-ze_api_version_t
-GetDriverVersion
+void
+zeroGetDriverVersion
 (
-  ze_driver_handle_t driver
+  ze_driver_handle_t driver,
+  ze_api_version_t& version
 );
 
-ze_api_version_t
-GetVersion
+void
+zeroGetVersion
 (
-  void
+  ze_api_version_t& version
 );
-
-} // namespace l0_driver
 
 #endif // LEVEL0_DRIVER_H_

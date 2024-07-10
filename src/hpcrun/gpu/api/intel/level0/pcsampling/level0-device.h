@@ -3,13 +3,18 @@
 
 #include <level_zero/ze_api.h>
 #include <level_zero/zet_api.h>
+
 #include <atomic>
+#include <cstring>
+#include <iostream>
 #include <map>
 #include <string>
 #include <thread>
+#include <unordered_map>
 #include <vector>
 
-namespace l0_device {
+#include "level0-metric.h"
+#include "pti_assert.h"
 
 enum ZeProfilerState {
   PROFILER_DISABLED = 0,
@@ -29,10 +34,18 @@ struct ZeDeviceDescriptor {
   std::thread *profiling_thread_;
   std::atomic<ZeProfilerState> profiling_state_;
   bool stall_sampling_;
+  pthread_mutex_t kernel_mutex_;
+  pthread_cond_t kernel_cond_;
+  bool kernel_running_;
+  pthread_mutex_t data_mutex_;
+  pthread_cond_t data_cond_;
+  bool data_processed_;
+  uint64_t correlation_id_;
+  uint64_t last_correlation_id_;
 };
 
 ZeDeviceDescriptor*
-CreateDeviceDescriptor
+zeroCreateDeviceDescriptor
 (
   ze_device_handle_t device, 
   int32_t did, 
@@ -42,14 +55,15 @@ CreateDeviceDescriptor
   const std::string& metric_group
 );
 
-uint32_t 
-GetSubDeviceCount
+void
+zeroGetSubDeviceCount
 (
-  ze_device_handle_t device
+  ze_device_handle_t device,
+  uint32_t& num_sub_devices
 );
 
 void 
-HandleSubDevices
+zeroHandleSubDevices
 (
   ZeDeviceDescriptor* parent_desc, 
   std::map<ze_device_handle_t, 
@@ -57,33 +71,32 @@ HandleSubDevices
 );
 
 void 
-EnumerateDevices
+zeroEnumerateDevices
 (
-  std::map<ze_device_handle_t, ZeDeviceDescriptor*>& device_descriptors_, 
+  std::map<ze_device_handle_t, ZeDeviceDescriptor*>& device_descriptors_,
   std::vector<ze_context_handle_t>& metric_contexts
 );
 
 int 
-GetDeviceId
+zeroGetDeviceId
 (
   const std::map<ze_device_handle_t, ZeDeviceDescriptor*>& device_descriptors, 
   ze_device_handle_t sub_device
 );
 
-int 
-GetSubDeviceId
+int
+zeroGetSubDeviceId
 (
   const std::map<ze_device_handle_t, ZeDeviceDescriptor*>& device_descriptors, 
   ze_device_handle_t sub_device
 );
 
-ze_device_handle_t 
-GetParentDevice
+void
+zeroGetParentDevice
 (
-  const std::map<ze_device_handle_t, ZeDeviceDescriptor*>& device_descriptors, 
-  ze_device_handle_t sub_device
+  const std::map<ze_device_handle_t, ZeDeviceDescriptor*>& device_descriptors,
+  ze_device_handle_t sub_device,
+  ze_device_handle_t& parent_device
 );
-
-}  // namespace l0_device
 
 #endif  // LEVEL0_DEVICE_H

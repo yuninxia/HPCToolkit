@@ -29,16 +29,21 @@
 //*****************************************************************************
 
 #include "../../../../../libmonitor/monitor.h"
-#include "../../../../activity/gpu-activity-channel.h"
-#include "../../../../activity/correlation/gpu-correlation-channel.h"
 #include "../level0-command-process.h"
-#include "pti_assert.h"
-#include "level0-metric.h"
-#include "level0-device.h"
-#include "level0-kernel-properties.h"
-#include "level0-activity-translate.h"
 #include "level0-activity-generate.h"
 #include "level0-activity-send.h"
+#include "level0-activity-translate.h"
+#include "level0-device.h"
+#include "level0-kernel-properties.h"
+#include "level0-metric.h"
+#include "level0-notify.h"
+#include "level0-sync.h"
+#include "pti_assert.h"
+
+extern "C" {
+  #include "../../../../activity/correlation/gpu-correlation-channel.h"
+  #include "../../../../activity/gpu-activity-channel.h"
+}
 
 //*****************************************************************************
 // macros
@@ -64,31 +69,26 @@ class ZeMetricProfiler {
   ZeMetricProfiler(const ZeMetricProfiler& that) = delete;
   ZeMetricProfiler& operator=(const ZeMetricProfiler& that) = delete;
 
+  void GetDeviceDescriptors(std::map<ze_device_handle_t, ZeDeviceDescriptor*>& out_descriptors);
+
  private:
   ZeMetricProfiler();
   void StartProfilingMetrics();
   void StopProfilingMetrics();
-    
-  // Loop profiling
-  static void CollectAndProcessMetrics(ZeMetricProfiler* profiler, l0_device::ZeDeviceDescriptor* desc, zet_metric_streamer_handle_t& streamer);
-  static zet_metric_streamer_handle_t FlushStreamerBuffer(zet_metric_streamer_handle_t old_streamer, l0_device::ZeDeviceDescriptor* desc, ze_event_handle_t event, ze_event_pool_handle_t event_pool);
-  static void NotifyDataProcessingComplete();
+
+  static void MetricProfilingThread(ZeMetricProfiler* profiler, ZeDeviceDescriptor *desc);
+  static void RunProfilingLoop(ZeMetricProfiler* profiler, ZeDeviceDescriptor* desc, ze_event_handle_t event, ze_event_pool_handle_t event_pool, zet_metric_streamer_handle_t& streamer);
+  static void CollectAndProcessMetrics(ZeMetricProfiler* profiler, ZeDeviceDescriptor* desc, zet_metric_streamer_handle_t& streamer);
+  static void FlushStreamerBuffer(zet_metric_streamer_handle_t& streamer, ZeDeviceDescriptor* desc, ze_event_handle_t event, ze_event_pool_handle_t event_pool);
   static void UpdateCorrelationID(uint64_t cid, gpu_activity_channel_t *channel, void *arg);
 
-  static void RunProfilingLoop(ZeMetricProfiler* profiler, l0_device::ZeDeviceDescriptor* desc, ze_event_handle_t event, ze_event_pool_handle_t event_pool, zet_metric_streamer_handle_t& streamer);
-  static void MetricProfilingThread(ZeMetricProfiler* profiler, l0_device::ZeDeviceDescriptor *desc);
-
  private: // Data
-  std::vector<ze_context_handle_t> metric_contexts_;
-  std::map<ze_device_handle_t, l0_device::ZeDeviceDescriptor *> device_descriptors_;
   static std::string data_dir_name_;
-  static uint64_t correlation_id_;
-  static uint64_t last_correlation_id_;
+  std::vector<ze_context_handle_t> metric_contexts_;
+  std::map<ze_device_handle_t, ZeDeviceDescriptor *> device_descriptors_;
 };
 
 std::string ZeMetricProfiler::data_dir_name_;
-uint64_t ZeMetricProfiler::last_correlation_id_ = 0;
-uint64_t ZeMetricProfiler::correlation_id_ = 0;
 
 ZeMetricProfiler* 
 ZeMetricProfiler::Create
@@ -107,7 +107,7 @@ ZeMetricProfiler::ZeMetricProfiler
   void
 ) 
 {
-  l0_device::EnumerateDevices(device_descriptors_, metric_contexts_);
+  zeroEnumerateDevices(device_descriptors_, metric_contexts_);
 }
 
 ZeMetricProfiler::~ZeMetricProfiler
@@ -132,7 +132,7 @@ ZeMetricProfiler::StartProfilingMetrics
     monitor_disable_new_threads();
     it->second->profiling_thread_ = new std::thread(MetricProfilingThread, this, it->second);
     monitor_enable_new_threads();
-    while (it->second->profiling_state_.load(std::memory_order_acquire) != l0_device::PROFILER_ENABLED) {
+    while (it->second->profiling_state_.load(std::memory_order_acquire) != PROFILER_ENABLED) {
       std::this_thread::sleep_for(std::chrono::milliseconds(1));
     }
   }
@@ -150,12 +150,28 @@ ZeMetricProfiler::StopProfilingMetrics
       continue;
     }
     PTI_ASSERT(it->second->profiling_thread_ != nullptr);
-    PTI_ASSERT(it->second->profiling_state_ == l0_device::PROFILER_ENABLED);
-    it->second->profiling_state_.store(l0_device::PROFILER_DISABLED, std::memory_order_release);
+    PTI_ASSERT(it->second->profiling_state_ == PROFILER_ENABLED);
+    it->second->profiling_state_.store(PROFILER_DISABLED, std::memory_order_release);
     it->second->profiling_thread_->join();
     delete it->second->profiling_thread_;
     it->second->profiling_thread_ = nullptr;
+
+    pthread_mutex_destroy(&it->second->kernel_mutex_);
+    pthread_cond_destroy(&it->second->kernel_cond_);
+    
+    pthread_mutex_destroy(&it->second->data_mutex_);
+    pthread_cond_destroy(&it->second->data_cond_);
   }
+  device_descriptors_.clear();
+}
+
+void
+ZeMetricProfiler::GetDeviceDescriptors
+(
+  std::map<ze_device_handle_t, ZeDeviceDescriptor*>& out_descriptors
+)
+{
+  out_descriptors = device_descriptors_;
 }
 
 void 
@@ -166,114 +182,105 @@ ZeMetricProfiler::UpdateCorrelationID
   void *arg
 ) 
 {
-  correlation_id_ = cid;
+  ZeDeviceDescriptor* desc = static_cast<ZeDeviceDescriptor*>(arg);
+  desc->correlation_id_ = cid;
 }
 
-zet_metric_streamer_handle_t 
+void
 ZeMetricProfiler::FlushStreamerBuffer
 (
-  zet_metric_streamer_handle_t old_streamer, 
-  l0_device::ZeDeviceDescriptor* desc,
+  zet_metric_streamer_handle_t& streamer,
+  ZeDeviceDescriptor* desc,
   ze_event_handle_t event,
   ze_event_pool_handle_t event_pool
-) 
+)
 {
   ze_result_t status = ZE_RESULT_SUCCESS;
 
   // Close the old streamer
-  status = zetMetricStreamerClose(old_streamer);
+  status = zetMetricStreamerClose(streamer);
   PTI_ASSERT(status == ZE_RESULT_SUCCESS);
 
   // Open a new streamer
-  zet_metric_streamer_handle_t new_streamer = nullptr;
   uint32_t interval = 50 * 1000; // ns
-  zet_metric_streamer_desc_t streamer_desc = { ZET_STRUCTURE_TYPE_METRIC_STREAMER_DESC, nullptr, max_metric_samples, interval };
-  status = zetMetricStreamerOpen(desc->context_, desc->device_, desc->metric_group_, &streamer_desc, event, &new_streamer);
+  zet_metric_streamer_desc_t streamer_desc = {ZET_STRUCTURE_TYPE_METRIC_STREAMER_DESC, nullptr, max_metric_samples, interval};
+  status = zetMetricStreamerOpen(desc->context_, desc->device_, desc->metric_group_, &streamer_desc, event, &streamer);
   if (status != ZE_RESULT_SUCCESS) {
     std::cerr << "[ERROR] Failed to open metric streamer (" << status << "). The sampling interval might be too small." << std::endl;
     status = zeEventDestroy(event);
     PTI_ASSERT(status == ZE_RESULT_SUCCESS);
     status = zeEventPoolDestroy(event_pool);
     PTI_ASSERT(status == ZE_RESULT_SUCCESS);
-    return nullptr;
+    streamer = nullptr; // Make sure to set streamer to nullptr if fails
+    return;
   }
 
   if (streamer_desc.notifyEveryNReports > max_metric_samples) {
     max_metric_samples = streamer_desc.notifyEveryNReports;
   }
-
-  return new_streamer;
 }
 
 void 
 ZeMetricProfiler::CollectAndProcessMetrics
 (
   ZeMetricProfiler* profiler, 
-  l0_device::ZeDeviceDescriptor* desc,
+  ZeDeviceDescriptor* desc,
   zet_metric_streamer_handle_t& streamer
 )
 {
   std::vector<uint8_t> raw_metrics(MAX_METRIC_BUFFER + 512);
-
-  uint64_t raw_size = l0_metric::CollectMetrics(streamer, raw_metrics);
+  uint64_t raw_size;
+  zeroCollectMetrics(streamer, raw_metrics, raw_size);
   if (raw_size == 0) return;
 
-  std::map<uint64_t, l0_metric::EuStalls> eustalls = l0_metric::CalculateEuStalls(desc->metric_group_, raw_size, raw_metrics);
+  std::map<uint64_t, EuStalls> eustalls;
+  zeroCalculateEuStalls(desc->metric_group_, raw_size, raw_metrics, eustalls);
   if (eustalls.size() == 0) return;
 
-  std::map<uint64_t, KernelProperties> kprops = ReadKernelProperties(desc->device_id_, data_dir_name_);
+  std::map<uint64_t, KernelProperties> kprops;
+  zeroReadKernelProperties(desc->device_id_, data_dir_name_, kprops);
   if (kprops.size() == 0) return;
 
-  std::deque<gpu_activity_t*> activities = GenerateActivities(kprops, eustalls, correlation_id_);
-  SendActivities(activities);
+  std::deque<gpu_activity_t*> activities;
+  zeroGenerateActivities(kprops, eustalls, desc->correlation_id_, activities);
+  zeroSendActivities(activities);
 
 #if 1
-  LogActivities(activities, kprops);
+  zeroLogActivities(activities, kprops);
 #endif
 
   for (auto activity : activities) {
     delete activity;
-  }  
-}
-
-void 
-ZeMetricProfiler::NotifyDataProcessingComplete
-(
-  void
-)
-{
-  pthread_mutex_lock(&gpu_activity_mtx);
-  data_processed = true;
-  pthread_cond_signal(&cv);
-  pthread_mutex_unlock(&gpu_activity_mtx);
+  }
+  activities.clear();
 }
 
 void 
 ZeMetricProfiler::RunProfilingLoop
 (
   ZeMetricProfiler* profiler, 
-  l0_device::ZeDeviceDescriptor* desc, 
+  ZeDeviceDescriptor* desc, 
   ze_event_handle_t event, 
   ze_event_pool_handle_t event_pool,
   zet_metric_streamer_handle_t& streamer
 ) 
 {
   std::vector<uint8_t> raw_metrics(MAX_METRIC_BUFFER + 512);
-  desc->profiling_state_.store(l0_device::PROFILER_ENABLED, std::memory_order_release);
+  desc->profiling_state_.store(PROFILER_ENABLED, std::memory_order_release);
   
-  while (desc->profiling_state_.load(std::memory_order_acquire) != l0_device::PROFILER_DISABLED) {
-    pthread_mutex_lock(&kernel_mutex);
+  while (desc->profiling_state_.load(std::memory_order_acquire) != PROFILER_DISABLED) {
+    pthread_mutex_lock(&desc->kernel_mutex_);
     struct timespec ts;
     clock_gettime(CLOCK_REALTIME, &ts);
     ts.tv_sec += 1;
     
     // Wait for the kernel to start running
-    while (!kernel_running) {
-      int rc = pthread_cond_timedwait(&kernel_cond, &kernel_mutex, &ts);
+    while (!desc->kernel_running_) {
+      int rc = pthread_cond_timedwait(&desc->kernel_cond_, &desc->kernel_mutex_, &ts);
       if (rc == ETIMEDOUT) {
         // Check if profiling should be terminated
-        if (desc->profiling_state_.load(std::memory_order_acquire) == l0_device::PROFILER_DISABLED) {
-          pthread_mutex_unlock(&kernel_mutex);
+        if (desc->profiling_state_.load(std::memory_order_acquire) == PROFILER_DISABLED) {
+          pthread_mutex_unlock(&desc->kernel_mutex_);
           return;
         }
         // Reset timeout
@@ -282,16 +289,16 @@ ZeMetricProfiler::RunProfilingLoop
       } else if (rc != 0) {
         // Handle unexpected errors
         fprintf(stderr, "pthread_cond_timedwait error: %d\n", rc);
-        pthread_mutex_unlock(&kernel_mutex);
+        pthread_mutex_unlock(&desc->kernel_mutex_);
         return;
       }
     }
-    pthread_mutex_unlock(&kernel_mutex);
+    pthread_mutex_unlock(&desc->kernel_mutex_);
 
     // Kernel is running, enter sampling loop
     while (true) {
       // Update correlation ID
-      gpu_correlation_channel_receive(1, UpdateCorrelationID, NULL);
+      gpu_correlation_channel_receive(1, UpdateCorrelationID, desc);
       
       // Wait for the event with a timeout
       ze_result_t status = zeEventHostSynchronize(event, 50000000 /* wait delay in nanoseconds */);
@@ -302,13 +309,13 @@ ZeMetricProfiler::RunProfilingLoop
         status = zeEventHostReset(event);
         PTI_ASSERT(status == ZE_RESULT_SUCCESS);
         CollectAndProcessMetrics(profiler, desc, streamer);
-        streamer = FlushStreamerBuffer(streamer, desc, event, event_pool);
+        FlushStreamerBuffer(streamer, desc, event, event_pool);
       }
 
       // Check if the kernel has finished
-      pthread_mutex_lock(&kernel_mutex);
-      bool is_kernel_finished = !kernel_running;
-      pthread_mutex_unlock(&kernel_mutex);
+      pthread_mutex_lock(&desc->kernel_mutex_);
+      bool is_kernel_finished = !desc->kernel_running_;
+      pthread_mutex_unlock(&desc->kernel_mutex_);
 
       if (is_kernel_finished) {
         break;  // Exit sampling loop
@@ -319,10 +326,10 @@ ZeMetricProfiler::RunProfilingLoop
     ze_result_t status = zeEventHostReset(event);
     PTI_ASSERT(status == ZE_RESULT_SUCCESS);
     CollectAndProcessMetrics(profiler, desc, streamer);
-    streamer = FlushStreamerBuffer(streamer, desc, event, event_pool);
+    FlushStreamerBuffer(streamer, desc, event, event_pool);
     
     // Notify the app thread that data processing is complete
-    NotifyDataProcessingComplete();
+    zeroNotifyDataProcessingComplete(desc);
   }
 }
 
@@ -330,7 +337,7 @@ void
 ZeMetricProfiler::MetricProfilingThread
 (
   ZeMetricProfiler* profiler, 
-  l0_device::ZeDeviceDescriptor *desc
+  ZeDeviceDescriptor *desc
 ) 
 {
   ze_result_t status = ZE_RESULT_SUCCESS;
@@ -368,7 +375,7 @@ ZeMetricProfiler::MetricProfilingThread
     PTI_ASSERT(status == ZE_RESULT_SUCCESS);
 
     // set state to enabled to let the parent thread continue
-    desc->profiling_state_.store(l0_device::PROFILER_ENABLED, std::memory_order_release);
+    desc->profiling_state_.store(PROFILER_ENABLED, std::memory_order_release);
     return;
   }
 
@@ -376,9 +383,9 @@ ZeMetricProfiler::MetricProfilingThread
     max_metric_samples = streamer_desc.notifyEveryNReports;
   }
 
-  std::vector<std::string> metrics_list;
-  metrics_list = l0_metric::GetMetricList(group);
-  PTI_ASSERT(!metrics_list.empty());
+  std::vector<std::string> metric_list;
+  zeroGetMetricList(group, metric_list);
+  PTI_ASSERT(!metric_list.empty());
 
   RunProfilingLoop(profiler, desc, event, event_pool, streamer);
 
