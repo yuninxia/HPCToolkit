@@ -1,14 +1,15 @@
 #ifndef LEVEL0_METRIC_H
 #define LEVEL0_METRIC_H
 
-#include <cstdint>
-#include <string>
-#include <map>
-#include <vector>
 #include <level_zero/zet_api.h>
 
-namespace l0_metric {
+#include <cstdint>
+#include <iostream>
+#include <map>
+#include <string>
+#include <vector>
 
+#include "pti_assert.h"
 struct EuStalls {
   uint64_t active_;
   uint64_t control_;
@@ -21,53 +22,58 @@ struct EuStalls {
   uint64_t other_;
 };
 
-std::string 
-GetMetricUnits
+void
+zeroGetMetricUnits
 (
-  const char* units
+  const char* units,
+  std::string& result
 );
 
-uint32_t 
-GetMetricId
+void
+zeroGetMetricId
 (
-  const std::vector<std::string>& metric_list, 
-  const std::string& metric_name
+  const std::vector<std::string>& metric_list,
+  const std::string& metric_name,
+  uint32_t& metric_id
 );
 
-uint32_t 
-GetMetricCount
+void
+zeroGetMetricCount
 (
-  zet_metric_group_handle_t group
+  zet_metric_group_handle_t group,
+  uint32_t& metric_count
 );
 
-std::vector<std::string> 
-GetMetricList
+void
+zeroGetMetricList
 (
-  zet_metric_group_handle_t group
+  zet_metric_group_handle_t group,
+  std::vector<std::string>& name_list
 );
 
-zet_metric_group_handle_t 
-GetMetricGroup
+void
+zeroGetMetricGroup
 (
-  ze_device_handle_t device, 
-  const std::string& metric_group_name
+  ze_device_handle_t device,
+  const std::string& metric_group_name,
+  zet_metric_group_handle_t& group
 );
 
-uint64_t
-CollectMetrics
+void
+zeroCollectMetrics
 (
-  zet_metric_streamer_handle_t streamer, 
-  std::vector<uint8_t>& storage
+  zet_metric_streamer_handle_t streamer,
+  std::vector<uint8_t>& storage,
+  uint64_t& data_size
 );
 
-std::map<uint64_t, EuStalls>
-CalculateEuStalls
+void
+zeroCalculateEuStalls
 (
   zet_metric_group_handle_t metric_group,
   int raw_size,
-  const std::vector<uint8_t>& raw_metrics
+  const std::vector<uint8_t>& raw_metrics,
+  std::map<uint64_t, EuStalls>& eustalls
 );
-
-}  // namespace l0_metric
 
 #endif  // LEVEL0_METRIC_H

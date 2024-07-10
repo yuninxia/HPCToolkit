@@ -1,9 +1,7 @@
 #include "level0-activity-send.h"
-#include <iostream>
-#include <unordered_map>
 
 void
-SendActivities
+zeroSendActivities
 (
   std::deque<gpu_activity_t*>& activities
 ) 
@@ -16,7 +14,7 @@ SendActivities
 }
 
 void 
-LogActivities
+zeroLogActivities
 (
   const std::deque<gpu_activity_t*>& activities,
   const std::map<uint64_t, KernelProperties>& kprops

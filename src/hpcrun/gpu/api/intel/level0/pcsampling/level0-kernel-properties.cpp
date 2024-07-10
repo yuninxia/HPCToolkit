@@ -1,16 +1,14 @@
 #include "level0-kernel-properties.h"
-#include <filesystem>
-#include <fstream>
-#include <iostream>
 
-std::map<uint64_t, KernelProperties> 
-ReadKernelProperties
+void
+zeroReadKernelProperties
 (
   const int32_t device_id,
-  const std::string& data_dir_name
+  const std::string& data_dir_name,
+  std::map<uint64_t, KernelProperties>& kprops
 )
 {
-  std::map<uint64_t, KernelProperties> kprops;
+  kprops.clear();
   // enumerate all kernel property files
   for (const auto& e : std::filesystem::directory_iterator(std::filesystem::path(data_dir_name))) {
     // kernel properties file path: <data_dir>/.kprops.<device_id>.<pid>.txt
@@ -47,5 +45,4 @@ ReadKernelProperties
       kpf.close();
     }
   }
-  return kprops;
 }

@@ -1,12 +1,8 @@
 #include "level0-device.h"
-#include "level0-metric.h"
-#include "pti_assert.h"
-#include <iostream>
-
-namespace l0_device {
+#include "level0-notify.h"
 
 ZeDeviceDescriptor*
-CreateDeviceDescriptor
+zeroCreateDeviceDescriptor
 (
   ze_device_handle_t device, 
   int32_t did, 
@@ -24,37 +20,51 @@ CreateDeviceDescriptor
   desc->parent_device_id_ = -1;    // no parent device
   desc->parent_device_ = nullptr;
   desc->subdevice_id_ = -1;        // not a subdevice
-  desc->num_sub_devices_ = GetSubDeviceCount(device);
   desc->driver_ = driver;
   desc->context_ = context;
-  desc->metric_group_ = l0_metric::GetMetricGroup(device, metric_group);
+  desc->correlation_id_ = 0;
+  desc->last_correlation_id_ = 0;
+  zeroGetMetricGroup(device, metric_group, desc->metric_group_);
+  
+  uint32_t num_sub_devices;
+  zeroGetSubDeviceCount(device, num_sub_devices);
+  desc->num_sub_devices_ = static_cast<int32_t>(num_sub_devices);
+
   desc->profiling_thread_ = nullptr;
   desc->profiling_state_.store(PROFILER_DISABLED, std::memory_order_release);
+  
+  pthread_mutex_init(&desc->kernel_mutex_, NULL);
+  pthread_cond_init(&desc->kernel_cond_, NULL);
+  desc->kernel_running_ = false;
+
+  pthread_mutex_init(&desc->data_mutex_, NULL);
+  pthread_cond_init(&desc->data_cond_, NULL);
+  desc->data_processed_ = false;
 
   return desc;
 }
 
-uint32_t
-GetSubDeviceCount
+void
+zeroGetSubDeviceCount
 (
-  ze_device_handle_t device
-) 
+  ze_device_handle_t device,
+  uint32_t& num_sub_devices
+)
 {
-  uint32_t num_sub_devices = 0;
   ze_result_t status = zeDeviceGetSubDevices(device, &num_sub_devices, nullptr);
   PTI_ASSERT(status == ZE_RESULT_SUCCESS);
-  return num_sub_devices;
 }
 
 void 
-HandleSubDevices
+zeroHandleSubDevices
 (
   ZeDeviceDescriptor* parent_desc,
   std::map<ze_device_handle_t,
   ZeDeviceDescriptor*>& device_descriptors
 ) 
 {
-  uint32_t num_sub_devices = GetSubDeviceCount(parent_desc->device_);
+  uint32_t num_sub_devices;
+  zeroGetSubDeviceCount(parent_desc->device_, num_sub_devices);
   if (num_sub_devices == 0) return;
 
   std::vector<ze_device_handle_t> sub_devices(num_sub_devices);
@@ -81,9 +91,9 @@ HandleSubDevices
 }
 
 void
-EnumerateDevices
+zeroEnumerateDevices
 (
-  std::map<ze_device_handle_t, ZeDeviceDescriptor*>& device_descriptors, 
+  std::map<ze_device_handle_t, ZeDeviceDescriptor*>& device_descriptors,
   std::vector<ze_context_handle_t>& metric_contexts
 ) 
 {
@@ -120,20 +130,20 @@ EnumerateDevices
     PTI_ASSERT(status == ZE_RESULT_SUCCESS);
 
     for (auto device : devices) {
-      ZeDeviceDescriptor* desc = CreateDeviceDescriptor(device, did, driver, context, stall_sampling, metric_group);
+      ZeDeviceDescriptor* desc = zeroCreateDeviceDescriptor(device, did, driver, context, stall_sampling, metric_group);
       if (desc == nullptr) {
         continue;
       }
 
       device_descriptors.insert({device, desc});
-      HandleSubDevices(desc, device_descriptors);
+      zeroHandleSubDevices(desc, device_descriptors);
       did++;
     }
   }
 }
 
 int
-GetDeviceId
+zeroGetDeviceId
 (
   const std::map<ze_device_handle_t,
   ZeDeviceDescriptor*>& device_descriptors,
@@ -148,7 +158,7 @@ GetDeviceId
 }
 
 int
-GetSubDeviceId
+zeroGetSubDeviceId
 (
   const std::map<ze_device_handle_t,
   ZeDeviceDescriptor*>& device_descriptors,
@@ -162,18 +172,18 @@ GetSubDeviceId
   return -1;
 }
 
-ze_device_handle_t
-GetParentDevice
+void
+zeroGetParentDevice
 (
   const std::map<ze_device_handle_t, ZeDeviceDescriptor*>& device_descriptors,
-  ze_device_handle_t sub_device
-) 
+  ze_device_handle_t sub_device,
+  ze_device_handle_t& parent_device
+)
 {
   auto it = device_descriptors.find(sub_device);
   if (it != device_descriptors.end()) {
-    return it->second->parent_device_;
+    parent_device = it->second->parent_device_;
+  } else {
+    parent_device = nullptr; // Not found
   }
-  return nullptr;
 }
-
-}  // namespace level0_device

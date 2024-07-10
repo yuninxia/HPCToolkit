@@ -17,19 +17,19 @@ extern "C" {
 #endif
 
 void 
-level0_pcsampling_init
+zeroPCSamplingInit
+(
+  void
+);
+
+void
+zeroPCSamplingEnable
 (
   void
 );
 
 void 
-level0_pcsampling_enable
-(
-  void
-);
-
-void 
-level0_pcsampling_fini
+zeroPCSamplingFini
 (
   void
 );
