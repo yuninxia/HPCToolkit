@@ -458,6 +458,8 @@ if level0_dep.found()
     'gpu/api/intel/level0/pcsampling/level0-activity-generate.cpp',
     'gpu/api/intel/level0/pcsampling/level0-driver.cpp',
     'gpu/api/intel/level0/pcsampling/level0-activity-send.cpp',
+    'gpu/api/intel/level0/pcsampling/level0-notify.cpp',
+    'gpu/api/intel/level0/pcsampling/level0-sync.cpp',
     'gpu/api/intel/level0/level0-id-map.c',
     'gpu/api/intel/binaries/symbolVector.c',
     'gpu/api/intel/binaries/zebinSymbols.c',

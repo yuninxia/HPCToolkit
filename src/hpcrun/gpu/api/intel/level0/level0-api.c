@@ -827,7 +827,7 @@ foilbase_zeInit
   // Exit action
   get_gpu_driver_and_device();
 
-  level0_pcsampling_enable();
+  zeroPCSamplingEnable();
   return ret;
 }
 
@@ -1206,7 +1206,7 @@ level0_init
 
   const char* is_level0_pcsampling_enabled  = getenv("ZET_ENABLE_METRICS");
   if (is_level0_pcsampling_enabled != NULL && strcmp(is_level0_pcsampling_enabled, "1") == 0) {
-    level0_pcsampling_init();
+    zeroPCSamplingInit();
     level0_pcsampling = true;
   }
 
@@ -1228,7 +1228,7 @@ level0_fini
                         " complete; some GPU event data may be lost.");
 #endif
     gpu_operation_multiplexer_fini(); 
-    level0_pcsampling_fini();
+    zeroPCSamplingFini();
 #if 0
     GPU_FLUSH_ALARM_TEST();
     GPU_FLUSH_ALARM_CLEAR(); 

@@ -7,11 +7,12 @@
 #ifndef PTI_TOOLS_UNITRACE_LEVEL_ZERO_COLLECTOR_H_
 #define PTI_TOOLS_UNITRACE_LEVEL_ZERO_COLLECTOR_H_
 
-#include <fstream>
-#include <iostream>
+#include <level_zero/layers/zel_tracing_api.h>
 #include <level_zero/ze_api.h>
 #include <level_zero/zet_api.h>
-#include <level_zero/layers/zel_tracing_api.h>
+
+#include <fstream>
+#include <iostream>
 #include <map>
 #include <mutex>
 #include <shared_mutex>
@@ -21,9 +22,10 @@
 #include <vector>
 
 #include "../../../../../../common/lean/crypto-hash.h"
-#include "../../../../../../common/lean/hpctoolkit_demangle.h"
 #include "../level0-id-map.h"
 #include "level0-driver.h"
+#include "level0-metric-profiler.h"
+#include "level0-sync.h"
 #include "pti_assert.h"
 
 struct ZeKernelGroupSize {
@@ -80,6 +82,8 @@ static std::shared_mutex devices_mutex_;
 static std::map<ze_device_handle_t, ZeDevice> *devices_;
 static ze_result_t (*zexKernelGetBaseAddress)(ze_kernel_handle_t hKernel, uint64_t *baseAddress) = nullptr;
 
+extern ZeMetricProfiler* metric_profiler;
+
 #if !defined(ZEX_STRUCTURE_KERNEL_REGISTER_FILE_SIZE_EXP)
 
 #define ZEX_STRUCTURE_KERNEL_REGISTER_FILE_SIZE_EXP (ze_structure_type_t)0x00030012
@@ -133,7 +137,8 @@ ZeCollector::Create
   const std::string& data_dir
 ) 
 {
-  ze_api_version_t version = l0_driver::GetVersion();
+  ze_api_version_t version;
+  zeroGetVersion(version);
   PTI_ASSERT(
     ZE_MAJOR_VERSION(version) >= 1 &&
     ZE_MINOR_VERSION(version) >= 2);
@@ -283,16 +288,17 @@ ZeCollector::EnumerateAndSetupDevices
   }
 }
 
-void 
+void
 ZeCollector::LogKernelProfiles
 (
   const ZeKernelCommandProperties* kernel, 
   size_t size
-  ) 
+) 
 {
   std::cerr << "Kernel properties:" << std::endl;
   std::cerr << "name=\"" << kernel->name_ 
-            << "\", base_addr=" << kernel->base_addr_ 
+            << "\", base_addr=0x" << std::hex << kernel->base_addr_
+            << std::dec
             << ", size=" << size
             << ", module_id=" << kernel->module_id_ 
             << ", kernel_id=" << kernel->id_
@@ -635,6 +641,21 @@ OnEnterCommandListAppendLaunchKernel
 ) 
 {
   std::cerr << "OnEnterCommandListAppendLaunchKernel" << std::endl;
+  
+  ze_command_list_handle_t hCommandList = *(params->phCommandList);
+  ze_device_handle_t hDevice;
+  ze_result_t ret = zeCommandListGetDeviceHandle(hCommandList, &hDevice);
+  PTI_ASSERT(ret == ZE_RESULT_SUCCESS);
+
+  std::map<ze_device_handle_t, ZeDeviceDescriptor*> device_descriptors;
+  metric_profiler->GetDeviceDescriptors(device_descriptors);
+  auto it = device_descriptors.find(hDevice);
+  if (it != device_descriptors.end()) {
+    ZeDeviceDescriptor* desc = it->second;
+    zeroNotifyKernelStart(desc);
+  } else {
+    std::cerr << "[Warning] Device descriptor not found for device handle: " << hDevice << std::endl;
+  }
 }
 
 static void 
@@ -659,6 +680,23 @@ OnExitCommandListAppendLaunchKernel
 ) 
 {
   std::cerr << "OnExitCommandListAppendLaunchKernel" << std::endl;
+  
+  ze_command_list_handle_t hCommandList = *(params->phCommandList);
+  ze_device_handle_t hDevice;
+  ze_result_t ret = zeCommandListGetDeviceHandle(hCommandList, &hDevice);
+  PTI_ASSERT(ret == ZE_RESULT_SUCCESS);
+
+  std::map<ze_device_handle_t, ZeDeviceDescriptor*> device_descriptors;
+  metric_profiler->GetDeviceDescriptors(device_descriptors);
+
+  auto it = device_descriptors.find(hDevice);
+  if (it != device_descriptors.end()) {
+    ZeDeviceDescriptor* desc = it->second;
+    zeroNotifyKernelEnd(desc);
+    zeroPCSampleSync(desc);
+  } else {
+    std::cerr << "[Warning] Device descriptor not found for device handle: " << hDevice << std::endl;
+  }
 }
 
 static void zeCommandListAppendLaunchKernelOnExit
