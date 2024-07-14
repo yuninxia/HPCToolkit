@@ -55,11 +55,10 @@ zeroCreateDeviceDescriptor
   const std::string& metric_group
 );
 
-void
+uint32_t
 zeroGetSubDeviceCount
 (
-  ze_device_handle_t device,
-  uint32_t& num_sub_devices
+  ze_device_handle_t device
 );
 
 void 

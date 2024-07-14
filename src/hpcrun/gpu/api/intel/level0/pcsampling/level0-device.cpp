@@ -20,16 +20,13 @@ zeroCreateDeviceDescriptor
   desc->parent_device_id_ = -1;    // no parent device
   desc->parent_device_ = nullptr;
   desc->subdevice_id_ = -1;        // not a subdevice
+  desc->num_sub_devices_ = zeroGetSubDeviceCount(device);
   desc->driver_ = driver;
   desc->context_ = context;
   desc->correlation_id_ = 0;
   desc->last_correlation_id_ = 0;
   zeroGetMetricGroup(device, metric_group, desc->metric_group_);
   
-  uint32_t num_sub_devices;
-  zeroGetSubDeviceCount(device, num_sub_devices);
-  desc->num_sub_devices_ = static_cast<int32_t>(num_sub_devices);
-
   desc->profiling_thread_ = nullptr;
   desc->profiling_state_.store(PROFILER_DISABLED, std::memory_order_release);
   
@@ -44,15 +41,16 @@ zeroCreateDeviceDescriptor
   return desc;
 }
 
-void
+uint32_t
 zeroGetSubDeviceCount
 (
-  ze_device_handle_t device,
-  uint32_t& num_sub_devices
+  ze_device_handle_t device
 )
 {
+  uint32_t num_sub_devices = 0;
   ze_result_t status = zeDeviceGetSubDevices(device, &num_sub_devices, nullptr);
   PTI_ASSERT(status == ZE_RESULT_SUCCESS);
+  return num_sub_devices;
 }
 
 void 
@@ -63,8 +61,7 @@ zeroHandleSubDevices
   ZeDeviceDescriptor*>& device_descriptors
 ) 
 {
-  uint32_t num_sub_devices;
-  zeroGetSubDeviceCount(parent_desc->device_, num_sub_devices);
+  uint32_t num_sub_devices = zeroGetSubDeviceCount(parent_desc->device_);
   if (num_sub_devices == 0) return;
 
   std::vector<ze_device_handle_t> sub_devices(num_sub_devices);
