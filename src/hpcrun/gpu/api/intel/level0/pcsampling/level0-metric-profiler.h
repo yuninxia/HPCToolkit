@@ -71,6 +71,20 @@ class ZeMetricProfiler {
 
   void GetDeviceDescriptors(std::map<ze_device_handle_t, ZeDeviceDescriptor*>& out_descriptors);
 
+  void InsertCommandListDeviceMapping(ze_command_list_handle_t cmdList, ze_device_handle_t device) {
+    std::lock_guard<std::mutex> lock(cmdlist_device_map_mutex_);
+    cmdlist_device_map_[cmdList] = device;
+  }
+
+  ze_device_handle_t GetDeviceForCommandList(ze_command_list_handle_t cmdList) {
+    std::lock_guard<std::mutex> lock(cmdlist_device_map_mutex_);
+    auto it = cmdlist_device_map_.find(cmdList);
+    if (it != cmdlist_device_map_.end()) {
+      return it->second;
+    }
+    return nullptr;
+  }
+
  private:
   ZeMetricProfiler();
   void StartProfilingMetrics();
@@ -86,6 +100,8 @@ class ZeMetricProfiler {
   static std::string data_dir_name_;
   std::vector<ze_context_handle_t> metric_contexts_;
   std::map<ze_device_handle_t, ZeDeviceDescriptor *> device_descriptors_;
+  std::mutex cmdlist_device_map_mutex_;
+  std::map<ze_command_list_handle_t, ze_device_handle_t> cmdlist_device_map_;
 };
 
 std::string ZeMetricProfiler::data_dir_name_;

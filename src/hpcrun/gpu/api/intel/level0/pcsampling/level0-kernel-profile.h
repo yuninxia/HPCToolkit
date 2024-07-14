@@ -644,8 +644,15 @@ OnEnterCommandListAppendLaunchKernel
   
   ze_command_list_handle_t hCommandList = *(params->phCommandList);
   ze_device_handle_t hDevice;
+
+#if 0
+  // Option 1: with compute runtime using level0 >= v1.9.0, but the binary is broken for now
   ze_result_t ret = zeCommandListGetDeviceHandle(hCommandList, &hDevice);
   PTI_ASSERT(ret == ZE_RESULT_SUCCESS);
+#else
+  // Option 2: manually maintain the mapping, generally more reliable
+  hDevice = metric_profiler->GetDeviceForCommandList(hCommandList);
+#endif
 
   std::map<ze_device_handle_t, ZeDeviceDescriptor*> device_descriptors;
   metric_profiler->GetDeviceDescriptors(device_descriptors);
@@ -682,10 +689,17 @@ OnExitCommandListAppendLaunchKernel
   std::cerr << "OnExitCommandListAppendLaunchKernel" << std::endl;
   
   ze_command_list_handle_t hCommandList = *(params->phCommandList);
-  ze_device_handle_t hDevice;
+  ze_device_handle_t hDevice; 
+  
+#if 0
+  // Option 1: with compute runtime using level0 >= v1.9.0, but the binary is broken for now
   ze_result_t ret = zeCommandListGetDeviceHandle(hCommandList, &hDevice);
   PTI_ASSERT(ret == ZE_RESULT_SUCCESS);
-
+#else
+  // Option 2: manually maintain the mapping
+  hDevice = metric_profiler->GetDeviceForCommandList(hCommandList);
+#endif
+  
   std::map<ze_device_handle_t, ZeDeviceDescriptor*> device_descriptors;
   metric_profiler->GetDeviceDescriptors(device_descriptors);
 
@@ -699,7 +713,8 @@ OnExitCommandListAppendLaunchKernel
   }
 }
 
-static void zeCommandListAppendLaunchKernelOnExit
+static void
+zeCommandListAppendLaunchKernelOnExit
 (
   ze_command_list_append_launch_kernel_params_t* params,
   ze_result_t result,
@@ -708,6 +723,21 @@ static void zeCommandListAppendLaunchKernelOnExit
 ) 
 {
   OnExitCommandListAppendLaunchKernel(params, result, global_user_data, instance_user_data); 
+}
+
+static void
+zeCommandListCreateImmediateOnExit
+(
+  ze_command_list_create_immediate_params_t* params,
+  ze_result_t result,
+  void* global_user_data,
+  void** instance_user_data
+)
+{
+  PTI_ASSERT(global_user_data != nullptr);
+  ze_command_list_handle_t hCommandList = **(params->pphCommandList);
+  ze_device_handle_t hDevice = *(params->phDevice);
+  metric_profiler->InsertCommandListDeviceMapping(hCommandList, hDevice);
 }
 
 void 
@@ -724,6 +754,7 @@ ZeCollector::EnableTracing
   epilogue.Kernel.pfnCreateCb = zeKernelCreateOnExit;
   prologue.CommandList.pfnAppendLaunchKernelCb = zeCommandListAppendLaunchKernelOnEnter;
   epilogue.CommandList.pfnAppendLaunchKernelCb = zeCommandListAppendLaunchKernelOnExit;
+  epilogue.CommandList.pfnCreateImmediateCb = zeCommandListCreateImmediateOnExit;
 
   ze_result_t status = ZE_RESULT_SUCCESS;
   status = zelTracerSetPrologues(tracer, &prologue);
