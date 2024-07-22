@@ -186,8 +186,18 @@ zeroCalculateEuStalls
     raw_size, raw_metrics.data(), &num_samples, &num_metrics,
     nullptr, nullptr);
 
-  if ((status != ZE_RESULT_SUCCESS) || (num_samples == 0) || (num_metrics == 0)) {
-    std::cerr << "[WARNING] Unable to calculate metrics" << std::endl;
+  if (status != ZE_RESULT_SUCCESS || num_samples == 0 || num_metrics == 0) {
+    std::cerr << "[WARNING] Unable to calculate metrics. ";
+    if (status != ZE_RESULT_SUCCESS) {
+      std::cerr << "Status: " << status << ".";
+    }
+    if (num_samples == 0) {
+      std::cerr << "No samples collected.";
+    }
+    if (num_metrics == 0) {
+      std::cerr << "No metrics calculated.";
+    }
+    std::cerr << std::endl;
     return;
   }
 
@@ -198,7 +208,7 @@ zeroCalculateEuStalls
     raw_size, raw_metrics.data(), &num_samples, &num_metrics,
     samples.data(), metrics.data());
 
-  if ((status != ZE_RESULT_SUCCESS) && (status != ZE_RESULT_WARNING_DROPPED_DATA)) {
+  if (status != ZE_RESULT_SUCCESS && status != ZE_RESULT_WARNING_DROPPED_DATA) {
     std::cerr << "[WARNING] Unable to calculate metrics" << std::endl;
     return;
   }

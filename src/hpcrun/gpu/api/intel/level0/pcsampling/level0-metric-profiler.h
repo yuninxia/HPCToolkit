@@ -91,9 +91,9 @@ class ZeMetricProfiler {
   void StopProfilingMetrics();
 
   static void MetricProfilingThread(ZeMetricProfiler* profiler, ZeDeviceDescriptor *desc);
-  static void RunProfilingLoop(ZeMetricProfiler* profiler, ZeDeviceDescriptor* desc, ze_event_handle_t event, ze_event_pool_handle_t event_pool, zet_metric_streamer_handle_t& streamer);
+  static void RunProfilingLoop(ZeMetricProfiler* profiler, ZeDeviceDescriptor* desc, zet_metric_streamer_handle_t& streamer);
   static void CollectAndProcessMetrics(ZeMetricProfiler* profiler, ZeDeviceDescriptor* desc, zet_metric_streamer_handle_t& streamer);
-  static void FlushStreamerBuffer(zet_metric_streamer_handle_t& streamer, ZeDeviceDescriptor* desc, ze_event_handle_t event, ze_event_pool_handle_t event_pool);
+  static void FlushStreamerBuffer(zet_metric_streamer_handle_t& streamer, ZeDeviceDescriptor* desc);
   static void UpdateCorrelationID(uint64_t cid, gpu_activity_channel_t *channel, void *arg);
 
  private: // Data
@@ -206,9 +206,7 @@ void
 ZeMetricProfiler::FlushStreamerBuffer
 (
   zet_metric_streamer_handle_t& streamer,
-  ZeDeviceDescriptor* desc,
-  ze_event_handle_t event,
-  ze_event_pool_handle_t event_pool
+  ZeDeviceDescriptor* desc
 )
 {
   ze_result_t status = ZE_RESULT_SUCCESS;
@@ -220,13 +218,9 @@ ZeMetricProfiler::FlushStreamerBuffer
   // Open a new streamer
   uint32_t interval = 50 * 1000; // ns
   zet_metric_streamer_desc_t streamer_desc = {ZET_STRUCTURE_TYPE_METRIC_STREAMER_DESC, nullptr, max_metric_samples, interval};
-  status = zetMetricStreamerOpen(desc->context_, desc->device_, desc->metric_group_, &streamer_desc, event, &streamer);
+  status = zetMetricStreamerOpen(desc->context_, desc->device_, desc->metric_group_, &streamer_desc, nullptr, &streamer);
   if (status != ZE_RESULT_SUCCESS) {
     std::cerr << "[ERROR] Failed to open metric streamer (" << status << "). The sampling interval might be too small." << std::endl;
-    status = zeEventDestroy(event);
-    PTI_ASSERT(status == ZE_RESULT_SUCCESS);
-    status = zeEventPoolDestroy(event_pool);
-    PTI_ASSERT(status == ZE_RESULT_SUCCESS);
     streamer = nullptr; // Make sure to set streamer to nullptr if fails
     return;
   }
@@ -274,21 +268,26 @@ ZeMetricProfiler::CollectAndProcessMetrics
 void 
 ZeMetricProfiler::RunProfilingLoop
 (
-  ZeMetricProfiler* profiler, 
-  ZeDeviceDescriptor* desc, 
-  ze_event_handle_t event, 
-  ze_event_pool_handle_t event_pool,
+  ZeMetricProfiler* profiler,
+  ZeDeviceDescriptor* desc,
   zet_metric_streamer_handle_t& streamer
 ) 
 {
   std::vector<uint8_t> raw_metrics(MAX_METRIC_BUFFER + 512);
   desc->profiling_state_.store(PROFILER_ENABLED, std::memory_order_release);
+
+  struct timespec ts;
+  const int interval_ms = 50;
   
   while (desc->profiling_state_.load(std::memory_order_acquire) != PROFILER_DISABLED) {
     pthread_mutex_lock(&desc->kernel_mutex_);
-    struct timespec ts;
+
     clock_gettime(CLOCK_REALTIME, &ts);
-    ts.tv_sec += 1;
+    ts.tv_nsec += interval_ms * 1000000;
+    if (ts.tv_nsec >= 1000000000) {
+      ts.tv_sec += 1;
+      ts.tv_nsec -= 1000000000;
+    }
     
     // Wait for the kernel to start running
     while (!desc->kernel_running_) {
@@ -301,7 +300,11 @@ ZeMetricProfiler::RunProfilingLoop
         }
         // Reset timeout
         clock_gettime(CLOCK_REALTIME, &ts);
-        ts.tv_sec += 1;
+        ts.tv_nsec += interval_ms * 1000000;
+        if (ts.tv_nsec >= 1000000000) {
+          ts.tv_sec += 1;
+          ts.tv_nsec -= 1000000000;
+        }
       } else if (rc != 0) {
         // Handle unexpected errors
         fprintf(stderr, "pthread_cond_timedwait error: %d\n", rc);
@@ -315,22 +318,23 @@ ZeMetricProfiler::RunProfilingLoop
     while (true) {
       // Update correlation ID
       gpu_correlation_channel_receive(1, UpdateCorrelationID, desc);
-      
-      // Wait for the event with a timeout
-      ze_result_t status = zeEventHostSynchronize(event, 50000000 /* wait delay in nanoseconds */);
-      PTI_ASSERT(status == ZE_RESULT_SUCCESS || status == ZE_RESULT_NOT_READY);
-      
-      if (status == ZE_RESULT_SUCCESS) {
-        // Event is signaled, process it
-        status = zeEventHostReset(event);
-        PTI_ASSERT(status == ZE_RESULT_SUCCESS);
-        CollectAndProcessMetrics(profiler, desc, streamer);
-        FlushStreamerBuffer(streamer, desc, event, event_pool);
-      }
 
-      // Check if the kernel has finished
+      CollectAndProcessMetrics(profiler, desc, streamer);
+      FlushStreamerBuffer(streamer, desc);
+
+      // Wait for the next interval
       pthread_mutex_lock(&desc->kernel_mutex_);
       bool is_kernel_finished = !desc->kernel_running_;
+      int rc = pthread_cond_timedwait(&desc->kernel_cond_, &desc->kernel_mutex_, &ts);
+      if (rc == ETIMEDOUT) {
+        // Reset timeout for next interval
+        clock_gettime(CLOCK_REALTIME, &ts);
+        ts.tv_nsec += interval_ms * 1000000;
+        if (ts.tv_nsec >= 1000000000) {
+          ts.tv_sec += 1;
+          ts.tv_nsec -= 1000000000;
+        }
+      }
       pthread_mutex_unlock(&desc->kernel_mutex_);
 
       if (is_kernel_finished) {
@@ -339,10 +343,8 @@ ZeMetricProfiler::RunProfilingLoop
     }
 
     // Kernel has finished, perform final sampling and cleanup
-    ze_result_t status = zeEventHostReset(event);
-    PTI_ASSERT(status == ZE_RESULT_SUCCESS);
     CollectAndProcessMetrics(profiler, desc, streamer);
-    FlushStreamerBuffer(streamer, desc, event, event_pool);
+    FlushStreamerBuffer(streamer, desc);
     
     // Notify the app thread that data processing is complete
     zeroNotifyDataProcessingComplete(desc);
@@ -365,30 +367,14 @@ ZeMetricProfiler::MetricProfilingThread
   status = zetContextActivateMetricGroups(context, device, 1, &group);
   PTI_ASSERT(status == ZE_RESULT_SUCCESS);
 
-  ze_event_pool_handle_t event_pool = nullptr;
-  ze_event_pool_desc_t event_pool_desc = { ZE_STRUCTURE_TYPE_EVENT_POOL_DESC, nullptr, ZE_EVENT_POOL_FLAG_HOST_VISIBLE, 1 };
-  status = zeEventPoolCreate(context, &event_pool_desc, 1, &device, &event_pool);
-  PTI_ASSERT(status == ZE_RESULT_SUCCESS);
-
-  ze_event_handle_t event = nullptr;
-  ze_event_desc_t event_desc = { ZE_STRUCTURE_TYPE_EVENT_DESC, nullptr, 0, ZE_EVENT_SCOPE_FLAG_HOST, ZE_EVENT_SCOPE_FLAG_HOST };
-  status = zeEventCreate(event_pool, &event_desc, &event);
-  PTI_ASSERT(status == ZE_RESULT_SUCCESS);
-
   zet_metric_streamer_handle_t streamer = nullptr;
   uint32_t interval = 50 * 1000; // ns
   uint32_t notifyEveryNReports = 1024;
 
   zet_metric_streamer_desc_t streamer_desc = { ZET_STRUCTURE_TYPE_METRIC_STREAMER_DESC, nullptr, notifyEveryNReports, interval };
-  status = zetMetricStreamerOpen(context, device, group, &streamer_desc, event, &streamer);
+  status = zetMetricStreamerOpen(context, device, group, &streamer_desc, nullptr, &streamer);
   if (status != ZE_RESULT_SUCCESS) {
     std::cerr << "[ERROR] Failed to open metric streamer (" << status << "). The sampling interval might be too small." << std::endl;
-
-    status = zeEventDestroy(event);
-    PTI_ASSERT(status == ZE_RESULT_SUCCESS);
-
-    status = zeEventPoolDestroy(event_pool);
-    PTI_ASSERT(status == ZE_RESULT_SUCCESS);
 
     // set state to enabled to let the parent thread continue
     desc->profiling_state_.store(PROFILER_ENABLED, std::memory_order_release);
@@ -403,15 +389,9 @@ ZeMetricProfiler::MetricProfilingThread
   zeroGetMetricList(group, metric_list);
   PTI_ASSERT(!metric_list.empty());
 
-  RunProfilingLoop(profiler, desc, event, event_pool, streamer);
+  RunProfilingLoop(profiler, desc, streamer);
 
   status = zetMetricStreamerClose(streamer);
-  PTI_ASSERT(status == ZE_RESULT_SUCCESS);
-
-  status = zeEventDestroy(event);
-  PTI_ASSERT(status == ZE_RESULT_SUCCESS);
-
-  status = zeEventPoolDestroy(event_pool);
   PTI_ASSERT(status == ZE_RESULT_SUCCESS);
 
   status = zetContextActivateMetricGroups(context, device, 0, &group);

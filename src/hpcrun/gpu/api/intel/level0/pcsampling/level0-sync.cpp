@@ -2,7 +2,6 @@
 
 void
 zeroPCSampleSync
-
 (
   ZeDeviceDescriptor* desc
 )

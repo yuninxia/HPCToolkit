@@ -300,12 +300,15 @@ ZeCollector::LogKernelProfiles
             << "\", base_addr=0x" << std::hex << kernel->base_addr_
             << std::dec
             << ", size=" << size
+            << ", device_handle=" << kernel->device_
+            << ", device_id=" << kernel->device_id_
             << ", module_id=" << kernel->module_id_ 
             << ", kernel_id=" << kernel->id_
+            << ", work_dim=(x=" << kernel->group_size_.x << ", y=" << kernel->group_size_.y << ", z=" << kernel->group_size_.z << ")"
             << std::endl;
 }
 
-void 
+void
 ZeCollector::DumpKernelProfiles
 (
   void
@@ -638,11 +641,10 @@ OnEnterCommandListAppendLaunchKernel
   ze_command_list_append_launch_kernel_params_t* params,
   void* global_data, 
   void** instance_data
-) 
+)
 {
-  std::cerr << "OnEnterCommandListAppendLaunchKernel" << std::endl;
-  
   ze_command_list_handle_t hCommandList = *(params->phCommandList);
+  ze_kernel_handle_t hKernel = *(params->phKernel);
   ze_device_handle_t hDevice;
 
 #if 0
@@ -653,6 +655,8 @@ OnEnterCommandListAppendLaunchKernel
   // Option 2: manually maintain the mapping, generally more reliable
   hDevice = metric_profiler->GetDeviceForCommandList(hCommandList);
 #endif
+
+  std::cerr << "OnEnterCommandListAppendLaunchKernel: hKernel=" << hKernel << ", hDevice=" << hDevice << std::endl;
 
   std::map<ze_device_handle_t, ZeDeviceDescriptor*> device_descriptors;
   metric_profiler->GetDeviceDescriptors(device_descriptors);
@@ -686,9 +690,8 @@ OnExitCommandListAppendLaunchKernel
   void** instance_data
 ) 
 {
-  std::cerr << "OnExitCommandListAppendLaunchKernel" << std::endl;
-  
   ze_command_list_handle_t hCommandList = *(params->phCommandList);
+  ze_kernel_handle_t hKernel = *(params->phKernel);
   ze_device_handle_t hDevice; 
   
 #if 0
@@ -699,6 +702,8 @@ OnExitCommandListAppendLaunchKernel
   // Option 2: manually maintain the mapping
   hDevice = metric_profiler->GetDeviceForCommandList(hCommandList);
 #endif
+
+  std::cerr << "OnEnterCommandListAppendLaunchKernel: hKernel=" << hKernel << ", hDevice=" << hDevice << std::endl;
   
   std::map<ze_device_handle_t, ZeDeviceDescriptor*> device_descriptors;
   metric_profiler->GetDeviceDescriptors(device_descriptors);
