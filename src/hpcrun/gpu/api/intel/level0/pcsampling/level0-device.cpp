@@ -184,3 +184,15 @@ zeroGetParentDevice
     parent_device = nullptr; // Not found
   }
 }
+
+ze_device_handle_t
+zeroConvertToRootDevice
+(
+  ze_device_handle_t device
+)
+{
+  ze_device_handle_t rootDevice = nullptr;
+  ze_result_t result = zeDeviceGetRootDevice(device, &rootDevice);
+  PTI_ASSERT(result == ZE_RESULT_SUCCESS);
+  return (rootDevice != nullptr) ? rootDevice : device;
+}
