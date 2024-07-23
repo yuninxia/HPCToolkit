@@ -98,4 +98,10 @@ zeroGetParentDevice
   ze_device_handle_t& parent_device
 );
 
+ze_device_handle_t
+zeroConvertToRootDevice
+(
+  ze_device_handle_t device
+);
+
 #endif  // LEVEL0_DEVICE_H
