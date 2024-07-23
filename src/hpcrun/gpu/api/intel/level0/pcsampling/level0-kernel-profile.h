@@ -658,6 +658,9 @@ OnEnterCommandListAppendLaunchKernel
 
   std::cerr << "OnEnterCommandListAppendLaunchKernel: hKernel=" << hKernel << ", hDevice=" << hDevice << std::endl;
 
+  // Use the root device for notification and synchronization
+  hDevice = zeroConvertToRootDevice(hDevice);
+
   std::map<ze_device_handle_t, ZeDeviceDescriptor*> device_descriptors;
   metric_profiler->GetDeviceDescriptors(device_descriptors);
   auto it = device_descriptors.find(hDevice);
@@ -703,7 +706,10 @@ OnExitCommandListAppendLaunchKernel
   hDevice = metric_profiler->GetDeviceForCommandList(hCommandList);
 #endif
 
-  std::cerr << "OnEnterCommandListAppendLaunchKernel: hKernel=" << hKernel << ", hDevice=" << hDevice << std::endl;
+  std::cerr << "OnExitCommandListAppendLaunchKernel: hKernel=" << hKernel << ", hDevice=" << hDevice << std::endl;
+  
+  // Use the root device for notification and synchronization
+  hDevice = zeroConvertToRootDevice(hDevice);
   
   std::map<ze_device_handle_t, ZeDeviceDescriptor*> device_descriptors;
   metric_profiler->GetDeviceDescriptors(device_descriptors);
