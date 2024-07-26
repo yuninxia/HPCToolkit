@@ -34,14 +34,10 @@ struct ZeDeviceDescriptor {
   std::thread *profiling_thread_;
   std::atomic<ZeProfilerState> profiling_state_;
   bool stall_sampling_;
-  pthread_mutex_t kernel_mutex_;
-  pthread_cond_t kernel_cond_;
-  bool kernel_running_;
-  pthread_mutex_t data_mutex_;
-  pthread_cond_t data_cond_;
-  bool data_processed_;
   uint64_t correlation_id_;
   uint64_t last_correlation_id_;
+  ze_event_handle_t serial_kernel_start_;
+  ze_event_handle_t serial_data_ready_;
 };
 
 ZeDeviceDescriptor*
