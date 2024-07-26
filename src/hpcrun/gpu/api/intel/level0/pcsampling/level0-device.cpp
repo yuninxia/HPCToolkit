@@ -1,5 +1,4 @@
 #include "level0-device.h"
-#include "level0-notify.h"
 
 ZeDeviceDescriptor*
 zeroCreateDeviceDescriptor
@@ -29,14 +28,23 @@ zeroCreateDeviceDescriptor
   
   desc->profiling_thread_ = nullptr;
   desc->profiling_state_.store(PROFILER_DISABLED, std::memory_order_release);
-  
-  pthread_mutex_init(&desc->kernel_mutex_, NULL);
-  pthread_cond_init(&desc->kernel_cond_, NULL);
-  desc->kernel_running_ = false;
 
-  pthread_mutex_init(&desc->data_mutex_, NULL);
-  pthread_cond_init(&desc->data_cond_, NULL);
-  desc->data_processed_ = false;
+  ze_result_t status = ZE_RESULT_SUCCESS;
+
+  // Create event pool
+  ze_event_pool_handle_t event_pool = nullptr;
+  ze_event_pool_desc_t event_pool_desc = {ZE_STRUCTURE_TYPE_EVENT_POOL_DESC, nullptr, ZE_EVENT_POOL_FLAG_HOST_VISIBLE, 2};
+  status = zeEventPoolCreate(context, &event_pool_desc, 1, &device, &event_pool);
+  PTI_ASSERT(status == ZE_RESULT_SUCCESS);
+
+  // Create events  
+  ze_event_desc_t event_desc = {ZE_STRUCTURE_TYPE_EVENT_DESC, nullptr, 0, ZE_EVENT_SCOPE_FLAG_HOST, ZE_EVENT_SCOPE_FLAG_HOST};
+  status = zeEventCreate(event_pool, &event_desc, &desc->serial_kernel_start_);
+  PTI_ASSERT(status == ZE_RESULT_SUCCESS);
+
+  ze_event_desc_t data_event_desc = {ZE_STRUCTURE_TYPE_EVENT_DESC, nullptr, 1, ZE_EVENT_SCOPE_FLAG_HOST, ZE_EVENT_SCOPE_FLAG_HOST};
+  status = zeEventCreate(event_pool, &data_event_desc, &desc->serial_data_ready_);
+  PTI_ASSERT(status == ZE_RESULT_SUCCESS);
 
   return desc;
 }

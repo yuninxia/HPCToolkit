@@ -43,12 +43,12 @@ zeroLogActivities
 
     uint64_t offset = (kernel_base != 0) ? (instruction_pc_lm_ip - kernel_base) : 0;
 
-    std::cerr << "PC Sample" << std::endl;
-    std::cerr << "PC sampling: sample(pc=0x" << std::hex << activity->details.pc_sampling.pc.lm_ip
+    std::cout << "PC Sample" << std::endl;
+    std::cout << "PC sampling: sample(pc=0x" << std::hex << activity->details.pc_sampling.pc.lm_ip
               << ", cid=" << cid
               << ", kernel_name=" << kernel_name
               << ")" << std::endl;
-    std::cerr << "PC sampling: normalize 0x" << std::hex << instruction_pc_lm_ip
+    std::cout << "PC sampling: normalize 0x" << std::hex << instruction_pc_lm_ip
               << " --> [" << std::dec << lm_id << ", 0x" 
               << std::hex << offset << "]" << std::endl;
 
