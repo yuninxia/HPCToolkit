@@ -187,17 +187,6 @@ zeroCalculateEuStalls
     nullptr, nullptr);
 
   if (status != ZE_RESULT_SUCCESS || num_samples == 0 || num_metrics == 0) {
-    std::cerr << "[WARNING] Unable to calculate metrics. ";
-    if (status != ZE_RESULT_SUCCESS) {
-      std::cerr << "Status: " << status << ".";
-    }
-    if (num_samples == 0) {
-      std::cerr << "No samples collected.";
-    }
-    if (num_metrics == 0) {
-      std::cerr << "No metrics calculated.";
-    }
-    std::cerr << std::endl;
     return;
   }
 

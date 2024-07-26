@@ -36,8 +36,6 @@
 #include "level0-device.h"
 #include "level0-kernel-properties.h"
 #include "level0-metric.h"
-#include "level0-notify.h"
-#include "level0-sync.h"
 #include "pti_assert.h"
 
 extern "C" {
@@ -171,12 +169,6 @@ ZeMetricProfiler::StopProfilingMetrics
     it->second->profiling_thread_->join();
     delete it->second->profiling_thread_;
     it->second->profiling_thread_ = nullptr;
-
-    pthread_mutex_destroy(&it->second->kernel_mutex_);
-    pthread_cond_destroy(&it->second->kernel_cond_);
-    
-    pthread_mutex_destroy(&it->second->data_mutex_);
-    pthread_cond_destroy(&it->second->data_cond_);
   }
   device_descriptors_.clear();
 }
@@ -216,7 +208,7 @@ ZeMetricProfiler::FlushStreamerBuffer
   PTI_ASSERT(status == ZE_RESULT_SUCCESS);
 
   // Open a new streamer
-  uint32_t interval = 50 * 1000; // ns
+  uint32_t interval = 100 * 1000; // ns
   zet_metric_streamer_desc_t streamer_desc = {ZET_STRUCTURE_TYPE_METRIC_STREAMER_DESC, nullptr, max_metric_samples, interval};
   status = zetMetricStreamerOpen(desc->context_, desc->device_, desc->metric_group_, &streamer_desc, nullptr, &streamer);
   if (status != ZE_RESULT_SUCCESS) {
@@ -255,7 +247,7 @@ ZeMetricProfiler::CollectAndProcessMetrics
   zeroGenerateActivities(kprops, eustalls, desc->correlation_id_, activities);
   zeroSendActivities(activities);
 
-#if 1
+#if 0
   zeroLogActivities(activities, kprops);
 #endif
 
@@ -275,44 +267,21 @@ ZeMetricProfiler::RunProfilingLoop
 {
   std::vector<uint8_t> raw_metrics(MAX_METRIC_BUFFER + 512);
   desc->profiling_state_.store(PROFILER_ENABLED, std::memory_order_release);
-
-  struct timespec ts;
-  const int interval_ms = 50;
+  ze_result_t status;
   
   while (desc->profiling_state_.load(std::memory_order_acquire) != PROFILER_DISABLED) {
-    pthread_mutex_lock(&desc->kernel_mutex_);
 
-    clock_gettime(CLOCK_REALTIME, &ts);
-    ts.tv_nsec += interval_ms * 1000000;
-    if (ts.tv_nsec >= 1000000000) {
-      ts.tv_sec += 1;
-      ts.tv_nsec -= 1000000000;
-    }
-    
     // Wait for the kernel to start running
-    while (!desc->kernel_running_) {
-      int rc = pthread_cond_timedwait(&desc->kernel_cond_, &desc->kernel_mutex_, &ts);
-      if (rc == ETIMEDOUT) {
-        // Check if profiling should be terminated
-        if (desc->profiling_state_.load(std::memory_order_acquire) == PROFILER_DISABLED) {
-          pthread_mutex_unlock(&desc->kernel_mutex_);
-          return;
-        }
-        // Reset timeout
-        clock_gettime(CLOCK_REALTIME, &ts);
-        ts.tv_nsec += interval_ms * 1000000;
-        if (ts.tv_nsec >= 1000000000) {
-          ts.tv_sec += 1;
-          ts.tv_nsec -= 1000000000;
-        }
-      } else if (rc != 0) {
-        // Handle unexpected errors
-        fprintf(stderr, "pthread_cond_timedwait error: %d\n", rc);
-        pthread_mutex_unlock(&desc->kernel_mutex_);
+    while (true) {
+      status = zeEventHostSynchronize(desc->serial_kernel_start_, 50000000);
+      if (status == ZE_RESULT_SUCCESS) {
+        break;
+      }
+
+      if (desc->profiling_state_.load(std::memory_order_acquire) == PROFILER_DISABLED) {
         return;
       }
     }
-    pthread_mutex_unlock(&desc->kernel_mutex_);
 
     // Kernel is running, enter sampling loop
     while (true) {
@@ -323,31 +292,22 @@ ZeMetricProfiler::RunProfilingLoop
       FlushStreamerBuffer(streamer, desc);
 
       // Wait for the next interval
-      pthread_mutex_lock(&desc->kernel_mutex_);
-      bool is_kernel_finished = !desc->kernel_running_;
-      int rc = pthread_cond_timedwait(&desc->kernel_cond_, &desc->kernel_mutex_, &ts);
-      if (rc == ETIMEDOUT) {
-        // Reset timeout for next interval
-        clock_gettime(CLOCK_REALTIME, &ts);
-        ts.tv_nsec += interval_ms * 1000000;
-        if (ts.tv_nsec >= 1000000000) {
-          ts.tv_sec += 1;
-          ts.tv_nsec -= 1000000000;
-        }
-      }
-      pthread_mutex_unlock(&desc->kernel_mutex_);
-
-      if (is_kernel_finished) {
-        break;  // Exit sampling loop
+      status = zeEventHostSynchronize(desc->serial_kernel_start_, 50000000);
+      if (status != ZE_RESULT_SUCCESS) {
+        break;
       }
     }
 
     // Kernel has finished, perform final sampling and cleanup
     CollectAndProcessMetrics(profiler, desc, streamer);
     FlushStreamerBuffer(streamer, desc);
+
+    status = zeEventHostReset(desc->serial_kernel_start_);
+    PTI_ASSERT(status == ZE_RESULT_SUCCESS);
     
     // Notify the app thread that data processing is complete
-    zeroNotifyDataProcessingComplete(desc);
+    status = zeEventHostSignal(desc->serial_data_ready_);
+    PTI_ASSERT(status == ZE_RESULT_SUCCESS);
   }
 }
 
@@ -368,7 +328,7 @@ ZeMetricProfiler::MetricProfilingThread
   PTI_ASSERT(status == ZE_RESULT_SUCCESS);
 
   zet_metric_streamer_handle_t streamer = nullptr;
-  uint32_t interval = 50 * 1000; // ns
+  uint32_t interval = 100 * 1000; // ns
   uint32_t notifyEveryNReports = 1024;
 
   zet_metric_streamer_desc_t streamer_desc = { ZET_STRUCTURE_TYPE_METRIC_STREAMER_DESC, nullptr, notifyEveryNReports, interval };

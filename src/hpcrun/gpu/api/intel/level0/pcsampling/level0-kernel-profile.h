@@ -25,7 +25,6 @@
 #include "../level0-id-map.h"
 #include "level0-driver.h"
 #include "level0-metric-profiler.h"
-#include "level0-sync.h"
 #include "pti_assert.h"
 
 struct ZeKernelGroupSize {
@@ -295,8 +294,8 @@ ZeCollector::LogKernelProfiles
   size_t size
 ) 
 {
-  std::cerr << "Kernel properties:" << std::endl;
-  std::cerr << "name=\"" << kernel->name_ 
+  std::cout << "Kernel properties:" << std::endl;
+  std::cout << "name=\"" << kernel->name_ 
             << "\", base_addr=0x" << std::hex << kernel->base_addr_
             << std::dec
             << ", size=" << size
@@ -357,7 +356,9 @@ ZeCollector::DumpKernelProfiles
       kpfs << size << std::endl;
       prev_base = it->second->base_addr_;
 
+#if 0
       LogKernelProfiles(it->second, size);
+#endif
     }
     kpfs.close();
   }
@@ -644,19 +645,21 @@ OnEnterCommandListAppendLaunchKernel
 )
 {
   ze_command_list_handle_t hCommandList = *(params->phCommandList);
-  ze_kernel_handle_t hKernel = *(params->phKernel);
   ze_device_handle_t hDevice;
+  ze_result_t status = ZE_RESULT_SUCCESS;
 
 #if 0
   // Option 1: with compute runtime using level0 >= v1.9.0, but the binary is broken for now
-  ze_result_t ret = zeCommandListGetDeviceHandle(hCommandList, &hDevice);
-  PTI_ASSERT(ret == ZE_RESULT_SUCCESS);
+  status = zeCommandListGetDeviceHandle(hCommandList, &hDevice);
+  PTI_ASSERT(status == ZE_RESULT_SUCCESS);
 #else
   // Option 2: manually maintain the mapping, generally more reliable
   hDevice = metric_profiler->GetDeviceForCommandList(hCommandList);
 #endif
 
-  std::cerr << "OnEnterCommandListAppendLaunchKernel: hKernel=" << hKernel << ", hDevice=" << hDevice << std::endl;
+#if 0
+  std::cout << "OnEnterCommandListAppendLaunchKernel: hKernel=" << hKernel << ", hDevice=" << hDevice << std::endl;
+#endif
 
   // Use the root device for notification and synchronization
   hDevice = zeroConvertToRootDevice(hDevice);
@@ -666,7 +669,10 @@ OnEnterCommandListAppendLaunchKernel
   auto it = device_descriptors.find(hDevice);
   if (it != device_descriptors.end()) {
     ZeDeviceDescriptor* desc = it->second;
-    zeroNotifyKernelStart(desc);
+    
+    // Signal event to notify kernel start
+    status = zeEventHostSignal(desc->serial_kernel_start_);
+    PTI_ASSERT(status == ZE_RESULT_SUCCESS);
   } else {
     std::cerr << "[Warning] Device descriptor not found for device handle: " << hDevice << std::endl;
   }
@@ -694,20 +700,22 @@ OnExitCommandListAppendLaunchKernel
 ) 
 {
   ze_command_list_handle_t hCommandList = *(params->phCommandList);
-  ze_kernel_handle_t hKernel = *(params->phKernel);
-  ze_device_handle_t hDevice; 
+  ze_device_handle_t hDevice;
+  ze_result_t status = ZE_RESULT_SUCCESS;
   
 #if 0
   // Option 1: with compute runtime using level0 >= v1.9.0, but the binary is broken for now
-  ze_result_t ret = zeCommandListGetDeviceHandle(hCommandList, &hDevice);
-  PTI_ASSERT(ret == ZE_RESULT_SUCCESS);
+  status = zeCommandListGetDeviceHandle(hCommandList, &hDevice);
+  PTI_ASSERT(status == ZE_RESULT_SUCCESS);
 #else
   // Option 2: manually maintain the mapping
   hDevice = metric_profiler->GetDeviceForCommandList(hCommandList);
 #endif
 
-  std::cerr << "OnExitCommandListAppendLaunchKernel: hKernel=" << hKernel << ", hDevice=" << hDevice << std::endl;
-  
+#if 0
+  std::cout << "OnExitCommandListAppendLaunchKernel: hKernel=" << hKernel << ", hDevice=" << hDevice << std::endl;
+#endif
+
   // Use the root device for notification and synchronization
   hDevice = zeroConvertToRootDevice(hDevice);
   
@@ -717,8 +725,13 @@ OnExitCommandListAppendLaunchKernel
   auto it = device_descriptors.find(hDevice);
   if (it != device_descriptors.end()) {
     ZeDeviceDescriptor* desc = it->second;
-    zeroNotifyKernelEnd(desc);
-    zeroPCSampleSync(desc);
+    
+    // Host reset event to indicate kernel execution has ended
+    status = zeEventHostReset(desc->serial_kernel_start_);
+    PTI_ASSERT(status == ZE_RESULT_SUCCESS);
+
+    status = zeEventHostSynchronize(desc->serial_data_ready_, UINT64_MAX);
+    PTI_ASSERT(status == ZE_RESULT_SUCCESS);
   } else {
     std::cerr << "[Warning] Device descriptor not found for device handle: " << hDevice << std::endl;
   }
