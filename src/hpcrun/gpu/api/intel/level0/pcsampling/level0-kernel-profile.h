@@ -645,6 +645,8 @@ OnEnterCommandListAppendLaunchKernel
 )
 {
   ze_command_list_handle_t hCommandList = *(params->phCommandList);
+  ze_kernel_handle_t hKernel = *(params->phKernel);
+  ze_event_handle_t hSignalEvent = *(params->phSignalEvent);
   ze_device_handle_t hDevice;
   ze_result_t status = ZE_RESULT_SUCCESS;
 
@@ -669,6 +671,8 @@ OnEnterCommandListAppendLaunchKernel
   auto it = device_descriptors.find(hDevice);
   if (it != device_descriptors.end()) {
     ZeDeviceDescriptor* desc = it->second;
+    desc->running_kernel_ = hKernel;
+    desc->serial_kernel_end_ = hSignalEvent;
     
     // Signal event to notify kernel start
     status = zeEventHostSignal(desc->serial_kernel_start_);
@@ -700,6 +704,7 @@ OnExitCommandListAppendLaunchKernel
 ) 
 {
   ze_command_list_handle_t hCommandList = *(params->phCommandList);
+  ze_kernel_handle_t hKernel = *(params->phKernel);
   ze_device_handle_t hDevice;
   ze_result_t status = ZE_RESULT_SUCCESS;
   
@@ -725,12 +730,15 @@ OnExitCommandListAppendLaunchKernel
   auto it = device_descriptors.find(hDevice);
   if (it != device_descriptors.end()) {
     ZeDeviceDescriptor* desc = it->second;
+    desc->running_kernel_ = nullptr;
     
     // Host reset event to indicate kernel execution has ended
     status = zeEventHostReset(desc->serial_kernel_start_);
     PTI_ASSERT(status == ZE_RESULT_SUCCESS);
 
     status = zeEventHostSynchronize(desc->serial_data_ready_, UINT64_MAX);
+    PTI_ASSERT(status == ZE_RESULT_SUCCESS);
+    status = zeEventHostReset(desc->serial_data_ready_);
     PTI_ASSERT(status == ZE_RESULT_SUCCESS);
   } else {
     std::cerr << "[Warning] Device descriptor not found for device handle: " << hDevice << std::endl;

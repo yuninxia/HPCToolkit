@@ -68,20 +68,8 @@ class ZeMetricProfiler {
   ZeMetricProfiler& operator=(const ZeMetricProfiler& that) = delete;
 
   void GetDeviceDescriptors(std::map<ze_device_handle_t, ZeDeviceDescriptor*>& out_descriptors);
-
-  void InsertCommandListDeviceMapping(ze_command_list_handle_t cmdList, ze_device_handle_t device) {
-    std::lock_guard<std::mutex> lock(cmdlist_device_map_mutex_);
-    cmdlist_device_map_[cmdList] = device;
-  }
-
-  ze_device_handle_t GetDeviceForCommandList(ze_command_list_handle_t cmdList) {
-    std::lock_guard<std::mutex> lock(cmdlist_device_map_mutex_);
-    auto it = cmdlist_device_map_.find(cmdList);
-    if (it != cmdlist_device_map_.end()) {
-      return it->second;
-    }
-    return nullptr;
-  }
+  void InsertCommandListDeviceMapping(ze_command_list_handle_t cmdList, ze_device_handle_t device);
+  ze_device_handle_t GetDeviceForCommandList(ze_command_list_handle_t cmdList);
 
  private:
   ZeMetricProfiler();
@@ -90,7 +78,7 @@ class ZeMetricProfiler {
 
   static void MetricProfilingThread(ZeMetricProfiler* profiler, ZeDeviceDescriptor *desc);
   static void RunProfilingLoop(ZeMetricProfiler* profiler, ZeDeviceDescriptor* desc, zet_metric_streamer_handle_t& streamer);
-  static void CollectAndProcessMetrics(ZeMetricProfiler* profiler, ZeDeviceDescriptor* desc, zet_metric_streamer_handle_t& streamer);
+  static void CollectAndProcessMetrics(ZeMetricProfiler* profiler, ZeDeviceDescriptor* desc, zet_metric_streamer_handle_t& streamer, std::vector<uint8_t>& raw_metrics);
   static void FlushStreamerBuffer(zet_metric_streamer_handle_t& streamer, ZeDeviceDescriptor* desc);
   static void UpdateCorrelationID(uint64_t cid, gpu_activity_channel_t *channel, void *arg);
 
@@ -182,6 +170,31 @@ ZeMetricProfiler::GetDeviceDescriptors
   out_descriptors = device_descriptors_;
 }
 
+void
+ZeMetricProfiler::InsertCommandListDeviceMapping
+(
+  ze_command_list_handle_t cmdList,
+  ze_device_handle_t device
+)
+{
+  std::lock_guard<std::mutex> lock(cmdlist_device_map_mutex_);
+  cmdlist_device_map_[cmdList] = device;
+}
+
+ze_device_handle_t
+ZeMetricProfiler::GetDeviceForCommandList
+(
+  ze_command_list_handle_t cmdList
+)
+{
+  std::lock_guard<std::mutex> lock(cmdlist_device_map_mutex_);
+  auto it = cmdlist_device_map_.find(cmdList);
+  if (it != cmdlist_device_map_.end()) {
+    return it->second;
+  }
+  return nullptr;
+}
+
 void 
 ZeMetricProfiler::UpdateCorrelationID
 (
@@ -208,7 +221,7 @@ ZeMetricProfiler::FlushStreamerBuffer
   PTI_ASSERT(status == ZE_RESULT_SUCCESS);
 
   // Open a new streamer
-  uint32_t interval = 100 * 1000; // ns
+  uint32_t interval = 500000; // ns
   zet_metric_streamer_desc_t streamer_desc = {ZET_STRUCTURE_TYPE_METRIC_STREAMER_DESC, nullptr, max_metric_samples, interval};
   status = zetMetricStreamerOpen(desc->context_, desc->device_, desc->metric_group_, &streamer_desc, nullptr, &streamer);
   if (status != ZE_RESULT_SUCCESS) {
@@ -227,10 +240,10 @@ ZeMetricProfiler::CollectAndProcessMetrics
 (
   ZeMetricProfiler* profiler, 
   ZeDeviceDescriptor* desc,
-  zet_metric_streamer_handle_t& streamer
+  zet_metric_streamer_handle_t& streamer,
+  std::vector<uint8_t>& raw_metrics
 )
-{
-  std::vector<uint8_t> raw_metrics(MAX_METRIC_BUFFER + 512);
+{ 
   uint64_t raw_size;
   zeroCollectMetrics(streamer, raw_metrics, raw_size);
   if (raw_size == 0) return;
@@ -244,7 +257,7 @@ ZeMetricProfiler::CollectAndProcessMetrics
   if (kprops.size() == 0) return;
 
   std::deque<gpu_activity_t*> activities;
-  zeroGenerateActivities(kprops, eustalls, desc->correlation_id_, activities);
+  zeroGenerateActivities(kprops, eustalls, desc->correlation_id_, activities, desc->running_kernel_);
   zeroSendActivities(activities);
 
 #if 0
@@ -288,18 +301,17 @@ ZeMetricProfiler::RunProfilingLoop
       // Update correlation ID
       gpu_correlation_channel_receive(1, UpdateCorrelationID, desc);
 
-      CollectAndProcessMetrics(profiler, desc, streamer);
-      FlushStreamerBuffer(streamer, desc);
-
       // Wait for the next interval
-      status = zeEventHostSynchronize(desc->serial_kernel_start_, 50000000);
-      if (status != ZE_RESULT_SUCCESS) {
+      status = zeEventHostSynchronize(desc->serial_kernel_end_, 50000000);
+      if (status == ZE_RESULT_SUCCESS) {
         break;
       }
+
+      CollectAndProcessMetrics(profiler, desc, streamer, raw_metrics);
     }
 
     // Kernel has finished, perform final sampling and cleanup
-    CollectAndProcessMetrics(profiler, desc, streamer);
+    CollectAndProcessMetrics(profiler, desc, streamer, raw_metrics);
     FlushStreamerBuffer(streamer, desc);
 
     status = zeEventHostReset(desc->serial_kernel_start_);
@@ -328,7 +340,7 @@ ZeMetricProfiler::MetricProfilingThread
   PTI_ASSERT(status == ZE_RESULT_SUCCESS);
 
   zet_metric_streamer_handle_t streamer = nullptr;
-  uint32_t interval = 100 * 1000; // ns
+  uint32_t interval = 500000; // ns
   uint32_t notifyEveryNReports = 1024;
 
   zet_metric_streamer_desc_t streamer_desc = { ZET_STRUCTURE_TYPE_METRIC_STREAMER_DESC, nullptr, notifyEveryNReports, interval };

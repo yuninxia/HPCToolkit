@@ -37,7 +37,9 @@ struct ZeDeviceDescriptor {
   uint64_t correlation_id_;
   uint64_t last_correlation_id_;
   ze_event_handle_t serial_kernel_start_;
+  ze_event_handle_t serial_kernel_end_;
   ze_event_handle_t serial_data_ready_;
+  ze_kernel_handle_t running_kernel_;
 };
 
 ZeDeviceDescriptor*
