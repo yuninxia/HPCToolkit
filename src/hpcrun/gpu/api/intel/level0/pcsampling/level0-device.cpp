@@ -29,6 +29,8 @@ zeroCreateDeviceDescriptor
   desc->profiling_thread_ = nullptr;
   desc->profiling_state_.store(PROFILER_DISABLED, std::memory_order_release);
 
+  desc->running_kernel_ = nullptr;
+
   ze_result_t status = ZE_RESULT_SUCCESS;
 
   // Create event pool
@@ -45,6 +47,8 @@ zeroCreateDeviceDescriptor
   ze_event_desc_t data_event_desc = {ZE_STRUCTURE_TYPE_EVENT_DESC, nullptr, 1, ZE_EVENT_SCOPE_FLAG_HOST, ZE_EVENT_SCOPE_FLAG_HOST};
   status = zeEventCreate(event_pool, &data_event_desc, &desc->serial_data_ready_);
   PTI_ASSERT(status == ZE_RESULT_SUCCESS);
+
+  desc->serial_kernel_end_ = nullptr;
 
   return desc;
 }
