@@ -11,8 +11,6 @@
 #include <stdbool.h>
 
 // Names for option environment variables
-extern const char* HPCRUN_OPT_LUSH_AGENTS;
-
 extern const char* HPCRUN_OUT_PATH;
 
 extern const char* HPCRUN_TRACE;

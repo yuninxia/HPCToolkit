@@ -23,6 +23,7 @@
 #include "trampoline/common/trampoline.h"
 #include "messages/messages.h"
 #include "cct/cct_bundle.h"
+#include "memory/hpcrun-malloc.h"
 
 void
 hpcrun_reset_epoch(epoch_t* epoch)

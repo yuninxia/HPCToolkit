@@ -19,7 +19,6 @@
 
 #include "../common/lean/lush/lush-support.h"
 #include "../common/lean/placeholders.h"
-#include "lush/lush-backtrace.h"
 #include "thread_data.h"
 #include "hpcrun_stats.h"
 #include "trace.h"
@@ -33,7 +32,6 @@
 
 #include "cct_insert_backtrace.h"
 #include "cct_backtrace_finalize.h"
-#include "lush/lush-backtrace.h"
 #include "unwind/common/backtrace.h"
 #include "thread_data.h"
 #include "utilities/ip-normalized.h"
@@ -208,17 +206,10 @@ hpcrun_backtrace2cct(cct_bundle_t* cct, ucontext_t* context,
                      int skipInner, int isSync, void *data)
 {
   cct_node_t* n = NULL;
-  if (hpcrun_isLogicalUnwind()) {
-    TMSG(LUSH,"lush backtrace2cct invoked");
-    n = lush_backtrace2cct(cct, context, metricId, metricIncr, skipInner,
-                           isSync);
-  }
-  else {
-    TMSG(BT_INSERT,"regular (NON-lush) backtrace2cct invoked");
-    n = help_hpcrun_backtrace2cct(cct, context,
-                                  metricId, metricIncr,
-                                  skipInner, isSync, data);
-  }
+  TMSG(BT_INSERT,"regular (NON-lush) backtrace2cct invoked");
+  n = help_hpcrun_backtrace2cct(cct, context,
+                                metricId, metricIncr,
+                                skipInner, isSync, data);
 
   // N.B.: for lush_backtrace() it may be that n = NULL
 

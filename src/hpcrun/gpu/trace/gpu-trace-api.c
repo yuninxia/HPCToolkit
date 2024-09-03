@@ -39,6 +39,7 @@
 #include "../../threadmgr.h"
 #include "../../trace.h"
 #include "../../write_data.h"
+#include "../../memory/hpcrun-malloc.h"
 
 #include "../common/gpu-monitoring.h"
 
@@ -49,7 +50,6 @@
 #include "gpu-trace-demultiplexer.h"
 #include "gpu-context-id-map.h"
 #include "gpu-stream-id-map.h"
-
 
 
 //******************************************************************************

@@ -58,11 +58,11 @@
 #include "../thread_data.h"
 #include "../threadmgr.h"
 #include "../trace.h"
+#include "../memory/hpcrun-malloc.h"
 
 #include "blame-shift/blame-shift.h"
 #include "../utilities/tokenize.h"
 #include "../messages/messages.h"
-#include "../lush/lush-backtrace.h"
 #include "../../common/lean/hpcrun-fmt.h"
 
 
@@ -434,14 +434,13 @@ METHOD_FN(supports_event, const char *ev_str)
 }
 
 static void
-METHOD_FN(process_event_list, int lush_metrics)
+METHOD_FN(process_event_list)
 {
   TMSG(PAPI, "process event list");
   if (papi_unavail) { return; }
 
   char *event;
   int i, ret;
-  int num_lush_metrics = 0;
 
   papi_kind = hpcrun_metrics_new_kind();
 
@@ -475,11 +474,6 @@ METHOD_FN(process_event_list, int lush_metrics)
       hpcrun_ssfail_unsupported("PAPI", name);
     }
 
-    // FIXME:LUSH: need a more flexible metric interface
-    if (lush_metrics == 1 && strncmp(event, "PAPI_TOT_CYC", 12) == 0) {
-      num_lush_metrics++;
-    }
-
     if (strncmp(event, "PAPI_TOT_CYC", 12) == 0) {
       if (period_type == THRESH_FREQ) {
         // frequency is specified in samples per second
@@ -497,7 +491,7 @@ METHOD_FN(process_event_list, int lush_metrics)
   int nevents = (self->evl).nevents;
   TMSG(PAPI,"nevents = %d", nevents);
 
-  hpcrun_pre_allocate_metrics(nevents + num_lush_metrics);
+  hpcrun_pre_allocate_metrics(nevents);
 
   some_overflow = 0;
   for (i = 0; i < nevents; i++) {
@@ -549,19 +543,6 @@ METHOD_FN(process_event_list, int lush_metrics)
       hpcrun_cycles_metric_id = metric_id;
       hpcrun_set_trace_metric(HPCRUN_CPU_TRACE_FLAG);
     }
-
-    // FIXME:LUSH: need a more flexible metric interface
-    if (num_lush_metrics > 0 && strcmp(buffer, "PAPI_TOT_CYC") == 0) {
-      // there should be one lush metric; its source is the last event
-      int mid_idleness =
-        hpcrun_set_new_metric_info_and_period(papi_kind, "idleness",
-                                              MetricFlags_ValFmt_Real,
-                                              self->evl.events[i].thresh, prop);
-      if (num_lush_metrics != 1 || i != (nevents - 1))
-        hpcrun_terminate();
-      lush_agents->metric_time = metric_id;
-      lush_agents->metric_idleness = mid_idleness;
-    }
   }
 
   hpcrun_close_kind(papi_kind);
@@ -577,7 +558,7 @@ METHOD_FN(finalize_event_list)
 }
 
 static void
-METHOD_FN(gen_event_set, int lush_metrics)
+METHOD_FN(gen_event_set)
 {
   thread_data_t *td = hpcrun_get_thread_data();
   int i;

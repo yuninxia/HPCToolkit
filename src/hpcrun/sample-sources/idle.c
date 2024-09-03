@@ -145,7 +145,7 @@ METHOD_FN(supports_event,const char *ev_str)
 
 
 static void
-METHOD_FN(process_event_list, int lush_metrics)
+METHOD_FN(process_event_list)
 {
   TMSG(IDLE, "Process event list");
   idleness_measurement_enabled = true;
@@ -171,7 +171,7 @@ METHOD_FN(finalize_event_list)
 
 
 static void
-METHOD_FN(gen_event_set,int lush_metrics)
+METHOD_FN(gen_event_set)
 {
 }
 

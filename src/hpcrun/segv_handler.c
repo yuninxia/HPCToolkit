@@ -42,6 +42,7 @@
 
 #include "messages/messages.h"
 #include "utilities/arch/context-pc.h"
+#include "memory/hpcrun-malloc.h"
 
 #include "segv_handler.h"
 

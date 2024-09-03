@@ -124,7 +124,7 @@ METHOD_FN(supports_event,const char *ev_str)
 
 
 static void
-METHOD_FN(process_event_list, int lush_metrics)
+METHOD_FN(process_event_list)
 {
   TMSG(RETCNT_CTL, "Setting up return counts(trampolines)");
 
@@ -149,7 +149,7 @@ METHOD_FN(finalize_event_list)
 // Event sets not truly relevant for this sample source,
 //
 static void
-METHOD_FN(gen_event_set,int lush_metrics)
+METHOD_FN(gen_event_set)
 {
   TMSG(REC_COMPRESS, "RETCNT event ==> retain recursion");
   hpcrun_set_retain_recursion_mode(true); // make sure all recursion elements are retained

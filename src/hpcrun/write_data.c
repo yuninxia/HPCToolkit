@@ -35,8 +35,6 @@
 
 #include "messages/messages.h"
 
-#include "lush/lush-backtrace.h"
-
 #include "../common/lean/hpcio.h"
 #include "../common/lean/hpcfmt.h"
 #include "../common/lean/hpcrun-fmt.h"

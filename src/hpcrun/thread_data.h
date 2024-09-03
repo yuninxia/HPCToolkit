@@ -27,7 +27,6 @@
 #include "ompt/omp-tools.h"
 #include "logical/common.h"
 
-#include "lush/lush-pthread-internal.h"
 #include "unwind/common/backtrace.h"
 #include "unwind/common/uw_hash.h"
 
@@ -92,9 +91,6 @@ typedef struct gpu_data_t {
        This is a collection of files:
          trace_file
          hpcrun_file
-
-    lushPthr_t
-       lush items can stand alone
 
     debug
        a few bools & integers. General purpose. Used for simulating error conditions.
@@ -224,11 +220,6 @@ typedef struct thread_data_t {
   // ----------------------------------------
   // Logical unwinding
   // ----------------------------------------
-  lushPthr_t     pthr_metrics;
-
-  // ----------------------------------------
-  // Logical unwinding v2
-  // ----------------------------------------
 
   /// Stack of active logical regions in this thread.
   logical_region_stack_t logical_regs;
@@ -260,6 +251,8 @@ typedef struct thread_data_t {
   bool application_thread_0;
 
   uint64_t gpu_trace_prev_time;
+
+  uint64_t ga_idleness_count;
 
 } thread_data_t;
 

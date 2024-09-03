@@ -41,45 +41,6 @@ extern "C" {
 
 //*************************** Forward Declarations **************************
 
-// ---------------------------------------------------------
-// LUSH metric id
-// ---------------------------------------------------------
-
-#define lush_metricid_NULL (-1)
-
-
-//***************************************************************************
-// LUSH Agents
-//***************************************************************************
-
-// ---------------------------------------------------------
-// LUSH agent id
-// ---------------------------------------------------------
-
-#define lush_agentid_NULL (0)
-typedef int lush_agentid_t;
-
-
-// ---------------------------------------------------------
-// A LUSH agent
-// ---------------------------------------------------------
-
-typedef struct lush_agent lush_agent_t;
-
-struct lush_agent {
-  lush_agentid_t id;
-  char* path;
-  void* dlhandle;
-};
-
-
-// ---------------------------------------------------------
-// A pool of LUSH agents
-// ---------------------------------------------------------
-
-typedef struct lush_agent_pool lush_agent_pool_t;
-
-
 //***************************************************************************
 // LUSH association Types
 //***************************************************************************
@@ -148,24 +109,6 @@ lush_assoc_class(lush_assoc_t as)
   return ((as) & LUSH_ASSOC_CLASS_MASK);
 }
 
-static inline bool
-lush_assoc_is_a_to_0(lush_assoc_t as)
-{
-  return (lush_assoc_class(as) & LUSH_ASSOC_CLASS_a_to_0);
-}
-
-static inline bool
-lush_assoc_is_1_to_a(lush_assoc_t as)
-{
-  return (lush_assoc_class(as) & LUSH_ASSOC_CLASS_1_to_a);
-}
-
-static inline bool
-lush_assoc_is_a_to_1(lush_assoc_t as)
-{
-  return (lush_assoc_class(as) & LUSH_ASSOC_CLASS_a_to_1);
-}
-
 static inline uint32_t
 lush_assoc_info__get_path_len(lush_assoc_info_t x)
 {
@@ -218,18 +161,6 @@ lush_assoc_info_gt(lush_assoc_info_t x, lush_assoc_info_t y)
 #define lush_assoc_info__set_assoc(/*lush_assoc_info_t*/ x,         \
                                    /*lush_assoc_t*/ new_as)         \
   (x).u.as = (new_as)
-
-#define lush_assoc_info__set_path_len(/*lush_assoc_info_t*/ x,  \
-                                      /*uint32_t*/ new_len)     \
-  (x).u.len = (new_len)
-
-
-static inline bool
-lush_assoc_info_is_root_note(lush_assoc_info_t x)
-{
-  return (((x).u.as != LUSH_ASSOC_NULL) && ((x).u.len == 1));
-}
-
 
 #define LUSH_ASSOC_STR_MAX_LEN 6
 
@@ -302,38 +233,6 @@ lush_lip_gt(const lush_lip_t* x, const lush_lip_t* y)
 
 const char*
 lush_lip_sprintf(char* str, const lush_lip_t* x);
-
-
-// ---------------------------------------------------------
-// Temporary interpreters for current set of agents
-// ---------------------------------------------------------
-
-static inline uint16_t
-lush_lip_getLMId(const lush_lip_t* x)
-{
-  return (uint16_t)x->data8[0];
-}
-
-
-static inline void
-lush_lip_setLMId(lush_lip_t* x, uint16_t lmId)
-{
-  x->data8[0] = (uint64_t)lmId;
-}
-
-
-static inline uint64_t
-lush_lip_getLMIP(const lush_lip_t* x)
-{
-  return (uint64_t)x->data8[1];
-}
-
-
-static inline void
-lush_lip_setLMIP(lush_lip_t* x, uint64_t lm_ip)
-{
-  x->data8[1] = lm_ip;
-}
 
 
 // **************************************************************************

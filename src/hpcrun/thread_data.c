@@ -27,6 +27,7 @@
 //*************************** User Include Files ****************************
 
 #include "memory/newmem.h"
+#include "memory/hpcrun-malloc.h"
 #include "epoch.h"
 #include "handling_sample.h"
 
@@ -35,7 +36,6 @@
 #include "trace.h"
 #include "threadmgr.h"
 
-#include "lush/lush-pthread.h"
 #include "messages/messages.h"
 #include "trampoline/common/trampoline.h"
 #include "memory/mmap.h"
@@ -436,12 +436,6 @@ hpcrun_thread_data_init
   // ----------------------------------------
   // Logical unwinding
   // ----------------------------------------
-  lushPthr_init(&td->pthr_metrics);
-  lushPthr_thread_init(&td->pthr_metrics);
-
-  // ----------------------------------------
-  // Logical unwinding v2
-  // ----------------------------------------
   hpcrun_logical_stack_init(&td->logical_regs);
 
   // ----------------------------------------
@@ -463,6 +457,8 @@ hpcrun_thread_data_init
   // blame-shifting
   // ----------------------------------------
   td->application_thread_0 = false;
+
+  td->ga_idleness_count = 0;
 
 #ifdef ENABLE_CUDA
   gpu_data_init(&(td->gpu_data));

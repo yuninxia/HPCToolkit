@@ -27,6 +27,7 @@
 #include "unw-throw.h"
 #include "../../hpcrun_stats.h"
 #include "../../control-knob.h"
+#include "../../memory/hpcrun-malloc.h"
 
 #include "../../libmonitor/monitor.h"
 

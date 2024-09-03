@@ -64,7 +64,6 @@
 #include "../ompt/ompt-region.h"
 #include "../trace.h"
 
-#include "../lush/lush-backtrace.h"
 #include "../messages/messages.h"
 
 #include "../utilities/tokenize.h"
@@ -425,11 +424,11 @@ METHOD_FN(supports_event, const char *ev_str)
 }
 
 static void
-METHOD_FN(process_event_list, int lush_metrics)
+METHOD_FN(process_event_list)
 {
   char name[1024]; // local buffer needed for extract_ev_threshold
 
-  TMSG(ITIMER_CTL, "process event list, lush_metrics = %d", lush_metrics);
+  TMSG(ITIMER_CTL, "process event list");
 
   hpcrun_set_trace_metric(HPCRUN_CPU_TRACE_FLAG);
 
@@ -503,7 +502,7 @@ METHOD_FN(process_event_list, int lush_metrics)
   sigaddset(&timer_mask, the_signal_num);
 
   // handle metric allocation
-  hpcrun_pre_allocate_metrics(1 + lush_metrics);
+  hpcrun_pre_allocate_metrics(1);
 
 
   // set metric information in metric table
@@ -513,14 +512,6 @@ METHOD_FN(process_event_list, int lush_metrics)
     hpcrun_set_new_metric_info_and_period(timer_kind, the_metric_name, MetricFlags_ValFmt_Real,
                                           sample_period, metric_property_time);
   METHOD_CALL(self, store_metric_id, ITIMER_EVENT, metric_id);
-  if (lush_metrics == 1) {
-    int mid_idleness =
-      hpcrun_set_new_metric_info_and_period(timer_kind, IDLE_METRIC_NAME,
-                                            MetricFlags_ValFmt_Real,
-                                            sample_period, metric_property_time);
-    lush_agents->metric_time = metric_id;
-    lush_agents->metric_idleness = mid_idleness;
-  }
   hpcrun_close_kind(timer_kind);
 
   event = next_tok();
@@ -540,7 +531,7 @@ METHOD_FN(finalize_event_list)
 // The signal setup, however, is done here.
 //
 static void
-METHOD_FN(gen_event_set, int lush_metrics)
+METHOD_FN(gen_event_set)
 {
   monitor_sigaction(the_signal_num, &itimer_signal_handler, 0, NULL);
 }

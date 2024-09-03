@@ -41,21 +41,3 @@ hpcrun_options__fini(hpcrun_options_t* x)
 {
   return HPCRUN_OK;
 }
-
-/* assumes no private 'heap' memory is available yet */
-int
-hpcrun_options__getopts(hpcrun_options_t* x)
-{
-  /* Option: HPCRUN_OPT_LUSH_AGENTS */
-  char *s = getenv(HPCRUN_OPT_LUSH_AGENTS);
-  if (s) {
-    strcpy(x->lush_agent_paths, s);
-  }
-  else {
-    x->lush_agent_paths[0] = '\0';
-  }
-
-  TMSG(OPTIONS,"--at end of getopts");
-
-  return HPCRUN_OK;
-}

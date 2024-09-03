@@ -15,6 +15,7 @@
 
 #include "../../../common/lean/queue.h" // Singly-linkled list macros
 
+#include "../../memory/hpcrun-malloc.h"
 #include "../display.h"
 
 #include "event_custom.h"
