@@ -61,7 +61,6 @@
 #include "hpcrun_stats.h"
 #include "name.h"
 #include "start-stop.h"
-#include "custom-init.h"
 #include "cct_insert_backtrace.h"
 #include "safe-sampling.h"
 
@@ -1006,8 +1005,6 @@ void hpcrun_prepare_measurement_subsystem(bool is_child)
   if (atomic_fetch_add(&ms_init_started, 1) == 0){
     TMSG(PROCESS, "init all sample sources");
     hpcrun_registered_sources_init();
-
-    hpcrun_do_custom_init();
 
     // for debugging, limit the life of the execution with an alarm.
     char* life  = getenv("HPCRUN_LIFETIME");
