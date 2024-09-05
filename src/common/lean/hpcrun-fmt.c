@@ -588,18 +588,9 @@ hpcrun_fmt_cct_node_fread(hpcrun_fmt_cct_node_t* x,
   HPCFMT_ThrowIfError(hpcfmt_int4_fread(&x->id, fs));
   HPCFMT_ThrowIfError(hpcfmt_int4_fread(&x->id_parent, fs));
 
-  x->as_info = lush_assoc_info_NULL;
-  if (flags.fields.isLogicalUnwind) {
-    HPCFMT_ThrowIfError(hpcfmt_int4_fread(&x->as_info.bits, fs));
-  }
-
   HPCFMT_ThrowIfError(hpcfmt_int2_fread(&x->lm_id, fs));
   HPCFMT_ThrowIfError(hpcfmt_int8_fread(&x->lm_ip, fs));
 
-  lush_lip_init(&x->lip);
-  if (flags.fields.isLogicalUnwind) {
-    hpcrun_fmt_lip_fread(&x->lip, fs);
-  }
   /* YUMENG: no need for sparse metrics
   for (int i = 0; i < x->num_metrics; ++i) {
     HPCFMT_ThrowIfError(hpcfmt_int8_fread(&x->metrics[i].bits, fs));
@@ -621,16 +612,9 @@ hpcrun_fmt_cct_node_fwrite(hpcrun_fmt_cct_node_t* x,
   HPCFMT_ThrowIfError(hpcfmt_int4_fwrite(x->id, fs));
   HPCFMT_ThrowIfError(hpcfmt_int4_fwrite(x->id_parent, fs));
 
-  if (flags.fields.isLogicalUnwind) {
-    HPCFMT_ThrowIfError(hpcfmt_int4_fwrite(x->as_info.bits, fs));
-  }
-
   HPCFMT_ThrowIfError(hpcfmt_int2_fwrite(x->lm_id, fs));
   HPCFMT_ThrowIfError(hpcfmt_int8_fwrite(x->lm_ip, fs));
 
-  if (flags.fields.isLogicalUnwind) {
-    HPCFMT_ThrowIfError(hpcrun_fmt_lip_fwrite(&x->lip, fs));
-  }
   /*YUMENG: no need for sparse metrics
   for (int i = 0; i < x->num_metrics; ++i) {
     HPCFMT_ThrowIfError(hpcfmt_int8_fwrite(x->metrics[i].bits, fs));
@@ -654,13 +638,6 @@ hpcrun_fmt_cct_node_fprint(hpcrun_fmt_cct_node_t* x, FILE* fs,
   fprintf(fs, "%s[node: (id: %d) (id-parent: %d) ",
           pre, (int)x->id, (int)x->id_parent);
 
-  if (flags.fields.isLogicalUnwind) {
-    char as_str[LUSH_ASSOC_INFO_STR_MIN_LEN];
-    lush_assoc_info_sprintf(as_str, x->as_info);
-
-    fprintf(fs, "(as: %s) ", as_str);
-  }
-
   if(!x->unwound) fprintf(fs, "(not unwound) ");
 
   fprintf(fs, "(lm-id: %u) (lm-ip: 0x%"PRIx64") ", (unsigned int)x->lm_id, x->lm_ip);
@@ -680,46 +657,7 @@ hpcrun_fmt_cct_node_fprint(hpcrun_fmt_cct_node_t* x, FILE* fs,
       fprintf(fs, "\"%s\" ", pretty);
   }
 
-  if (flags.fields.isLogicalUnwind) {
-    hpcrun_fmt_lip_fprint(&x->lip, fs, "");
-  }
-
   fprintf(fs, "]\n");
-
-  return HPCFMT_OK;
-}
-
-//***************************************************************************
-
-int
-hpcrun_fmt_lip_fread(lush_lip_t* x, FILE* fs)
-{
-  for (int i = 0; i < LUSH_LIP_DATA8_SZ; ++i) {
-    HPCFMT_ThrowIfError(hpcfmt_int8_fread(&x->data8[i], fs));
-  }
-
-  return HPCFMT_OK;
-}
-
-
-int
-hpcrun_fmt_lip_fwrite(lush_lip_t* x, FILE* fs)
-{
-  for (int i = 0; i < LUSH_LIP_DATA8_SZ; ++i) {
-    HPCFMT_ThrowIfError(hpcfmt_int8_fwrite(x->data8[i], fs));
-  }
-
-  return HPCFMT_OK;
-}
-
-
-int
-hpcrun_fmt_lip_fprint(lush_lip_t* x, FILE* fs, const char* pre)
-{
-  char lip_str[LUSH_LIP_STR_MIN_LEN];
-  lush_lip_sprintf(lip_str, x);
-
-  fprintf(fs, "%s(lip: %s)", pre, lip_str);
 
   return HPCFMT_OK;
 }

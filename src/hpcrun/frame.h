@@ -10,8 +10,6 @@
 
 #include "unwind/common/unw-datatypes.h"
 #include "utilities/ip-normalized.h"
-#include "../common/lean/lush/lush-support.h"
-#include "../common/lean/lush/lush-support.h"
 #include "utilities/ip-normalized.h"
 
 // --------------------------------------------------------------------------
@@ -20,12 +18,10 @@
 
 typedef struct frame_t {
   hpcrun_unw_cursor_t cursor;       // hold a copy of the cursor for this frame
-  lush_assoc_info_t as_info;
   ip_normalized_t ip_norm;
   ip_normalized_t the_function;     // enclosing function of ip_norm
   void* ra_loc;
   void* ra_val;
-  lush_lip_t* lip;
 } frame_t;
 
 static inline

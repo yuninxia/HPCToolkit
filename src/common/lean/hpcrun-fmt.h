@@ -31,6 +31,7 @@
 
 #include <stdbool.h>
 #include <limits.h>
+#include <string.h>
 
 //*************************** User Include Files ****************************
 
@@ -39,8 +40,6 @@
 #include "hpcio-buffer.h"
 #include "hpcfmt.h"
 #include "id-tuple.h"
-
-#include "lush/lush-support.h"
 
 //*************************** Forward Declarations **************************
 
@@ -142,8 +141,7 @@ static const int  HPCRUN_FMT_EpochTagLen = (sizeof(HPCRUN_FMT_EpochTag) - 1);
 
 
 typedef struct epoch_flags_bitfield {
-  bool isLogicalUnwind : 1;
-  uint64_t unused      : 63;
+  uint64_t unused      : 64;
 } epoch_flags_bitfield;
 
 
@@ -457,8 +455,6 @@ typedef struct hpcrun_fmt_cct_node_t {
   uint32_t id;
   uint32_t id_parent;
 
-  lush_assoc_info_t as_info;
-
   // load module id. Use HPCRUN_FMT_LMId_NULL as a NULL value.
   uint16_t lm_id;
 
@@ -467,9 +463,6 @@ typedef struct hpcrun_fmt_cct_node_t {
   // represented by adding 0, 1, or 2 to the instruction pointer for
   // the first, second and third operation, respectively.
   hpcfmt_vma_t lm_ip;
-
-  // static logical instruction pointer
-  lush_lip_t lip;
 
   hpcfmt_uint_t num_metrics;
   hpcrun_metricVal_t* metrics;
@@ -501,19 +494,6 @@ hpcrun_fmt_cct_node_fwrite(hpcrun_fmt_cct_node_t* x,
 extern int
 hpcrun_fmt_cct_node_fprint(hpcrun_fmt_cct_node_t* x, FILE* fs,
                            epoch_flags_t flags,const char* pre);
-
-// --------------------------------------------------------------------------
-//
-// --------------------------------------------------------------------------
-
-extern int
-hpcrun_fmt_lip_fread(lush_lip_t* x, FILE* fs);
-
-extern int
-hpcrun_fmt_lip_fwrite(lush_lip_t* x, FILE* fs);
-
-extern int
-hpcrun_fmt_lip_fprint(lush_lip_t* x, FILE* fs, const char* pre);
 
 
 //***************************************************************************
