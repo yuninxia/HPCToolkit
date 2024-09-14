@@ -730,13 +730,12 @@ OnExitCommandListAppendLaunchKernel
   auto it = device_descriptors.find(hDevice);
   if (it != device_descriptors.end()) {
     ZeDeviceDescriptor* desc = it->second;
-    desc->running_kernel_ = nullptr;
     
     // Host reset event to indicate kernel execution has ended
     status = zeEventHostReset(desc->serial_kernel_start_);
     PTI_ASSERT(status == ZE_RESULT_SUCCESS);
 
-    status = zeEventHostSynchronize(desc->serial_data_ready_, UINT64_MAX);
+    status = zeEventHostSynchronize(desc->serial_data_ready_, UINT64_MAX - 1);
     PTI_ASSERT(status == ZE_RESULT_SUCCESS);
     status = zeEventHostReset(desc->serial_data_ready_);
     PTI_ASSERT(status == ZE_RESULT_SUCCESS);

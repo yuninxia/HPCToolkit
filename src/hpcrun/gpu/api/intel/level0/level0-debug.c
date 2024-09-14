@@ -80,7 +80,7 @@ ze_result_to_string
   ze_result_t result
 )
 {
-#define ENUM_TO_STRING(x) case x: error = #x;
+#define ENUM_TO_STRING(x) case x: error = #x; break;
   const char *error;
   switch(result) {
     FORALL_ZE_RESULT(ENUM_TO_STRING);
