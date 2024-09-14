@@ -102,8 +102,6 @@ static bool gtpin_instrumentation = false;
 
 static bool level0_pcsampling = false;
 
-static pthread_mutex_t level0_kernel_launch_mutex = PTHREAD_MUTEX_INITIALIZER;
-
 //----------------------------------------------------------
 // level0 function pointers for late binding
 //----------------------------------------------------------
@@ -845,10 +843,6 @@ foilbase_zeCommandListAppendLaunchKernel
 )
 {
   PRINT("Enter zeCommandListAppendLaunchKernel wrapper: command list %p\n", hCommandList);
-
-  if (level0_pcsampling_enabled()) {
-    pthread_mutex_lock(&level0_kernel_launch_mutex);
-  }
   
   // Entry action:
   // We need to create a new event for querying time stamps
@@ -860,13 +854,13 @@ foilbase_zeCommandListAppendLaunchKernel
   ze_result_t ret = HPCRUN_LEVEL0_CALL(zeCommandListAppendLaunchKernel,
     (hCommandList, hKernel, pLaunchFuncArgs,
     new_event_handle, numWaitEvents, phWaitEvents));
-
-  // Exit action
-  level0_process_immediate_command_list(new_event_handle, hCommandList);
   
   if (level0_pcsampling_enabled()) {
-    pthread_mutex_unlock(&level0_kernel_launch_mutex);
+    zeEventHostSynchronize(new_event_handle, UINT64_MAX - 1);
   }
+  
+  // Exit action
+  level0_process_immediate_command_list(new_event_handle, hCommandList);
 
   return ret;
 }
@@ -931,11 +925,7 @@ foilbase_zeCommandListCreateImmediate
 )
 {
   ze_command_queue_desc_t desc = *altdesc;
-
-  if (level0_pcsampling_enabled()) {
-    desc.mode = ZE_COMMAND_QUEUE_MODE_SYNCHRONOUS; 
-  }
-
+  
   // Entry action
   // Execute the real level0 API
   ze_result_t ret = HPCRUN_LEVEL0_CALL(zeCommandListCreateImmediate,
