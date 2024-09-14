@@ -572,6 +572,10 @@ hpcrun_zeCommandListAppendLaunchKernel
   // Execute the real level0 API
   ze_result_t ret = f_zeCommandListAppendLaunchKernel(hCommandList, hKernel, pLaunchFuncArgs,
     new_event_handle, numWaitEvents, phWaitEvents, dispatch);
+  
+  if (level0_pcsampling_enabled()) {
+    zeEventHostSynchronize(new_event_handle, UINT64_MAX - 1);
+  }
 
   // Exit action
   level0_process_immediate_command_list(new_event_handle, hCommandList, dispatch);
@@ -638,12 +642,6 @@ hpcrun_zeCommandListCreateImmediate
   const struct hpcrun_foil_appdispatch_level0* dispatch
 )
 {
-  ze_command_queue_desc_t desc = *altdesc;
-
-  if (level0_pcsampling_enabled()) {
-    desc.mode = ZE_COMMAND_QUEUE_MODE_SYNCHRONOUS; 
-  }
-
   // Entry action
   // Execute the real level0 API
 
