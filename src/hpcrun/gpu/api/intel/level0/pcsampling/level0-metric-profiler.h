@@ -86,7 +86,7 @@ class ZeMetricProfiler {
   static std::string data_dir_name_;
   std::vector<ze_context_handle_t> metric_contexts_;
   std::map<ze_device_handle_t, ZeDeviceDescriptor *> device_descriptors_;
-  std::mutex cmdlist_device_map_mutex_;
+  std::shared_mutex cmdlist_device_map_mutex_;
   std::map<ze_command_list_handle_t, ze_device_handle_t> cmdlist_device_map_;
 };
 
@@ -177,7 +177,7 @@ ZeMetricProfiler::InsertCommandListDeviceMapping
   ze_device_handle_t device
 )
 {
-  std::lock_guard<std::mutex> lock(cmdlist_device_map_mutex_);
+  std::unique_lock<std::shared_mutex> lock(cmdlist_device_map_mutex_);
   cmdlist_device_map_[cmdList] = device;
 }
 
@@ -187,7 +187,7 @@ ZeMetricProfiler::GetDeviceForCommandList
   ze_command_list_handle_t cmdList
 )
 {
-  std::lock_guard<std::mutex> lock(cmdlist_device_map_mutex_);
+  std::shared_lock<std::shared_mutex> lock(cmdlist_device_map_mutex_);
   auto it = cmdlist_device_map_.find(cmdList);
   if (it != cmdlist_device_map_.end()) {
     return it->second;
@@ -314,8 +314,7 @@ ZeMetricProfiler::RunProfilingLoop
     CollectAndProcessMetrics(profiler, desc, streamer, raw_metrics);
     FlushStreamerBuffer(streamer, desc);
 
-    status = zeEventHostReset(desc->serial_kernel_start_);
-    PTI_ASSERT(status == ZE_RESULT_SUCCESS);
+    desc->running_kernel_ = nullptr;
     
     // Notify the app thread that data processing is complete
     status = zeEventHostSignal(desc->serial_data_ready_);
