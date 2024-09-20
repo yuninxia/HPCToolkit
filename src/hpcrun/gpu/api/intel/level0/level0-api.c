@@ -562,7 +562,7 @@ hpcrun_zeCommandListAppendLaunchKernel
 )
 {
   PRINT("Enter zeCommandListAppendLaunchKernel wrapper: command list %p\n", hCommandList);
-  
+
   // Entry action:
   // We need to create a new event for querying time stamps
   // if the user appends the kernel with an empty event parameter
@@ -831,7 +831,7 @@ hpcrun_zeKernelCreate
   PRINT("foilbase_zeKernelCreate: module handle %p, kernel handle %p\n",hModule, *phKernel);
   // Exit action
   level0_kernel_module_map_insert(*phKernel, hModule);
-  
+
   return ret;
 }
 
@@ -934,7 +934,6 @@ level0_fini
   }
 #endif
 }
-
 
 void
 level0_flush
