@@ -1,17 +1,39 @@
+// SPDX-FileCopyrightText: 2002-2024 Rice University
+// SPDX-FileCopyrightText: 2024 Contributors to the HPCToolkit Project
+//
+// SPDX-License-Identifier: BSD-3-Clause
+
+// -*-Mode: C++;-*-
+
 #ifndef LEVEL0_DEVICE_H
 #define LEVEL0_DEVICE_H
 
+//*****************************************************************************
+// level zero includes
+//*****************************************************************************
+
 #include <level_zero/ze_api.h>
 #include <level_zero/zet_api.h>
+
+
+//*****************************************************************************
+// system includes
+//*****************************************************************************
 
 #include <atomic>
 #include <cstring>
 #include <iostream>
 #include <map>
+#include <memory>
 #include <string>
 #include <thread>
 #include <unordered_map>
 #include <vector>
+
+
+//******************************************************************************
+// local variables
+//******************************************************************************
 
 #include "level0-metric.h"
 #include "pti_assert.h"
@@ -42,30 +64,10 @@ struct ZeDeviceDescriptor {
   ze_kernel_handle_t running_kernel_;
 };
 
-ZeDeviceDescriptor*
-zeroCreateDeviceDescriptor
-(
-  ze_device_handle_t device, 
-  int32_t did, 
-  ze_driver_handle_t driver, 
-  ze_context_handle_t context, 
-  bool stall_sampling, 
-  const std::string& metric_group
-);
 
-uint32_t
-zeroGetSubDeviceCount
-(
-  ze_device_handle_t device
-);
-
-void 
-zeroHandleSubDevices
-(
-  ZeDeviceDescriptor* parent_desc, 
-  std::map<ze_device_handle_t, 
-  ZeDeviceDescriptor*>& device_descriptors
-);
+//******************************************************************************
+// interface operations
+//******************************************************************************
 
 void 
 zeroEnumerateDevices
@@ -74,32 +76,11 @@ zeroEnumerateDevices
   std::vector<ze_context_handle_t>& metric_contexts
 );
 
-int 
-zeroGetDeviceId
-(
-  const std::map<ze_device_handle_t, ZeDeviceDescriptor*>& device_descriptors, 
-  ze_device_handle_t sub_device
-);
-
-int
-zeroGetSubDeviceId
-(
-  const std::map<ze_device_handle_t, ZeDeviceDescriptor*>& device_descriptors, 
-  ze_device_handle_t sub_device
-);
-
-void
-zeroGetParentDevice
-(
-  const std::map<ze_device_handle_t, ZeDeviceDescriptor*>& device_descriptors,
-  ze_device_handle_t sub_device,
-  ze_device_handle_t& parent_device
-);
-
 ze_device_handle_t
 zeroConvertToRootDevice
 (
   ze_device_handle_t device
 );
+
 
 #endif  // LEVEL0_DEVICE_H

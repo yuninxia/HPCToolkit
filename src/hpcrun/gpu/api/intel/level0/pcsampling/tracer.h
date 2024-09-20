@@ -1,15 +1,23 @@
-//==============================================================
-// Copyright (C) Intel Corporation
+// SPDX-FileCopyrightText: 2002-2024 Rice University
+// SPDX-FileCopyrightText: 2024 Contributors to the HPCToolkit Project
 //
-// SPDX-License-Identifier: MIT
-// =============================================================
+// SPDX-License-Identifier: BSD-3-Clause
 
-#ifndef PTI_TOOLS_UNITRACE_UNIFIED_TRACER_H_
-#define PTI_TOOLS_UNITRACE_UNIFIED_TRACER_H_
+// -*-Mode: C++;-*-
+
+//*****************************************************************************
+// system includes
+//*****************************************************************************
 
 #include <iostream>
 #include <string>
-#include "level0-kernel-profile.h"
+
+
+//*****************************************************************************
+// local includes
+//*****************************************************************************
+
+#include "level0-tracing-callbacks.h"
 
 class UniTracer {
  public:
@@ -56,5 +64,3 @@ UniTracer::~UniTracer
 }
 
 UniTracer::UniTracer() {}
-
-#endif // PTI_TOOLS_UNITRACE_UNIFIED_TRACER_H_
