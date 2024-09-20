@@ -1,5 +1,16 @@
+// SPDX-FileCopyrightText: 2002-2024 Rice University
+// SPDX-FileCopyrightText: 2024 Contributors to the HPCToolkit Project
+//
+// SPDX-License-Identifier: BSD-3-Clause
+
+// -*-Mode: C++;-*-
+
 #ifndef LEVEL0_KERNEL_PROPERTIES_H
 #define LEVEL0_KERNEL_PROPERTIES_H
+
+//*****************************************************************************
+// system includes
+//*****************************************************************************
 
 #include <cstdint>
 #include <filesystem>
@@ -7,6 +18,13 @@
 #include <iostream>
 #include <map>
 #include <string>
+#include <unistd.h>
+
+
+//*****************************************************************************
+// type definitions
+//*****************************************************************************
+
 struct KernelProperties {
   std::string name;
   uint64_t base_address;
@@ -16,6 +34,11 @@ struct KernelProperties {
   size_t sample_count;
 };
 
+
+//******************************************************************************
+// interface operations
+//******************************************************************************
+
 void
 zeroReadKernelProperties
 (
@@ -23,5 +46,6 @@ zeroReadKernelProperties
   const std::string& data_dir_name,
   std::map<uint64_t, KernelProperties>& kprops
 );
+
 
 #endif // LEVEL0_KERNEL_PROPERTIES_H

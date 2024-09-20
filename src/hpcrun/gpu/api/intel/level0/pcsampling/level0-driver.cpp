@@ -1,10 +1,20 @@
-//==============================================================
-// Copyright (C) Intel Corporation
+// SPDX-FileCopyrightText: 2002-2024 Rice University
+// SPDX-FileCopyrightText: 2024 Contributors to the HPCToolkit Project
 //
-// SPDX-License-Identifier: MIT
-// =============================================================
+// SPDX-License-Identifier: BSD-3-Clause
+
+// -*-Mode: C++;-*-
+
+//*****************************************************************************
+// local includes
+//*****************************************************************************
 
 #include "level0-driver.h"
+
+
+//******************************************************************************
+// private operations
+//******************************************************************************
 
 void
 zeroGetDriverList
@@ -12,9 +22,8 @@ zeroGetDriverList
   std::vector<ze_driver_handle_t>& driver_list
 )
 {
-  ze_result_t status = ZE_RESULT_SUCCESS;
   uint32_t driver_count = 0;
-  status = zeDriverGet(&driver_count, nullptr);
+  ze_result_t status = zeDriverGet(&driver_count, nullptr);
   PTI_ASSERT(status == ZE_RESULT_SUCCESS);
 
   driver_list.clear();
@@ -38,6 +47,11 @@ zeroGetDriverVersion
   ze_result_t status = zeDriverGetApiVersion(driver, &version);
   PTI_ASSERT(status == ZE_RESULT_SUCCESS);
 }
+
+
+//******************************************************************************
+// interface operations
+//******************************************************************************
 
 void
 zeroGetVersion

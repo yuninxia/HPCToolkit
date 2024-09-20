@@ -1,4 +1,32 @@
+// SPDX-FileCopyrightText: 2002-2024 Rice University
+// SPDX-FileCopyrightText: 2024 Contributors to the HPCToolkit Project
+//
+// SPDX-License-Identifier: BSD-3-Clause
+
+// -*-Mode: C++;-*-
+
+//*****************************************************************************
+// local includes
+//*****************************************************************************
+
 #include "level0-device.h"
+
+
+//******************************************************************************
+// private operations
+//******************************************************************************
+
+uint32_t
+zeroGetSubDeviceCount
+(
+  ze_device_handle_t device
+)
+{
+  uint32_t num_sub_devices = 0;
+  ze_result_t status = zeDeviceGetSubDevices(device, &num_sub_devices, nullptr);
+  PTI_ASSERT(status == ZE_RESULT_SUCCESS);
+  return num_sub_devices;
+}
 
 ZeDeviceDescriptor*
 zeroCreateDeviceDescriptor
@@ -11,7 +39,7 @@ zeroCreateDeviceDescriptor
   const std::string& metric_group
 ) 
 {
-  ZeDeviceDescriptor *desc = new ZeDeviceDescriptor;
+  auto desc = std::make_unique<ZeDeviceDescriptor>();
 
   desc->stall_sampling_ = stall_sampling;
   desc->device_ = device;
@@ -50,19 +78,7 @@ zeroCreateDeviceDescriptor
 
   desc->serial_kernel_end_ = nullptr;
 
-  return desc;
-}
-
-uint32_t
-zeroGetSubDeviceCount
-(
-  ze_device_handle_t device
-)
-{
-  uint32_t num_sub_devices = 0;
-  ze_result_t status = zeDeviceGetSubDevices(device, &num_sub_devices, nullptr);
-  PTI_ASSERT(status == ZE_RESULT_SUCCESS);
-  return num_sub_devices;
+  return desc.release();
 }
 
 void 
@@ -99,6 +115,11 @@ zeroHandleSubDevices
   }
 }
 
+
+//******************************************************************************
+// interface operations
+//******************************************************************************
+
 void
 zeroEnumerateDevices
 (
@@ -106,8 +127,8 @@ zeroEnumerateDevices
   std::vector<ze_context_handle_t>& metric_contexts
 ) 
 {
-  std::string metric_group = "EuStallSampling";
-  bool stall_sampling = (metric_group == "EuStallSampling");
+  const std::string metric_group = "EuStallSampling";
+  const bool stall_sampling = (metric_group == "EuStallSampling");
 
   uint32_t num_drivers = 0;
   ze_result_t status = zeDriverGet(&num_drivers, nullptr);
@@ -122,7 +143,7 @@ zeroEnumerateDevices
   PTI_ASSERT(status == ZE_RESULT_SUCCESS);
 
   int32_t did = 0;
-  for (auto driver : drivers) {
+  for (const auto& driver : drivers) {
     ze_context_handle_t context = nullptr;
     ze_context_desc_t cdesc = {ZE_STRUCTURE_TYPE_CONTEXT_DESC, nullptr, 0};
     status = zeContextCreate(driver, &cdesc, &context);
@@ -138,62 +159,14 @@ zeroEnumerateDevices
     status = zeDeviceGet(driver, &num_devices, devices.data());
     PTI_ASSERT(status == ZE_RESULT_SUCCESS);
 
-    for (auto device : devices) {
+    for (const auto& device : devices) {
       ZeDeviceDescriptor* desc = zeroCreateDeviceDescriptor(device, did, driver, context, stall_sampling, metric_group);
-      if (desc == nullptr) {
-        continue;
+      if (desc != nullptr) {
+        device_descriptors.emplace(device, desc);
+        zeroHandleSubDevices(desc, device_descriptors);
+        ++did;
       }
-
-      device_descriptors.insert({device, desc});
-      zeroHandleSubDevices(desc, device_descriptors);
-      did++;
     }
-  }
-}
-
-int
-zeroGetDeviceId
-(
-  const std::map<ze_device_handle_t,
-  ZeDeviceDescriptor*>& device_descriptors,
-  ze_device_handle_t sub_device
-) 
-{
-  auto it = device_descriptors.find(sub_device);
-  if (it != device_descriptors.end()) {
-    return it->second->device_id_;
-  }
-  return -1;
-}
-
-int
-zeroGetSubDeviceId
-(
-  const std::map<ze_device_handle_t,
-  ZeDeviceDescriptor*>& device_descriptors,
-  ze_device_handle_t sub_device
-) 
-{
-  auto it = device_descriptors.find(sub_device);
-  if (it != device_descriptors.end()) {
-    return it->second->subdevice_id_;
-  }
-  return -1;
-}
-
-void
-zeroGetParentDevice
-(
-  const std::map<ze_device_handle_t, ZeDeviceDescriptor*>& device_descriptors,
-  ze_device_handle_t sub_device,
-  ze_device_handle_t& parent_device
-)
-{
-  auto it = device_descriptors.find(sub_device);
-  if (it != device_descriptors.end()) {
-    parent_device = it->second->parent_device_;
-  } else {
-    parent_device = nullptr; // Not found
   }
 }
 

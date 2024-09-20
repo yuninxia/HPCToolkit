@@ -1,4 +1,20 @@
+// SPDX-FileCopyrightText: 2002-2024 Rice University
+// SPDX-FileCopyrightText: 2024 Contributors to the HPCToolkit Project
+//
+// SPDX-License-Identifier: BSD-3-Clause
+
+// -*-Mode: C++;-*-
+
+//*****************************************************************************
+// local includes
+//*****************************************************************************
+
 #include "level0-activity-translate.h"
+
+
+//******************************************************************************
+// private operations
+//******************************************************************************
 
 void
 zeroConvertStallReason
@@ -10,85 +26,81 @@ zeroConvertStallReason
   stall_reason = GPU_INST_STALL_NONE;
   uint64_t max_value = 0;
 
-  if (stall.control_ > max_value) {
-    max_value = stall.control_;
-    stall_reason = GPU_INST_STALL_OTHER; // TBD
-  }
-  if (stall.pipe_ > max_value) {
-    max_value = stall.pipe_;
-    stall_reason = GPU_INST_STALL_PIPE_BUSY;
-  }
-  if (stall.send_ > max_value) {
-    max_value = stall.send_;
-    stall_reason = GPU_INST_STALL_GMEM; // TBD
-  }
-  if (stall.dist_ > max_value) {
-    max_value = stall.dist_;
-    stall_reason = GPU_INST_STALL_PIPE_BUSY; // TBD
-  }
-  if (stall.sbid_ > max_value) {
-    max_value = stall.sbid_;
-    stall_reason = GPU_INST_STALL_IDEPEND; // TBD
-  }
-  if (stall.sync_ > max_value) {
-    max_value = stall.sync_;
-    stall_reason = GPU_INST_STALL_SYNC;
-  }
-  if (stall.insfetch_ > max_value) {
-    max_value = stall.insfetch_;
-    stall_reason = GPU_INST_STALL_IFETCH;
-  }
-  if (stall.other_ > max_value) {
-    max_value = stall.other_;
-    stall_reason = GPU_INST_STALL_OTHER;
+  // Map stall types to reasons
+  const struct {
+    uint64_t EuStalls::* stall_value;
+    gpu_inst_stall_t reason;
+  } stall_mappings[] = {
+    {&EuStalls::control_, GPU_INST_STALL_OTHER}, // TBD
+    {&EuStalls::pipe_, GPU_INST_STALL_PIPE_BUSY},
+    {&EuStalls::send_, GPU_INST_STALL_GMEM}, // TBD
+    {&EuStalls::dist_, GPU_INST_STALL_PIPE_BUSY}, // TBD
+    {&EuStalls::sbid_, GPU_INST_STALL_IDEPEND}, // TBD
+    {&EuStalls::sync_, GPU_INST_STALL_SYNC},
+    {&EuStalls::insfetch_, GPU_INST_STALL_IFETCH},
+    {&EuStalls::other_, GPU_INST_STALL_OTHER}
+  };
+
+  // Iterate through the mappings to find the maximum stall value
+  for (const auto& mapping : stall_mappings) {
+    if (stall.*(mapping.stall_value) > max_value) {
+      max_value = stall.*(mapping.stall_value);
+      stall_reason = mapping.reason;
+    }
   }
 }
 
-bool 
+bool
 zeroConvertPCSampling
 (
   gpu_activity_t* activity, 
-  std::map<uint64_t, EuStalls>::iterator it,
-  std::map<uint64_t, KernelProperties>::const_reverse_iterator rit,
+  const std::map<uint64_t, EuStalls>::iterator& it,
+  const std::map<uint64_t, KernelProperties>::const_reverse_iterator& rit,
   uint64_t correlation_id
 )
 {
+  if (!activity) return false;
+
   activity->kind = GPU_ACTIVITY_PC_SAMPLING;
 
-  KernelProperties kernel_props = rit->second;
-  EuStalls stall = it->second;
+  const KernelProperties& kernel_props = rit->second;
+  const EuStalls& stall = it->second;
 
   uint32_t module_id_uint32 = hex_string_to_uint<uint32_t>(kernel_props.module_id.substr(0, 8));
-  zebin_id_map_entry_t *entry = zebin_id_map_lookup(module_id_uint32);
-  if (entry != nullptr) {
+  zebin_id_map_entry_t* entry = zebin_id_map_lookup(module_id_uint32);
+  if (entry) {
     uint32_t hpctoolkit_module_id = zebin_id_map_entry_hpctoolkit_id_get(entry);
-    activity->details.pc_sampling.pc.lm_id = (uint16_t)hpctoolkit_module_id;
+    activity->details.pc_sampling.pc.lm_id = static_cast<uint16_t>(hpctoolkit_module_id);
   }
 
   activity->details.pc_sampling.pc.lm_ip = it->first + 0x800000000000; // real = it->first; base = rit->first; offset = real - base;
   activity->details.pc_sampling.correlation_id = correlation_id;
-  activity->details.pc_sampling.samples = stall.active_ + stall.control_ + stall.pipe_ + stall.send_ + stall.dist_ + stall.sbid_ + stall.sync_ + stall.insfetch_ + stall.other_;
+  activity->details.pc_sampling.samples = stall.active_ + stall.control_ + stall.pipe_ + 
+    stall.send_ + stall.dist_ + stall.sbid_ + stall.sync_ + stall.insfetch_ + stall.other_;
   activity->details.pc_sampling.latencySamples = activity->details.pc_sampling.samples - stall.active_;  
   zeroConvertStallReason(stall, activity->details.pc_sampling.stallReason);
   
   return true;
 }
 
-void 
+
+//******************************************************************************
+// interface operations
+//******************************************************************************
+
+void
 zeroActivityTranslate
 (
   std::deque<gpu_activity_t*>& activities, 
-  std::map<uint64_t, EuStalls>::iterator it,
-  std::map<uint64_t, KernelProperties>::const_reverse_iterator rit,
+  const std::map<uint64_t, EuStalls>::iterator& it,
+  const std::map<uint64_t, KernelProperties>::const_reverse_iterator& rit,
   uint64_t correlation_id
 ) 
 {
-  gpu_activity_t* activity = new gpu_activity_t();
-  gpu_activity_init(activity);
+  auto activity = std::make_unique<gpu_activity_t>();
+  gpu_activity_init(activity.get());
 
-  if (zeroConvertPCSampling(activity, it, rit, correlation_id)) {
-    activities.push_back(activity);
-  } else {
-    delete activity;
+  if (zeroConvertPCSampling(activity.get(), it, rit, correlation_id)) {
+    activities.push_back(activity.release());
   }
 }

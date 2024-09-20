@@ -562,7 +562,7 @@ hpcrun_zeCommandListAppendLaunchKernel
 )
 {
   PRINT("Enter zeCommandListAppendLaunchKernel wrapper: command list %p\n", hCommandList);
-  
+
   // Entry action:
   // We need to create a new event for querying time stamps
   // if the user appends the kernel with an empty event parameter
@@ -830,7 +830,7 @@ hpcrun_zeKernelCreate
   level0_kernel_module_map_insert(*phKernel, hModule);
   ip_normalized_t kernel_ip;
   kernel_ip = level0_func_ip_resolve(*phKernel, dispatch);
-  
+
   return ret;
 }
 
@@ -930,7 +930,6 @@ level0_fini
   }
 #endif
 }
-
 
 void
 level0_flush
