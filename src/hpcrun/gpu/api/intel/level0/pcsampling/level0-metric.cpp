@@ -1,4 +1,20 @@
+// SPDX-FileCopyrightText: 2002-2024 Rice University
+// SPDX-FileCopyrightText: 2024 Contributors to the HPCToolkit Project
+//
+// SPDX-License-Identifier: BSD-3-Clause
+
+// -*-Mode: C++;-*-
+
+//*****************************************************************************
+// local includes
+//*****************************************************************************
+
 #include "level0-metric.h"
+
+
+//******************************************************************************
+// private operations
+//******************************************************************************
 
 void
 zeroGetMetricUnits
@@ -54,6 +70,11 @@ zeroGetMetricCount
   metric_count = group_props.metricCount;
 }
 
+
+//******************************************************************************
+// interface operations
+//******************************************************************************
+
 void
 zeroGetMetricList
 (
@@ -87,7 +108,7 @@ zeroGetMetricList
     if (!units.empty()) {
       name += "[" + units + "]";
     }
-    name_list.push_back(name);
+    name_list.push_back(std::move(name));
   }
 }
 
@@ -114,14 +135,14 @@ zeroGetMetricGroup
   PTI_ASSERT(status == ZE_RESULT_SUCCESS);
 
   group = nullptr;
-  for (uint32_t k = 0; k < num_groups; ++k) {
+  for (auto& current_group : groups) {
     zet_metric_group_properties_t group_props{};
     group_props.stype = ZET_STRUCTURE_TYPE_METRIC_GROUP_PROPERTIES;
-    status = zetMetricGroupGetProperties(groups[k], &group_props);
+    status = zetMetricGroupGetProperties(current_group, &group_props);
     PTI_ASSERT(status == ZE_RESULT_SUCCESS);
 
     if ((group_props.name == metric_group_name) && (group_props.samplingType & ZET_METRIC_GROUP_SAMPLING_TYPE_FLAG_TIME_BASED)) {
-        group = groups[k];
+        group = current_group;
         return;
     }
   }

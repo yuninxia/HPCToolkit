@@ -1,7 +1,23 @@
+// SPDX-FileCopyrightText: 2002-2024 Rice University
+// SPDX-FileCopyrightText: 2024 Contributors to the HPCToolkit Project
+//
+// SPDX-License-Identifier: BSD-3-Clause
+
+// -*-Mode: C++;-*-
+
 #ifndef LEVEL0_METRIC_H
 #define LEVEL0_METRIC_H
 
+//*****************************************************************************
+// level zero includes
+//*****************************************************************************
+
 #include <level_zero/zet_api.h>
+
+
+//*****************************************************************************
+// system includes
+//*****************************************************************************
 
 #include <cstdint>
 #include <iostream>
@@ -9,7 +25,18 @@
 #include <string>
 #include <vector>
 
+
+//*****************************************************************************
+// local includes
+//*****************************************************************************
+
 #include "pti_assert.h"
+
+
+//*****************************************************************************
+// type definitions
+//*****************************************************************************
+
 struct EuStalls {
   uint64_t active_;
   uint64_t control_;
@@ -22,27 +49,10 @@ struct EuStalls {
   uint64_t other_;
 };
 
-void
-zeroGetMetricUnits
-(
-  const char* units,
-  std::string& result
-);
 
-void
-zeroGetMetricId
-(
-  const std::vector<std::string>& metric_list,
-  const std::string& metric_name,
-  uint32_t& metric_id
-);
-
-void
-zeroGetMetricCount
-(
-  zet_metric_group_handle_t group,
-  uint32_t& metric_count
-);
+//******************************************************************************
+// interface operations
+//******************************************************************************
 
 void
 zeroGetMetricList
@@ -75,5 +85,6 @@ zeroCalculateEuStalls
   const std::vector<uint8_t>& raw_metrics,
   std::map<uint64_t, EuStalls>& eustalls
 );
+
 
 #endif  // LEVEL0_METRIC_H

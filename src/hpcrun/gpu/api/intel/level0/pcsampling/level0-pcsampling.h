@@ -3,7 +3,7 @@
 //
 // SPDX-License-Identifier: BSD-3-Clause
 
-// -*-Mode: C++;-*- // technically C99
+// -*-Mode: C++;-*-
 
 #ifndef level0_pcsampling_h
 #define level0_pcsampling_h

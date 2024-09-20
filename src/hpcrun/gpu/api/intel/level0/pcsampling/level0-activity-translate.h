@@ -1,5 +1,16 @@
+// SPDX-FileCopyrightText: 2002-2024 Rice University
+// SPDX-FileCopyrightText: 2024 Contributors to the HPCToolkit Project
+//
+// SPDX-License-Identifier: BSD-3-Clause
+
+// -*-Mode: C++;-*-
+
 #ifndef LEVEL0_ACTIVITY_TRANSLATE_H
 #define LEVEL0_ACTIVITY_TRANSLATE_H
+
+//*****************************************************************************
+// system includes
+//*****************************************************************************
 
 #include <deque>
 #include <iomanip>
@@ -7,33 +18,27 @@
 #include <sstream>
 #include <string>
 
+
+//*****************************************************************************
+// local includes
+//*****************************************************************************
+
 #include "../../../../activity/gpu-activity.h"
 #include "../level0-id-map.h"
 #include "level0-kernel-properties.h"
 #include "level0-metric.h"
 
-void
-zeroConvertStallReason
-(
-  const EuStalls& stall,
-  gpu_inst_stall_t& stall_reason
-);
 
-bool
-zeroConvertPCSampling
-(
-  gpu_activity_t* activity, 
-  std::map<uint64_t, EuStalls>::iterator it,
-  std::map<uint64_t, KernelProperties>::const_reverse_iterator rit, 
-  uint64_t correlation_id
-);
+//******************************************************************************
+// interface operations
+//******************************************************************************
 
 void
 zeroActivityTranslate
 (
   std::deque<gpu_activity_t*>& activities, 
-  std::map<uint64_t, EuStalls>::iterator it,
-  std::map<uint64_t, KernelProperties>::const_reverse_iterator rit, 
+  const std::map<uint64_t, EuStalls>::iterator& it,
+  const std::map<uint64_t, KernelProperties>::const_reverse_iterator& rit,
   uint64_t correlation_id
 );
 
@@ -49,5 +54,6 @@ T hex_string_to_uint
   ss >> num;
   return num;
 }
+
 
 #endif // LEVEL0_ACTIVITY_TRANSLATE_H
