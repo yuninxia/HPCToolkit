@@ -9,7 +9,7 @@
 // local includes
 //*****************************************************************************
 
-#include "level0-device.h"
+#include "level0-device.hpp"
 
 
 //******************************************************************************
@@ -24,7 +24,7 @@ zeroGetSubDeviceCount
 {
   uint32_t num_sub_devices = 0;
   ze_result_t status = zeDeviceGetSubDevices(device, &num_sub_devices, nullptr);
-  PTI_ASSERT(status == ZE_RESULT_SUCCESS);
+  level0_check_result(status, __LINE__);
   return num_sub_devices;
 }
 
@@ -65,16 +65,16 @@ zeroCreateDeviceDescriptor
   ze_event_pool_handle_t event_pool = nullptr;
   ze_event_pool_desc_t event_pool_desc = {ZE_STRUCTURE_TYPE_EVENT_POOL_DESC, nullptr, ZE_EVENT_POOL_FLAG_HOST_VISIBLE, 2};
   status = zeEventPoolCreate(context, &event_pool_desc, 1, &device, &event_pool);
-  PTI_ASSERT(status == ZE_RESULT_SUCCESS);
+  level0_check_result(status, __LINE__);
 
   // Create events  
   ze_event_desc_t event_desc = {ZE_STRUCTURE_TYPE_EVENT_DESC, nullptr, 0, ZE_EVENT_SCOPE_FLAG_HOST, ZE_EVENT_SCOPE_FLAG_HOST};
   status = zeEventCreate(event_pool, &event_desc, &desc->serial_kernel_start_);
-  PTI_ASSERT(status == ZE_RESULT_SUCCESS);
+  level0_check_result(status, __LINE__);
 
   ze_event_desc_t data_event_desc = {ZE_STRUCTURE_TYPE_EVENT_DESC, nullptr, 1, ZE_EVENT_SCOPE_FLAG_HOST, ZE_EVENT_SCOPE_FLAG_HOST};
   status = zeEventCreate(event_pool, &data_event_desc, &desc->serial_data_ready_);
-  PTI_ASSERT(status == ZE_RESULT_SUCCESS);
+  level0_check_result(status, __LINE__);
 
   desc->serial_kernel_end_ = nullptr;
 
@@ -94,7 +94,7 @@ zeroHandleSubDevices
 
   std::vector<ze_device_handle_t> sub_devices(num_sub_devices);
   ze_result_t status = zeDeviceGetSubDevices(parent_desc->device_, &num_sub_devices, sub_devices.data());
-  PTI_ASSERT(status == ZE_RESULT_SUCCESS);
+  level0_check_result(status, __LINE__);
 
   for (uint32_t j = 0; j < num_sub_devices; j++) {
     ZeDeviceDescriptor* sub_desc = new ZeDeviceDescriptor;
@@ -132,7 +132,7 @@ zeroEnumerateDevices
 
   uint32_t num_drivers = 0;
   ze_result_t status = zeDriverGet(&num_drivers, nullptr);
-  PTI_ASSERT(status == ZE_RESULT_SUCCESS);
+  level0_check_result(status, __LINE__);
 
   if (num_drivers == 0) {
     return;
@@ -140,24 +140,24 @@ zeroEnumerateDevices
 
   std::vector<ze_driver_handle_t> drivers(num_drivers);
   status = zeDriverGet(&num_drivers, drivers.data());
-  PTI_ASSERT(status == ZE_RESULT_SUCCESS);
+  level0_check_result(status, __LINE__);
 
   int32_t did = 0;
   for (const auto& driver : drivers) {
     ze_context_handle_t context = nullptr;
     ze_context_desc_t cdesc = {ZE_STRUCTURE_TYPE_CONTEXT_DESC, nullptr, 0};
     status = zeContextCreate(driver, &cdesc, &context);
-    PTI_ASSERT(status == ZE_RESULT_SUCCESS);
+    level0_check_result(status, __LINE__);
     metric_contexts.push_back(context);
 
     uint32_t num_devices = 0;
     status = zeDeviceGet(driver, &num_devices, nullptr);
-    PTI_ASSERT(status == ZE_RESULT_SUCCESS);
+    level0_check_result(status, __LINE__);
     if (num_devices == 0) continue;
 
     std::vector<ze_device_handle_t> devices(num_devices);
     status = zeDeviceGet(driver, &num_devices, devices.data());
-    PTI_ASSERT(status == ZE_RESULT_SUCCESS);
+    level0_check_result(status, __LINE__);
 
     for (const auto& device : devices) {
       ZeDeviceDescriptor* desc = zeroCreateDeviceDescriptor(device, did, driver, context, stall_sampling, metric_group);
@@ -177,7 +177,7 @@ zeroConvertToRootDevice
 )
 {
   ze_device_handle_t rootDevice = nullptr;
-  ze_result_t result = zeDeviceGetRootDevice(device, &rootDevice);
-  PTI_ASSERT(result == ZE_RESULT_SUCCESS);
+  ze_result_t status = zeDeviceGetRootDevice(device, &rootDevice);
+  level0_check_result(status, __LINE__);
   return (rootDevice != nullptr) ? rootDevice : device;
 }

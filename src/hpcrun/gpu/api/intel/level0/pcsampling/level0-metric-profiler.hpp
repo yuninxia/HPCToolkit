@@ -33,13 +33,14 @@
 
 #include "../../../../../libmonitor/monitor.h"
 #include "../level0-command-process.h"
-#include "level0-activity-generate.h"
-#include "level0-activity-send.h"
-#include "level0-activity-translate.h"
-#include "level0-device.h"
-#include "level0-kernel-properties.h"
-#include "level0-metric.h"
-#include "pti_assert.h"
+#include "level0-activity-generate.hpp"
+#include "level0-activity-send.hpp"
+#include "level0-activity-translate.hpp"
+#include "level0-assert.hpp"
+#include "level0-buffer.hpp"
+#include "level0-device.hpp"
+#include "level0-kernel-properties.hpp"
+#include "level0-metric.hpp"
 
 extern "C" {
   #include "../../../../activity/correlation/gpu-correlation-channel.h"
@@ -48,13 +49,24 @@ extern "C" {
 
 
 //*****************************************************************************
-// macros
+// local variables
 //*****************************************************************************
 
 constexpr static uint32_t max_metric_size = 512;
+
+
+//*****************************************************************************
+// global variables
+//*****************************************************************************
+
 extern uint32_t max_metric_samples;
 
-#define MAX_METRIC_BUFFER  (max_metric_samples * max_metric_size * 2)
+
+//*****************************************************************************
+// macros
+//*****************************************************************************
+
+#define MAX_METRIC_BUFFER (max_metric_samples * max_metric_size * 2)
 
 
 //*****************************************************************************
@@ -78,9 +90,8 @@ class ZeMetricProfiler {
   void StopProfilingMetrics();
 
   static void MetricProfilingThread(ZeMetricProfiler* profiler, ZeDeviceDescriptor *desc);
-  static void RunProfilingLoop(ZeMetricProfiler* profiler, ZeDeviceDescriptor* desc, zet_metric_streamer_handle_t& streamer);
-  static void CollectAndProcessMetrics(ZeMetricProfiler* profiler, ZeDeviceDescriptor* desc, zet_metric_streamer_handle_t& streamer, std::vector<uint8_t>& raw_metrics);
-  static void FlushStreamerBuffer(zet_metric_streamer_handle_t& streamer, ZeDeviceDescriptor* desc);
+  static void RunProfilingLoop(ZeDeviceDescriptor* desc, zet_metric_streamer_handle_t& streamer);
+  static void CollectAndProcessMetrics(ZeDeviceDescriptor* desc, zet_metric_streamer_handle_t& streamer, std::vector<uint8_t>& raw_metrics);
   static void UpdateCorrelationID(uint64_t cid, gpu_activity_channel_t *channel, void *arg);
 
  private: // Data

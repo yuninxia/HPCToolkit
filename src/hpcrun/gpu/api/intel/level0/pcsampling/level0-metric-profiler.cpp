@@ -9,7 +9,7 @@
 // local includes
 //*****************************************************************************
 
-#include "level0-metric-profiler.h"
+#include "level0-metric-profiler.hpp"
 
 
 //******************************************************************************
@@ -38,7 +38,7 @@ ZeMetricProfiler::MetricProfilingThread
   zet_metric_group_handle_t group = desc->metric_group_;
 
   status = zetContextActivateMetricGroups(context, device, 1, &group);
-  PTI_ASSERT(status == ZE_RESULT_SUCCESS);
+  level0_check_result(status, __LINE__);
 
   zet_metric_streamer_handle_t streamer = nullptr;
   uint32_t interval = 500000; // ns
@@ -60,21 +60,20 @@ ZeMetricProfiler::MetricProfilingThread
 
   std::vector<std::string> metric_list;
   zeroGetMetricList(group, metric_list);
-  PTI_ASSERT(!metric_list.empty());
+  assert(!metric_list.empty());
 
-  RunProfilingLoop(profiler, desc, streamer);
+  RunProfilingLoop(desc, streamer);
 
   status = zetMetricStreamerClose(streamer);
-  PTI_ASSERT(status == ZE_RESULT_SUCCESS);
+  level0_check_result(status, __LINE__);
 
   status = zetContextActivateMetricGroups(context, device, 0, &group);
-  PTI_ASSERT(status == ZE_RESULT_SUCCESS);
+  level0_check_result(status, __LINE__);
 }
 
 void 
 ZeMetricProfiler::RunProfilingLoop
 (
-  ZeMetricProfiler* profiler,
   ZeDeviceDescriptor* desc,
   zet_metric_streamer_handle_t& streamer
 )
@@ -107,25 +106,24 @@ ZeMetricProfiler::RunProfilingLoop
         break;
       }
 
-      CollectAndProcessMetrics(profiler, desc, streamer, raw_metrics);
+      CollectAndProcessMetrics(desc, streamer, raw_metrics);
     }
 
     // Kernel has finished, perform final sampling and cleanup
-    CollectAndProcessMetrics(profiler, desc, streamer, raw_metrics);
+    CollectAndProcessMetrics(desc, streamer, raw_metrics);
     FlushStreamerBuffer(streamer, desc);
 
     desc->running_kernel_ = nullptr;
     
     // Notify the app thread that data processing is complete
     status = zeEventHostSignal(desc->serial_data_ready_);
-    PTI_ASSERT(status == ZE_RESULT_SUCCESS);
+    level0_check_result(status, __LINE__);
   }
 }
 
 void
 ZeMetricProfiler::CollectAndProcessMetrics
 (
-  ZeMetricProfiler* profiler,
   ZeDeviceDescriptor* desc,
   zet_metric_streamer_handle_t& streamer,
   std::vector<uint8_t>& raw_metrics
@@ -155,34 +153,6 @@ ZeMetricProfiler::CollectAndProcessMetrics
     delete activity;
   }
   activities.clear();
-}
-
-void
-ZeMetricProfiler::FlushStreamerBuffer
-(
-  zet_metric_streamer_handle_t& streamer,
-  ZeDeviceDescriptor* desc
-)
-{
-  ze_result_t status = ZE_RESULT_SUCCESS;
-
-  // Close the old streamer
-  status = zetMetricStreamerClose(streamer);
-  PTI_ASSERT(status == ZE_RESULT_SUCCESS);
-
-  // Open a new streamer
-  uint32_t interval = 500000; // ns
-  zet_metric_streamer_desc_t streamer_desc = {ZET_STRUCTURE_TYPE_METRIC_STREAMER_DESC, nullptr, max_metric_samples, interval};
-  status = zetMetricStreamerOpen(desc->context_, desc->device_, desc->metric_group_, &streamer_desc, nullptr, &streamer);
-  if (status != ZE_RESULT_SUCCESS) {
-    std::cerr << "[ERROR] Failed to open metric streamer (" << status << "). The sampling interval might be too small." << std::endl;
-    streamer = nullptr; // Make sure to set streamer to nullptr if fails
-    return;
-  }
-
-  if (streamer_desc.notifyEveryNReports > max_metric_samples) {
-    max_metric_samples = streamer_desc.notifyEveryNReports;
-  }
 }
 
 void 
@@ -254,8 +224,8 @@ ZeMetricProfiler::StopProfilingMetrics
       // Skip subdevices
       continue;
     }
-    PTI_ASSERT(it->second->profiling_thread_ != nullptr);
-    PTI_ASSERT(it->second->profiling_state_ == PROFILER_ENABLED);
+    assert(it->second->profiling_thread_ != nullptr);
+    assert(it->second->profiling_state_ == PROFILER_ENABLED);
     it->second->profiling_state_.store(PROFILER_DISABLED, std::memory_order_release);
     it->second->profiling_thread_->join();
     delete it->second->profiling_thread_;

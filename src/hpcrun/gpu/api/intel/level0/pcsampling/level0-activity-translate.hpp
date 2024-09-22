@@ -5,17 +5,18 @@
 
 // -*-Mode: C++;-*-
 
-#ifndef LEVEL0_ACTIVITY_SEND_H
-#define LEVEL0_ACTIVITY_SEND_H
+#ifndef LEVEL0_ACTIVITY_TRANSLATE_H
+#define LEVEL0_ACTIVITY_TRANSLATE_H
 
 //*****************************************************************************
 // system includes
 //*****************************************************************************
 
 #include <deque>
-#include <iostream>
+#include <iomanip>
 #include <map>
-#include <unordered_map>
+#include <sstream>
+#include <string>
 
 
 //*****************************************************************************
@@ -23,11 +24,9 @@
 //*****************************************************************************
 
 #include "../../../../activity/gpu-activity.h"
-#include "level0-kernel-properties.h"
-
-extern "C" {
-  #include "../../../../activity/gpu-activity-channel.h"
-}
+#include "../level0-id-map.h"
+#include "level0-kernel-properties.hpp"
+#include "level0-metric.hpp"
 
 
 //******************************************************************************
@@ -35,17 +34,13 @@ extern "C" {
 //******************************************************************************
 
 void
-zeroSendActivities
+zeroActivityTranslate
 (
-  std::deque<gpu_activity_t*>& activities
-);
-
-void
-zeroLogActivities
-(
-  const std::deque<gpu_activity_t*>& activities, 
-  const std::map<uint64_t, KernelProperties>& kprops
+  std::deque<gpu_activity_t*>& activities, 
+  const std::map<uint64_t, EuStalls>::iterator& it,
+  const std::map<uint64_t, KernelProperties>::const_reverse_iterator& rit,
+  uint64_t correlation_id
 );
 
 
-#endif // LEVEL0_ACTIVITY_SEND_H
+#endif // LEVEL0_ACTIVITY_TRANSLATE_H
