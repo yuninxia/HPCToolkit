@@ -9,7 +9,7 @@
 // local includes
 //*****************************************************************************
 
-#include "level0-driver.h"
+#include "level0-driver.hpp"
 
 
 //******************************************************************************
@@ -24,7 +24,7 @@ zeroGetDriverList
 {
   uint32_t driver_count = 0;
   ze_result_t status = zeDriverGet(&driver_count, nullptr);
-  PTI_ASSERT(status == ZE_RESULT_SUCCESS);
+  level0_check_result(status, __LINE__);
 
   driver_list.clear();
   if (driver_count == 0) {
@@ -33,7 +33,7 @@ zeroGetDriverList
 
   driver_list.resize(driver_count);
   status = zeDriverGet(&driver_count, driver_list.data());
-  PTI_ASSERT(status == ZE_RESULT_SUCCESS);
+  level0_check_result(status, __LINE__);
 }
 
 void
@@ -43,9 +43,9 @@ zeroGetDriverVersion
   ze_api_version_t& version
 )
 {
-  PTI_ASSERT(driver != nullptr);
+  assert(driver != nullptr);
   ze_result_t status = zeDriverGetApiVersion(driver, &version);
-  PTI_ASSERT(status == ZE_RESULT_SUCCESS);
+  level0_check_result(status, __LINE__);
 }
 
 

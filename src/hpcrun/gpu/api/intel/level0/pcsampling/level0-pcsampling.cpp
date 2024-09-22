@@ -18,11 +18,11 @@
 // local includes
 //*****************************************************************************
 
-#include "level0-pcsampling.h"
-#include "tracer.h"
-#include "level0-metric-profiler.h"
+#include "level0-pcsampling.hpp"
+#include "level0-tracing-callbacks.hpp"
+#include "level0-metric-profiler.hpp"
 
-static UniTracer* tracer = nullptr;
+static ZeCollector* ze_collector = nullptr;
 ZeMetricProfiler* metric_profiler = nullptr;
 
 static pthread_once_t level0_pcsampling_init_once = PTHREAD_ONCE_INIT;
@@ -62,6 +62,7 @@ zeroDisableProfiling
 {
   if (metric_profiler != nullptr) {
     delete metric_profiler;
+    metric_profiler = nullptr;
   }
 }
 
@@ -72,7 +73,11 @@ zeroPCSamplingEnableHelper
 )
 {
   zeroEnableProfiling(data_dir_name);
-  tracer = UniTracer::Create(data_dir_name); // kernel collector
+  ze_collector = ZeCollector::Create(data_dir_name); // kernel collector
+  if (ze_collector == nullptr) {
+    std::cerr << "[ERROR] Failed to create ZeCollector instance." << std::endl;
+    exit(-1);
+  }
 }
 
 
@@ -118,7 +123,10 @@ zeroPCSamplingFini
 )
 {
   if (zeroIsPcSamplingEnabled()) {
-    delete tracer;
+    if (ze_collector != nullptr) {
+      ze_collector->DisableTracing();
+      delete ze_collector;
+    }
     zeroDisableProfiling();
     for (const auto& e: std::filesystem::directory_iterator(std::filesystem::path(data_dir_name))) {
       std::filesystem::remove_all(e.path());
