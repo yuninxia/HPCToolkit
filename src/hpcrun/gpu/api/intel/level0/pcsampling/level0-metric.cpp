@@ -9,7 +9,7 @@
 // local includes
 //*****************************************************************************
 
-#include "level0-metric.h"
+#include "level0-metric.hpp"
 
 
 //******************************************************************************
@@ -23,7 +23,7 @@ zeroGetMetricUnits
   std::string& result
 )
 {
-  PTI_ASSERT(units != nullptr);
+  assert(units != nullptr);
 
   result = units;
   if (result.find("null") != std::string::npos) {
@@ -41,8 +41,8 @@ zeroGetMetricId
   uint32_t& metric_id
 )
 {
-  PTI_ASSERT(!metric_list.empty());
-  PTI_ASSERT(!metric_name.empty());
+  assert(!metric_list.empty());
+  assert(!metric_name.empty());
 
   for (size_t i = 0; i < metric_list.size(); ++i) {
     if (metric_list[i].find(metric_name) == 0) {
@@ -60,12 +60,12 @@ zeroGetMetricCount
   uint32_t& metric_count
 )
 {
-  PTI_ASSERT(group != nullptr);
+  assert(group != nullptr);
 
   zet_metric_group_properties_t group_props{};
   group_props.stype = ZET_STRUCTURE_TYPE_METRIC_GROUP_PROPERTIES;
   ze_result_t status = zetMetricGroupGetProperties(group, &group_props);
-  PTI_ASSERT(status == ZE_RESULT_SUCCESS);
+  level0_check_result(status, __LINE__);
 
   metric_count = group_props.metricCount;
 }
@@ -82,16 +82,16 @@ zeroGetMetricList
   std::vector<std::string>& name_list
 )
 {
-  PTI_ASSERT(group != nullptr);
+  assert(group != nullptr);
 
   uint32_t metric_count;
   zeroGetMetricCount(group, metric_count);
-  PTI_ASSERT(metric_count > 0);
+  assert(metric_count > 0);
 
   std::vector<zet_metric_handle_t> metric_list(metric_count);
   ze_result_t status = zetMetricGet(group, &metric_count, metric_list.data());
-  PTI_ASSERT(status == ZE_RESULT_SUCCESS);
-  PTI_ASSERT(metric_count == metric_list.size());
+  level0_check_result(status, __LINE__);
+  assert(metric_count == metric_list.size());
 
   name_list.clear();
   for (auto metric : metric_list) {
@@ -99,7 +99,7 @@ zeroGetMetricList
       ZET_STRUCTURE_TYPE_METRIC_PROPERTIES,
     };
     status = zetMetricGetProperties(metric, &metric_props);
-    PTI_ASSERT(status == ZE_RESULT_SUCCESS);
+    level0_check_result(status, __LINE__);
 
     std::string units;
     zeroGetMetricUnits(metric_props.resultUnits, units);
@@ -122,7 +122,7 @@ zeroGetMetricGroup
 {
   uint32_t num_groups = 0;
   ze_result_t status = zetMetricGroupGet(device, &num_groups, nullptr);
-  PTI_ASSERT(status == ZE_RESULT_SUCCESS);
+  level0_check_result(status, __LINE__);
 
   if (num_groups == 0) {
     std::cerr << "[WARNING] No metric groups found" << std::endl;
@@ -132,14 +132,14 @@ zeroGetMetricGroup
 
   std::vector<zet_metric_group_handle_t> groups(num_groups, nullptr);
   status = zetMetricGroupGet(device, &num_groups, groups.data());
-  PTI_ASSERT(status == ZE_RESULT_SUCCESS);
+  level0_check_result(status, __LINE__);
 
   group = nullptr;
   for (auto& current_group : groups) {
     zet_metric_group_properties_t group_props{};
     group_props.stype = ZET_STRUCTURE_TYPE_METRIC_GROUP_PROPERTIES;
     status = zetMetricGroupGetProperties(current_group, &group_props);
-    PTI_ASSERT(status == ZE_RESULT_SUCCESS);
+    level0_check_result(status, __LINE__);
 
     if ((group_props.name == metric_group_name) && (group_props.samplingType & ZET_METRIC_GROUP_SAMPLING_TYPE_FLAG_TIME_BASED)) {
         group = current_group;
@@ -165,8 +165,8 @@ zeroCollectMetrics
   size_t actual_data_size = 0;
 
   status = zetMetricStreamerReadData(streamer, UINT32_MAX, &actual_data_size, nullptr);
-  PTI_ASSERT(status == ZE_RESULT_SUCCESS);
-  PTI_ASSERT(actual_data_size > 0);
+  level0_check_result(status, __LINE__);
+  assert(actual_data_size > 0);
 
   if (actual_data_size > storage.size()) {
     actual_data_size = storage.size();
@@ -174,7 +174,7 @@ zeroCollectMetrics
   }
 
   status = zetMetricStreamerReadData(streamer, UINT32_MAX, &actual_data_size, storage.data());
-  PTI_ASSERT(status == ZE_RESULT_SUCCESS);
+  level0_check_result(status, __LINE__);
   data_size = actual_data_size;
 }
 
@@ -191,7 +191,7 @@ zeroCalculateEuStalls
 
   std::vector<std::string> metric_list;
   zeroGetMetricList(metric_group, metric_list);
-  PTI_ASSERT(!metric_list.empty());
+  assert(!metric_list.empty());
 
   uint32_t ip_idx;
   zeroGetMetricId(metric_list, "IP", ip_idx);
