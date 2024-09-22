@@ -9,7 +9,7 @@
 // local includes
 //*****************************************************************************
 
-#include "level0-activity-translate.h"
+#include "level0-activity-translate.hpp"
 
 
 //******************************************************************************
@@ -66,7 +66,11 @@ zeroConvertPCSampling
   const KernelProperties& kernel_props = rit->second;
   const EuStalls& stall = it->second;
 
-  uint32_t module_id_uint32 = hex_string_to_uint<uint32_t>(kernel_props.module_id.substr(0, 8));
+  // Convert hex string to uint32_t directly
+  uint32_t module_id_uint32 = 0;
+  std::istringstream iss(kernel_props.module_id.substr(0, 8));
+  iss >> std::hex >> module_id_uint32;
+
   zebin_id_map_entry_t* entry = zebin_id_map_lookup(module_id_uint32);
   if (entry) {
     uint32_t hpctoolkit_module_id = zebin_id_map_entry_hpctoolkit_id_get(entry);

@@ -22,9 +22,9 @@
 //******************************************************************************
 
 #include "../../../../activity/gpu-activity.h"
-#include "level0-activity-translate.h"
-#include "level0-kernel-properties.h"
-#include "level0-metric.h"
+#include "level0-activity-translate.hpp"
+#include "level0-kernel-properties.hpp"
+#include "level0-metric.hpp"
 
 
 //******************************************************************************

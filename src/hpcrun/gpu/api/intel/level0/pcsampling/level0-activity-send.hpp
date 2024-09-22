@@ -5,28 +5,29 @@
 
 // -*-Mode: C++;-*-
 
-#ifndef LEVEL0_DRIVER_H_
-#define LEVEL0_DRIVER_H_
-
-//*****************************************************************************
-// level zero includes
-//*****************************************************************************
-
-#include <level_zero/ze_api.h>
-
+#ifndef LEVEL0_ACTIVITY_SEND_H
+#define LEVEL0_ACTIVITY_SEND_H
 
 //*****************************************************************************
 // system includes
 //*****************************************************************************
 
-#include <vector>
+#include <deque>
+#include <iostream>
+#include <map>
+#include <unordered_map>
 
 
 //*****************************************************************************
 // local includes
 //*****************************************************************************
 
-#include "pti_assert.h"
+#include "../../../../activity/gpu-activity.h"
+#include "level0-kernel-properties.hpp"
+
+extern "C" {
+  #include "../../../../activity/gpu-activity-channel.h"
+}
 
 
 //******************************************************************************
@@ -34,10 +35,17 @@
 //******************************************************************************
 
 void
-zeroGetVersion
+zeroSendActivities
 (
-  ze_api_version_t& version
+  std::deque<gpu_activity_t*>& activities
+);
+
+void
+zeroLogActivities
+(
+  const std::deque<gpu_activity_t*>& activities, 
+  const std::map<uint64_t, KernelProperties>& kprops
 );
 
 
-#endif // LEVEL0_DRIVER_H_
+#endif // LEVEL0_ACTIVITY_SEND_H
