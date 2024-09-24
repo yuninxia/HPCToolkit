@@ -16,8 +16,8 @@
 // private operations
 //******************************************************************************
 
-void
-zeroGetMetricUnits
+static void
+getMetricUnits
 (
   const char* units,
   std::string& result
@@ -33,8 +33,8 @@ zeroGetMetricUnits
   }
 }
 
-void
-zeroGetMetricId
+static void
+getMetricId
 (
   const std::vector<std::string>& metric_list,
   const std::string& metric_name,
@@ -53,21 +53,209 @@ zeroGetMetricId
   metric_id = metric_list.size();
 }
 
-void
-zeroGetMetricCount
+static uint32_t
+getMetricCount
 (
-  zet_metric_group_handle_t group,
-  uint32_t& metric_count
+  zet_metric_group_handle_t group
 )
 {
-  assert(group != nullptr);
-
   zet_metric_group_properties_t group_props{};
   group_props.stype = ZET_STRUCTURE_TYPE_METRIC_GROUP_PROPERTIES;
   ze_result_t status = zetMetricGroupGetProperties(group, &group_props);
   level0_check_result(status, __LINE__);
+  return group_props.metricCount;
+}
 
-  metric_count = group_props.metricCount;
+static std::vector<zet_metric_handle_t>
+getMetricHandles
+(
+  zet_metric_group_handle_t group,
+  uint32_t metric_count
+)
+{
+  std::vector<zet_metric_handle_t> metric_list(metric_count);
+  ze_result_t status = zetMetricGet(group, &metric_count, metric_list.data());
+  level0_check_result(status, __LINE__);
+  assert(metric_count == metric_list.size());
+  return metric_list;
+}
+
+static zet_metric_properties_t
+getMetricProperties
+(
+  zet_metric_handle_t metric
+)
+{
+  zet_metric_properties_t metric_props{ZET_STRUCTURE_TYPE_METRIC_PROPERTIES};
+  ze_result_t status = zetMetricGetProperties(metric, &metric_props);
+  level0_check_result(status, __LINE__);
+  return metric_props;
+}
+
+static std::string
+buildMetricName
+(
+  const zet_metric_properties_t& metric_props
+)
+{
+  std::string units;
+  getMetricUnits(metric_props.resultUnits, units);
+
+  std::string name = metric_props.name;
+  if (!units.empty()) {
+    name += "[" + units + "]";
+  }
+  return name;
+}
+
+static uint32_t
+getNumberOfMetricGroups
+(
+  ze_device_handle_t device
+)
+{
+  uint32_t num_groups = 0;
+  ze_result_t status = zetMetricGroupGet(device, &num_groups, nullptr);
+  level0_check_result(status, __LINE__);
+  return num_groups;
+}
+
+static std::vector<zet_metric_group_handle_t>
+getMetricGroups
+(
+  ze_device_handle_t device,
+  uint32_t num_groups
+)
+{
+  std::vector<zet_metric_group_handle_t> groups(num_groups, nullptr);
+  ze_result_t status = zetMetricGroupGet(device, &num_groups, groups.data());
+  level0_check_result(status, __LINE__);
+  return groups;
+}
+
+static zet_metric_group_properties_t
+getMetricGroupProperties
+(
+  zet_metric_group_handle_t group
+)
+{
+  zet_metric_group_properties_t group_props{};
+  group_props.stype = ZET_STRUCTURE_TYPE_METRIC_GROUP_PROPERTIES;
+  ze_result_t status = zetMetricGroupGetProperties(group, &group_props);
+  level0_check_result(status, __LINE__);
+  return group_props;
+}
+
+static bool
+isMatchingMetricGroup
+(
+  const zet_metric_group_properties_t& group_props,
+  const std::string& metric_group_name
+)
+{
+  return (group_props.name == metric_group_name) &&
+          (group_props.samplingType & ZET_METRIC_GROUP_SAMPLING_TYPE_FLAG_TIME_BASED);
+}
+
+static zet_metric_group_handle_t
+findMatchingMetricGroup
+(
+  const std::vector<zet_metric_group_handle_t>& groups,
+  const std::string& metric_group_name
+)
+{
+  for (auto& current_group : groups) {
+    zet_metric_group_properties_t group_props = getMetricGroupProperties(current_group);
+    if (isMatchingMetricGroup(group_props, metric_group_name)) {
+      return current_group;
+    }
+  }
+  return nullptr;
+}
+
+static bool
+isValidMetricList
+(
+  const std::vector<std::string>& metric_list
+)
+{
+  if (metric_list.empty()) return false;
+  uint32_t ip_idx;
+  getMetricId(metric_list, "IP", ip_idx);
+  return ip_idx < metric_list.size();
+}
+
+static EuStalls
+createEuStalls
+(
+  const zet_typed_value_t* value
+)
+{
+  return {
+    .active_ = value[1].value.ui64,
+    .control_ = value[2].value.ui64,
+    .pipe_ = value[3].value.ui64,
+    .send_ = value[4].value.ui64,
+    .dist_ = value[5].value.ui64,
+    .sbid_ = value[6].value.ui64,
+    .sync_ = value[7].value.ui64,
+    .insfetch_ = value[8].value.ui64,
+    .other_ = value[9].value.ui64
+  };
+}
+
+static void
+updateExistingEuStalls
+(
+  EuStalls& existing,
+  const EuStalls& stall
+)
+{
+  existing.active_ += stall.active_;
+  existing.control_ += stall.control_;
+  existing.pipe_ += stall.pipe_;
+  existing.send_ += stall.send_;
+  existing.dist_ += stall.dist_;
+  existing.sbid_ += stall.sbid_;
+  existing.sync_ += stall.sync_;
+  existing.insfetch_ += stall.insfetch_;
+  existing.other_ += stall.other_;
+}
+
+static void
+processMetricSample
+(
+  const zet_typed_value_t* value,
+  std::map<uint64_t, EuStalls>& eustalls
+)
+{
+  uint64_t ip = (value[0].value.ui64 << 3);
+  if (ip == 0) return;
+
+  EuStalls stall = createEuStalls(value);
+  auto [it, inserted] = eustalls.try_emplace(ip, stall);
+  if (!inserted) {
+    updateExistingEuStalls(it->second, stall);
+  }
+}
+
+static void
+processMetrics
+(
+  const std::vector<std::string>& metric_list,
+  const std::vector<uint32_t>& samples,
+  const std::vector<zet_typed_value_t>& metrics,
+  std::map<uint64_t, EuStalls>& eustalls
+)
+{
+  const zet_typed_value_t* value = metrics.data();
+  for (uint32_t i = 0; i < samples.size(); ++i) {
+    uint32_t size = samples[i];
+    for (uint32_t j = 0; j < size; j += metric_list.size()) {
+      processMetricSample(value + j, eustalls);
+    }
+    value += samples[i];
+  }
 }
 
 
@@ -83,31 +271,15 @@ zeroGetMetricList
 )
 {
   assert(group != nullptr);
-
-  uint32_t metric_count;
-  zeroGetMetricCount(group, metric_count);
+  uint32_t metric_count = getMetricCount(group);
   assert(metric_count > 0);
 
-  std::vector<zet_metric_handle_t> metric_list(metric_count);
-  ze_result_t status = zetMetricGet(group, &metric_count, metric_list.data());
-  level0_check_result(status, __LINE__);
-  assert(metric_count == metric_list.size());
+  std::vector<zet_metric_handle_t> metric_list = getMetricHandles(group, metric_count);
 
   name_list.clear();
   for (auto metric : metric_list) {
-    zet_metric_properties_t metric_props{
-      ZET_STRUCTURE_TYPE_METRIC_PROPERTIES,
-    };
-    status = zetMetricGetProperties(metric, &metric_props);
-    level0_check_result(status, __LINE__);
-
-    std::string units;
-    zeroGetMetricUnits(metric_props.resultUnits, units);
-
-    std::string name = metric_props.name;
-    if (!units.empty()) {
-      name += "[" + units + "]";
-    }
+    zet_metric_properties_t metric_props = getMetricProperties(metric);
+    std::string name = buildMetricName(metric_props);
     name_list.push_back(std::move(name));
   }
 }
@@ -120,33 +292,15 @@ zeroGetMetricGroup
   zet_metric_group_handle_t& group
 )
 {
-  uint32_t num_groups = 0;
-  ze_result_t status = zetMetricGroupGet(device, &num_groups, nullptr);
-  level0_check_result(status, __LINE__);
-
+  uint32_t num_groups = getNumberOfMetricGroups(device);
   if (num_groups == 0) {
     std::cerr << "[WARNING] No metric groups found" << std::endl;
     group = nullptr;
     return;
   }
 
-  std::vector<zet_metric_group_handle_t> groups(num_groups, nullptr);
-  status = zetMetricGroupGet(device, &num_groups, groups.data());
-  level0_check_result(status, __LINE__);
-
-  group = nullptr;
-  for (auto& current_group : groups) {
-    zet_metric_group_properties_t group_props{};
-    group_props.stype = ZET_STRUCTURE_TYPE_METRIC_GROUP_PROPERTIES;
-    status = zetMetricGroupGetProperties(current_group, &group_props);
-    level0_check_result(status, __LINE__);
-
-    if ((group_props.name == metric_group_name) && (group_props.samplingType & ZET_METRIC_GROUP_SAMPLING_TYPE_FLAG_TIME_BASED)) {
-        group = current_group;
-        return;
-    }
-  }
-
+  std::vector<zet_metric_group_handle_t> groups = getMetricGroups(device, num_groups);
+  group = findMatchingMetricGroup(groups, metric_group_name);
   if (group == nullptr) {
     std::cerr << "[ERROR] Invalid metric group " << metric_group_name << std::endl;
     exit(-1);
@@ -192,12 +346,7 @@ zeroCalculateEuStalls
   std::vector<std::string> metric_list;
   zeroGetMetricList(metric_group, metric_list);
   assert(!metric_list.empty());
-
-  uint32_t ip_idx;
-  zeroGetMetricId(metric_list, "IP", ip_idx);
-  if (ip_idx >= metric_list.size()) {
-    return; // no IP metric
-  }
+  if (!isValidMetricList(metric_list)) return;
 
   uint32_t num_samples = 0;
   uint32_t num_metrics = 0;
@@ -223,39 +372,5 @@ zeroCalculateEuStalls
     return;
   }
 
-  const zet_typed_value_t *value = metrics.data();
-
-  for (uint32_t i = 0; i < num_samples; ++i) {
-    uint32_t size = samples[i];
-    for (uint32_t j = 0; j < size; j += metric_list.size()) {
-      uint64_t ip = (value[j + 0].value.ui64 << 3);
-      if (ip == 0) {
-        continue;
-      }
-      EuStalls stall;
-      stall.active_ = value[j + 1].value.ui64;
-      stall.control_ = value[j + 2].value.ui64;
-      stall.pipe_ = value[j + 3].value.ui64;
-      stall.send_ = value[j + 4].value.ui64;
-      stall.dist_ = value[j + 5].value.ui64;
-      stall.sbid_ = value[j + 6].value.ui64;
-      stall.sync_ = value[j + 7].value.ui64;
-      stall.insfetch_ = value[j + 8].value.ui64;
-      stall.other_ = value[j + 9].value.ui64;
-      auto [it, inserted] = eustalls.try_emplace(ip, stall);
-      if (!inserted) {
-        EuStalls& existing = it->second;
-        existing.active_ += stall.active_;
-        existing.control_ += stall.control_;
-        existing.pipe_ += stall.pipe_;
-        existing.send_ += stall.send_;
-        existing.dist_ += stall.dist_;
-        existing.sbid_ += stall.sbid_;
-        existing.sync_ += stall.sync_;
-        existing.insfetch_ += stall.insfetch_;
-        existing.other_ += stall.other_;
-      }
-    }
-    value += samples[i];
-  }
+  processMetrics(metric_list, samples, metrics, eustalls);
 }

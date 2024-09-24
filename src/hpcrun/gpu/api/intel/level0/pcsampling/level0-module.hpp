@@ -5,20 +5,23 @@
 
 // -*-Mode: C++;-*-
 
-#ifndef LEVEL0_DRIVER_H_
-#define LEVEL0_DRIVER_H_
+#ifndef LEVEL0_MODULE_H_
+#define LEVEL0_MODULE_H_
 
 //*****************************************************************************
 // level zero includes
 //*****************************************************************************
 
 #include <level_zero/ze_api.h>
+#include <level_zero/zet_api.h>
 
 
 //*****************************************************************************
 // system includes
 //*****************************************************************************
 
+#include <iostream>
+#include <string>
 #include <vector>
 
 
@@ -27,23 +30,37 @@
 //*****************************************************************************
 
 #include "level0-assert.hpp"
+#include "level0-module.hpp"
 
 
 //******************************************************************************
 // interface operations
 //******************************************************************************
 
-void
-zeroGetVersion
+std::string
+zeroGetKernelName
 (
-  ze_api_version_t& version
+  ze_kernel_handle_t kernel
 );
 
-std::vector<ze_driver_handle_t>
-zeroGetDrivers
+void*
+zeroGetFunctionPointer
 (
-  void
+  ze_module_handle_t module,
+  const std::string& kernel_name
+);
+
+std::vector<uint8_t>
+zeroGetModuleDebugInfo
+(
+  ze_module_handle_t module
+);
+
+std::vector<std::string>
+zeroGetModuleKernelNames
+(
+  ze_module_handle_t module
 );
 
 
-#endif // LEVEL0_DRIVER_H_
+#endif // LEVEL0_MODULE_H_

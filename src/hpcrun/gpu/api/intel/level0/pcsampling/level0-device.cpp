@@ -16,20 +16,8 @@
 // private operations
 //******************************************************************************
 
-uint32_t
-zeroGetSubDeviceCount
-(
-  ze_device_handle_t device
-)
-{
-  uint32_t num_sub_devices = 0;
-  ze_result_t status = zeDeviceGetSubDevices(device, &num_sub_devices, nullptr);
-  level0_check_result(status, __LINE__);
-  return num_sub_devices;
-}
-
-ZeDeviceDescriptor*
-zeroCreateDeviceDescriptor
+static ZeDeviceDescriptor*
+createDeviceDescriptor
 (
   ze_device_handle_t device, 
   int32_t did, 
@@ -52,37 +40,23 @@ zeroCreateDeviceDescriptor
   desc->context_ = context;
   desc->correlation_id_ = 0;
   desc->last_correlation_id_ = 0;
+  
   zeroGetMetricGroup(device, metric_group, desc->metric_group_);
   
   desc->profiling_thread_ = nullptr;
   desc->profiling_state_.store(PROFILER_DISABLED, std::memory_order_release);
-
   desc->running_kernel_ = nullptr;
 
-  ze_result_t status = ZE_RESULT_SUCCESS;
-
-  // Create event pool
-  ze_event_pool_handle_t event_pool = nullptr;
-  ze_event_pool_desc_t event_pool_desc = {ZE_STRUCTURE_TYPE_EVENT_POOL_DESC, nullptr, ZE_EVENT_POOL_FLAG_HOST_VISIBLE, 2};
-  status = zeEventPoolCreate(context, &event_pool_desc, 1, &device, &event_pool);
-  level0_check_result(status, __LINE__);
-
-  // Create events  
-  ze_event_desc_t event_desc = {ZE_STRUCTURE_TYPE_EVENT_DESC, nullptr, 0, ZE_EVENT_SCOPE_FLAG_HOST, ZE_EVENT_SCOPE_FLAG_HOST};
-  status = zeEventCreate(event_pool, &event_desc, &desc->serial_kernel_start_);
-  level0_check_result(status, __LINE__);
-
-  ze_event_desc_t data_event_desc = {ZE_STRUCTURE_TYPE_EVENT_DESC, nullptr, 1, ZE_EVENT_SCOPE_FLAG_HOST, ZE_EVENT_SCOPE_FLAG_HOST};
-  status = zeEventCreate(event_pool, &data_event_desc, &desc->serial_data_ready_);
-  level0_check_result(status, __LINE__);
-
+  ze_event_pool_handle_t event_pool = zeroCreateEventPool(context, device, 2, ZE_EVENT_POOL_FLAG_HOST_VISIBLE);
+  desc->serial_kernel_start_ = zeroCreateEvent(event_pool, 0, ZE_EVENT_SCOPE_FLAG_HOST, ZE_EVENT_SCOPE_FLAG_HOST);
+  desc->serial_data_ready_ = zeroCreateEvent(event_pool, 1, ZE_EVENT_SCOPE_FLAG_HOST, ZE_EVENT_SCOPE_FLAG_HOST);
   desc->serial_kernel_end_ = nullptr;
 
   return desc.release();
 }
 
-void 
-zeroHandleSubDevices
+static void 
+handleSubDevices
 (
   ZeDeviceDescriptor* parent_desc,
   std::map<ze_device_handle_t,
@@ -120,50 +94,76 @@ zeroHandleSubDevices
 // interface operations
 //******************************************************************************
 
+std::vector<ze_device_handle_t>
+zeroGetDevices
+(
+  ze_driver_handle_t driver
+)
+{
+  uint32_t num_devices = 0;
+  ze_result_t status = zeDeviceGet(driver, &num_devices, nullptr);
+  level0_check_result(status, __LINE__);
+  
+  if (num_devices == 0) {
+    return {};
+  }
+  
+  std::vector<ze_device_handle_t> devices(num_devices);
+  status = zeDeviceGet(driver, &num_devices, devices.data());
+  level0_check_result(status, __LINE__);
+  
+  return devices;
+}
+
+std::vector<ze_device_handle_t>
+zeroGetSubDevices
+(
+  ze_device_handle_t device,
+  uint32_t num_sub_devices
+)
+{
+  std::vector<ze_device_handle_t> sub_devices(num_sub_devices);
+  ze_result_t status = zeDeviceGetSubDevices(device, &num_sub_devices, sub_devices.data());
+  level0_check_result(status, __LINE__);
+  return sub_devices;
+}
+
+uint32_t
+zeroGetSubDeviceCount
+(
+  ze_device_handle_t device
+)
+{
+  uint32_t num_sub_devices = 0;
+  ze_result_t status = zeDeviceGetSubDevices(device, &num_sub_devices, nullptr);
+  level0_check_result(status, __LINE__);
+  return num_sub_devices;
+}
+
 void
 zeroEnumerateDevices
 (
   std::map<ze_device_handle_t, ZeDeviceDescriptor*>& device_descriptors,
   std::vector<ze_context_handle_t>& metric_contexts
-) 
+)
 {
   const std::string metric_group = "EuStallSampling";
   const bool stall_sampling = (metric_group == "EuStallSampling");
 
-  uint32_t num_drivers = 0;
-  ze_result_t status = zeDriverGet(&num_drivers, nullptr);
-  level0_check_result(status, __LINE__);
-
-  if (num_drivers == 0) {
-    return;
-  }
-
-  std::vector<ze_driver_handle_t> drivers(num_drivers);
-  status = zeDriverGet(&num_drivers, drivers.data());
-  level0_check_result(status, __LINE__);
+  std::vector<ze_driver_handle_t> drivers = zeroGetDrivers();
 
   int32_t did = 0;
   for (const auto& driver : drivers) {
-    ze_context_handle_t context = nullptr;
-    ze_context_desc_t cdesc = {ZE_STRUCTURE_TYPE_CONTEXT_DESC, nullptr, 0};
-    status = zeContextCreate(driver, &cdesc, &context);
-    level0_check_result(status, __LINE__);
+    ze_context_handle_t context = zeroCreateContext(driver);
     metric_contexts.push_back(context);
 
-    uint32_t num_devices = 0;
-    status = zeDeviceGet(driver, &num_devices, nullptr);
-    level0_check_result(status, __LINE__);
-    if (num_devices == 0) continue;
-
-    std::vector<ze_device_handle_t> devices(num_devices);
-    status = zeDeviceGet(driver, &num_devices, devices.data());
-    level0_check_result(status, __LINE__);
+    std::vector<ze_device_handle_t> devices = zeroGetDevices(driver);
 
     for (const auto& device : devices) {
-      ZeDeviceDescriptor* desc = zeroCreateDeviceDescriptor(device, did, driver, context, stall_sampling, metric_group);
+      ZeDeviceDescriptor* desc = createDeviceDescriptor(device, did, driver, context, stall_sampling, metric_group);
       if (desc != nullptr) {
         device_descriptors.emplace(device, desc);
-        zeroHandleSubDevices(desc, device_descriptors);
+        handleSubDevices(desc, device_descriptors);
         ++did;
       }
     }
