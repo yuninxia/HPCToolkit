@@ -16,7 +16,7 @@
 // private operations
 //******************************************************************************
 
-void
+static void
 zeroGetDriverList
 (
   std::vector<ze_driver_handle_t>& driver_list
@@ -36,7 +36,7 @@ zeroGetDriverList
   level0_check_result(status, __LINE__);
 }
 
-void
+static void
 zeroGetDriverVersion
 (
   ze_driver_handle_t driver,
@@ -66,4 +66,25 @@ zeroGetVersion
   } else {
     zeroGetDriverVersion(driver_list.front(), version);
   }
+}
+
+std::vector<ze_driver_handle_t>
+zeroGetDrivers
+(
+  void
+)
+{
+  uint32_t num_drivers = 0;
+  ze_result_t status = zeDriverGet(&num_drivers, nullptr);
+  level0_check_result(status, __LINE__);
+  
+  if (num_drivers == 0) {
+      return {};
+  }
+  
+  std::vector<ze_driver_handle_t> drivers(num_drivers);
+  status = zeDriverGet(&num_drivers, drivers.data());
+  level0_check_result(status, __LINE__);
+  
+  return drivers;
 }
