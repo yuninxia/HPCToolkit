@@ -5,21 +5,14 @@
 
 // -*-Mode: C++;-*-
 
-#ifndef LEVEL0_DRIVER_H_
-#define LEVEL0_DRIVER_H_
+#ifndef LEVEL0_CONTEXT_HPP
+#define LEVEL0_CONTEXT_HPP
 
 //*****************************************************************************
 // level zero includes
 //*****************************************************************************
 
 #include <level_zero/ze_api.h>
-
-
-//*****************************************************************************
-// system includes
-//*****************************************************************************
-
-#include <vector>
 
 
 //*****************************************************************************
@@ -33,17 +26,11 @@
 // interface operations
 //******************************************************************************
 
-void
-zeroGetVersion
+ze_context_handle_t
+zeroCreateContext
 (
-  ze_api_version_t& version
-);
-
-std::vector<ze_driver_handle_t>
-zeroGetDrivers
-(
-  void
+  ze_driver_handle_t driver
 );
 
 
-#endif // LEVEL0_DRIVER_H_
+#endif // LEVEL0_CONTEXT_HPP

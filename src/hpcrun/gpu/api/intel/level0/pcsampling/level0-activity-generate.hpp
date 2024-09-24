@@ -13,18 +13,18 @@
 //*****************************************************************************
 
 #include <deque>
-#include <map>
 #include <unordered_map>
 
 
 //******************************************************************************
-// local variables
+// local includes
 //******************************************************************************
 
 #include "../../../../activity/gpu-activity.h"
 #include "level0-activity-translate.hpp"
 #include "level0-kernel-properties.hpp"
 #include "level0-metric.hpp"
+#include "level0-module.hpp"
 
 
 //******************************************************************************

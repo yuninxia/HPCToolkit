@@ -16,7 +16,7 @@
 // private operations
 //******************************************************************************
 
-const std::pair<std::string, uint64_t>&
+static const std::pair<std::string, uint64_t>&
 findKernelInfo
 (
   uint64_t instruction_pc_lm_ip,
@@ -31,7 +31,7 @@ findKernelInfo
   return (it != kernel_info.end()) ? it->second : unknown_kernel;
 }
 
-void
+static void
 printPCSampleInfo
 (
   const gpu_activity_t* activity,
@@ -52,7 +52,7 @@ printPCSampleInfo
             << std::hex << offset << "]" << std::endl;
 }
 
-void
+static void
 logActivity
 (
   const gpu_activity_t* activity,
@@ -71,7 +71,7 @@ logActivity
   cid_count[cid]++;
 }
 
-void
+static void
 printCorrelationIdStatistics
 (
   const std::unordered_map<uint64_t, int>& cid_count
@@ -109,6 +109,7 @@ zeroLogActivities
   const std::map<uint64_t, KernelProperties>& kprops
 )
 {
+  // FIXME(Yuning): address adjustment is not robust
   const uint64_t BASE_ADJUSTMENT = 0x800000000000;
   std::map<uint64_t, std::pair<std::string, uint64_t>> kernel_info;
   for (const auto& [base, prop] : kprops) {

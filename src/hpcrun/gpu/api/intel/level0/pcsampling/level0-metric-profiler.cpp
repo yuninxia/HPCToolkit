@@ -13,10 +13,16 @@
 
 
 //******************************************************************************
-// local variables
+// global variables
 //******************************************************************************
 
 uint32_t max_metric_samples = 65536;
+
+
+//******************************************************************************
+// static member variables
+//******************************************************************************
+
 std::string ZeMetricProfiler::data_dir_name_;
 
 
@@ -111,7 +117,9 @@ ZeMetricProfiler::RunProfilingLoop
 
     // Kernel has finished, perform final sampling and cleanup
     CollectAndProcessMetrics(desc, streamer, raw_metrics);
-    FlushStreamerBuffer(streamer, desc);
+
+    // FIXME(Yuning): need a better way to flush the streamer buffer without repeatedly closing and reopening the streamer
+    zeroFlushStreamerBuffer(streamer, desc);
 
     desc->running_kernel_ = nullptr;
     

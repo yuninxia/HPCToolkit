@@ -37,7 +37,7 @@ static char* data_dir_name = nullptr;
 //******************************************************************************
 
 static bool
-zeroIsPcSamplingEnabled
+isPcSamplingEnabled
 (
   void
 )
@@ -46,7 +46,7 @@ zeroIsPcSamplingEnabled
 }
 
 static void
-zeroEnableProfiling
+enableProfiling
 (
   char *dir
 )
@@ -55,7 +55,7 @@ zeroEnableProfiling
 }
 
 static void
-zeroDisableProfiling
+disableProfiling
 (
   void
 )
@@ -67,12 +67,12 @@ zeroDisableProfiling
 }
 
 static void
-zeroPCSamplingEnableHelper
+pcSamplingEnableHelper
 (
   void
 )
 {
-  zeroEnableProfiling(data_dir_name);
+  enableProfiling(data_dir_name);
   ze_collector = ZeCollector::Create(data_dir_name); // kernel collector
   if (ze_collector == nullptr) {
     std::cerr << "[ERROR] Failed to create ZeCollector instance." << std::endl;
@@ -111,8 +111,8 @@ zeroPCSamplingEnable
   void
 )
 {
-  if (zeroIsPcSamplingEnabled()) {
-    pthread_once(&level0_pcsampling_init_once, zeroPCSamplingEnableHelper);
+  if (isPcSamplingEnabled()) {
+    pthread_once(&level0_pcsampling_init_once, pcSamplingEnableHelper);
   }
 }
 
@@ -122,12 +122,12 @@ zeroPCSamplingFini
   void
 )
 {
-  if (zeroIsPcSamplingEnabled()) {
+  if (isPcSamplingEnabled()) {
     if (ze_collector != nullptr) {
       ze_collector->DisableTracing();
       delete ze_collector;
     }
-    zeroDisableProfiling();
+    disableProfiling();
     for (const auto& e: std::filesystem::directory_iterator(std::filesystem::path(data_dir_name))) {
       std::filesystem::remove_all(e.path());
     }

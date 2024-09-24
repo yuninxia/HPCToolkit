@@ -18,25 +18,10 @@
 
 
 //******************************************************************************
-// local variables
+// local includes
 //******************************************************************************
 
 #include "level0-collector.hpp"
-
-
-//*****************************************************************************
-// global variables
-//*****************************************************************************
-
-extern std::shared_mutex kernel_command_properties_mutex_;
-extern std::map<std::string, ZeKernelCommandProperties> *kernel_command_properties_;
-extern std::shared_mutex modules_on_devices_mutex_;
-extern std::map<ze_module_handle_t, ZeModule> modules_on_devices_;
-extern std::shared_mutex devices_mutex_;
-extern std::map<ze_device_handle_t, ZeDevice> *devices_;
-extern ze_result_t (*zexKernelGetBaseAddress)(ze_kernel_handle_t hKernel, uint64_t *baseAddress);
-
-extern ZeMetricProfiler* metric_profiler;
 
 
 //*****************************************************************************

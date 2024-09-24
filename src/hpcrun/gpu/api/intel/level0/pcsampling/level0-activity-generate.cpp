@@ -16,24 +16,7 @@
 // private operations
 //******************************************************************************
 
-std::string
-getKernelName
-(
-  ze_kernel_handle_t kernel
-)
-{
-  size_t name_len = 0;
-  ze_result_t status = zeKernelGetName(kernel, &name_len, nullptr);
-  if (status != ZE_RESULT_SUCCESS || name_len == 0) {
-    return "UnknownKernel";
-  }
-
-  std::vector<char> kernel_name(name_len);
-  status = zeKernelGetName(kernel, &name_len, kernel_name.data());
-  return (status == ZE_RESULT_SUCCESS) ? std::string(kernel_name.begin(), kernel_name.end() - 1) : "UnknownKernel";
-}
-
-std::unordered_map<std::string, uint64_t>
+static std::unordered_map<std::string, uint64_t>
 generateKernelCorrelationIds
 (
   const std::map<uint64_t, KernelProperties>& kprops,
@@ -49,7 +32,7 @@ generateKernelCorrelationIds
   return kernel_cids;
 }
 
-std::string
+static std::string
 stripEdgeQuotes
 (
   const std::string& str
@@ -65,7 +48,7 @@ stripEdgeQuotes
   return str;
 }
 
-void
+static void
 generateActivities
 (
   const std::map<uint64_t, KernelProperties>& kprops,
@@ -112,7 +95,7 @@ zeroGenerateActivities
   activities.clear();
 
   // Extract kernel name
-  std::string running_kernel_name = getKernelName(running_kernel);
+  std::string running_kernel_name = zeroGetKernelName(running_kernel);
 
   // Generate kernel correlation IDs
   auto kernel_cids = generateKernelCorrelationIds(kprops, correlation_id);

@@ -30,14 +30,16 @@
 
 
 //******************************************************************************
-// local variables
+// local includes
 //******************************************************************************
 
 #include "../../../../../../common/lean/crypto-hash.h"
 #include "../level0-id-map.h"
 #include "level0-assert.hpp"
+#include "level0-device.hpp"
 #include "level0-driver.hpp"
 #include "level0-metric-profiler.hpp"
+#include "level0-module.hpp"
 
 
 //******************************************************************************

@@ -6,20 +6,25 @@
 // -*-Mode: C++;-*-
 
 //*****************************************************************************
-// system includes
-//*****************************************************************************
-
-#include <fstream>
-#include <iostream>
-#include <unistd.h>
-
-
-//*****************************************************************************
 // local includes
 //*****************************************************************************
 
 #include "level0-collector.hpp"
 #include "level0-tracing-callbacks.hpp"
+
+
+//******************************************************************************
+// local variables
+//******************************************************************************
+
+std::shared_mutex kernel_command_properties_mutex_;
+std::map<std::string, ZeKernelCommandProperties> *kernel_command_properties_ = nullptr;
+std::shared_mutex modules_on_devices_mutex_;
+std::map<ze_module_handle_t, ZeModule> modules_on_devices_;
+std::shared_mutex devices_mutex_;
+std::map<ze_device_handle_t, ZeDevice> *devices_ = nullptr;
+
+ze_result_t (*zexKernelGetBaseAddress)(ze_kernel_handle_t hKernel, uint64_t *baseAddress) = nullptr;
 
 
 //******************************************************************************
@@ -49,65 +54,45 @@ ZeCollector::EnumerateAndSetupDevices
     devices_ = new std::map<ze_device_handle_t, ZeDevice>;
   }
 
-  ze_result_t status = ZE_RESULT_SUCCESS;
-  uint32_t num_drivers = 0;
-  status = zeDriverGet(&num_drivers, nullptr);
-  level0_check_result(status, __LINE__);
-  if (num_drivers > 0) {
-    int32_t did = 0;
-    std::vector<ze_driver_handle_t> drivers(num_drivers);
-    status = zeDriverGet(&num_drivers, drivers.data());
-    level0_check_result(status, __LINE__);
-    for (auto driver : drivers) {
+  std::vector<ze_driver_handle_t> drivers = zeroGetDrivers();
 
-      uint32_t num_devices = 0;
-      status = zeDeviceGet(driver, &num_devices, nullptr);
-      level0_check_result(status, __LINE__);
-      if (num_devices) {
-        std::vector<ze_device_handle_t> devices(num_devices);
-        status = zeDeviceGet(driver, &num_devices, devices.data());
-        level0_check_result(status, __LINE__);
-        for (auto device : devices) {
-          ZeDevice desc;
+  int32_t did = 0;
+  for (auto driver : drivers) {
+    std::vector<ze_device_handle_t> devices = zeroGetDevices(driver);
+    
+    for (auto device : devices) {
+      ZeDevice desc;
 
-          desc.device_ = device;
-          desc.id_ = did;
-          desc.parent_id_ = -1;	// no parent
-          desc.parent_device_ = nullptr;
-          desc.subdevice_id_ = -1;	// not a subdevice
-          desc.driver_ = driver;
+      desc.device_ = device;
+      desc.id_ = did;
+      desc.parent_id_ = -1;	// no parent
+      desc.parent_device_ = nullptr;
+      desc.subdevice_id_ = -1;	// not a subdevice
+      desc.driver_ = driver;
 
-          uint32_t num_sub_devices = 0;
-          status = zeDeviceGetSubDevices(device, &num_sub_devices, nullptr);
-          level0_check_result(status, __LINE__);
+      uint32_t num_sub_devices = zeroGetSubDeviceCount(device);
+      desc.num_subdevices_ = num_sub_devices;
+      
+      devices_->insert({device, std::move(desc)});
 
-          desc.num_subdevices_ = num_sub_devices;
-          
-          devices_->insert({device, std::move(desc)});
+      if (num_sub_devices > 0) {
+        std::vector<ze_device_handle_t> sub_devices = zeroGetSubDevices(device, num_sub_devices);
 
-          if (num_sub_devices > 0) {
-            std::vector<ze_device_handle_t> sub_devices(num_sub_devices);
+        for (uint32_t j = 0; j < num_sub_devices; j++) {
+          ZeDevice sub_desc;
 
-            status = zeDeviceGetSubDevices(device, &num_sub_devices, sub_devices.data());
-            level0_check_result(status, __LINE__);
+          sub_desc.device_ = sub_devices[j];
+          sub_desc.parent_id_ = did;
+          sub_desc.parent_device_ = device;
+          sub_desc.num_subdevices_ = 0;
+          sub_desc.subdevice_id_ = j;
+          sub_desc.id_ = did;	// take parent device's id
+          sub_desc.driver_ = driver;
 
-            for (uint32_t j = 0; j < num_sub_devices; j++) {
-              ZeDevice sub_desc;
-
-              sub_desc.device_ = sub_devices[j];
-              sub_desc.parent_id_ = did;
-              sub_desc.parent_device_ = device;
-              sub_desc.num_subdevices_ = 0;
-              sub_desc.subdevice_id_ = j;
-              sub_desc.id_ = did;	// take parent device's id
-              sub_desc.driver_ = driver;
-
-              devices_->insert({sub_devices[j], std::move(sub_desc)});
-            }
-          }
-          did++;
+          devices_->insert({sub_devices[j], std::move(sub_desc)});
         }
       }
+      did++;
     }
   }
 }
@@ -140,7 +125,7 @@ ZeCollector::EnableTracing
 void
 ZeCollector::LogKernelProfiles
 (
-  const ZeKernelCommandProperties* kernel, 
+  const ZeKernelCommandProperties* kernel,
   size_t size
 )
 {
@@ -340,53 +325,19 @@ ZeCollector::OnExitModuleCreate
   ze_module_handle_t mod = **(params->pphModule);
   ze_device_handle_t device = *(params->phDevice);
 
-  size_t binary_size = 0;
-  ze_result_t status = ZE_RESULT_SUCCESS;
-  status = zetModuleGetDebugInfo(
-    mod, 
-    ZET_MODULE_DEBUG_INFO_FORMAT_ELF_DWARF,
-    &binary_size, 
-    nullptr
-  );
-  level0_check_result(status, __LINE__);
-  if (binary_size == 0) {
-    std::cerr << "[WARNING] Unable to find kernel symbols" << std::endl;
+  std::vector<uint8_t> binary = zeroGetModuleDebugInfo(mod);
+  if (binary.empty()) {
     return;
   }
 
-  std::vector<uint8_t> binary(binary_size);
-  status = zetModuleGetDebugInfo(
-    mod, 
-    ZET_MODULE_DEBUG_INFO_FORMAT_ELF_DWARF,
-    &binary_size, 
-    binary.data()
-  );
-  level0_check_result(status, __LINE__);
-
-  std::string module_id = GenerateUniqueId(binary.data(), binary_size);
+  std::string module_id = GenerateUniqueId(binary.data(), binary.size());
 
   ZeModule m;
   
   m.device_ = device;
-  m.size_ = binary_size;
+  m.size_ = binary.size();
   m.module_id_ = module_id;
-
-  // Retrieve kernel names
-  uint32_t kernel_count = 0;
-  status = zeModuleGetKernelNames(mod, &kernel_count, nullptr);
-  if (status == ZE_RESULT_SUCCESS && kernel_count > 0) {
-    std::vector<const char*> kernel_names(kernel_count);
-    status = zeModuleGetKernelNames(mod, &kernel_count, kernel_names.data());
-    if (status == ZE_RESULT_SUCCESS) {
-      for (uint32_t i = 0; i < kernel_count; ++i) {
-        m.kernel_names_.emplace_back(kernel_names[i]);
-      }
-    } else {
-      std::cerr << "[WARNING] Unable to get kernel names, status: " << status << std::endl;
-    }
-  } else {
-    std::cerr << "[WARNING] Unable to get kernel count, status: " << status << std::endl;
-  }
+  m.kernel_names_ = zeroGetModuleKernelNames(mod);
 
   modules_on_devices_mutex_.lock();
   modules_on_devices_.insert({mod, std::move(m)});
@@ -451,13 +402,7 @@ ZeCollector::OnExitKernelCreate
 
   ze_kernel_handle_t kernel = **(params->pphKernel);
 
-  size_t name_len = 0;
-  ze_result_t status = zeKernelGetName(kernel, &name_len, nullptr);
-  std::vector<char> kernel_name(name_len);
-  if (status == ZE_RESULT_SUCCESS && name_len > 0) {
-    status = zeKernelGetName(kernel, &name_len, kernel_name.data());
-  }
-  desc.name_ = name_len > 0 ? std::string(kernel_name.begin(), kernel_name.end()) : "UnknownKernel";
+  desc.name_ = zeroGetKernelName(kernel);
 
   std::string kernel_id = GenerateUniqueId(reinterpret_cast<const uint8_t*>(&kernel), sizeof(kernel));
 
@@ -472,7 +417,7 @@ ZeCollector::OnExitKernelCreate
   zex_kernel_register_file_size_exp_t regsize{};
   kprops.pNext = (void *)&regsize;
 
-  status = zeKernelGetProperties(kernel, &kprops);
+  ze_result_t status = zeKernelGetProperties(kernel, &kprops);
   level0_check_result(status, __LINE__);
   desc.simd_width_ = kprops.maxSubgroupSize;
   desc.nargs_ = kprops.numKernelArgs;
@@ -493,14 +438,7 @@ ZeCollector::OnExitKernelCreate
   desc.base_addr_ = base_addr;
   desc.size_ = GetFunctionSize(desc.name_);
 
-  // Retrieve the function pointer
-  void* function_pointer = nullptr;
-  if (zeModuleGetFunctionPointer(mod, kernel_name.data(), &function_pointer) == ZE_RESULT_SUCCESS) {
-    desc.function_pointer_ = function_pointer;
-  } else {
-    desc.function_pointer_ = nullptr;
-    std::cerr << "[WARNING] Unable to get function pointer for kernel: " << desc.name_ << std::endl;
-  }
+  desc.function_pointer_ = zeroGetFunctionPointer(mod, desc.name_);
 
   kernel_command_properties_->insert({desc.id_, std::move(desc)});
 
