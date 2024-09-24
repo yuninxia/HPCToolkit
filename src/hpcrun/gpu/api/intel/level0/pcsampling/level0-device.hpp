@@ -21,13 +21,8 @@
 //*****************************************************************************
 
 #include <atomic>
-#include <cstring>
-#include <iostream>
-#include <map>
 #include <memory>
-#include <string>
 #include <thread>
-#include <unordered_map>
 #include <vector>
 
 
@@ -36,6 +31,10 @@
 //*****************************************************************************
 
 #include "level0-assert.hpp"
+#include "level0-context.hpp"
+#include "level0-driver.hpp"
+#include "level0-event.hpp"
+#include "level0-eventpool.hpp"
 #include "level0-metric.hpp"
 
 
@@ -73,6 +72,25 @@ struct ZeDeviceDescriptor {
 //******************************************************************************
 // interface operations
 //******************************************************************************
+
+std::vector<ze_device_handle_t>
+zeroGetDevices
+(
+  ze_driver_handle_t driver
+);
+
+std::vector<ze_device_handle_t>
+zeroGetSubDevices
+(
+  ze_device_handle_t device,
+  uint32_t num_sub_devices
+);
+
+uint32_t
+zeroGetSubDeviceCount
+(
+  ze_device_handle_t device
+);
 
 void 
 zeroEnumerateDevices

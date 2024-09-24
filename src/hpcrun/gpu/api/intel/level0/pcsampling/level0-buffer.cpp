@@ -16,7 +16,7 @@
 //******************************************************************************
 
 void
-FlushStreamerBuffer
+zeroFlushStreamerBuffer
 (
   zet_metric_streamer_handle_t& streamer,
   ZeDeviceDescriptor* desc

@@ -6,7 +6,7 @@
 // -*-Mode: C++;-*-
 
 //******************************************************************************
-// local variables
+// local includes
 //******************************************************************************
 
 #include "level0-tracing-callbacks.hpp"
@@ -14,25 +14,49 @@
 
 
 //*****************************************************************************
-// system includes
-//*****************************************************************************
-
-#include <iostream>
-
-
-//*****************************************************************************
 // global variables
 //*****************************************************************************
 
-std::shared_mutex kernel_command_properties_mutex_;
-std::map<std::string, ZeKernelCommandProperties> *kernel_command_properties_ = nullptr;
-std::shared_mutex modules_on_devices_mutex_;
-std::map<ze_module_handle_t, ZeModule> modules_on_devices_;
-std::shared_mutex devices_mutex_;
-std::map<ze_device_handle_t, ZeDevice> *devices_ = nullptr;
-ze_result_t (*zexKernelGetBaseAddress)(ze_kernel_handle_t hKernel, uint64_t *baseAddress) = nullptr;
-
 extern ZeMetricProfiler* metric_profiler;
+
+
+//******************************************************************************
+// private operations
+//******************************************************************************
+
+static ze_device_handle_t
+getDeviceForCommandList
+(
+  ze_command_list_handle_t hCommandList
+)
+{
+  ze_device_handle_t hDevice;
+#if 0
+  // Option 1: with compute runtime using level0 >= v1.9.0, but the binary is broken for now
+  ze_result_t status = zeCommandListGetDeviceHandle(hCommandList, &hDevice);
+  level0_check_result(status, __LINE__);
+#else
+  // Option 2: manually maintain the mapping, generally more reliable
+  hDevice = metric_profiler->GetDeviceForCommandList(hCommandList);
+#endif
+  return zeroConvertToRootDevice(hDevice);
+}
+
+static ZeDeviceDescriptor*
+getDeviceDescriptor
+(
+  ze_device_handle_t hDevice
+)
+{
+  std::map<ze_device_handle_t, ZeDeviceDescriptor*> device_descriptors;
+  metric_profiler->GetDeviceDescriptors(device_descriptors);
+  auto it = device_descriptors.find(hDevice);
+  if (it == device_descriptors.end()) {
+    std::cerr << "[Warning] Device descriptor not found for device handle: " << hDevice << std::endl;
+    return nullptr;
+  }
+  return it->second;
+}
 
 
 //*****************************************************************************
@@ -91,17 +115,7 @@ zeCommandListAppendLaunchKernelOnEnter
   ze_command_list_handle_t hCommandList = *(params->phCommandList);
   ze_kernel_handle_t hKernel = *(params->phKernel);
   ze_event_handle_t hSignalEvent = *(params->phSignalEvent);
-  ze_device_handle_t hDevice;
-  ze_result_t status = ZE_RESULT_SUCCESS;
-
-#if 0
-  // Option 1: with compute runtime using level0 >= v1.9.0, but the binary is broken for now
-  status = zeCommandListGetDeviceHandle(hCommandList, &hDevice);
-  level0_check_result(status, __LINE__);
-#else
-  // Option 2: manually maintain the mapping, generally more reliable
-  hDevice = metric_profiler->GetDeviceForCommandList(hCommandList);
-#endif
+  ze_device_handle_t hDevice = getDeviceForCommandList(hCommandList);
 
 #if 0
   std::cout << "OnEnterCommandListAppendLaunchKernel: hKernel=" << hKernel << ", hDevice=" << hDevice << std::endl;
@@ -109,20 +123,14 @@ zeCommandListAppendLaunchKernelOnEnter
 
   // Use the root device for notification and synchronization
   hDevice = zeroConvertToRootDevice(hDevice);
-
-  std::map<ze_device_handle_t, ZeDeviceDescriptor*> device_descriptors;
-  metric_profiler->GetDeviceDescriptors(device_descriptors);
-  auto it = device_descriptors.find(hDevice);
-  if (it != device_descriptors.end()) {
-    ZeDeviceDescriptor* desc = it->second;
+  ZeDeviceDescriptor* desc = getDeviceDescriptor(hDevice);
+  if (desc) {
     desc->running_kernel_ = hKernel;
     desc->serial_kernel_end_ = hSignalEvent;
     
     // Signal event to notify kernel start
-    status = zeEventHostSignal(desc->serial_kernel_start_);
+    ze_result_t status = zeEventHostSignal(desc->serial_kernel_start_);
     level0_check_result(status, __LINE__);
-  } else {
-    std::cerr << "[Warning] Device descriptor not found for device handle: " << hDevice << std::endl;
   }
 }
 
@@ -136,17 +144,7 @@ zeCommandListAppendLaunchKernelOnExit
 )
 {
   ze_command_list_handle_t hCommandList = *(params->phCommandList);
-  ze_device_handle_t hDevice;
-  ze_result_t status = ZE_RESULT_SUCCESS;
-  
-#if 0
-  // Option 1: with compute runtime using level0 >= v1.9.0, but the binary is broken for now
-  status = zeCommandListGetDeviceHandle(hCommandList, &hDevice);
-  level0_check_result(status, __LINE__);
-#else
-  // Option 2: manually maintain the mapping
-  hDevice = metric_profiler->GetDeviceForCommandList(hCommandList);
-#endif
+  ze_device_handle_t hDevice = getDeviceForCommandList(hCommandList);
 
 #if 0
   ze_kernel_handle_t hKernel = *(params->phKernel);
@@ -155,24 +153,19 @@ zeCommandListAppendLaunchKernelOnExit
 
   // Use the root device for notification and synchronization
   hDevice = zeroConvertToRootDevice(hDevice);
+  ZeDeviceDescriptor* desc = getDeviceDescriptor(hDevice);
   
   std::map<ze_device_handle_t, ZeDeviceDescriptor*> device_descriptors;
   metric_profiler->GetDeviceDescriptors(device_descriptors);
-
-  auto it = device_descriptors.find(hDevice);
-  if (it != device_descriptors.end()) {
-    ZeDeviceDescriptor* desc = it->second;
-    
+  if (desc) {
     // Host reset event to indicate kernel execution has ended
-    status = zeEventHostReset(desc->serial_kernel_start_);
+    ze_result_t status = zeEventHostReset(desc->serial_kernel_start_);
     level0_check_result(status, __LINE__);
 
     status = zeEventHostSynchronize(desc->serial_data_ready_, UINT64_MAX - 1);
     level0_check_result(status, __LINE__);
     status = zeEventHostReset(desc->serial_data_ready_);
     level0_check_result(status, __LINE__);
-  } else {
-    std::cerr << "[Warning] Device descriptor not found for device handle: " << hDevice << std::endl;
   }
 }
 

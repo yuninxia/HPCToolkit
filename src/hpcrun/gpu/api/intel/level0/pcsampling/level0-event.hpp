@@ -5,21 +5,14 @@
 
 // -*-Mode: C++;-*-
 
-#ifndef LEVEL0_DRIVER_H_
-#define LEVEL0_DRIVER_H_
+#ifndef LEVEL0_EVENT_HPP
+#define LEVEL0_EVENT_HPP
 
 //*****************************************************************************
 // level zero includes
 //*****************************************************************************
 
 #include <level_zero/ze_api.h>
-
-
-//*****************************************************************************
-// system includes
-//*****************************************************************************
-
-#include <vector>
 
 
 //*****************************************************************************
@@ -33,17 +26,14 @@
 // interface operations
 //******************************************************************************
 
-void
-zeroGetVersion
+ze_event_handle_t
+zeroCreateEvent
 (
-  ze_api_version_t& version
-);
-
-std::vector<ze_driver_handle_t>
-zeroGetDrivers
-(
-  void
+  ze_event_pool_handle_t event_pool,
+  uint32_t event_index,
+  ze_event_scope_flag_t signal_scope,
+  ze_event_scope_flag_t wait_scope
 );
 
 
-#endif // LEVEL0_DRIVER_H_
+#endif // LEVEL0_EVENT_HPP

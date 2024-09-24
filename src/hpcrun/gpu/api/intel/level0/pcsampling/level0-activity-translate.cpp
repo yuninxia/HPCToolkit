@@ -16,8 +16,8 @@
 // private operations
 //******************************************************************************
 
-void
-zeroConvertStallReason
+static void
+convertStallReason
 (
   const EuStalls& stall,
   gpu_inst_stall_t& stall_reason
@@ -26,6 +26,7 @@ zeroConvertStallReason
   stall_reason = GPU_INST_STALL_NONE;
   uint64_t max_value = 0;
 
+  // FIXME(Yuning): stall reasons are not accurately mapped
   // Map stall types to reasons
   const struct {
     uint64_t EuStalls::* stall_value;
@@ -50,8 +51,8 @@ zeroConvertStallReason
   }
 }
 
-bool
-zeroConvertPCSampling
+static bool
+convertPCSampling
 (
   gpu_activity_t* activity, 
   const std::map<uint64_t, EuStalls>::iterator& it,
@@ -77,12 +78,17 @@ zeroConvertPCSampling
     activity->details.pc_sampling.pc.lm_id = static_cast<uint16_t>(hpctoolkit_module_id);
   }
 
+#if 0
+  std::cout << "real: " << std::hex << it->first << " ,base: " << std::hex << rit->first << " ,offset: " << std::hex << it->first - rit->first << std::endl;
+#endif
+
+  // FIXME(Yuning): address adjustment is not robust
   activity->details.pc_sampling.pc.lm_ip = it->first + 0x800000000000; // real = it->first; base = rit->first; offset = real - base;
   activity->details.pc_sampling.correlation_id = correlation_id;
   activity->details.pc_sampling.samples = stall.active_ + stall.control_ + stall.pipe_ + 
     stall.send_ + stall.dist_ + stall.sbid_ + stall.sync_ + stall.insfetch_ + stall.other_;
   activity->details.pc_sampling.latencySamples = activity->details.pc_sampling.samples - stall.active_;  
-  zeroConvertStallReason(stall, activity->details.pc_sampling.stallReason);
+  convertStallReason(stall, activity->details.pc_sampling.stallReason);
   
   return true;
 }
@@ -104,7 +110,7 @@ zeroActivityTranslate
   auto activity = std::make_unique<gpu_activity_t>();
   gpu_activity_init(activity.get());
 
-  if (zeroConvertPCSampling(activity.get(), it, rit, correlation_id)) {
+  if (convertPCSampling(activity.get(), it, rit, correlation_id)) {
     activities.push_back(activity.release());
   }
 }

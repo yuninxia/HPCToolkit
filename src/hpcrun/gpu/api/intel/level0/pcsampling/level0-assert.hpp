@@ -44,4 +44,4 @@ level0_check_result
   int lineNo
 );
 
-#endif
+#endif // LEVEL0_ASSERT_H
