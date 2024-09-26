@@ -7,6 +7,7 @@
 #include "nvidia.h"
 
 #include "../hpcrun-sonames.h"
+#include "../messages/messages.h"
 #include "nvidia-private.h"
 
 #include <assert.h>
@@ -20,13 +21,14 @@ static const struct hpcrun_foil_appdispatch_nvidia* dispatch_var = NULL;
 static void init_dispatch() {
   void* handle = dlmopen(LM_ID_BASE, HPCRUN_DLOPEN_NVIDIA_SO, RTLD_NOW | RTLD_DEEPBIND);
   if (handle == NULL) {
-    assert(false && "Failed to load " HPCRUN_DLOPEN_NVIDIA_SO);
-    abort();
+    EEMSG("CUDA support failed to load, some functionality may be unavailable: %s",
+          dlerror());
+    return;
   }
   dispatch_var = dlsym(handle, "hpcrun_dispatch_nvidia");
   if (dispatch_var == NULL) {
-    assert(false && "Failed to fetch dispatch from " HPCRUN_DLOPEN_NVIDIA_SO);
-    abort();
+    EEMSG("Inconsistent " HPCRUN_DLOPEN_NVIDIA_SO " found, CUDA support is disabled.");
+    return;
   }
 }
 
@@ -37,116 +39,202 @@ static const struct hpcrun_foil_appdispatch_nvidia* dispatch() {
 }
 
 CUptiResult f_cuptiActivityEnable(CUpti_ActivityKind kind) {
-  return dispatch()->cuptiActivityEnable(kind);
+  const struct hpcrun_foil_appdispatch_nvidia* d = dispatch();
+  if (d == NULL)
+    return CUPTI_ERROR_NOT_INITIALIZED;
+  return d->cuptiActivityEnable(kind);
 }
 
 CUptiResult f_cuptiActivityDisable(CUpti_ActivityKind kind) {
-  return dispatch()->cuptiActivityDisable(kind);
+  const struct hpcrun_foil_appdispatch_nvidia* d = dispatch();
+  if (d == NULL)
+    return CUPTI_ERROR_NOT_INITIALIZED;
+  return d->cuptiActivityDisable(kind);
 }
 
 CUptiResult f_cuptiActivityEnableContext(CUcontext context, CUpti_ActivityKind kind) {
-  return dispatch()->cuptiActivityEnableContext(context, kind);
+  const struct hpcrun_foil_appdispatch_nvidia* d = dispatch();
+  if (d == NULL)
+    return CUPTI_ERROR_NOT_INITIALIZED;
+  return d->cuptiActivityEnableContext(context, kind);
 }
 
 CUptiResult f_cuptiActivityDisableContext(CUcontext context, CUpti_ActivityKind kind) {
-  return dispatch()->cuptiActivityDisableContext(context, kind);
+  const struct hpcrun_foil_appdispatch_nvidia* d = dispatch();
+  if (d == NULL)
+    return CUPTI_ERROR_NOT_INITIALIZED;
+  return d->cuptiActivityDisableContext(context, kind);
 }
 
 CUptiResult f_cuptiActivityConfigurePCSampling(CUcontext ctx,
                                                CUpti_ActivityPCSamplingConfig* config) {
-  return dispatch()->cuptiActivityConfigurePCSampling(ctx, config);
+  const struct hpcrun_foil_appdispatch_nvidia* d = dispatch();
+  if (d == NULL)
+    return CUPTI_ERROR_NOT_INITIALIZED;
+  return d->cuptiActivityConfigurePCSampling(ctx, config);
 }
 
 CUptiResult f_cuptiActivityRegisterCallbacks(
     CUpti_BuffersCallbackRequestFunc funcBufferRequested,
     CUpti_BuffersCallbackCompleteFunc funcBufferCompleted) {
-  return dispatch()->cuptiActivityRegisterCallbacks(funcBufferRequested,
-                                                    funcBufferCompleted);
+  const struct hpcrun_foil_appdispatch_nvidia* d = dispatch();
+  if (d == NULL)
+    return CUPTI_ERROR_NOT_INITIALIZED;
+  return d->cuptiActivityRegisterCallbacks(funcBufferRequested, funcBufferCompleted);
 }
 
 CUptiResult f_cuptiActivityPushExternalCorrelationId(CUpti_ExternalCorrelationKind kind,
                                                      uint64_t id) {
-  return dispatch()->cuptiActivityPushExternalCorrelationId(kind, id);
+  const struct hpcrun_foil_appdispatch_nvidia* d = dispatch();
+  if (d == NULL)
+    return CUPTI_ERROR_NOT_INITIALIZED;
+  return d->cuptiActivityPushExternalCorrelationId(kind, id);
 }
 
 CUptiResult f_cuptiActivityPopExternalCorrelationId(CUpti_ExternalCorrelationKind kind,
                                                     uint64_t* lastId) {
-  return dispatch()->cuptiActivityPopExternalCorrelationId(kind, lastId);
+  const struct hpcrun_foil_appdispatch_nvidia* d = dispatch();
+  if (d == NULL)
+    return CUPTI_ERROR_NOT_INITIALIZED;
+  return d->cuptiActivityPopExternalCorrelationId(kind, lastId);
 }
 
 CUptiResult f_cuptiActivityGetNextRecord(uint8_t* buffer, size_t validBufferSizeBytes,
                                          CUpti_Activity** record) {
-  return dispatch()->cuptiActivityGetNextRecord(buffer, validBufferSizeBytes, record);
+  const struct hpcrun_foil_appdispatch_nvidia* d = dispatch();
+  if (d == NULL)
+    return CUPTI_ERROR_NOT_INITIALIZED;
+  return d->cuptiActivityGetNextRecord(buffer, validBufferSizeBytes, record);
 }
 
 CUptiResult f_cuptiActivityGetNumDroppedRecords(CUcontext context, uint32_t streamId,
                                                 size_t* dropped) {
-  return dispatch()->cuptiActivityGetNumDroppedRecords(context, streamId, dropped);
+  const struct hpcrun_foil_appdispatch_nvidia* d = dispatch();
+  if (d == NULL)
+    return CUPTI_ERROR_NOT_INITIALIZED;
+  return d->cuptiActivityGetNumDroppedRecords(context, streamId, dropped);
 }
 
 CUptiResult f_cuptiActivitySetAttribute(CUpti_ActivityAttribute attribute,
                                         size_t* value_size, void* value) {
-  return dispatch()->cuptiActivitySetAttribute(attribute, value_size, value);
+  const struct hpcrun_foil_appdispatch_nvidia* d = dispatch();
+  if (d == NULL)
+    return CUPTI_ERROR_NOT_INITIALIZED;
+  return d->cuptiActivitySetAttribute(attribute, value_size, value);
 }
 
 CUptiResult f_cuptiActivityFlushAll(uint32_t flag) {
-  return dispatch()->cuptiActivityFlushAll(flag);
+  const struct hpcrun_foil_appdispatch_nvidia* d = dispatch();
+  if (d == NULL)
+    return CUPTI_ERROR_NOT_INITIALIZED;
+  return d->cuptiActivityFlushAll(flag);
 }
 
 CUptiResult f_cuptiGetTimestamp(uint64_t* timestamp) {
-  return dispatch()->cuptiGetTimestamp(timestamp);
+  const struct hpcrun_foil_appdispatch_nvidia* d = dispatch();
+  if (d == NULL)
+    return CUPTI_ERROR_NOT_INITIALIZED;
+  return d->cuptiGetTimestamp(timestamp);
 }
 
 CUptiResult f_cuptiEnableDomain(uint32_t enable, CUpti_SubscriberHandle subscriber,
                                 CUpti_CallbackDomain domain) {
-  return dispatch()->cuptiEnableDomain(enable, subscriber, domain);
+  const struct hpcrun_foil_appdispatch_nvidia* d = dispatch();
+  if (d == NULL)
+    return CUPTI_ERROR_NOT_INITIALIZED;
+  return d->cuptiEnableDomain(enable, subscriber, domain);
 }
 
-CUptiResult f_cuptiFinalize() { return dispatch()->cuptiFinalize(); }
+CUptiResult f_cuptiFinalize() {
+  const struct hpcrun_foil_appdispatch_nvidia* d = dispatch();
+  if (d == NULL)
+    return CUPTI_ERROR_NOT_INITIALIZED;
+  return d->cuptiFinalize();
+}
 
 CUptiResult f_cuptiGetResultString(CUptiResult result, const char** str) {
-  return dispatch()->cuptiGetResultString(result, str);
+  const struct hpcrun_foil_appdispatch_nvidia* d = dispatch();
+  if (d == NULL)
+    return CUPTI_ERROR_NOT_INITIALIZED;
+  return d->cuptiGetResultString(result, str);
 }
 
 CUptiResult f_cuptiSubscribe(CUpti_SubscriberHandle* subscriber,
                              CUpti_CallbackFunc callback, void* userdata) {
-  return dispatch()->cuptiSubscribe(subscriber, callback, userdata);
+  const struct hpcrun_foil_appdispatch_nvidia* d = dispatch();
+  if (d == NULL)
+    return CUPTI_ERROR_NOT_INITIALIZED;
+  return d->cuptiSubscribe(subscriber, callback, userdata);
 }
 
 CUptiResult f_cuptiEnableCallback(uint32_t enable, CUpti_SubscriberHandle subscriber,
                                   CUpti_CallbackDomain domain, CUpti_CallbackId cbid) {
-  return dispatch()->cuptiEnableCallback(enable, subscriber, domain, cbid);
+  const struct hpcrun_foil_appdispatch_nvidia* d = dispatch();
+  if (d == NULL)
+    return CUPTI_ERROR_NOT_INITIALIZED;
+  return d->cuptiEnableCallback(enable, subscriber, domain, cbid);
 }
 
 CUptiResult f_cuptiUnsubscribe(CUpti_SubscriberHandle subscriber) {
-  return dispatch()->cuptiUnsubscribe(subscriber);
+  const struct hpcrun_foil_appdispatch_nvidia* d = dispatch();
+  if (d == NULL)
+    return CUPTI_ERROR_NOT_INITIALIZED;
+  return d->cuptiUnsubscribe(subscriber);
 }
 
 CUresult f_cuDeviceGetAttribute(int* pi, CUdevice_attribute attrib, CUdevice dev) {
-  return dispatch()->cuDeviceGetAttribute(pi, attrib, dev);
+  const struct hpcrun_foil_appdispatch_nvidia* d = dispatch();
+  if (d == NULL)
+    return CUDA_ERROR_NO_DEVICE;
+  return d->cuDeviceGetAttribute(pi, attrib, dev);
 }
 
-CUresult f_cuCtxGetCurrent(CUcontext* ctx) { return dispatch()->cuCtxGetCurrent(ctx); }
+CUresult f_cuCtxGetCurrent(CUcontext* ctx) {
+  const struct hpcrun_foil_appdispatch_nvidia* d = dispatch();
+  if (d == NULL)
+    return CUDA_ERROR_NO_DEVICE;
+  return d->cuCtxGetCurrent(ctx);
+}
 
 CUresult f_cuFuncGetModule(CUmodule* hmod, CUfunction function) {
-  return dispatch()->cuFuncGetModule(hmod, function);
+  const struct hpcrun_foil_appdispatch_nvidia* d = dispatch();
+  if (d == NULL)
+    return CUDA_ERROR_NO_DEVICE;
+  return d->cuFuncGetModule(hmod, function);
 }
 
 CUresult f_cuDriverGetVersion(int* version) {
-  return dispatch()->cuDriverGetVersion(version);
+  const struct hpcrun_foil_appdispatch_nvidia* d = dispatch();
+  if (d == NULL)
+    return CUDA_ERROR_NO_DEVICE;
+  return d->cuDriverGetVersion(version);
 }
 
 cudaError_t f_cudaGetDevice(int* device_id) {
-  return dispatch()->cudaGetDevice(device_id);
+  const struct hpcrun_foil_appdispatch_nvidia* d = dispatch();
+  if (d == NULL)
+    return cudaErrorNoDevice;
+  return d->cudaGetDevice(device_id);
 }
 
 cudaError_t f_cudaRuntimeGetVersion(int* runtimeVersion) {
-  return dispatch()->cudaRuntimeGetVersion(runtimeVersion);
+  const struct hpcrun_foil_appdispatch_nvidia* d = dispatch();
+  if (d == NULL)
+    return cudaErrorNoDevice;
+  return d->cudaRuntimeGetVersion(runtimeVersion);
 }
 
-cudaError_t f_cudaDeviceSynchronize() { return dispatch()->cudaDeviceSynchronize(); }
+cudaError_t f_cudaDeviceSynchronize() {
+  const struct hpcrun_foil_appdispatch_nvidia* d = dispatch();
+  if (d == NULL)
+    return cudaErrorNoDevice;
+  return d->cudaDeviceSynchronize();
+}
 
 cudaError_t f_cudaMemcpy(void* dst, const void* src, size_t count,
                          enum cudaMemcpyKind kind) {
-  return dispatch()->cudaMemcpy(dst, src, count, kind);
+  const struct hpcrun_foil_appdispatch_nvidia* d = dispatch();
+  if (d == NULL)
+    return cudaErrorNoDevice;
+  return d->cudaMemcpy(dst, src, count, kind);
 }
