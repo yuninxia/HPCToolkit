@@ -399,10 +399,9 @@ dev amd64:
   needs: ['predeps: [dev-amd64]']
   image: $PREDEPS_IMAGE_DEV_AMD64
   variables:
-    # FIXME: The CUDA-enabled tests FAIL instead of SKIP if the CUDA driver is unavailable on the
+    # FIXME: The Level Zero-enabled tests FAIL instead of SKIP if the CUDA driver is unavailable on the
     # system. For now, disable these tests to allow the CI job to pass.
-    # FIXME: Same for LevelZero-enabled tests.
-    TEST_ARGS: --no-suite cuda --no-suite level0
+    TEST_ARGS: --no-suite level0
 ubuntu20.04 amd64:
   extends: .individual test job std
   needs: ['predeps: [ubuntu20.04-amd64]']
