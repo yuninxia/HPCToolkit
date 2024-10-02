@@ -127,6 +127,8 @@ zeCommandListAppendLaunchKernelOnEnter
   if (desc) {
     desc->running_kernel_ = hKernel;
     desc->serial_kernel_end_ = hSignalEvent;
+
+    desc->kernel_started_.store(true, std::memory_order_release);
     
     // Signal event to notify kernel start
     ze_result_t status = zeEventHostSignal(desc->serial_kernel_start_);
@@ -148,7 +150,11 @@ zeCommandListAppendLaunchKernelOnExit
 
 #if 0
   ze_kernel_handle_t hKernel = *(params->phKernel);
-  std::cout << "OnExitCommandListAppendLaunchKernel: hKernel=" << hKernel << ", hDevice=" << hDevice << std::endl;
+  ze_event_handle_t hSignalEvent = *(params->phSignalEvent);
+  KernelExecutionTime executionTime = zeroGetKernelExecutionTime(hSignalEvent, hDevice);
+  std::cout << "OnExitCommandListAppendLaunchKernel: hKernel=" << hKernel << ", hDevice=" << hDevice
+            << ", Start time: " << executionTime.startTimeNs << " ns" << ", End time: " << executionTime.endTimeNs << " ns"
+            << "  Execution time: " << executionTime.executionTimeNs << " ns" << std::endl;
 #endif
 
   // Use the root device for notification and synchronization

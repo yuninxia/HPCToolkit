@@ -66,6 +66,7 @@ struct ZeDeviceDescriptor {
   ze_event_handle_t serial_kernel_end_;
   ze_event_handle_t serial_data_ready_;
   ze_kernel_handle_t running_kernel_;
+  std::atomic<bool> kernel_started_{false};
 };
 
 
@@ -97,6 +98,12 @@ zeroEnumerateDevices
 (
   std::map<ze_device_handle_t, ZeDeviceDescriptor*>& device_descriptors_,
   std::vector<ze_context_handle_t>& metric_contexts
+);
+
+ze_device_properties_t
+zeroGetDeviceProperties
+(
+  ze_device_handle_t device
 );
 
 ze_device_handle_t
