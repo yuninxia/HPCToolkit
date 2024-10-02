@@ -96,6 +96,16 @@ ZeMetricProfiler::RunProfilingLoop
         break;
       }
 
+      // Handle case where kernel execution is extremely short:
+      // In such cases, the kernel might finish before zeEventHostSynchronize can detect the start event.
+      // Without this check, a deadlock could occur:
+      // - The Profiling thread would keep waiting for the start event (which has already been reset).
+      // - The App thread would be waiting for the Profiling thread to complete data processing.
+      // kernel_started_ allows Profiling thread to proceed, avoiding deadlock.
+      if (desc->kernel_started_.load(std::memory_order_acquire)) {
+        break;
+      }
+
       if (desc->profiling_state_.load(std::memory_order_acquire) == PROFILER_DISABLED) {
         return;
       }
@@ -122,6 +132,7 @@ ZeMetricProfiler::RunProfilingLoop
     zeroFlushStreamerBuffer(streamer, desc);
 
     desc->running_kernel_ = nullptr;
+    desc->kernel_started_.store(false, std::memory_order_release);
     
     // Notify the app thread that data processing is complete
     status = zeEventHostSignal(desc->serial_data_ready_);
