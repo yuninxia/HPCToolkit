@@ -471,6 +471,7 @@ if level0_dep.found()
     'gpu/api/intel/level0/pcsampling/level0-metric-profiler.cpp',
     'gpu/api/intel/level0/pcsampling/level0-module.cpp',
     'gpu/api/intel/level0/pcsampling/level0-pcsampling.cpp',
+    'gpu/api/intel/level0/pcsampling/level0-timestamp.cpp',
     'gpu/api/intel/level0/pcsampling/level0-tracing-callbacks.cpp',
     'sample-sources/level0.c',
   )

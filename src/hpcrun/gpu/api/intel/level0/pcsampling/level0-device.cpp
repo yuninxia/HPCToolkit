@@ -170,6 +170,21 @@ zeroEnumerateDevices
   }
 }
 
+ze_device_properties_t
+zeroGetDeviceProperties
+(
+  ze_device_handle_t device
+)
+{
+  ze_device_properties_t deviceProps = {};
+  deviceProps.stype = ZE_STRUCTURE_TYPE_DEVICE_PROPERTIES;
+  
+  ze_result_t status = zeDeviceGetProperties(device, &deviceProps);
+  level0_check_result(status, __LINE__);
+  
+  return deviceProps;
+}
+
 ze_device_handle_t
 zeroConvertToRootDevice
 (
