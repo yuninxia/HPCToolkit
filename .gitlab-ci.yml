@@ -373,7 +373,6 @@ include:
     echo "      -e SETUP_ARGS='$SETUP_ARGS' -e TEST_ARGS='$TEST_ARGS'$EXTRA_ENVS \\"
     echo "      $CI_JOB_IMAGE"
     echo 'and repeat the commands listed in the job log above, with $BUILD_DIRECTORY replaced with /tmp/builddir.'
-    echo "If using VSCode, you may also try using the appropriate devcontainer."
   - if [ -f compile.log ]; then ./ci/cc-diagnostics.py cc cq.json compile.log; fi
   artifacts:
     reports:
