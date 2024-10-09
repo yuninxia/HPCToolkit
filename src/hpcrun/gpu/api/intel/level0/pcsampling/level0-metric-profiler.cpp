@@ -48,7 +48,7 @@ ZeMetricProfiler::MetricProfilingThread
 
   zet_metric_streamer_handle_t streamer = nullptr;
   uint32_t interval = 500000; // ns
-  uint32_t notifyEveryNReports = 1024;
+  uint32_t notifyEveryNReports = 65536;
 
   zet_metric_streamer_desc_t streamer_desc = { ZET_STRUCTURE_TYPE_METRIC_STREAMER_DESC, nullptr, notifyEveryNReports, interval };
   status = zetMetricStreamerOpen(context, device, group, &streamer_desc, nullptr, &streamer);
@@ -117,7 +117,7 @@ ZeMetricProfiler::RunProfilingLoop
       gpu_correlation_channel_receive(1, UpdateCorrelationID, desc);
 
       // Wait for the next interval
-      status = zeEventHostSynchronize(desc->serial_kernel_end_, 50000000);
+      status = zeEventHostSynchronize(desc->serial_kernel_end_, 5000);
       if (status == ZE_RESULT_SUCCESS) {
         break;
       }
@@ -128,8 +128,10 @@ ZeMetricProfiler::RunProfilingLoop
     // Kernel has finished, perform final sampling and cleanup
     CollectAndProcessMetrics(desc, streamer, raw_metrics);
 
+#if 0
     // FIXME(Yuning): need a better way to flush the streamer buffer without repeatedly closing and reopening the streamer
     zeroFlushStreamerBuffer(streamer, desc);
+#endif
 
     desc->running_kernel_ = nullptr;
     desc->kernel_started_.store(false, std::memory_order_release);
