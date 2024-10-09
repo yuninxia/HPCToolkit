@@ -25,6 +25,7 @@
 #include "../../../../activity/gpu-activity.h"
 #include "../level0-id-map.h"
 #include "level0-kernel-properties.hpp"
+#include "level0-logging.hpp"
 #include "level0-metric.hpp"
 
 

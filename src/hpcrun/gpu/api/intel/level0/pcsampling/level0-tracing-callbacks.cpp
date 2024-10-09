@@ -152,7 +152,7 @@ zeCommandListAppendLaunchKernelOnExit
   ze_kernel_handle_t hKernel = *(params->phKernel);
   ze_event_handle_t hSignalEvent = *(params->phSignalEvent);
   KernelExecutionTime executionTime = zeroGetKernelExecutionTime(hSignalEvent, hDevice);
-  std::cout << "OnExitCommandListAppendLaunchKernel: hKernel=" << hKernel << ", hDevice=" << hDevice
+  std::cout << "OnExitCommandListAppendLaunchKernel:  hKernel=" << hKernel << ", hDevice=" << hDevice
             << ", Start time: " << executionTime.startTimeNs << " ns" << ", End time: " << executionTime.endTimeNs << " ns"
             << "  Execution time: " << executionTime.executionTimeNs << " ns" << std::endl;
 #endif

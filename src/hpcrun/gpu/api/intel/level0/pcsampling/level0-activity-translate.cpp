@@ -89,7 +89,11 @@ convertPCSampling
     stall.send_ + stall.dist_ + stall.sbid_ + stall.sync_ + stall.insfetch_ + stall.other_;
   activity->details.pc_sampling.latencySamples = activity->details.pc_sampling.samples - stall.active_;  
   convertStallReason(stall, activity->details.pc_sampling.stallReason);
-  
+
+#if 0
+  zeroLogPCSample(correlation_id, kernel_props, activity->details.pc_sampling, stall, rit->first);
+#endif
+
   return true;
 }
 

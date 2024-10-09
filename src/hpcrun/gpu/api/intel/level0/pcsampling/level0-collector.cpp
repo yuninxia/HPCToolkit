@@ -145,12 +145,12 @@ ZeCollector::LogKernelProfiles
 std::string 
 ZeCollector::GenerateUniqueId
 (
-  const uint8_t* binary_data, 
+  const void *data,
   size_t binary_size
 ) const
 {
   char hash_string[CRYPTO_HASH_STRING_LENGTH] = {0};
-  crypto_compute_hash_string(binary_data, binary_size, hash_string, CRYPTO_HASH_STRING_LENGTH);
+  crypto_compute_hash_string(data, binary_size, hash_string, CRYPTO_HASH_STRING_LENGTH);
   return std::string(hash_string);
 }
 
@@ -330,7 +330,7 @@ ZeCollector::OnExitModuleCreate
     return;
   }
 
-  std::string module_id = GenerateUniqueId(binary.data(), binary.size());
+  std::string module_id = GenerateUniqueId(&mod, sizeof(mod));
 
   ZeModule m;
   
@@ -404,7 +404,7 @@ ZeCollector::OnExitKernelCreate
 
   desc.name_ = zeroGetKernelName(kernel);
 
-  std::string kernel_id = GenerateUniqueId(reinterpret_cast<const uint8_t*>(&kernel), sizeof(kernel));
+  std::string kernel_id = GenerateUniqueId(&kernel, sizeof(kernel));
 
   desc.id_ = kernel_id;
   desc.module_id_ = module_id;
