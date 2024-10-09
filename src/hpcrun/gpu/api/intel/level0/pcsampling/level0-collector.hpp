@@ -129,7 +129,7 @@ class ZeCollector {
   void LogKernelProfiles(const ZeKernelCommandProperties* kernel, size_t size);
  
   void EnableTracing(zel_tracer_handle_t tracer);
-  std::string GenerateUniqueId(const uint8_t* binary_data, size_t binary_size) const;
+  std::string GenerateUniqueId(const void *data, size_t binary_size) const;
   void FillFunctionSizeMap(zebin_id_map_entry_t *entry);
   size_t GetFunctionSize(std::string& function_name) const;
 
