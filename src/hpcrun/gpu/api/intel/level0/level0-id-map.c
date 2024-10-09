@@ -278,11 +278,8 @@ zebin_id_transform
     return ip;
   }
 
-  size_t debug_zebin_size;
-  uint8_t* debug_zebin = level0_module_debug_zebin_get(hModule, &debug_zebin_size);
-
   char module_id[CRYPTO_HASH_STRING_LENGTH];
-  crypto_compute_hash_string(debug_zebin, debug_zebin_size, module_id, CRYPTO_HASH_STRING_LENGTH);
+  crypto_compute_hash_string(&hModule, sizeof(hModule), module_id, CRYPTO_HASH_STRING_LENGTH);
   
   uint32_t module_id_uint32;
   sscanf(module_id, "%8x", &module_id_uint32);
@@ -301,7 +298,6 @@ zebin_id_transform
     } else {
       fprintf(stderr, "zeModuleGetFunctionPointer failed for function %s\n", function_name);
       free(function_name);
-      free(debug_zebin);
       return ip;
     }
 
@@ -317,7 +313,6 @@ zebin_id_transform
   }
 
   free(function_name);
-  free(debug_zebin);
   return ip;
 }
 

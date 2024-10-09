@@ -5,14 +5,22 @@
 
 // -*-Mode: C++;-*-
 
-#ifndef LEVEL0_ACTIVITY_SEND_H
-#define LEVEL0_ACTIVITY_SEND_H
+#ifndef LEVEL0_LOGGING_HPP
+#define LEVEL0_LOGGING_HPP
+
+//*****************************************************************************
+// level zero includes
+//*****************************************************************************
+
+#include <level_zero/ze_api.h>
+
 
 //*****************************************************************************
 // system includes
 //*****************************************************************************
 
 #include <deque>
+#include <unordered_map>
 
 
 //*****************************************************************************
@@ -20,11 +28,10 @@
 //*****************************************************************************
 
 #include "../../../../activity/gpu-activity.h"
+#include "../level0-id-map.h"
+#include "level0-assert.hpp"
 #include "level0-kernel-properties.hpp"
-
-extern "C" {
-  #include "../../../../activity/gpu-activity-channel.h"
-}
+#include "level0-metric.hpp"
 
 
 //******************************************************************************
@@ -32,10 +39,21 @@ extern "C" {
 //******************************************************************************
 
 void
-zeroSendActivities
+zeroLogActivities
 (
-  std::deque<gpu_activity_t*>& activities
+  const std::deque<gpu_activity_t*>& activities, 
+  const std::map<uint64_t, KernelProperties>& kprops
+);
+
+void
+zeroLogPCSample
+(
+  uint64_t correlation_id,
+  const KernelProperties& kernel_props,
+  const gpu_pc_sampling_t& pc_sampling,
+  const EuStalls& stall,
+  uint64_t base_address
 );
 
 
-#endif // LEVEL0_ACTIVITY_SEND_H
+#endif // LEVEL0_LOGGING_HPP

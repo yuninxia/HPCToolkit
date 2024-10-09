@@ -25,12 +25,13 @@
 #include "level0-binary.h"
 #include "level0-command-list-map.h"
 #include "level0-command-list-context-map.h"
+#include "level0-command-process.h"
 #include "level0-command-queue-map.h"
 #include "level0-event-map.h"
-#include "level0-command-process.h"
 #include "level0-data-node.h"
 #include "level0-debug.h"
 #include "level0-fence-map.h"
+#include "level0-id-map.h"
 #include "level0-kernel-module-map.h"
 #include "pcsampling/level0-pcsampling.hpp"
 
@@ -302,11 +303,9 @@ level0_command_list_append_launch_kernel_entry
     // Associate the data entry with the event
     level0_event_map_insert(event, data_for_kernel);
 #if LATE_BEGIN == 0
-    if (level0_pcsampling_enabled()) {
-      // For immediate command list, the kernel is dispatched to GPU at this point.
-      // So, we attribute GPU metrics to the current CPU calling context.
-      level0_command_begin(data_for_kernel);
-    }
+    // For immediate command list, the kernel is dispatched to GPU at this point.
+    // So, we attribute GPU metrics to the current CPU calling context.
+    level0_command_begin(data_for_kernel);
 #endif
   }
   return event;
@@ -352,11 +351,9 @@ level0_command_list_append_launch_memcpy_entry
     // Associate the data entry with the event
     level0_event_map_insert(event, data_for_memcpy);
 #if LATE_BEGIN == 0
-    if (level0_pcsampling_enabled()) {
-      // For immediate command list, the mempcy is dispatched to GPU at this point.
-      // So, we attribute GPU metrics to the current CPU calling context.
-      level0_command_begin(data_for_memcpy);
-    }
+    // For immediate command list, the mempcy is dispatched to GPU at this point.
+    // So, we attribute GPU metrics to the current CPU calling context.
+    level0_command_begin(data_for_memcpy);
 #endif
   }
   return event;
@@ -470,11 +467,11 @@ level0_process_immediate_command_list
     level0_data_node_t* data_for_act = level0_event_map_lookup(event);
 
 #if LATE_BEGIN != 0
-    if (!level0_pcsampling_enabled()) {
-      // For immediate command list, the kernel is dispatched to GPU at this point.
-      // So, we attribute GPU metrics to the current CPU calling context.
-      level0_command_begin(data_for_act);
-    }
+    // For immediate command list, the kernel is dispatched to GPU at this point.
+    // So, we attribute GPU metrics to the current CPU calling context.
+    level0_command_begin(data_for_act);
+    printf("level0_process_immediate_command_list: immediate command list, event handle %p\n",
+      (void*)event);
 #endif
 
     level0_attribute_event(event, dispatch);
@@ -819,6 +816,13 @@ hpcrun_zeModuleDestroy
 {
   // Entry action
   level0_module_handle_map_delete(hModule);
+
+  // Hash the module handle to get a unique id
+  char zebin_id[CRYPTO_HASH_STRING_LENGTH];
+  crypto_compute_hash_string(&hModule, sizeof(hModule), zebin_id, CRYPTO_HASH_STRING_LENGTH);
+  uint32_t zebin_id_uint32;
+  sscanf(zebin_id, "%8x", &zebin_id_uint32);
+  zebin_id_map_delete(zebin_id_uint32);
 
   ze_result_t ret = f_zeModuleDestroy(hModule, dispatch);
 

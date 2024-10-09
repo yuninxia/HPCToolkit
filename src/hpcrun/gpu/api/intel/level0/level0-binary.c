@@ -128,7 +128,7 @@ level0_binary_process
 
   // Generate a hash for the binary
   char zebin_id[CRYPTO_HASH_STRING_LENGTH];
-  crypto_compute_hash_string(debug_zebin, debug_zebin_size, zebin_id, CRYPTO_HASH_STRING_LENGTH);
+  crypto_compute_hash_string(&module, sizeof(module), zebin_id, CRYPTO_HASH_STRING_LENGTH);
      
   TMSG(LEVEL0, "zebin_id %d -> loadmap_module_id %d", zebin_id, loadmap_module_id);
 
