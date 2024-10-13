@@ -19,6 +19,7 @@
 // system includes
 //*****************************************************************************
 
+#include <iostream>
 #include <vector>
 
 
@@ -43,6 +44,14 @@ std::vector<ze_driver_handle_t>
 zeroGetDrivers
 (
   void
+);
+
+void
+zeroCheckDriverVersion
+(
+  uint32_t requiredMajor,
+  uint32_t requiredMinor,
+  bool printVersion
 );
 
 
