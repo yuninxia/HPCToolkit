@@ -172,11 +172,8 @@ METHOD_FN(process_event_list, int lush_metrics)
     &th, NO_THRESHOLD);
 
   if (hpcrun_ev_is(event, LEVEL0_PC_SAMPLING)) {
-
-    // FIXME(Yuning): sampling frequency should not be hard-coded
-    uint32_t sampling_interval_nanoseconds = 50 * 1000;
-    double sampling_frequency = 1e9 / sampling_interval_nanoseconds;
-    gpu_monitoring_instruction_sample_frequency_set(sampling_frequency);
+    // FIXME(Yuning): the unit of pc sampling metric is the count of collected samples
+    gpu_monitoring_instruction_sample_frequency_set(0);
 
     gpu_metrics_GPU_INST_enable(); // instruction counts
     gpu_metrics_GPU_INST_STALL_enable();
