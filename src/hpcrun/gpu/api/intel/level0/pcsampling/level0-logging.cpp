@@ -136,7 +136,9 @@ zeroLogPCSample
             << " --> [" << std::dec << pc_sampling.pc.lm_id << ", 0x" 
             << std::hex << offset << "]" << std::endl;
   
-  std::cout << "Stall reason: " << pc_sampling.stallReason << std::endl;
+  std::cout << "Stall reason: " << pc_sampling.stallReason
+            << ", Samples: " << pc_sampling.samples
+            << ", Latency samples: " << pc_sampling.latencySamples << std::endl;
   
   std::cout << "Stall counts:"
             << " Active: " << stall.active_
