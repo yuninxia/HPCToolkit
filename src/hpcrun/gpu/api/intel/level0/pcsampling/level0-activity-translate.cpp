@@ -16,22 +16,12 @@
 // private operations
 //******************************************************************************
 
-static void
-convertStallReason
-(
-  const EuStalls& stall,
-  gpu_inst_stall_t& stall_reason
-) 
-{
-  stall_reason = GPU_INST_STALL_NONE;
-  uint64_t max_value = 0;
-
-  // FIXME(Yuning): stall reasons are not accurately mapped
-  // Map stall types to reasons
-  const struct {
-    uint64_t EuStalls::* stall_value;
-    gpu_inst_stall_t reason;
-  } stall_mappings[] = {
+// FIXME(Yuning): stall reasons are not accurately mapped
+// Map stall types to reasons
+static const struct {
+  uint64_t EuStalls::* stall_value;
+  gpu_inst_stall_t reason;
+} stall_mappings[] = {
     {&EuStalls::control_, GPU_INST_STALL_OTHER}, // TBD
     {&EuStalls::pipe_, GPU_INST_STALL_PIPE_BUSY},
     {&EuStalls::send_, GPU_INST_STALL_GMEM}, // TBD
@@ -40,32 +30,24 @@ convertStallReason
     {&EuStalls::sync_, GPU_INST_STALL_SYNC},
     {&EuStalls::insfetch_, GPU_INST_STALL_IFETCH},
     {&EuStalls::other_, GPU_INST_STALL_OTHER}
-  };
-
-  // Iterate through the mappings to find the maximum stall value
-  for (const auto& mapping : stall_mappings) {
-    if (stall.*(mapping.stall_value) > max_value) {
-      max_value = stall.*(mapping.stall_value);
-      stall_reason = mapping.reason;
-    }
-  }
-}
+};
 
 static bool
 convertPCSampling
 (
   gpu_activity_t* activity, 
-  const std::map<uint64_t, EuStalls>::iterator& it,
-  const std::map<uint64_t, KernelProperties>::const_reverse_iterator& rit,
-  uint64_t correlation_id
+  const std::map<uint64_t, EuStalls>::iterator& eustall_iter,
+  const std::map<uint64_t, KernelProperties>::const_reverse_iterator& kernel_iter,
+  uint64_t correlation_id,
+  gpu_inst_stall_t stall_reason,
+  uint64_t stall_count
 )
 {
   if (!activity) return false;
 
   activity->kind = GPU_ACTIVITY_PC_SAMPLING;
 
-  const KernelProperties& kernel_props = rit->second;
-  const EuStalls& stall = it->second;
+  const KernelProperties& kernel_props = kernel_iter->second;
 
   // Convert hex string to uint32_t directly
   uint32_t module_id_uint32 = 0;
@@ -79,19 +61,23 @@ convertPCSampling
   }
 
 #if 0
-  std::cout << "real: " << std::hex << it->first << " ,base: " << std::hex << rit->first << " ,offset: " << std::hex << it->first - rit->first << std::endl;
+  std::cout << "real: " << std::hex << eustall_iter->first 
+            << " ,base: " << std::hex << kernel_iter->first 
+            << " ,offset: " << std::hex << eustall_iter->first - kernel_iter->first 
+            << std::endl;
 #endif
 
   // FIXME(Yuning): address adjustment is not robust
-  activity->details.pc_sampling.pc.lm_ip = it->first + 0x800000000000; // real = it->first; base = rit->first; offset = real - base;
+  activity->details.pc_sampling.pc.lm_ip = eustall_iter->first + 0x800000000000; // real = it->first; base = kernel_iter->first; offset = real - base;
   activity->details.pc_sampling.correlation_id = correlation_id;
-  activity->details.pc_sampling.samples = stall.active_ + stall.control_ + stall.pipe_ + 
-    stall.send_ + stall.dist_ + stall.sbid_ + stall.sync_ + stall.insfetch_ + stall.other_;
-  activity->details.pc_sampling.latencySamples = activity->details.pc_sampling.samples - stall.active_;  
-  convertStallReason(stall, activity->details.pc_sampling.stallReason);
+  activity->details.pc_sampling.samples = stall_count;
+
+  // FIXME(Yuning): latencySamples may not be accurate
+  activity->details.pc_sampling.latencySamples = stall_count;
+  activity->details.pc_sampling.stallReason = stall_reason;
 
 #if 0
-  zeroLogPCSample(correlation_id, kernel_props, activity->details.pc_sampling, stall, rit->first);
+  zeroLogPCSample(correlation_id, kernel_props, activity->details.pc_sampling, eustall_iter->second, kernel_iter->first);
 #endif
 
   return true;
@@ -106,15 +92,21 @@ void
 zeroActivityTranslate
 (
   std::deque<gpu_activity_t*>& activities, 
-  const std::map<uint64_t, EuStalls>::iterator& it,
-  const std::map<uint64_t, KernelProperties>::const_reverse_iterator& rit,
+  const std::map<uint64_t, EuStalls>::iterator& eustall_iter,
+  const std::map<uint64_t, KernelProperties>::const_reverse_iterator& kernel_iter,
   uint64_t correlation_id
 ) 
 {
-  auto activity = std::make_unique<gpu_activity_t>();
-  gpu_activity_init(activity.get());
+  const EuStalls& stall = eustall_iter->second;
 
-  if (convertPCSampling(activity.get(), it, rit, correlation_id)) {
-    activities.push_back(activity.release());
+  for (const auto& mapping : stall_mappings) {
+    uint64_t stall_count = stall.*(mapping.stall_value);
+    if (stall_count == 0) continue; // Skip if no stalls of this type
+
+    auto activity = std::make_unique<gpu_activity_t>();
+    gpu_activity_init(activity.get());
+    if (convertPCSampling(activity.get(), eustall_iter, kernel_iter, correlation_id, mapping.reason, stall_count)) {
+      activities.push_back(activity.release());
+    }
   }
 }
