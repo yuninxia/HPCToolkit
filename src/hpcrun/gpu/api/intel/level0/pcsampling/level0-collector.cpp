@@ -195,9 +195,7 @@ ZeCollector::Create
   const std::string& data_dir
 )
 {
-  ze_api_version_t version;
-  zeroGetVersion(version);
-  assert(ZE_MAJOR_VERSION(version) >= 1 && ZE_MINOR_VERSION(version) >= 2);
+  zeroCheckDriverVersion(1, 2, /*printVersion=*/false);
 
   ZeCollector* collector = new ZeCollector(data_dir);
 

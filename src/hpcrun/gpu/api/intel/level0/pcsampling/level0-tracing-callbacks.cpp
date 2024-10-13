@@ -39,6 +39,8 @@ getDeviceForCommandList
   // Option 2: manually maintain the mapping, generally more reliable
   hDevice = metric_profiler->GetDeviceForCommandList(hCommandList);
 #endif
+
+  // Use the root device for notification and synchronization
   return zeroConvertToRootDevice(hDevice);
 }
 
@@ -121,8 +123,6 @@ zeCommandListAppendLaunchKernelOnEnter
   std::cout << "OnEnterCommandListAppendLaunchKernel: hKernel=" << hKernel << ", hDevice=" << hDevice << std::endl;
 #endif
 
-  // Use the root device for notification and synchronization
-  hDevice = zeroConvertToRootDevice(hDevice);
   ZeDeviceDescriptor* desc = getDeviceDescriptor(hDevice);
   if (desc) {
     desc->running_kernel_ = hKernel;
@@ -157,12 +157,7 @@ zeCommandListAppendLaunchKernelOnExit
             << "  Execution time: " << executionTime.executionTimeNs << " ns" << std::endl;
 #endif
 
-  // Use the root device for notification and synchronization
-  hDevice = zeroConvertToRootDevice(hDevice);
   ZeDeviceDescriptor* desc = getDeviceDescriptor(hDevice);
-  
-  std::map<ze_device_handle_t, ZeDeviceDescriptor*> device_descriptors;
-  metric_profiler->GetDeviceDescriptors(device_descriptors);
   if (desc) {
     // Host reset event to indicate kernel execution has ended
     ze_result_t status = zeEventHostReset(desc->serial_kernel_start_);
