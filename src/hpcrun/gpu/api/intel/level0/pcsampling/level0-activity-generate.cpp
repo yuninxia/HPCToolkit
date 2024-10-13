@@ -58,14 +58,14 @@ generateActivities
   const std::string& running_kernel_name
 )
 {
-  for (auto it = eustalls.begin(); it != eustalls.end(); ++it) {
-    uint64_t stall_time = it->first;
-    for (auto rit = kprops.crbegin(); rit != kprops.crend(); ++rit) {
-      if ((rit->first <= stall_time) && ((stall_time - rit->first) < rit->second.size)) {
-        std::string stripped_name = stripEdgeQuotes(rit->second.name);
+  for (auto eustall_iter = eustalls.begin(); eustall_iter != eustalls.end(); ++eustall_iter) {
+    for (auto kernel_iter = kprops.crbegin(); kernel_iter != kprops.crend(); ++kernel_iter) {
+      uint64_t instruction_offset = eustall_iter->first - kernel_iter->first;
+      if ((instruction_offset >= 0) && (instruction_offset < kernel_iter->second.size)) {
+        std::string stripped_name = stripEdgeQuotes(kernel_iter->second.name);
         if (stripped_name == running_kernel_name) {
-          uint64_t cid = kernel_cids.at(rit->second.name);
-          zeroActivityTranslate(activities, it, rit, cid);
+          uint64_t cid = kernel_cids.at(kernel_iter->second.name);
+          zeroActivityTranslate(activities, eustall_iter, kernel_iter, cid);
         }
         break;
       }
