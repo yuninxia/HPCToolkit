@@ -88,3 +88,25 @@ zeroGetDrivers
   
   return drivers;
 }
+
+void
+zeroCheckDriverVersion
+(
+  uint32_t requiredMajor,
+  uint32_t requiredMinor,
+  bool printVersion = false
+)
+{
+  ze_api_version_t version;
+  zeroGetVersion(version);
+
+  uint32_t major = ZE_MAJOR_VERSION(version);
+  uint32_t minor = ZE_MINOR_VERSION(version);
+
+  if (printVersion) {
+    std::cout << "Level Zero API version: " << major << "." << minor << std::endl;
+  }
+
+  assert((major >= requiredMajor && minor >= requiredMinor) && 
+          "Level Zero API version is lower than required");
+}
