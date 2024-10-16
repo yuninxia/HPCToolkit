@@ -135,13 +135,14 @@ gpu_instrumentation_options_set
         fprintf(stderr, "hpcrun ERROR: unexpected text encountered parsing GPU instrumentation knobs '%s'\n", ostr);
         exit(-1);
       }
-#endif
     }
+#else
     if (*ostr) {
       fprintf(stderr, "hpcrun ERROR: unexpected text encountered parsing GPU"
               " setting '%s'\n", ostr);
       exit(-1);
     }
+#endif
   }
 
 #if DEBUG
