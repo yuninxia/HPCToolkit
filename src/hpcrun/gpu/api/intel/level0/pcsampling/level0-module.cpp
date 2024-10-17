@@ -33,7 +33,7 @@ zeroGetKernelName
   return (status == ZE_RESULT_SUCCESS) ? std::string(kernel_name.begin(), kernel_name.end() - 1) : "UnknownKernel";
 }
 
-void*
+uint64_t
 zeroGetFunctionPointer
 (
   ze_module_handle_t module,
@@ -44,10 +44,10 @@ zeroGetFunctionPointer
   ze_result_t status = zeModuleGetFunctionPointer(module, kernel_name.c_str(), &function_pointer);
   
   if (status == ZE_RESULT_SUCCESS && function_pointer != nullptr) {
-    return function_pointer;
+    return reinterpret_cast<uint64_t>(function_pointer);
   } else {
     std::cerr << "[WARNING] Unable to get function pointer for kernel: " << kernel_name << std::endl;
-    return nullptr;
+    return 0;
   }
 }
 

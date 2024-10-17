@@ -5,71 +5,73 @@
 
 // -*-Mode: C++;-*-
 
-#ifndef LEVEL0_LOGGING_HPP
-#define LEVEL0_LOGGING_HPP
+#ifndef LEVEL0_TRACING_H_
+#define LEVEL0_TRACING_H_
 
 //*****************************************************************************
 // level zero includes
 //*****************************************************************************
 
-#include <level_zero/ze_api.h>
+#include <level_zero/layers/zel_tracing_api.h>
 
 
-//*****************************************************************************
-// system includes
-//*****************************************************************************
-
-#include <deque>
-#include <iostream>
-#include <iomanip>
-#include <sstream>
-#include <unordered_map>
-
-
-//*****************************************************************************
+//******************************************************************************
 // local includes
+//******************************************************************************
+
+#include "level0-assert.hpp"
+#include "level0-tracing-callbacks.hpp"
+
+
+//*****************************************************************************
+ // Forward Declaration
 //*****************************************************************************
 
-#include "../../../../activity/gpu-activity.h"
-#include "../level0-id-map.h"
-#include "level0-assert.hpp"
-#include "level0-kernel-properties.hpp"
-#include "level0-metric.hpp"
+class ZeCollector;
+
+
+//*****************************************************************************
+// global variables
+//*****************************************************************************
+
+extern zel_tracer_handle_t tracer_;
 
 
 //******************************************************************************
 // interface operations
 //******************************************************************************
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 void
-zeroLogActivities
+zeroEnableTracing
 (
-  const std::deque<gpu_activity_t*>& activities, 
-  const std::map<uint64_t, KernelProperties>& kprops
+  zel_tracer_handle_t tracer
+);
+
+#ifdef __cplusplus
+}
+#endif
+
+void
+zeroDisableTracing
+(
+  void
+);
+
+zel_tracer_handle_t
+zeroCreateTracer
+(
+  ZeCollector* collector
 );
 
 void
-zeroLogPCSample
+zeroDestroyTracer
 (
-  uint64_t correlation_id,
-  const KernelProperties& kernel_props,
-  const gpu_pc_sampling_t& pc_sampling,
-  const EuStalls& stall,
-  uint64_t base_address
-);
-
-void
-zeroLogMetricList
-(
-  const std::vector<std::string>& metric_list
-);
-
-void
-zeroLogSamplesAndMetrics
-(
-  const std::vector<uint32_t>& samples,
-  const std::vector<zet_typed_value_t>& metrics
+  zel_tracer_handle_t tracer
 );
 
 
-#endif // LEVEL0_LOGGING_HPP
+#endif // LEVEL0_TRACING_H_
