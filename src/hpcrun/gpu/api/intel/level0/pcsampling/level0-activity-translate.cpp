@@ -67,8 +67,7 @@ convertPCSampling
   std::cout << "[INFO] real: " << std::hex << real << " ,base: " << std::hex << base << " ,offset: " << std::hex << offset << std::endl;
 #endif
 
-  // FIXME(Yuning): address adjustment is not robust
-  activity->details.pc_sampling.pc.lm_ip = eustall_iter->first + 0x800000000000;
+  activity->details.pc_sampling.pc.lm_ip = eustall_iter->first;
   activity->details.pc_sampling.correlation_id = correlation_id;
   activity->details.pc_sampling.samples = stall_count;
 

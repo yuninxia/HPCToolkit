@@ -16,98 +16,6 @@
 // private operations
 //******************************************************************************
 
-static void
-getMetricUnits
-(
-  const char* units,
-  std::string& result
-)
-{
-  assert(units != nullptr);
-
-  result = units;
-  if (result.find("null") != std::string::npos) {
-    result = "";
-  } else if (result.find("percent") != std::string::npos) {
-    result = "%";
-  }
-}
-
-static void
-getMetricId
-(
-  const std::vector<std::string>& metric_list,
-  const std::string& metric_name,
-  uint32_t& metric_id
-)
-{
-  assert(!metric_list.empty());
-  assert(!metric_name.empty());
-
-  for (size_t i = 0; i < metric_list.size(); ++i) {
-    if (metric_list[i].find(metric_name) == 0) {
-      metric_id = i;
-      return;
-    }
-  }
-  metric_id = metric_list.size();
-}
-
-static uint32_t
-getMetricCount
-(
-  zet_metric_group_handle_t group
-)
-{
-  zet_metric_group_properties_t group_props{};
-  group_props.stype = ZET_STRUCTURE_TYPE_METRIC_GROUP_PROPERTIES;
-  ze_result_t status = zetMetricGroupGetProperties(group, &group_props);
-  level0_check_result(status, __LINE__);
-  return group_props.metricCount;
-}
-
-static std::vector<zet_metric_handle_t>
-getMetricHandles
-(
-  zet_metric_group_handle_t group,
-  uint32_t metric_count
-)
-{
-  std::vector<zet_metric_handle_t> metric_list(metric_count);
-  ze_result_t status = zetMetricGet(group, &metric_count, metric_list.data());
-  level0_check_result(status, __LINE__);
-  assert(metric_count == metric_list.size());
-  return metric_list;
-}
-
-static zet_metric_properties_t
-getMetricProperties
-(
-  zet_metric_handle_t metric
-)
-{
-  zet_metric_properties_t metric_props{ZET_STRUCTURE_TYPE_METRIC_PROPERTIES};
-  ze_result_t status = zetMetricGetProperties(metric, &metric_props);
-  level0_check_result(status, __LINE__);
-  return metric_props;
-}
-
-static std::string
-buildMetricName
-(
-  const zet_metric_properties_t& metric_props
-)
-{
-  std::string units;
-  getMetricUnits(metric_props.resultUnits, units);
-
-  std::string name = metric_props.name;
-  if (!units.empty()) {
-    name += "[" + units + "]";
-  }
-  return name;
-}
-
 static uint32_t
 getNumberOfMetricGroups
 (
@@ -173,18 +81,6 @@ findMatchingMetricGroup
   return nullptr;
 }
 
-static bool
-isValidMetricList
-(
-  const std::vector<std::string>& metric_list
-)
-{
-  if (metric_list.empty()) return false;
-  uint32_t ip_idx;
-  getMetricId(metric_list, "IP", ip_idx);
-  return ip_idx < metric_list.size();
-}
-
 static EuStalls
 createEuStalls
 (
@@ -229,32 +125,15 @@ processMetricSample
   std::map<uint64_t, EuStalls>& eustalls
 )
 {
-  uint64_t ip = (value[0].value.ui64 << 3);
-  if (ip == 0) return;
+  uint64_t low_ip = (value[0].value.ui64 << 3);
+  if (low_ip == 0) return;
+  uint64_t full_ip = 0x800000000000ULL | (low_ip & 0xFFFFFFFF);
+  if (full_ip == 0) return;
 
   EuStalls stall = createEuStalls(value);
-  auto [it, inserted] = eustalls.try_emplace(ip, stall);
+  auto [it, inserted] = eustalls.try_emplace(full_ip, stall);
   if (!inserted) {
     updateExistingEuStalls(it->second, stall);
-  }
-}
-
-static void
-processMetrics
-(
-  const std::vector<std::string>& metric_list,
-  const std::vector<uint32_t>& samples,
-  const std::vector<zet_typed_value_t>& metrics,
-  std::map<uint64_t, EuStalls>& eustalls
-)
-{
-  const zet_typed_value_t* value = metrics.data();
-  for (uint32_t i = 0; i < samples.size(); ++i) {
-    uint32_t size = samples[i];
-    for (uint32_t j = 0; j < size; j += metric_list.size()) {
-      processMetricSample(value + j, eustalls);
-    }
-    value += samples[i];
   }
 }
 
@@ -262,27 +141,6 @@ processMetrics
 //******************************************************************************
 // interface operations
 //******************************************************************************
-
-void
-zeroGetMetricList
-(
-  zet_metric_group_handle_t group,
-  std::vector<std::string>& name_list
-)
-{
-  assert(group != nullptr);
-  uint32_t metric_count = getMetricCount(group);
-  assert(metric_count > 0);
-
-  std::vector<zet_metric_handle_t> metric_list = getMetricHandles(group, metric_count);
-
-  name_list.clear();
-  for (auto metric : metric_list) {
-    zet_metric_properties_t metric_props = getMetricProperties(metric);
-    std::string name = buildMetricName(metric_props);
-    name_list.push_back(std::move(name));
-  }
-}
 
 void
 zeroGetMetricGroup
@@ -308,7 +166,7 @@ zeroGetMetricGroup
 }
 
 void
-zeroCollectMetrics
+zeroMetricStreamerReadData
 (
   zet_metric_streamer_handle_t streamer,
   std::vector<uint8_t>& storage,
@@ -333,24 +191,19 @@ zeroCollectMetrics
 }
 
 void
-zeroCalculateEuStalls
+zeroMetricGroupCalculateMultipleMetricValuesExp
 (
   zet_metric_group_handle_t metric_group,
   int raw_size,
   const std::vector<uint8_t>& raw_metrics,
-  std::map<uint64_t, EuStalls>& eustalls
+  std::vector<uint32_t>& samples,
+  std::vector<zet_typed_value_t>& metrics
 )
 {
-  eustalls.clear();
-
-  std::vector<std::string> metric_list;
-  zeroGetMetricList(metric_group, metric_list);
-  assert(!metric_list.empty());
-  if (!isValidMetricList(metric_list)) return;
-
   uint32_t num_samples = 0;
   uint32_t num_metrics = 0;
 
+  // First call to get the number of samples and metrics
   ze_result_t status = zetMetricGroupCalculateMultipleMetricValuesExp(
     metric_group, ZET_METRIC_GROUP_CALCULATION_TYPE_METRIC_VALUES,
     raw_size, raw_metrics.data(), &num_samples, &num_metrics,
@@ -360,8 +213,11 @@ zeroCalculateEuStalls
     return;
   }
 
-  std::vector<uint32_t> samples(num_samples);
-  std::vector<zet_typed_value_t> metrics(num_metrics);
+  // Resize vectors to accommodate the data
+  samples.resize(num_samples);
+  metrics.resize(num_metrics);
+
+  // Second call to actually get the data
   status = zetMetricGroupCalculateMultipleMetricValuesExp(
     metric_group, ZET_METRIC_GROUP_CALCULATION_TYPE_METRIC_VALUES,
     raw_size, raw_metrics.data(), &num_samples, &num_metrics,
@@ -369,8 +225,26 @@ zeroCalculateEuStalls
 
   if (status != ZE_RESULT_SUCCESS && status != ZE_RESULT_WARNING_DROPPED_DATA) {
     std::cerr << "[WARNING] Unable to calculate metrics" << std::endl;
-    return;
+    samples.clear();
+    metrics.clear();
   }
+}
 
-  processMetrics(metric_list, samples, metrics, eustalls);
+void
+zeroProcessMetrics
+(
+  const std::vector<std::string>& metric_list,
+  const std::vector<uint32_t>& samples,
+  const std::vector<zet_typed_value_t>& metrics,
+  std::map<uint64_t, EuStalls>& eustalls
+)
+{
+  const zet_typed_value_t* value = metrics.data();
+  for (uint32_t i = 0; i < samples.size(); ++i) {
+    uint32_t size = samples[i];
+    for (uint32_t j = 0; j < size; j += metric_list.size()) {
+      processMetricSample(value + j, eustalls);
+    }
+    value += samples[i];
+  }
 }

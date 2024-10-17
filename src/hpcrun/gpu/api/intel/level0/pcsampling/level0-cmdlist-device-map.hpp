@@ -5,75 +5,59 @@
 
 // -*-Mode: C++;-*-
 
-#ifndef LEVEL0_MODULE_H_
-#define LEVEL0_MODULE_H_
+#ifndef LEVEL0_CMDLIST_DEVICE_MAP_H_
+#define LEVEL0_CMDLIST_DEVICE_MAP_H_
 
 //*****************************************************************************
 // level zero includes
 //*****************************************************************************
 
 #include <level_zero/ze_api.h>
-#include <level_zero/zet_api.h>
 
 
 //*****************************************************************************
 // system includes
 //*****************************************************************************
 
-#include <iostream>
-#include <string>
-#include <vector>
+#include <map>
+#include <mutex>
 
 
 //*****************************************************************************
 // local includes
 //*****************************************************************************
 
-#include "level0-assert.hpp"
-#include "level0-module.hpp"
+#include "level0-device.hpp"
 
 
-//******************************************************************************
-// struct definition
-//******************************************************************************
+//*****************************************************************************
+// global variables
+//*****************************************************************************
 
-struct ZeModule {
-  ze_device_handle_t device_;
-  std::string module_id_;
-  size_t size_;
-  bool aot_;
-  std::vector<std::string> kernel_names_;
-};
-
+extern std::map<ze_device_handle_t, ZeDeviceDescriptor*> device_descriptors_;
 
 //******************************************************************************
 // interface operations
 //******************************************************************************
 
-std::string
-zeroGetKernelName
+void
+zeroGetDeviceDesc
 (
-  ze_kernel_handle_t kernel
+  std::map<ze_device_handle_t, ZeDeviceDescriptor*>& out_descriptors
 );
 
-uint64_t
-zeroGetFunctionPointer
+void
+zeroInsertCmdListDeviceMap
 (
-  ze_module_handle_t module,
-  const std::string& kernel_name
+  ze_command_list_handle_t cmdList,
+  ze_device_handle_t device
 );
 
-std::vector<uint8_t>
-zeroGetModuleDebugInfo
+ze_device_handle_t
+zeroGetDeviceForCmdList
 (
-  ze_module_handle_t module
-);
-
-std::vector<std::string>
-zeroGetModuleKernelNames
-(
-  ze_module_handle_t module
+  ze_command_list_handle_t cmdList
 );
 
 
-#endif // LEVEL0_MODULE_H_
+#endif // LEVEL0_CMDLIST_DEVICE_MAP_H_

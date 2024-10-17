@@ -5,11 +5,22 @@
 
 // -*-Mode: C++;-*-
 
+#ifndef KERNEL_SIZE_MAP_HPP
+#define KERNEL_SIZE_MAP_HPP
+
+//*****************************************************************************
+// system includes
+//*****************************************************************************
+
+#include <string>
+#include <unordered_map>
+
+
 //*****************************************************************************
 // local includes
 //*****************************************************************************
 
-#include "level0-activity-send.hpp"
+#include "../level0-id-map.h"
 
 
 //******************************************************************************
@@ -17,14 +28,16 @@
 //******************************************************************************
 
 void
-zeroSendActivities
+zeroFillKernelSizeMap
 (
-  const std::deque<gpu_activity_t*>& activities
-) 
-{
-  for (const auto activity : activities) {
-    uint32_t thread_id = gpu_activity_channel_correlation_id_get_thread_id(activity->details.instruction.correlation_id);
-    gpu_activity_channel_t *channel = gpu_activity_channel_lookup(thread_id);
-    gpu_activity_channel_send(channel, activity);
-  }
-}
+  zebin_id_map_entry_t *entry
+);
+
+size_t
+zeroGetKernelSize
+(
+  std::string& kernel_name
+);
+
+
+#endif // KERNEL_SIZE_MAP_HPP

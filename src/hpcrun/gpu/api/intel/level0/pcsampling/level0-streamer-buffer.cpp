@@ -7,7 +7,7 @@
 // local includes
 //*****************************************************************************
 
-#include "level0-buffer.hpp"
+#include "level0-streamer-buffer.hpp"
 #include "level0-assert.hpp"
 
 
