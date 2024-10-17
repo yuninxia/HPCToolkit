@@ -16,25 +16,34 @@
 // private operations
 //******************************************************************************
 
-static void
-printPCSampleInfo
+// Helper function to format hexadecimal output
+template<typename T>
+std::string
+toHex
 (
-  const gpu_activity_t* activity,
+  T value
+)
+{
+  std::stringstream ss;
+  ss << "0x" << std::hex << std::setw(sizeof(T)*2) << std::setfill('0') << value;
+  return ss.str();
+}
+
+static void
+logPCSampleInfo
+(
+  uint64_t pc,
   uint64_t cid,
   const std::string& kernel_name,
-  uint64_t instruction_pc_lm_ip,
   uint16_t lm_id,
   uint64_t offset
 )
 {
-  std::cout << "PC Sample" << std::endl;
-  std::cout << "PC sampling: sample(pc=0x" << std::hex << activity->details.pc_sampling.pc.lm_ip
+  std::cout << "PC sampling: sample(pc=" << toHex(pc)
             << ", cid=" << cid
-            << ", kernel_name=" << kernel_name
-            << ")" << std::endl;
-  std::cout << "PC sampling: normalize 0x" << std::hex << instruction_pc_lm_ip
-            << " --> [" << std::dec << lm_id << ", 0x" 
-            << std::hex << offset << "]" << std::endl;
+            << ", kernel_name=" << kernel_name << ")\n"
+            << "PC sampling: normalize " << toHex(pc)
+            << " --> [" << lm_id << ", " << toHex(offset) << "]\n";
 }
 
 static const std::pair<std::string, uint64_t>&
@@ -67,8 +76,9 @@ logActivity
   const auto& [kernel_name, kernel_base] = findKernelInfo(instruction_pc_lm_ip, kernel_info);
   uint64_t offset = (kernel_base != 0) ? (instruction_pc_lm_ip - kernel_base) : 0;
 
-  printPCSampleInfo(activity, cid, kernel_name, instruction_pc_lm_ip, lm_id, offset);
-  cid_count[cid]++;
+  std::cout << "PC Sample\n";
+  logPCSampleInfo(activity->details.pc_sampling.pc.lm_ip, cid, kernel_name, lm_id, offset);
+  ++cid_count[cid];
 }
 
 static void
@@ -77,11 +87,11 @@ printCorrelationIdStatistics
   const std::unordered_map<uint64_t, int>& cid_count
 )
 {
-  std::cout << std::dec << std::endl;
-  std::cout << "Correlation ID Statistics:" << std::endl;
+  std::cout << "\nCorrelation ID Statistics:\n";
   for (const auto& [cid, count] : cid_count) {
-    std::cout << "Correlation ID: " << cid << " Count: " << count << std::endl;
+    std::cout << "Correlation ID: " << cid << " Count: " << count << '\n';
   }
+  std::cout << '\n';
 }
 
 
@@ -89,23 +99,19 @@ printCorrelationIdStatistics
 // interface operations
 //******************************************************************************
 
-void 
+void
 zeroLogActivities
 (
   const std::deque<gpu_activity_t*>& activities,
   const std::map<uint64_t, KernelProperties>& kprops
 )
 {
-  // FIXME(Yuning): address adjustment is not robust
-  const uint64_t BASE_ADJUSTMENT = 0x800000000000;
   std::map<uint64_t, std::pair<std::string, uint64_t>> kernel_info;
   for (const auto& [base, prop] : kprops) {
-    uint64_t adjusted_base = base + BASE_ADJUSTMENT;
-    kernel_info[adjusted_base] = {prop.name, adjusted_base};
+    kernel_info[base] = {prop.name, base};
   }
 
-  std::cout << std::endl;
-
+  std::cout << '\n';
   std::unordered_map<uint64_t, int> cid_count;
 
   for (const auto* activity : activities) {
@@ -125,23 +131,14 @@ zeroLogPCSample
   uint64_t base_address
 )
 {
-  std::cout << "[PC_Sample]" << std::endl;
-  std::cout << "PC sampling: sample(pc=0x" << std::hex << pc_sampling.pc.lm_ip
-            << ", cid=" << correlation_id
-            << ", kernel_name=" << kernel_props.name
-            << ")" << std::endl;
+  uint64_t offset = pc_sampling.pc.lm_ip - base_address;
   
-  uint64_t offset = pc_sampling.pc.lm_ip - base_address - 0x800000000000;
-  std::cout << "PC sampling: normalize 0x" << std::hex << pc_sampling.pc.lm_ip
-            << " --> [" << std::dec << pc_sampling.pc.lm_id << ", 0x" 
-            << std::hex << offset << "]" << std::endl;
-  
+  std::cout << "[PC_Sample]\n";
+  logPCSampleInfo(pc_sampling.pc.lm_ip, correlation_id, kernel_props.name, pc_sampling.pc.lm_id, offset);
   std::cout << "Stall reason: " << pc_sampling.stallReason
             << ", Samples: " << pc_sampling.samples
-            << ", Latency samples: " << pc_sampling.latencySamples << std::endl;
-  
-  std::cout << "Stall counts:"
-            << " Active: " << stall.active_
+            << ", Latency samples: " << pc_sampling.latencySamples << '\n'
+            << "Stall counts: Active: " << stall.active_
             << ", Control: " << stall.control_
             << ", Pipe: " << stall.pipe_
             << ", Send: " << stall.send_
@@ -149,7 +146,60 @@ zeroLogPCSample
             << ", SBID: " << stall.sbid_
             << ", Sync: " << stall.sync_
             << ", Insfetch: " << stall.insfetch_
-            << ", Other: " << stall.other_ << std::endl;
-  
-  std::cout << std::endl;
+            << ", Other: " << stall.other_ << "\n\n";
+}
+
+void
+zeroLogMetricList
+(
+  const std::vector<std::string>& metric_list
+)
+{
+  std::cout << "\nMetric list:\n";
+  std::cout << "metric_list.size(): " << metric_list.size() << '\n';
+  for (const auto& metric : metric_list) {
+    std::cout << "metric_list: " << metric << '\n';
+  }
+  std::cout << '\n';
+}
+
+void
+zeroLogSamplesAndMetrics
+(
+  const std::vector<uint32_t>& samples,
+  const std::vector<zet_typed_value_t>& metrics
+)
+{
+  std::cout << "\nSamples and Metrics\n";
+  std::cout << "samples: " << samples.size() << '\n';
+  std::cout << "metrics: " << metrics.size() << '\n';
+
+  for (size_t i = 0; i < samples.size(); ++i) {
+    std::cout << "Sample " << i << ": " << samples[i] << " metrics\n";
+    for (uint32_t j = 0; j < samples[i]; ++j) {
+      const auto& metric = metrics[i * samples[i] + j];
+      std::cout << "  Metric " << j << ": Type = ";
+      switch (metric.type) {
+        case ZET_VALUE_TYPE_UINT32:
+          std::cout << "UINT32, Value = " << metric.value.ui32;
+          break;
+        case ZET_VALUE_TYPE_UINT64:
+          std::cout << "UINT64, Value = " << metric.value.ui64;
+          break;
+        case ZET_VALUE_TYPE_FLOAT32:
+          std::cout << "FLOAT32, Value = " << metric.value.fp32;
+          break;
+        case ZET_VALUE_TYPE_FLOAT64:
+          std::cout << "FLOAT64, Value = " << metric.value.fp64;
+          break;
+        case ZET_VALUE_TYPE_BOOL8:
+          std::cout << "BOOL8, Value = " << (metric.value.b8 ? "true" : "false");
+          break;
+        default:
+          std::cout << "Unknown type";
+      }
+      std::cout << '\n';
+    }
+  }
+  std::cout << '\n';
 }

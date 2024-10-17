@@ -25,9 +25,7 @@ generateKernelCorrelationIds
 {
   std::unordered_map<std::string, uint64_t> kernel_cids;
   for (auto rit = kprops.crbegin(); rit != kprops.crend(); ++rit) {
-    if (kernel_cids.find(rit->second.name) == kernel_cids.end()) {
-      kernel_cids[rit->second.name] = correlation_id;
-    }
+    kernel_cids.emplace(rit->second.name, correlation_id);
   }
   return kernel_cids;
 }
@@ -38,12 +36,10 @@ stripEdgeQuotes
   const std::string& str
 )
 {
-  if (str.length() < 2) {
-      return str;
-  }
-  size_t start = 0, end = str.length() - 1;
-  if (str[start] == '"' && str[end] == '"') {
-      return str.substr(start + 1, end - start - 1);
+  if (str.length() < 2) return str;
+  
+  if (str.front() == '"' && str.back() == '"') {
+    return str.substr(1, str.length() - 2);
   }
   return str;
 }

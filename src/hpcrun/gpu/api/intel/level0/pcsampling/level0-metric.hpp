@@ -55,13 +55,6 @@ struct EuStalls {
 //******************************************************************************
 
 void
-zeroGetMetricList
-(
-  zet_metric_group_handle_t group,
-  std::vector<std::string>& name_list
-);
-
-void
 zeroGetMetricGroup
 (
   ze_device_handle_t device,
@@ -70,7 +63,7 @@ zeroGetMetricGroup
 );
 
 void
-zeroCollectMetrics
+zeroMetricStreamerReadData
 (
   zet_metric_streamer_handle_t streamer,
   std::vector<uint8_t>& storage,
@@ -78,11 +71,21 @@ zeroCollectMetrics
 );
 
 void
-zeroCalculateEuStalls
+zeroMetricGroupCalculateMultipleMetricValuesExp
 (
   zet_metric_group_handle_t metric_group,
   int raw_size,
   const std::vector<uint8_t>& raw_metrics,
+  std::vector<uint32_t>& samples,
+  std::vector<zet_typed_value_t>& metrics
+);
+
+void
+zeroProcessMetrics
+(
+  const std::vector<std::string>& metric_list,
+  const std::vector<uint32_t>& samples,
+  const std::vector<zet_typed_value_t>& metrics,
   std::map<uint64_t, EuStalls>& eustalls
 );
 
