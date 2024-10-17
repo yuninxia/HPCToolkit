@@ -5,26 +5,32 @@
 
 // -*-Mode: C++;-*-
 
+#ifndef LEVEL0_UNIQUE_ID_HPP
+#define LEVEL0_UNIQUE_ID_HPP
+
 //*****************************************************************************
-// local includes
+// system includes
 //*****************************************************************************
 
-#include "level0-activity-send.hpp"
+#include <string>
+
+
+//******************************************************************************
+// local includes
+//******************************************************************************
+
+#include "../../../../../../common/lean/crypto-hash.h"
 
 
 //******************************************************************************
 // interface operations
 //******************************************************************************
 
-void
-zeroSendActivities
+std::string 
+zeroGenerateUniqueId
 (
-  const std::deque<gpu_activity_t*>& activities
-) 
-{
-  for (const auto activity : activities) {
-    uint32_t thread_id = gpu_activity_channel_correlation_id_get_thread_id(activity->details.instruction.correlation_id);
-    gpu_activity_channel_t *channel = gpu_activity_channel_lookup(thread_id);
-    gpu_activity_channel_send(channel, activity);
-  }
-}
+  const void *data,
+  size_t binary_size
+);
+
+#endif // LEVEL0_UNIQUE_ID_HPP

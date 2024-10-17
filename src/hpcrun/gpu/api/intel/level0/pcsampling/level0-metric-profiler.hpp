@@ -37,15 +37,13 @@
 #include "level0-activity-send.hpp"
 #include "level0-activity-translate.hpp"
 #include "level0-assert.hpp"
-#include "level0-buffer.hpp"
+#include "level0-streamer-buffer.hpp"
+#include "level0-cmdlist-device-map.hpp"
+#include "level0-correlation-id.hpp"
 #include "level0-device.hpp"
 #include "level0-kernel-properties.hpp"
+#include "level0-metric-list.hpp"
 #include "level0-metric.hpp"
-
-extern "C" {
-  #include "../../../../activity/correlation/gpu-correlation-channel.h"
-  #include "../../../../activity/gpu-activity-channel.h"
-}
 
 
 //*****************************************************************************
@@ -80,26 +78,18 @@ class ZeMetricProfiler {
   ZeMetricProfiler(const ZeMetricProfiler& that) = delete;
   ZeMetricProfiler& operator=(const ZeMetricProfiler& that) = delete;
 
-  void GetDeviceDescriptors(std::map<ze_device_handle_t, ZeDeviceDescriptor*>& out_descriptors);
-  void InsertCommandListDeviceMapping(ze_command_list_handle_t cmdList, ze_device_handle_t device);
-  ze_device_handle_t GetDeviceForCommandList(ze_command_list_handle_t cmdList);
-
  private:
   ZeMetricProfiler();
   void StartProfilingMetrics();
   void StopProfilingMetrics();
 
   static void MetricProfilingThread(ZeMetricProfiler* profiler, ZeDeviceDescriptor *desc);
-  static void RunProfilingLoop(ZeDeviceDescriptor* desc, zet_metric_streamer_handle_t& streamer);
-  static void CollectAndProcessMetrics(ZeDeviceDescriptor* desc, zet_metric_streamer_handle_t& streamer, std::vector<uint8_t>& raw_metrics);
-  static void UpdateCorrelationID(uint64_t cid, gpu_activity_channel_t *channel, void *arg);
+  static void RunProfilingLoop(ZeDeviceDescriptor* desc, zet_metric_streamer_handle_t& streamer, std::vector<std::string>& metric_list);
+  static void CollectAndProcessMetrics(ZeDeviceDescriptor* desc, zet_metric_streamer_handle_t& streamer, std::vector<uint8_t>& raw_metrics, std::vector<std::string>& metric_list);
 
  private: // Data
   static std::string data_dir_name_;
   std::vector<ze_context_handle_t> metric_contexts_;
-  std::map<ze_device_handle_t, ZeDeviceDescriptor *> device_descriptors_;
-  std::mutex cmdlist_device_map_mutex_;
-  std::map<ze_command_list_handle_t, ze_device_handle_t> cmdlist_device_map_;
 };
 
 

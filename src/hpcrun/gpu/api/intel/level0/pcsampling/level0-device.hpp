@@ -69,6 +69,23 @@ struct ZeDeviceDescriptor {
   std::atomic<bool> kernel_started_{false};
 };
 
+struct ZeDevice {
+  ze_device_handle_t device_;
+  ze_device_handle_t parent_device_;
+  ze_driver_handle_t driver_;
+  int32_t id_;
+  int32_t parent_id_;
+  int32_t subdevice_id_;
+  int32_t num_subdevices_;
+};
+
+
+//******************************************************************************
+// global variables
+//******************************************************************************
+
+extern std::map<ze_device_handle_t, ZeDevice> *devices_;
+
 
 //******************************************************************************
 // interface operations
@@ -107,9 +124,15 @@ zeroGetDeviceProperties
 );
 
 ze_device_handle_t
-zeroConvertToRootDevice
+zeroDeviceGetRootDevice
 (
   ze_device_handle_t device
+);
+
+void
+zeroEnumerateAndSetupDevices
+(
+  void
 );
 
 

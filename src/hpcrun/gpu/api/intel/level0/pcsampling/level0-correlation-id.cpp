@@ -9,7 +9,7 @@
 // local includes
 //*****************************************************************************
 
-#include "level0-activity-send.hpp"
+#include "level0-correlation-id.hpp"
 
 
 //******************************************************************************
@@ -17,14 +17,13 @@
 //******************************************************************************
 
 void
-zeroSendActivities
+zeroUpdateCorrelationId
 (
-  const std::deque<gpu_activity_t*>& activities
-) 
+  uint64_t cid,
+  gpu_activity_channel_t *channel,
+  void *arg
+)
 {
-  for (const auto activity : activities) {
-    uint32_t thread_id = gpu_activity_channel_correlation_id_get_thread_id(activity->details.instruction.correlation_id);
-    gpu_activity_channel_t *channel = gpu_activity_channel_lookup(thread_id);
-    gpu_activity_channel_send(channel, activity);
-  }
+  ZeDeviceDescriptor* desc = static_cast<ZeDeviceDescriptor*>(arg);
+  desc->correlation_id_ = cid;
 }

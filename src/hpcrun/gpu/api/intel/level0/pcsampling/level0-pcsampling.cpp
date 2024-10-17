@@ -124,7 +124,7 @@ zeroPCSamplingFini
 {
   if (isPcSamplingEnabled()) {
     if (ze_collector != nullptr) {
-      ze_collector->DisableTracing();
+      zeroDisableTracing();
       delete ze_collector;
     }
     disableProfiling();

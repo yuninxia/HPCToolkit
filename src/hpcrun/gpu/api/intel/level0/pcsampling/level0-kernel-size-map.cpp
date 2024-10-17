@@ -5,26 +5,18 @@
 
 // -*-Mode: C++;-*-
 
-#ifndef LEVEL0_ACTIVITY_SEND_H
-#define LEVEL0_ACTIVITY_SEND_H
-
-//*****************************************************************************
-// system includes
-//*****************************************************************************
-
-#include <deque>
-
-
 //*****************************************************************************
 // local includes
 //*****************************************************************************
 
-#include "../../../../activity/gpu-activity.h"
-#include "level0-kernel-properties.hpp"
+#include "level0-kernel-size-map.hpp"
 
-extern "C" {
-  #include "../../../../activity/gpu-activity-channel.h"
-}
+
+//*****************************************************************************
+// local variables
+//*****************************************************************************
+
+static std::unordered_map<std::string, size_t> kernel_size_map_;
 
 
 //******************************************************************************
@@ -32,10 +24,31 @@ extern "C" {
 //******************************************************************************
 
 void
-zeroSendActivities
+zeroFillKernelSizeMap
 (
-  const std::deque<gpu_activity_t*>& activities
-);
+  zebin_id_map_entry_t *entry
+)
+{
+  SymbolVector* symbols = entry->elf_vector;
+  if (symbols) {
+    for (int i = 0; i < symbols->nsymbols; ++i) {
+      kernel_size_map_[symbols->symbolName[i]] = symbols->symbolSize[i];
+    }
+  }
+}
 
-
-#endif // LEVEL0_ACTIVITY_SEND_H
+size_t
+zeroGetKernelSize
+(
+  std::string& kernel_name
+)
+{
+  if (!kernel_name.empty() && kernel_name.back() == '\0') {
+    kernel_name.pop_back();
+  }
+  auto it = kernel_size_map_.find(kernel_name);
+  if (it != kernel_size_map_.end()) {
+    return it->second;
+  }
+  return -1;
+}

@@ -5,11 +5,19 @@
 
 // -*-Mode: C++;-*-
 
+#ifndef LEVEL0_CORRELATION_ID_H_
+#define LEVEL0_CORRELATION_ID_H_
+
 //*****************************************************************************
 // local includes
 //*****************************************************************************
 
-#include "level0-activity-send.hpp"
+#include "level0-device.hpp"
+
+extern "C" {
+  #include "../../../../activity/correlation/gpu-correlation-channel.h"
+  #include "../../../../activity/gpu-activity-channel.h"
+}
 
 
 //******************************************************************************
@@ -17,14 +25,12 @@
 //******************************************************************************
 
 void
-zeroSendActivities
+zeroUpdateCorrelationId
 (
-  const std::deque<gpu_activity_t*>& activities
-) 
-{
-  for (const auto activity : activities) {
-    uint32_t thread_id = gpu_activity_channel_correlation_id_get_thread_id(activity->details.instruction.correlation_id);
-    gpu_activity_channel_t *channel = gpu_activity_channel_lookup(thread_id);
-    gpu_activity_channel_send(channel, activity);
-  }
-}
+  uint64_t cid,
+  gpu_activity_channel_t *channel,
+  void *arg
+);
+
+
+#endif // LEVEL0_CORRELATION_ID_H_

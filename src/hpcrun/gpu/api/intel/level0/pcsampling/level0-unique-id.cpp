@@ -9,22 +9,21 @@
 // local includes
 //*****************************************************************************
 
-#include "level0-activity-send.hpp"
+#include "level0-unique-id.hpp"
 
 
 //******************************************************************************
 // interface operations
 //******************************************************************************
 
-void
-zeroSendActivities
+std::string 
+zeroGenerateUniqueId
 (
-  const std::deque<gpu_activity_t*>& activities
-) 
+  const void *data,
+  size_t binary_size
+)
 {
-  for (const auto activity : activities) {
-    uint32_t thread_id = gpu_activity_channel_correlation_id_get_thread_id(activity->details.instruction.correlation_id);
-    gpu_activity_channel_t *channel = gpu_activity_channel_lookup(thread_id);
-    gpu_activity_channel_send(channel, activity);
-  }
+  char hash_string[CRYPTO_HASH_STRING_LENGTH] = {0};
+  crypto_compute_hash_string(data, binary_size, hash_string, CRYPTO_HASH_STRING_LENGTH);
+  return std::string(hash_string);
 }
