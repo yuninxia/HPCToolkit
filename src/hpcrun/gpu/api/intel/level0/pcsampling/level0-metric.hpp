@@ -62,12 +62,12 @@ zeroGetMetricGroup
   zet_metric_group_handle_t& group
 );
 
-void
+uint64_t
 zeroMetricStreamerReadData
 (
   zet_metric_streamer_handle_t streamer,
   std::vector<uint8_t>& storage,
-  uint64_t& data_size
+  uint64_t ssize
 );
 
 void

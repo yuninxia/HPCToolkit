@@ -165,29 +165,27 @@ zeroGetMetricGroup
   }
 }
 
-void
+uint64_t
 zeroMetricStreamerReadData
 (
   zet_metric_streamer_handle_t streamer,
   std::vector<uint8_t>& storage,
-  uint64_t& data_size
+  uint64_t ssize
 )
 {
-  ze_result_t status = ZE_RESULT_SUCCESS;
-  size_t actual_data_size = 0;
-
-  status = zetMetricStreamerReadData(streamer, UINT32_MAX, &actual_data_size, nullptr);
+  uint64_t actual_data_size = 0;
+  ze_result_t status = zetMetricStreamerReadData(streamer, UINT32_MAX, &actual_data_size, nullptr);
   level0_check_result(status, __LINE__);
   assert(actual_data_size > 0);
 
-  if (actual_data_size > storage.size()) {
-    actual_data_size = storage.size();
+  if (actual_data_size > ssize) {
+    actual_data_size = ssize;
     std::cerr << "[WARNING] Metric samples dropped." << std::endl;
   }
 
   status = zetMetricStreamerReadData(streamer, UINT32_MAX, &actual_data_size, storage.data());
   level0_check_result(status, __LINE__);
-  data_size = actual_data_size;
+  return actual_data_size;
 }
 
 void
