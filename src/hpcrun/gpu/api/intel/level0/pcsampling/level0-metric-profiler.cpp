@@ -151,41 +151,44 @@ ZeMetricProfiler::CollectAndProcessMetrics
   std::vector<uint8_t>& raw_metrics,
   std::vector<std::string>& metric_list
 )
-{ 
-  uint64_t raw_size;
-  zeroMetricStreamerReadData(streamer, raw_metrics, raw_size);
-  if (raw_size == 0) return;
-
-  // Calculate multiple sets of metric values, potentially one set per sub-device
-  // samples: Number of metric value sets (typically one per sub-device)
-  // metrics: Concatenated metric values for all sets/sub-devices
-  std::vector<uint32_t> samples;
-  std::vector<zet_typed_value_t> metrics;
-  zeroMetricGroupCalculateMultipleMetricValuesExp(desc->metric_group_, raw_size, raw_metrics, samples, metrics);
-  if (samples.empty() || metrics.empty()) return;
-
-  std::map<uint64_t, EuStalls> eustalls;
-  zeroProcessMetrics(metric_list, samples, metrics, eustalls);
-  if (eustalls.empty()) return;
-
+{
   std::map<uint64_t, KernelProperties> kprops;
   zeroReadKernelProperties(desc->device_id_, data_dir_name_, kprops);
   if (kprops.empty()) return;
 
-  std::deque<gpu_activity_t*> activities;
-  zeroGenerateActivities(kprops, eustalls, desc->correlation_id_, activities, desc->running_kernel_);
-  zeroSendActivities(activities);
+  uint64_t ssize = MAX_METRIC_BUFFER + 512;
+  
+  while (desc->profiling_state_.load(std::memory_order_acquire) != PROFILER_DISABLED) {
+    uint64_t raw_size = zeroMetricStreamerReadData(streamer, raw_metrics, ssize);
+    if (raw_size == 0) return;
+
+    // Calculate multiple sets of metric values, potentially one set per sub-device
+    // samples: Number of metric value sets (typically one per sub-device)
+    // metrics: Concatenated metric values for all sets/sub-devices
+    std::vector<uint32_t> samples;
+    std::vector<zet_typed_value_t> metrics;
+    zeroMetricGroupCalculateMultipleMetricValuesExp(desc->metric_group_, raw_size, raw_metrics, samples, metrics);
+    if (samples.empty() || metrics.empty()) return;
+
+    std::map<uint64_t, EuStalls> eustalls;
+    zeroProcessMetrics(metric_list, samples, metrics, eustalls);
+    if (eustalls.empty()) return;
+
+    std::deque<gpu_activity_t*> activities;
+    zeroGenerateActivities(kprops, eustalls, desc->correlation_id_, activities, desc->running_kernel_);
+    zeroSendActivities(activities);
 
 #if 0
-  zeroLogSamplesAndMetrics(samples, metrics);
-  zeroLogMetricList(metric_list);
-  zeroLogActivities(activities, kprops);
+    zeroLogSamplesAndMetrics(samples, metrics);
+    zeroLogMetricList(metric_list);
+    zeroLogActivities(activities, kprops);
 #endif
 
-  for (auto activity : activities) {
-    delete activity;
+    for (auto activity : activities) {
+      delete activity;
+    }
+    activities.clear();
   }
-  activities.clear();
 }
 
 
