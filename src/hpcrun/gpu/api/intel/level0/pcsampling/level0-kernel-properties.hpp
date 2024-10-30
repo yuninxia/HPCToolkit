@@ -75,6 +75,17 @@ struct KernelProperties {
   size_t sample_count;
 };
 
+struct KernelTimeInfo {
+  uint64_t cid;                  // Correlation ID
+  uint64_t duration_ns;          // Duration in nanoseconds
+  uint64_t kernel_launch_count;  // Number of times this kernel was launched
+};
+
+struct KernelTimingData {
+  std::map<uint64_t, std::vector<KernelTimeInfo>> pc_timing_map;  // PC -> vector of timing info
+  std::mutex mutex;                                               // Protect concurrent access
+};
+
 
 //******************************************************************************
 // global variables
@@ -82,6 +93,8 @@ struct KernelProperties {
 
 extern std::shared_mutex kernel_command_properties_mutex_;
 extern std::map<std::string, ZeKernelCommandProperties> *kernel_command_properties_;
+extern KernelTimingData kernel_timing_data_;
+extern bool concurrent_metric_profiling;
 
 
 //******************************************************************************

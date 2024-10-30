@@ -249,27 +249,50 @@ OnExitCommandListAppendLaunchKernel
 )
 {
   ze_command_list_handle_t hCommandList = *(params->phCommandList);
-  ze_device_handle_t hDevice = getDeviceForCommandList(hCommandList);
+  ze_device_handle_t hDevice;
+  ze_result_t status = zeCommandListGetDeviceHandle(hCommandList, &hDevice);
+  level0_check_result(status, __LINE__);
+  ze_event_handle_t hSignalEvent = *(params->phSignalEvent);
+  ze_kernel_handle_t hKernel = *(params->phKernel);
+
+  if (concurrent_metric_profiling) {
+    // Get kernel base address
+    uint64_t base_pc = zeroGetKernelBaseAddress(hKernel);
+    
+    // Get current context ID
+    level0_data_node_t* command_node = level0_event_map_lookup(hSignalEvent);
+    uint64_t correlation_id = 0;
+    if (command_node != nullptr) {
+      correlation_id = command_node->correlation_id;
+    }
+    
+    // Get execution time
+    KernelExecutionTime execTime = zeroGetKernelExecutionTime(hSignalEvent, hDevice);
+    uint64_t duration_ns = execTime.executionTimeNs;
+    
+    // Save timing information
+    std::lock_guard<std::mutex> lock(kernel_timing_data_.mutex);
+    kernel_timing_data_.pc_timing_map[base_pc].push_back({correlation_id, duration_ns, 1});
+  } else {
 
 #if 0
-  ze_kernel_handle_t hKernel = *(params->phKernel);
-  ze_event_handle_t hSignalEvent = *(params->phSignalEvent);
-  KernelExecutionTime executionTime = zeroGetKernelExecutionTime(hSignalEvent, hDevice);
-  std::cout << "OnExitCommandListAppendLaunchKernel:  hKernel=" << hKernel << ", hDevice=" << hDevice
-            << ", Start time: " << executionTime.startTimeNs << " ns" << ", End time: " << executionTime.endTimeNs << " ns"
-            << "  Execution time: " << executionTime.executionTimeNs << " ns" << std::endl;
+    KernelExecutionTime executionTime = zeroGetKernelExecutionTime(hSignalEvent, hDevice);
+    std::cout << "OnExitCommandListAppendLaunchKernel:  hKernel=" << hKernel << ", hDevice=" << hDevice
+              << ", Start time: " << executionTime.startTimeNs << " ns" << ", End time: " << executionTime.endTimeNs << " ns"
+              << "  Execution time: " << executionTime.executionTimeNs << " ns" << std::endl;
 #endif
 
-  ZeDeviceDescriptor* desc = getDeviceDescriptor(hDevice);
-  if (desc) {
-    // Host reset event to indicate kernel execution has ended
-    ze_result_t status = zeEventHostReset(desc->serial_kernel_start_);
-    level0_check_result(status, __LINE__);
+    ZeDeviceDescriptor* desc = getDeviceDescriptor(hDevice);
+    if (desc) {
+      // Host reset event to indicate kernel execution has ended
+      ze_result_t status = zeEventHostReset(desc->serial_kernel_start_);
+      level0_check_result(status, __LINE__);
 
-    status = zeEventHostSynchronize(desc->serial_data_ready_, UINT64_MAX - 1);
-    level0_check_result(status, __LINE__);
-    status = zeEventHostReset(desc->serial_data_ready_);
-    level0_check_result(status, __LINE__);
+      status = zeEventHostSynchronize(desc->serial_data_ready_, UINT64_MAX - 1);
+      level0_check_result(status, __LINE__);
+      status = zeEventHostReset(desc->serial_data_ready_);
+      level0_check_result(status, __LINE__);
+    }
   }
 }
 

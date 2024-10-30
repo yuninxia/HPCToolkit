@@ -21,6 +21,10 @@
 // interface operations
 //*****************************************************************************
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 level0_data_node_t*
 level0_event_map_lookup
 (
@@ -39,5 +43,11 @@ level0_event_map_delete
 (
  ze_event_handle_t event_handle
 );
+
+
+#ifdef __cplusplus
+}
+#endif
+
 
 #endif

@@ -52,8 +52,10 @@ zeKernelCreateOnExit
 {
   OnExitKernelCreate(params, result);
   
-  ZeCollector* collector = static_cast<ZeCollector*>(global_user_data);
-  zeroDumpKernelProfiles(collector->GetDataDir());
+  if (concurrent_metric_profiling == false) {
+    ZeCollector* collector = static_cast<ZeCollector*>(global_user_data);
+    zeroDumpKernelProfiles(collector->GetDataDir());
+  }
 }
 
 void
@@ -65,7 +67,9 @@ zeCommandListAppendLaunchKernelOnEnter
   void** instance_user_data
 )
 {
-  OnEnterCommandListAppendLaunchKernel(params);
+  if (concurrent_metric_profiling == false) {
+    OnEnterCommandListAppendLaunchKernel(params);
+  }
 }
 
 void

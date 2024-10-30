@@ -71,5 +71,11 @@ zeroLogSamplesAndMetrics
   const std::vector<zet_typed_value_t>& metrics
 );
 
+void
+zeroLogTimingData
+(
+  const KernelTimingData& timing_data
+);
+
 
 #endif // LEVEL0_LOGGING_HPP

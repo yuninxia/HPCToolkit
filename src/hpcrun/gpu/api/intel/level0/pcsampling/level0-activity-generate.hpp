@@ -41,5 +41,14 @@ zeroGenerateActivities
   ze_kernel_handle_t running_kernel
 );
 
+void
+zeroGenerateActivitiesFromAccumulatedMetrics
+(
+  const std::map<uint64_t, KernelProperties>& kprops,
+  const std::map<uint64_t, EuStalls>& accumulated_eustalls,
+  const KernelTimingData& timing_data,
+  std::deque<gpu_activity_t*>& activities
+);
+
 
 #endif // LEVEL0_ACTIVITY_GENERATE_H

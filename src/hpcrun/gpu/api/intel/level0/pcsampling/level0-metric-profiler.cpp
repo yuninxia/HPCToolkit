@@ -13,13 +13,6 @@
 
 
 //******************************************************************************
-// global variables
-//******************************************************************************
-
-uint32_t max_metric_samples = 65536;
-
-
-//******************************************************************************
 // static member variables
 //******************************************************************************
 
@@ -37,48 +30,74 @@ ZeMetricProfiler::MetricProfilingThread
   ZeDeviceDescriptor *desc
 )
 {
-  ze_result_t status = ZE_RESULT_SUCCESS;
-
   ze_context_handle_t context = desc->context_;
   ze_device_handle_t device = desc->device_;
   zet_metric_group_handle_t group = desc->metric_group_;
-
-  status = zetContextActivateMetricGroups(context, device, 1, &group);
-  level0_check_result(status, __LINE__);
-
   zet_metric_streamer_handle_t streamer = nullptr;
-  uint32_t interval = 500000; // ns
-  uint32_t notifyEveryNReports = 65536;
 
-  zet_metric_streamer_desc_t streamer_desc = { ZET_STRUCTURE_TYPE_METRIC_STREAMER_DESC, nullptr, notifyEveryNReports, interval };
-  status = zetMetricStreamerOpen(context, device, group, &streamer_desc, nullptr, &streamer);
-  if (status != ZE_RESULT_SUCCESS) {
-    std::cerr << "[ERROR] Failed to open metric streamer (" << status << "). The sampling interval might be too small." << std::endl;
-
-    // set state to enabled to let the parent thread continue
-    desc->profiling_state_.store(PROFILER_ENABLED, std::memory_order_release);
-    return;
-  }
-
-  if (streamer_desc.notifyEveryNReports > max_metric_samples) {
-    max_metric_samples = streamer_desc.notifyEveryNReports;
-  }
+  zeroInitializeMetricStreamer(context, device, group, streamer);
 
   std::vector<std::string> metric_list;
   zeroGetMetricList(group, metric_list);
   if (!zeroIsValidMetricList(metric_list)) return;
 
-  RunProfilingLoop(desc, streamer, metric_list);
+  if (concurrent_metric_profiling) {
+    profiler->RunConcurrentProfilingLoop(desc, streamer, metric_list);
+  } else {
+    profiler->RunSequentialProfilingLoop(desc, streamer, metric_list);
+  }
 
-  status = zetMetricStreamerClose(streamer);
-  level0_check_result(status, __LINE__);
+  zeroCleanupMetricStreamer(context, device, group, streamer);
+}
 
-  status = zetContextActivateMetricGroups(context, device, 0, &group);
-  level0_check_result(status, __LINE__);
+void
+ZeMetricProfiler::RunConcurrentProfilingLoop
+(
+  ZeDeviceDescriptor* desc,
+  zet_metric_streamer_handle_t& streamer,
+  std::vector<std::string>& metric_list
+)
+{
+  std::vector<uint8_t> raw_metrics(MAX_METRIC_BUFFER + 512);
+  desc->profiling_state_.store(PROFILER_ENABLED, std::memory_order_release);
+  uint64_t ssize = MAX_METRIC_BUFFER + 512;
+  
+  // Create a persistent map to accumulate EuStalls across all samples
+  std::map<uint64_t, EuStalls> accumulated_eustalls;
+  
+  while (desc->profiling_state_.load(std::memory_order_acquire) != PROFILER_DISABLED) {
+    zeroAccumulateEUStallMetrics(desc->metric_group_, streamer, raw_metrics, ssize, metric_list, accumulated_eustalls);
+  }
+
+  // Final collection after loop ends
+  zeroAccumulateEUStallMetrics(desc->metric_group_, streamer, raw_metrics, ssize, metric_list, accumulated_eustalls);
+
+  if (accumulated_eustalls.empty()) return;
+   
+  // Read kernel properties
+  std::map<uint64_t, KernelProperties> kprops;
+  zeroReadKernelProperties(desc->device_id_, data_dir_name_, kprops);
+  if (kprops.empty()) return;
+  
+  // Generate activities using the complete accumulated data
+  std::deque<gpu_activity_t*> activities;
+  zeroGenerateActivitiesFromAccumulatedMetrics(kprops, accumulated_eustalls, kernel_timing_data_, activities);
+
+#if 0
+  zeroLogActivities(activities, kprops);
+#endif
+  
+  zeroSendActivities(activities);
+
+  // Cleanup activities
+  for (auto activity : activities) {
+    delete activity;
+  }
+  activities.clear();
 }
 
 void 
-ZeMetricProfiler::RunProfilingLoop
+ZeMetricProfiler::RunSequentialProfilingLoop
 (
   ZeDeviceDescriptor* desc,
   zet_metric_streamer_handle_t& streamer,
@@ -93,9 +112,7 @@ ZeMetricProfiler::RunProfilingLoop
     // Wait for the kernel to start running
     while (true) {
       status = zeEventHostSynchronize(desc->serial_kernel_start_, 50000000);
-      if (status == ZE_RESULT_SUCCESS) {
-        break;
-      }
+      if (status == ZE_RESULT_SUCCESS) break;
 
       // Handle case where kernel execution is extremely short:
       // In such cases, the kernel might finish before zeEventHostSynchronize can detect the start event.
@@ -103,13 +120,9 @@ ZeMetricProfiler::RunProfilingLoop
       // - The Profiling thread would keep waiting for the start event (which has already been reset).
       // - The App thread would be waiting for the Profiling thread to complete data processing.
       // kernel_started_ allows Profiling thread to proceed, avoiding deadlock.
-      if (desc->kernel_started_.load(std::memory_order_acquire)) {
-        break;
-      }
+      if (desc->kernel_started_.load(std::memory_order_acquire)) break;
 
-      if (desc->profiling_state_.load(std::memory_order_acquire) == PROFILER_DISABLED) {
-        return;
-      }
+      if (desc->profiling_state_.load(std::memory_order_acquire) == PROFILER_DISABLED) return;
     }
 
     // Kernel is running, enter sampling loop
@@ -119,9 +132,7 @@ ZeMetricProfiler::RunProfilingLoop
 
       // Wait for the next interval
       status = zeEventHostSynchronize(desc->serial_kernel_end_, 5000);
-      if (status == ZE_RESULT_SUCCESS) {
-        break;
-      }
+      if (status == ZE_RESULT_SUCCESS) break;
 
       CollectAndProcessMetrics(desc, streamer, raw_metrics, metric_list);
     }

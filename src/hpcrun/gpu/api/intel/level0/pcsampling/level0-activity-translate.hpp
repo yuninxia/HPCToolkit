@@ -12,6 +12,7 @@
 // system includes
 //*****************************************************************************
 
+#include <cmath>
 #include <deque>
 #include <iomanip>
 #include <map>
@@ -39,7 +40,19 @@ zeroActivityTranslate
   std::deque<gpu_activity_t*>& activities, 
   const std::map<uint64_t, EuStalls>::iterator& eustall_iter,
   const std::map<uint64_t, KernelProperties>::const_reverse_iterator& kernel_iter,
-  uint64_t correlation_id
+  uint64_t correlation_id,
+  double ratio
+);
+
+void
+zeroActivityTranslateWithRatio
+(
+  uint64_t pc,
+  const EuStalls& stalls,
+  const std::map<uint64_t, KernelProperties>::const_reverse_iterator& kernel_iter,
+  uint64_t correlation_id,
+  double ratio,
+  std::deque<gpu_activity_t*>& activities
 );
 
 

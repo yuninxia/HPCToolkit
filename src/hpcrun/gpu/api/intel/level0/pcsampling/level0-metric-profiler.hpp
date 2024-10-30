@@ -37,12 +37,12 @@
 #include "level0-activity-send.hpp"
 #include "level0-activity-translate.hpp"
 #include "level0-assert.hpp"
-#include "level0-streamer-buffer.hpp"
 #include "level0-cmdlist-device-map.hpp"
 #include "level0-correlation-id.hpp"
 #include "level0-device.hpp"
 #include "level0-kernel-properties.hpp"
 #include "level0-metric-list.hpp"
+#include "level0-metric-streamer.hpp"
 #include "level0-metric.hpp"
 
 
@@ -51,13 +51,6 @@
 //*****************************************************************************
 
 constexpr static uint32_t max_metric_size = 512;
-
-
-//*****************************************************************************
-// global variables
-//*****************************************************************************
-
-extern uint32_t max_metric_samples;
 
 
 //*****************************************************************************
@@ -84,7 +77,8 @@ class ZeMetricProfiler {
   void StopProfilingMetrics();
 
   static void MetricProfilingThread(ZeMetricProfiler* profiler, ZeDeviceDescriptor *desc);
-  static void RunProfilingLoop(ZeDeviceDescriptor* desc, zet_metric_streamer_handle_t& streamer, std::vector<std::string>& metric_list);
+  static void RunSequentialProfilingLoop(ZeDeviceDescriptor* desc, zet_metric_streamer_handle_t& streamer, std::vector<std::string>& metric_list);
+  static void RunConcurrentProfilingLoop(ZeDeviceDescriptor* desc, zet_metric_streamer_handle_t& streamer, std::vector<std::string>& metric_list);
   static void CollectAndProcessMetrics(ZeDeviceDescriptor* desc, zet_metric_streamer_handle_t& streamer, std::vector<uint8_t>& raw_metrics, std::vector<std::string>& metric_list);
 
  private: // Data

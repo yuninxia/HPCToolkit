@@ -89,5 +89,16 @@ zeroProcessMetrics
   std::map<uint64_t, EuStalls>& eustalls
 );
 
+void
+zeroAccumulateEUStallMetrics
+(
+  zet_metric_group_handle_t metric_group,
+  zet_metric_streamer_handle_t& streamer,
+  std::vector<uint8_t>& raw_metrics,
+  uint64_t ssize,
+  const std::vector<std::string>& metric_list,
+  std::map<uint64_t, EuStalls>& accumulated_eustalls
+);
+
 
 #endif  // LEVEL0_METRIC_H

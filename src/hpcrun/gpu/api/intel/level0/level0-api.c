@@ -470,8 +470,6 @@ level0_process_immediate_command_list
     // For immediate command list, the kernel is dispatched to GPU at this point.
     // So, we attribute GPU metrics to the current CPU calling context.
     level0_command_begin(data_for_act);
-    printf("level0_process_immediate_command_list: immediate command list, event handle %p\n",
-      (void*)event);
 #endif
 
     level0_attribute_event(event, dispatch);

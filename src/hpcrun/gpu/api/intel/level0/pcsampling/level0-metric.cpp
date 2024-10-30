@@ -246,3 +246,40 @@ zeroProcessMetrics
     value += samples[i];
   }
 }
+
+void
+zeroAccumulateEUStallMetrics
+(
+  zet_metric_group_handle_t metric_group,
+  zet_metric_streamer_handle_t& streamer,
+  std::vector<uint8_t>& raw_metrics,
+  uint64_t ssize,
+  const std::vector<std::string>& metric_list,
+  std::map<uint64_t, EuStalls>& accumulated_eustalls
+)
+{
+  uint64_t raw_size = zeroMetricStreamerReadData(streamer, raw_metrics, ssize);
+  if (raw_size == 0) return;
+
+  // Calculate multiple sets of metric values, potentially one set per sub-device
+  // samples: Number of metric value sets (typically one per sub-device)
+  // metrics: Concatenated metric values for all sets/sub-devices
+  std::vector<uint32_t> samples;
+  std::vector<zet_typed_value_t> metrics;
+  zeroMetricGroupCalculateMultipleMetricValuesExp(metric_group, raw_size, raw_metrics, samples, metrics);
+  if (samples.empty() || metrics.empty()) return;
+
+  // Process metrics into temporary eustalls map
+  std::map<uint64_t, EuStalls> current_eustalls;
+  zeroProcessMetrics(metric_list, samples, metrics, current_eustalls);
+  if (current_eustalls.empty()) return;
+
+  // Merge current eustalls into accumulated eustalls
+  for (const auto& [ip, stalls] : current_eustalls) {
+    auto [it, inserted] = accumulated_eustalls.try_emplace(ip, stalls);
+    if (!inserted) {
+      // If IP already exists, update the accumulated values
+      updateExistingEuStalls(it->second, stalls);
+    }
+  }
+}

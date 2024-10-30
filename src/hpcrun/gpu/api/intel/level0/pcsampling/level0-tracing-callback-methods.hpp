@@ -27,6 +27,7 @@
 // local includes
 //*****************************************************************************
 
+#include "../level0-event-map.h"
 #include "../level0-id-map.h"
 #include "level0-cmdlist-device-map.hpp"
 #include "level0-device.hpp"

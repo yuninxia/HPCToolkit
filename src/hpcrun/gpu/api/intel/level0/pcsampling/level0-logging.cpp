@@ -25,7 +25,7 @@ toHex
 )
 {
   std::stringstream ss;
-  ss << "0x" << std::hex << std::setw(sizeof(T)*2) << std::setfill('0') << value;
+  ss << "0x" << std::hex << value;
   return ss.str();
 }
 
@@ -92,6 +92,18 @@ printCorrelationIdStatistics
     std::cout << "Correlation ID: " << cid << " Count: " << count << '\n';
   }
   std::cout << '\n';
+}
+
+void
+extractThreadIdAndSeqNum
+(
+  uint64_t cid,
+  uint64_t& thread_id,
+  uint64_t& seq_num
+)
+{
+  thread_id = cid >> 32;          // High 32 bits -> thread ID
+  seq_num = cid & 0xFFFFFFFF;     // Low 32 bits -> sequence number
 }
 
 
@@ -202,4 +214,65 @@ zeroLogSamplesAndMetrics
     }
   }
   std::cout << '\n';
+}
+
+void
+zeroLogTimingData
+(
+  const KernelTimingData& timing_data
+)
+{
+  std::cout << "\nKernel Execution Time and Launch Count Distribution:" << std::endl;
+  std::cout << std::string(110, '=') << std::endl;
+  
+  // Process each kernel (base PC) separately
+  for (const auto& [base_pc, info] : timing_data.pc_timing_map) {
+    // Calculate total duration for this kernel and total launch count
+    uint64_t kernel_total_duration = 0;
+    uint64_t kernel_total_launch_count = 0;
+    for (const auto& timing_info : info) {
+      kernel_total_duration += timing_info.duration_ns;
+      kernel_total_launch_count += timing_info.kernel_launch_count;
+    }
+    
+    // Print kernel header
+    std::cout << "Kernel@0x" << std::hex << base_pc << std::dec << std::endl;
+    std::cout << std::string(110, '-') << std::endl;
+    
+    std::cout << std::left << std::setw(15) << "CID"
+              << std::left << std::setw(15) << "Thread ID"
+              << std::left << std::setw(15) << "Seq Number"
+              << std::left << std::setw(15) << "Duration (ns)"
+              << std::left << std::setw(15) << "Duration (%)"
+              << std::left << std::setw(15) << "Launch Count"
+              << std::left << std::setw(15) << "Launch Ratio (%)"
+              << std::endl;
+    
+    std::cout << std::string(110, '-') << std::endl;
+    
+    for (const auto& timing_info : info) {
+      uint64_t thread_id = 0;
+      uint64_t seq_num = 0;
+      extractThreadIdAndSeqNum(timing_info.cid, thread_id, seq_num);
+      
+      double duration_percentage = (static_cast<double>(timing_info.duration_ns) / kernel_total_duration) * 100.0;
+      
+      double launch_ratio = (kernel_total_launch_count > 0) ?
+                            (static_cast<double>(timing_info.kernel_launch_count) / kernel_total_launch_count) * 100.0 :
+                            0.0;
+      
+      std::cout << std::left << std::setw(15) << (toHex(timing_info.cid))
+                << std::left << std::setw(15) << (toHex(thread_id))
+                << std::left << std::setw(15) << (toHex(seq_num))
+                << std::left << std::setw(15) << timing_info.duration_ns
+                << std::left << std::setw(15) << std::fixed << std::setprecision(2) << duration_percentage
+                << std::left << std::setw(15) << timing_info.kernel_launch_count
+                << std::left << std::setw(15) << std::fixed << std::setprecision(2) << launch_ratio
+                << std::endl;
+    }
+    
+    std::cout << std::string(110, '-') << std::endl;
+    std::cout << "Total Duration: " << kernel_total_duration << " ns" << std::endl;
+    std::cout << "Total Launch Count: " << kernel_total_launch_count << "\n" << std::endl;
+  }
 }

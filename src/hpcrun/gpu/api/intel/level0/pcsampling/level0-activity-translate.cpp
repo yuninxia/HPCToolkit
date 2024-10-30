@@ -93,19 +93,47 @@ zeroActivityTranslate
   std::deque<gpu_activity_t*>& activities, 
   const std::map<uint64_t, EuStalls>::iterator& eustall_iter,
   const std::map<uint64_t, KernelProperties>::const_reverse_iterator& kernel_iter,
-  uint64_t correlation_id
-) 
+  uint64_t correlation_id,
+  double ratio = 1.0
+)
 {
-  const EuStalls& stall = eustall_iter->second;
+  const EuStalls& stalls = eustall_iter->second;
 
   for (const auto& mapping : stall_mappings) {
-    uint64_t stall_count = stall.*(mapping.stall_value);
+    // Calculate stall count (apply ratio if not 1.0)
+    uint64_t original_count = stalls.*(mapping.stall_value);
+    uint64_t stall_count = (ratio == 1.0) ? original_count : static_cast<uint64_t>(std::round(original_count * ratio));
+    
     if (stall_count == 0) continue; // Skip if no stalls of this type
 
     auto activity = std::make_unique<gpu_activity_t>();
+    if (!activity) {
+      std::cerr << "Failed to allocate memory for activity" << std::endl;
+      continue;
+    }
+
     gpu_activity_init(activity.get());
     if (convertPCSampling(activity.get(), eustall_iter, kernel_iter, correlation_id, mapping.reason, stall_count)) {
       activities.push_back(activity.release());
     }
   }
+}
+
+void
+zeroActivityTranslateWithRatio
+(
+  uint64_t pc,
+  const EuStalls& stalls,
+  const std::map<uint64_t, KernelProperties>::const_reverse_iterator& kernel_iter,
+  uint64_t correlation_id,
+  double ratio,
+  std::deque<gpu_activity_t*>& activities
+)
+{
+  // Create temporary map to hold stall data for this PC
+  std::map<uint64_t, EuStalls> temp_map;
+  temp_map[pc] = stalls;
+  
+  // Use the common translate function with ratio
+  zeroActivityTranslate(activities, temp_map.begin(), kernel_iter, correlation_id, ratio);
 }
