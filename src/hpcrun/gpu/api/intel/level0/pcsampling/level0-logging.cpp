@@ -40,7 +40,7 @@ logPCSampleInfo
 )
 {
   std::cout << "PC sampling: sample(pc=" << toHex(pc)
-            << ", cid=" << cid
+            << ", cid=" << toHex(cid)
             << ", kernel_name=" << kernel_name << ")\n"
             << "PC sampling: normalize " << toHex(pc)
             << " --> [" << lm_id << ", " << toHex(offset) << "]\n";

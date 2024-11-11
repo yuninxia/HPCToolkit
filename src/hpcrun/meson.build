@@ -459,6 +459,7 @@ if level0_dep.found()
     'gpu/api/intel/level0/pcsampling/level0-activity-send.cpp',
     'gpu/api/intel/level0/pcsampling/level0-activity-translate.cpp',
     'gpu/api/intel/level0/pcsampling/level0-assert.cpp',
+    'gpu/api/intel/level0/pcsampling/level0-cct.cpp',
     'gpu/api/intel/level0/pcsampling/level0-cmdlist-device-map.cpp',
     'gpu/api/intel/level0/pcsampling/level0-collector.cpp',
     'gpu/api/intel/level0/pcsampling/level0-context.cpp',

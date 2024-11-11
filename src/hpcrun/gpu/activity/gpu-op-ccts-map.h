@@ -40,6 +40,10 @@ typedef struct gpu_op_ccts_map_entry_t gpu_op_ccts_map_entry_t;
 // interface operations
 //*****************************************************************************
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 gpu_op_ccts_map_entry_value_t *
 gpu_op_ccts_map_lookup
 (
@@ -60,6 +64,10 @@ gpu_op_ccts_map_delete
 (
  uint64_t gpu_correlation_id
 );
+
+#ifdef __cplusplus
+}
+#endif
 
 
 #endif

@@ -20,6 +20,13 @@ std::string ZeMetricProfiler::data_dir_name_;
 
 
 //******************************************************************************
+// local variables
+//******************************************************************************
+
+static std::atomic<int> profiler_thread_counter{500};
+
+
+//******************************************************************************
 // private methods
 //******************************************************************************
 
@@ -86,14 +93,19 @@ ZeMetricProfiler::RunConcurrentProfilingLoop
 #if 0
   zeroLogActivities(activities, kprops);
 #endif
-  
-  zeroSendActivities(activities);
 
-  // Cleanup activities
-  for (auto activity : activities) {
-    delete activity;
+  int thread_id = profiler_thread_counter.fetch_add(1);
+  bool demand_new_thread = true;
+
+  thread_data_t* td = zeroInitThreadData(thread_id, demand_new_thread);
+  if (!td) return;
+
+  zeroInitIdTuple(td, desc->device_id_, thread_id);
+
+  if (!zeroBuildCCT(td, activities)) {
+    std::cerr << "Failed to build CCT" << std::endl;
+    return;
   }
-  activities.clear();
 }
 
 void 
@@ -139,11 +151,6 @@ ZeMetricProfiler::RunSequentialProfilingLoop
 
     // Kernel has finished, perform final sampling and cleanup
     CollectAndProcessMetrics(desc, streamer, raw_metrics, metric_list);
-
-#if 0
-    // FIXME(Yuning): need a better way to flush the streamer buffer without repeatedly closing and reopening the streamer
-    zeroFlushStreamerBuffer(streamer, desc);
-#endif
 
     desc->running_kernel_ = nullptr;
     desc->kernel_started_.store(false, std::memory_order_release);

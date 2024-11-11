@@ -36,7 +36,7 @@
 #include "level0-module.hpp"
 #include "level0-timestamp.hpp"
 #include "level0-unique-id.hpp"
-
+#include "../../../../activity/gpu-op-ccts-map.h"
 
 //******************************************************************************
 // global variables

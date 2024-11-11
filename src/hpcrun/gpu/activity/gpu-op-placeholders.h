@@ -67,6 +67,10 @@ extern gpu_op_placeholder_flags_t gpu_op_placeholder_flags_none;
 // interface operations
 //******************************************************************************
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 ip_normalized_t
 gpu_op_placeholder_ip
 (
@@ -109,6 +113,9 @@ gpu_op_placeholder_flags_is_set
  gpu_placeholder_type_t type
 );
 
+#ifdef __cplusplus
+}
+#endif
 
 
 #endif

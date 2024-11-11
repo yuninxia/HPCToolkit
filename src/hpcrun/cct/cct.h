@@ -96,11 +96,20 @@ extern cct_node_t* hpcrun_cct_top_new(uint16_t lmid, uintptr_t lmip);
 // Accessor functions
 //
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 extern cct_node_t* hpcrun_cct_parent(cct_node_t* node);
 extern cct_node_t* hpcrun_cct_children(cct_node_t* node);
 extern cct_node_t* hpcrun_leftmost_child(cct_node_t* node);
 extern int32_t hpcrun_cct_persistent_id(cct_node_t* node);
 extern cct_addr_t* hpcrun_cct_addr(cct_node_t* node);
+
+#ifdef __cplusplus
+}
+#endif
+
 extern bool hpcrun_cct_is_leaf(cct_node_t* node);
 extern bool hpcrun_cct_unwound(cct_node_t* node);
 extern cct_node_t* hpcrun_cct_insert_path_return_leaf(cct_node_t *root, cct_node_t *path);
@@ -118,9 +127,17 @@ extern bool hpcrun_cct_is_dummy(cct_node_t* node);
 // Mutator functions: modify a given cct
 //
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 extern void get_cct_node_id(cct_node_t* node, uint16_t* lm_id, uintptr_t* lm_ip);
 extern cct_node_t* hpcrun_cct_insert_instruction_child(cct_node_t* block, uintptr_t ip);
 extern cct_node_t* hpcrun_cct_insert_ip_norm(cct_node_t* node, ip_normalized_t ip_norm, bool unwound);
+
+#ifdef __cplusplus
+}
+#endif
 
 //
 // Fundamental mutation operation: insert a given addr into the
@@ -154,12 +171,20 @@ extern cct_node_t* hpcrun_cct_insert_node(cct_node_t* target, cct_node_t* src);
 
 extern void hpcrun_cct_insert_path(cct_node_t ** root, cct_node_t* path);
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 // mark a node for retention as the leaf of a traced call path.
 extern void hpcrun_cct_retain(cct_node_t* x);
 
 // check if a node was marked for retention as the leaf of a traced
 // call path.
 extern int hpcrun_cct_retained(cct_node_t* x);
+
+#ifdef __cplusplus
+}
+#endif
 
 
 // Walking functions section:

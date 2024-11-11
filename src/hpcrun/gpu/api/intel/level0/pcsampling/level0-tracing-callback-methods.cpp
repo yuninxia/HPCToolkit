@@ -249,9 +249,7 @@ OnExitCommandListAppendLaunchKernel
 )
 {
   ze_command_list_handle_t hCommandList = *(params->phCommandList);
-  ze_device_handle_t hDevice;
-  ze_result_t status = zeCommandListGetDeviceHandle(hCommandList, &hDevice);
-  level0_check_result(status, __LINE__);
+  ze_device_handle_t hDevice = getDeviceForCommandList(hCommandList);
   ze_event_handle_t hSignalEvent = *(params->phSignalEvent);
   ze_kernel_handle_t hKernel = *(params->phKernel);
 
@@ -265,6 +263,15 @@ OnExitCommandListAppendLaunchKernel
     if (command_node != nullptr) {
       correlation_id = command_node->correlation_id;
     }
+
+    // Get host node
+    gpu_op_ccts_map_entry_value_t *entry = gpu_op_ccts_map_lookup(correlation_id);
+    if (entry == nullptr) {
+      std::cerr << "[Warning] Cannot find CCTs for correlation id " << correlation_id << std::endl;
+      return;
+    }
+    cct_node_t *host_op_node = gpu_op_ccts_get(&entry->gpu_op_ccts, gpu_placeholder_type_kernel);    
+    cid_cct_node_[correlation_id] = host_op_node;
     
     // Get execution time
     KernelExecutionTime execTime = zeroGetKernelExecutionTime(hSignalEvent, hDevice);

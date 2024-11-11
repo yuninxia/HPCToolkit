@@ -20,7 +20,7 @@ std::shared_mutex kernel_command_properties_mutex_;
 std::map<std::string, ZeKernelCommandProperties> *kernel_command_properties_ = nullptr;
 KernelTimingData kernel_timing_data_;
 bool concurrent_metric_profiling = true;
-
+std::map<uint64_t, cct_node_t *> cid_cct_node_; 
 
 //*****************************************************************************
 // local variables

@@ -34,6 +34,7 @@
 //*****************************************************************************
 
 #include "level0-module.hpp"
+#include "../../../../activity/gpu-op-ccts-map.h"
 
 
 //*****************************************************************************
@@ -95,6 +96,7 @@ extern std::shared_mutex kernel_command_properties_mutex_;
 extern std::map<std::string, ZeKernelCommandProperties> *kernel_command_properties_;
 extern KernelTimingData kernel_timing_data_;
 extern bool concurrent_metric_profiling;
+extern std::map<uint64_t, cct_node_t *> cid_cct_node_;
 
 
 //******************************************************************************
