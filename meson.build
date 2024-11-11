@@ -502,19 +502,6 @@ else
 endif
 
 
-# For testing hpcprof-mpi, we also need mpiexec to actually launch the tool.
-mpiexec = find_program(
-  'mpiexec',
-  required: get_option('hpcprof_mpi').disabled() ? get_option('hpcprof_mpi') : false,
-)
-if mpiexec.found()
-  mpiexec = [mpiexec.full_path(), '-host', 'localhost:1000', '-n']
-else
-  _sh = find_program('sh')
-  mpiexec = [_sh.full_path(), '-c', 'exit 77']
-endif
-
-
 # Find support for CUDA performance monitoring
 #
 # NB: The CUDA dependency expects to be used with (implicit) `link_language: 'cuda'`, but we link

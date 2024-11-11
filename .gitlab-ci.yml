@@ -333,9 +333,6 @@ include:
     SETUP_ARGS: '--native-file hpctoolkit-ci.ini'
     TEST_ARGS: ''
     BUILD_DIRECTORY: builddir/
-    # OpenMPI refuses to run as user 0 without these options set.
-    OMPI_ALLOW_RUN_AS_ROOT: 1
-    OMPI_ALLOW_RUN_AS_ROOT_CONFIRM: 1
   script:
   - &test_job_setup
     - mkdir -p logs
@@ -373,7 +370,6 @@ include:
   - |
     echo "To reproduce this build, run:"
     echo "    podman run --rm -it -v ./:/hpctoolkit:ro --workdir /hpctoolkit \\"
-    echo "      -e OMPI_ALLOW_RUN_AS_ROOT=1 -e OMPI_ALLOW_RUN_AS_ROOT_CONFIRM=1 \\"
     echo "      -e SETUP_ARGS='$SETUP_ARGS' -e TEST_ARGS='$TEST_ARGS'$EXTRA_ENVS \\"
     echo "      $CI_JOB_IMAGE"
     echo 'and repeat the commands listed in the job log above, with $BUILD_DIRECTORY replaced with /tmp/builddir.'
@@ -424,17 +420,11 @@ ubuntu24.04 amd64:
   extends: .individual test job std
   needs: ['predeps: [ubuntu24.04-amd64]']
   image: $PREDEPS_IMAGE_UBUNTU24_04_AMD64
-  variables: &ubuntu24_04_vars
-    # FIXME: The version of MPICH shipped with Ubuntu 24.04 requires an authentication system to
-    # operate properly. We don't have one set up in the container nor do we want to. Disable MPI
-    # tests for this container.
-    TEST_ARGS: --no-suite mpi
 ubuntu24.04 arm64:
   extends: .individual test job std
   needs: ['predeps: [ubuntu24.04-arm64]']
   image: $PREDEPS_IMAGE_UBUNTU24_04_ARM64
   tags: [saas-linux-medium-arm64]
-  variables: *ubuntu24_04_vars
 ubuntu24.04 ppc64le:
   extends: .individual test job std
   needs: ['predeps: [ubuntu24.04-ppc64le]']
@@ -444,7 +434,7 @@ ubuntu24.04 ppc64le:
   # FIXME: For unknown reasons, the Python support doesn't work in this version of Python.
   # Not sure why. Disable it for now. https://gitlab.com/hpctoolkit/hpctoolkit/-/issues/847
   variables:
-    TEST_ARGS: --no-suite mpi --no-suite python
+    TEST_ARGS: --no-suite python
 leap15 amd64:
   extends: .individual test job std
   needs: ['predeps: [leap15-amd64]']
@@ -453,11 +443,6 @@ rhel8 amd64:
   extends: .individual test job std
   needs: ['predeps: [rhel8-amd64]']
   image: $PREDEPS_IMAGE_RHEL8_AMD64
-  variables:
-    # FIXME: MVAPICH2 reacts badly in VMs, it claims to have no threading support. The same effect
-    # can't be reproduced in a local container, for whatever reason. Disable the MPI tests on this
-    # MPI for now until a proper fix can be figured out.
-    TEST_ARGS: --no-suite mpi
 rhel9 amd64:
   extends: .individual test job std
   needs: ['predeps: [rhel9-amd64]']
@@ -466,10 +451,6 @@ rhel9 amd64:
     # FIXME: This particular combination of PAPI et al. seems to cause hpcrun to hang, always.
     # Disable PAPI in the build until a proper investigation can be carried out.
     SETUP_ARGS: --native-file hpctoolkit-ci.ini -Dpapi=disabled
-    # FIXME: MVAPICH2 reacts badly in VMs, it claims to have no threading support. The same effect
-    # can't be reproduced in a local container, for whatever reason. Disable the MPI tests on this
-    # MPI for now until a proper fix can be figured out.
-    TEST_ARGS: --no-suite mpi
 rhel9 arm64:
   extends: .individual test job std
   needs: ['predeps: [rhel9-arm64]']
@@ -479,10 +460,6 @@ rhel9 arm64:
     # FIXME: This particular combination of PAPI et al. seems to cause hpcrun to hang, always.
     # Disable PAPI in the build until a proper investigation can be carried out.
     SETUP_ARGS: --native-file hpctoolkit-ci.ini -Dpapi=disabled
-    # FIXME: MVAPICH2 reacts badly in VMs, it claims to have no threading support. The same effect
-    # can't be reproduced in a local container, for whatever reason. Disable the MPI tests on this
-    # MPI for now until a proper fix can be figured out.
-    TEST_ARGS: --no-suite mpi
 rhel9 ppc64le:
   extends: .individual test job std
   needs: ['predeps: [rhel9-ppc64le]']
@@ -493,27 +470,14 @@ rhel9 ppc64le:
     # FIXME: This particular combination of PAPI et al. seems to cause hpcrun to hang, always.
     # Disable PAPI in the build until a proper investigation can be carried out.
     SETUP_ARGS: --native-file hpctoolkit-ci.ini -Dpapi=disabled
-    # FIXME: MVAPICH2 reacts badly in VMs, it claims to have no threading support. The same effect
-    # can't be reproduced in a local container, for whatever reason. Disable the MPI tests on this
-    # MPI for now until a proper fix can be figured out.
-    TEST_ARGS: --no-suite mpi
 fedora39 amd64:
   extends: .individual test job std
   needs: ['predeps: [fedora39-amd64]']
   image: $PREDEPS_IMAGE_FEDORA39_AMD64
-  variables:
-    # FIXME: This particular version of OpenMPI reacts badly in VMs, hpcprof-mpi hangs. The same
-    # effect can't be reproduced in a local container, for whatever reason. Disable the MPI tests
-    # on this MPI for now until a proper fix can be figured out.
-    TEST_ARGS: --no-suite mpi
 fedora40 amd64:
   extends: .individual test job std
   needs: ['predeps: [fedora40-amd64]']
   image: $PREDEPS_IMAGE_FEDORA40_AMD64
-  variables:
-    # FIXME: This version of OpenMPI requires additional arguments to be happy in the CI environment.
-    # Disable the tests for now.
-    TEST_ARGS: --no-suite mpi
 
 .individual test job bare:
   extends: .individual test job
@@ -641,11 +605,7 @@ intel amd64:
   variables:
     # FIXME: Tests that use Level Zero fail on systems that don't have a suitable GPU attached.
     # This should be fixed, but for now don't try to run any of the affected tests.
-    # FIXME: Intel MPI doesn't work on a single node, it tries to ssh to localhost and doesn't get
-    # very far as a result. Don't try to run the MPI tests here.
-    TEST_ARGS: >-
-      --no-suite level0
-      --no-suite mpi
+    TEST_ARGS: --no-suite level0
 
 
 # Selected semi-fresh test runs. These regenerate suitable parts of the test data
@@ -743,10 +703,6 @@ compiler gcc8:
   image: $PREDEPS_IMAGE_RHEL8_AMD64
   variables:
     JOB_CC: gcc
-    # FIXME: MVAPICH2 reacts badly in VMs, it claims to have no threading support. The same effect
-    # can't be reproduced in a local container, for whatever reason. Disable the MPI tests on this
-    # MPI for now until a proper fix can be figured out.
-    TEST_ARGS: --no-suite mpi
 compiler clang10:
   extends: .compiler compat test job
   needs: ['predeps: [ubuntu20.04-amd64]']
@@ -759,19 +715,12 @@ compiler clang17:
   image: $PREDEPS_IMAGE_FEDORA39_AMD64
   variables:
     JOB_CC: clang
-    # FIXME: This particular version of OpenMPI reacts badly in VMs, hpcprof-mpi hangs. The same
-    # effect can't be reproduced in a local container, for whatever reason. Disable the MPI tests
-    # on this MPI for now until a proper fix can be figured out.
-    TEST_ARGS: --no-suite mpi
 compiler clang18:
   extends: .compiler compat test job
   needs: ['predeps: [fedora40-amd64]']
   image: $PREDEPS_IMAGE_FEDORA40_AMD64
   variables:
     JOB_CC: clang
-    # FIXME: This version of OpenMPI requires additional arguments to be happy in the CI environment.
-    # Disable the tests for now.
-    TEST_ARGS: --no-suite mpi
 compiler icx:
   extends: .compiler compat test job
   needs: ['predeps: [intel-amd64]']
@@ -789,11 +738,7 @@ compiler icx:
       --wrap-mode=forcefallback
     # FIXME: Tests that use Level Zero fail on systems that don't have a suitable GPU attached.
     # This should be fixed, but for now don't try to run any of the affected tests.
-    # FIXME: Intel MPI doesn't work on a single node, it tries to ssh to localhost and doesn't get
-    # very far as a result. Don't try to run the MPI tests here.
-    TEST_ARGS: >-
-      --no-suite level0
-      --no-suite mpi
+    TEST_ARGS: --no-suite level0
 
 
 # Non-default option checks. There are a small number of options that users/packagers can
@@ -901,9 +846,6 @@ compiler icx:
   image: $PREDEPS_IMAGE_UBUNTU24_04_AMD64
   variables:
     BUILD_DIRECTORY: builddir/long_path_segment__/long_path_segment__/long_path_segment__/long_path_segment__/long_path_segment__/long_path_segment__/long_path_segment__/long_path_segment__/long_path_segment__/long_path_segment__/long_path_segment__/long_path_segment__/
-    # FIXME: MPI tends to fail in this setup. Unsure why.
-    TEST_ARGS: >-
-      --no-suite mpi
 
 
 # The repository follows the REUSE specification v3.x for representing copyright and licencing
