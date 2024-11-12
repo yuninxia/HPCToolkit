@@ -512,6 +512,10 @@ fedora40 amd64:
   extends: .individual test job std
   needs: ['predeps: [fedora40-amd64]']
   image: $PREDEPS_IMAGE_FEDORA40_AMD64
+  variables:
+    # FIXME: This version of OpenMPI requires additional arguments to be happy in the CI environment.
+    # Disable the tests for now.
+    TEST_ARGS: --no-suite mpi
 
 .individual test job bare:
   extends: .individual test job
@@ -767,6 +771,9 @@ compiler clang18:
   image: $PREDEPS_IMAGE_FEDORA40_AMD64
   variables:
     JOB_CC: clang
+    # FIXME: This version of OpenMPI requires additional arguments to be happy in the CI environment.
+    # Disable the tests for now.
+    TEST_ARGS: --no-suite mpi
 compiler icx:
   extends: .compiler compat test job
   needs: ['predeps: [intel-amd64]']
