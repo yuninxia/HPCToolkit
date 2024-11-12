@@ -417,6 +417,7 @@ rst2man = find_program('rst2man', 'rst2man.py', required: get_option('manpages')
 
 
 # Find MPI.
+mpi_sanity_src = files('meson/sanity.mpi.cpp')
 if meson.version().version_compare('>=1.6.0')
   mpi_dep = dependency('MPI', language: 'cpp', required: get_option('hpcprof_mpi'))
 
@@ -424,7 +425,7 @@ if meson.version().version_compare('>=1.6.0')
   # (i.e. -Dhpcprof_mpi=auto) then the resulting dependency won't actually work.
   # If it was found, do a compile check and then re-run dependency() if needed.
   # See https://github.com/mesonbuild/meson/issues/13810.
-  if mpi_dep.found() and not cpp.has_header('mpi.h', dependencies: mpi_dep)
+  if mpi_dep.found() and not cpp.links(mpi_sanity_src, dependencies: mpi_dep)
     mpi_dep = dependency('MPI', language: 'c')    # NB: Different language to dodge cache
   endif
 elif get_option('hpcprof_mpi').allowed()
@@ -460,22 +461,7 @@ elif get_option('hpcprof_mpi').allowed()
         )
 
         # Sanity check that the flags we get from the script do in fact work like they should.
-        assert(
-          cpp.links(
-            '''
-        #include <mpi.h>
-        int main() {
-          MPI_Init(nullptr, nullptr);
-          int x = 42;
-          MPI_Bcast(&x, 1, MPI_INT, 0, MPI_COMM_WORLD);
-          MPI_Finalize();
-          return 0;
-        }
-        ''',
-            name: 'MPI sanity check',
-            dependencies: mpi_dep,
-          ),
-        )
+        cpp.links(mpi_sanity_src, dependencies: mpi_dep, required: true)
       endif
     endif
   endif
