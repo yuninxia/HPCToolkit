@@ -410,6 +410,22 @@ gmock_main_dep = dependency(
   disabler: true,
   required: get_option('tests'),
 )
+foreach gtest_var : ['gtest_dep', 'gtest_main_dep', 'gmock_dep', 'gmock_main_dep']
+  gdep = get_variable(gtest_var)
+  if gdep.found() and gdep.version().version_compare('<1.11.0')
+    # Before GoogleTest 1.11.0, a -lpthread argument is added to the pkg-config files
+    # in the Cflags section. Some compilers (Clang) generate a warning when this
+    # happens. Disable these warnings when the GoogleTest dependency is linked in.
+    set_variable(
+      gtest_var,
+      declare_dependency(
+        dependencies: gdep,
+        version: gdep.version(),
+        compile_args: cc.get_supported_arguments('-Wno-unused-command-line-argument'),
+      ),
+    )
+  endif
+endforeach
 
 
 # Find rst2man, which is used to generate the man pages from source
@@ -427,6 +443,18 @@ if meson.version().version_compare('>=1.6.0')
   # See https://github.com/mesonbuild/meson/issues/13810.
   if mpi_dep.found() and not cpp.links(mpi_sanity_src, dependencies: mpi_dep)
     mpi_dep = dependency('MPI', language: 'c')    # NB: Different language to dodge cache
+  endif
+
+  # MPICH tends to mix compile-time and linker-time arguments, despite having two
+  # different flags to fetch each. Some compilers (Clang) generate a warning when this
+  # happens. Disable these warnings when the MPI dependency is linked in.
+  if mpi_dep.found()
+    mpi_dep = declare_dependency(
+      dependencies: mpi_dep,
+      version: mpi_dep.version(),
+      compile_args: cc.get_supported_arguments('-Wno-unused-command-line-argument'),
+      link_args: cc.get_supported_arguments('-Wno-unused-command-line-argument'),
+    )
   endif
 elif get_option('hpcprof_mpi').allowed()
   # In versions before 1.6.0 the upstream support was quirky and often failed, so we
