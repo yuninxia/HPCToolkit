@@ -20,11 +20,7 @@ spack:
       strategy: full
 
   definitions:
-  # FIXME: The CUDA tests currently fail if no CUDA device is available. To avoid
-  # these known test failures, only attempt +cuda if CUDA is known to be available.
-  # For details see https://gitlab.com/hpctoolkit/hpctoolkit/-/issues/842
-  - when: env.get("ENV_ONLY_CUDA", "0") != "0"
-    hpct_cuda: [+cuda]
+  - hpct_cuda: [+cuda]
   - when: env.get("ENV_ONLY_CUDA", "0") == "0"
     hpct_cuda: [~cuda]
 
