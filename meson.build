@@ -410,6 +410,22 @@ gmock_main_dep = dependency(
   disabler: true,
   required: get_option('tests'),
 )
+foreach gtest_var : ['gtest_dep', 'gtest_main_dep', 'gmock_dep', 'gmock_main_dep']
+  gdep = get_variable(gtest_var)
+  if gdep.found() and gdep.version().version_compare('<1.11.0')
+    # Before GoogleTest 1.11.0, a -lpthread argument is added to the pkg-config files
+    # in the Cflags section. Some compilers (Clang) generate a warning when this
+    # happens. Disable these warnings when the GoogleTest dependency is linked in.
+    set_variable(
+      gtest_var,
+      declare_dependency(
+        dependencies: gdep,
+        version: gdep.version(),
+        compile_args: cc.get_supported_arguments('-Wno-unused-command-line-argument'),
+      ),
+    )
+  endif
+endforeach
 
 
 # Find rst2man, which is used to generate the man pages from source
@@ -417,6 +433,7 @@ rst2man = find_program('rst2man', 'rst2man.py', required: get_option('manpages')
 
 
 # Find MPI.
+mpi_sanity_src = files('meson/sanity.mpi.cpp')
 if meson.version().version_compare('>=1.6.0')
   mpi_dep = dependency('MPI', language: 'cpp', required: get_option('hpcprof_mpi'))
 
@@ -424,8 +441,20 @@ if meson.version().version_compare('>=1.6.0')
   # (i.e. -Dhpcprof_mpi=auto) then the resulting dependency won't actually work.
   # If it was found, do a compile check and then re-run dependency() if needed.
   # See https://github.com/mesonbuild/meson/issues/13810.
-  if mpi_dep.found() and not cpp.has_header('mpi.h', dependencies: mpi_dep)
+  if mpi_dep.found() and not cpp.links(mpi_sanity_src, dependencies: mpi_dep)
     mpi_dep = dependency('MPI', language: 'c')    # NB: Different language to dodge cache
+  endif
+
+  # MPICH tends to mix compile-time and linker-time arguments, despite having two
+  # different flags to fetch each. Some compilers (Clang) generate a warning when this
+  # happens. Disable these warnings when the MPI dependency is linked in.
+  if mpi_dep.found()
+    mpi_dep = declare_dependency(
+      dependencies: mpi_dep,
+      version: mpi_dep.version(),
+      compile_args: cc.get_supported_arguments('-Wno-unused-command-line-argument'),
+      link_args: cc.get_supported_arguments('-Wno-unused-command-line-argument'),
+    )
   endif
 elif get_option('hpcprof_mpi').allowed()
   # In versions before 1.6.0 the upstream support was quirky and often failed, so we
@@ -460,22 +489,7 @@ elif get_option('hpcprof_mpi').allowed()
         )
 
         # Sanity check that the flags we get from the script do in fact work like they should.
-        assert(
-          cpp.links(
-            '''
-        #include <mpi.h>
-        int main() {
-          MPI_Init(nullptr, nullptr);
-          int x = 42;
-          MPI_Bcast(&x, 1, MPI_INT, 0, MPI_COMM_WORLD);
-          MPI_Finalize();
-          return 0;
-        }
-        ''',
-            name: 'MPI sanity check',
-            dependencies: mpi_dep,
-          ),
-        )
+        cpp.links(mpi_sanity_src, dependencies: mpi_dep, required: true)
       endif
     endif
   endif
