@@ -28,7 +28,6 @@ common_lean_srcs = files(
   'hpcio.c',
   'hpcrun-fmt.c',
   'id-tuple.c',
-  'lush/lush-support.c',
   'mcs-lock.c',
   'md5.c',
   'pfq-rwlock.c',

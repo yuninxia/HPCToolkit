@@ -102,9 +102,6 @@
 
 #include "utilities/arch/context-pc.h"
 
-#include "lush/lush-backtrace.h"
-#include "lush/lush-pthread.h"
-
 #include "../common/lean/hpcrun-fmt.h"
 #include "../common/lean/hpcio.h"
 #include "../common/lean/spinlock.h"
@@ -161,8 +158,6 @@ struct hpcrun_aux_cleanup_t {
 //***************************************************************************
 // global variables
 //***************************************************************************
-
-int lush_metrics = 0; // FIXME: global variable for now
 
 bool hpcrun_no_unwind = false;
 bool hpcrun_local_rank_disabled = false;
@@ -477,7 +472,6 @@ hpcrun_init_internal(bool is_child)
   TMSG(MAIN_BOUNDS, "main addr %p ==> lower %p, upper %p", main_addr, main_lower, main_upper);
 
   hpcrun_options__init(&opts);
-  hpcrun_options__getopts(&opts);
 
   hpcrun_trace_init(); // this must go after thread initialization
 
@@ -486,22 +480,6 @@ hpcrun_init_internal(bool is_child)
   // Decide whether to retain full single recursion, or collapse recursive calls to
   // first instance of recursive call
   hpcrun_set_retain_recursion_mode(hpcrun_get_env_bool("HPCRUN_RETAIN_RECURSION"));
-
-  // Initialize logical unwinding agents (LUSH)
-  if (opts.lush_agent_paths[0] != '\0') {
-    epoch_t* epoch = TD_GET(core_profile_trace_data.epoch);
-    TMSG(MALLOC," -init_internal-: lush allocation");
-    lush_agents = (lush_agent_pool_t*)hpcrun_malloc(sizeof(lush_agent_pool_t));
-    hpcrun_logicalUnwind(true);
-    lush_agent_pool__init(lush_agents, opts.lush_agent_paths);
-    EMSG("Logical Unwinding Agent: %s (%p / %p)", opts.lush_agent_paths,
-         epoch, lush_agents);
-  }
-
-  lush_metrics = (lush_agents) ? 1 : 0;
-
-  // tallent: this is harmless, but should really only occur for pthread agent
-  lushPthr_processInit();
 
   hpcrun_setup_segv();
 
@@ -545,7 +523,7 @@ hpcrun_init_internal(bool is_child)
   //
 
   if (hpcrun_process_event_list) {
-    SAMPLE_SOURCES(process_event_list, lush_metrics);
+    SAMPLE_SOURCES(process_event_list);
     SAMPLE_SOURCES(finalize_event_list);
     hpcrun_metrics_data_finalize();
     hpcrun_process_event_list = false;
@@ -555,7 +533,7 @@ hpcrun_init_internal(bool is_child)
   // applies to sources in use, so must come after process event list.
   SAMPLE_SOURCES(thread_init);
 
-  SAMPLE_SOURCES(gen_event_set, lush_metrics);
+  SAMPLE_SOURCES(gen_event_set);
 
   // Check whether tracing is enabled and metrics suitable for tracing are specified
   if (hpcrun_trace_isactive() && hpcrun_has_trace_metric() == 0) {
@@ -725,12 +703,6 @@ hpcrun_fini_internal()
       SAMPLE_SOURCES(shutdown);
     }
 
-    // shutdown LUSH agents
-    if (lush_agents) {
-      lush_agent_pool__fini(lush_agents);
-      lush_agents = NULL;
-    }
-
     // N.B. short-circuit, if monitoring is disabled
     if (hpcrun_get_disabled()) {
       return;
@@ -821,7 +793,7 @@ hpcrun_thread_init(int id, local_thread_data_t* local_thread_data, bool has_trac
     SAMPLE_SOURCES(thread_init_action);
 
     // handle event sets for sample sources
-    SAMPLE_SOURCES(gen_event_set,lush_metrics);
+    SAMPLE_SOURCES(gen_event_set);
 
     // start the sample sources
     SAMPLE_SOURCES(start);
@@ -849,7 +821,6 @@ hpcrun_thread_fini(epoch_t *epoch)
     TMSG(FINI,"thread finit stops sampling");
     SAMPLE_SOURCES(stop);
     SAMPLE_SOURCES(thread_fini_action);
-    lushPthr_thread_fini(&TD_GET(pthr_metrics));
 
     if (hpcrun_get_disabled()) {
       return;
@@ -1361,304 +1332,6 @@ monitor_reset_stacksize(size_t old_size)
 
   return new_size;
 }
-
-
-//***************************************************************************
-// thread control (via our monitoring extensions)
-//***************************************************************************
-
-// ---------------------------------------------------------
-// mutex_lock
-// ---------------------------------------------------------
-
-#ifdef LUSH_PTHREADS
-
-typedef int mutex_lock_fcn(pthread_mutex_t *);
-
-//static mutex_lock_fcn *real_mutex_lock = NULL;
-static mutex_lock_fcn *real_mutex_trylock = NULL;
-static mutex_lock_fcn *real_mutex_unlock = NULL;
-
-
-int
-MONITOR_EXT_WRAP_NAME(pthread_mutex_lock)(pthread_mutex_t* lock)
-{
-  // N.B.: do not use dlsym() to obtain "real_pthread_mutex_lock"
-  // because dlsym() indirectly calls calloc(), which can call
-  // pthread_mutex_lock().
-  extern int __pthread_mutex_lock(pthread_mutex_t* lock);
-  //MONITOR_EXT_GET_NAME_WRAP(real_mutex_lock, pthread_mutex_lock);
-
-  if (0) { TMSG(MONITOR_EXTS, "%s", __func__); }
-
-  if (hpcrun_is_initialized()) {
-    lushPthr_mutexLock_pre(&TD_GET(pthr_metrics), lock);
-  }
-
-  int ret = __pthread_mutex_lock(lock);
-
-  if (hpcrun_is_initialized()) {
-    lushPthr_mutexLock_post(&TD_GET(pthr_metrics), lock /*,ret*/);
-  }
-
-  return ret;
-}
-
-
-int
-MONITOR_EXT_WRAP_NAME(pthread_mutex_trylock)(pthread_mutex_t* lock)
-{
-  MONITOR_EXT_GET_NAME_WRAP(real_mutex_trylock, pthread_mutex_trylock);
-  if (0) { TMSG(MONITOR_EXTS, "%s", __func__); }
-
-  int ret = (*real_mutex_trylock)(lock);
-
-  if (hpcrun_is_initialized()) {
-    lushPthr_mutexTrylock_post(&TD_GET(pthr_metrics), lock, ret);
-  }
-
-  return ret;
-}
-
-
-int
-MONITOR_EXT_WRAP_NAME(pthread_mutex_unlock)(pthread_mutex_t* lock)
-{
-  MONITOR_EXT_GET_NAME_WRAP(real_mutex_unlock, pthread_mutex_unlock);
-  if (0) { TMSG(MONITOR_EXTS, "%s", __func__); }
-
-  int ret = (*real_mutex_unlock)(lock);
-
-  if (hpcrun_is_initialized()) {
-    lushPthr_mutexUnlock_post(&TD_GET(pthr_metrics), lock /*,ret*/);
-  }
-
-  return ret;
-}
-
-#endif // LUSH_PTHREADS
-
-
-// ---------------------------------------------------------
-// spin_lock
-// ---------------------------------------------------------
-
-#ifdef LUSH_PTHREADS
-
-typedef int spinlock_fcn(pthread_spinlock_t *);
-
-static spinlock_fcn *real_spin_lock = NULL;
-static spinlock_fcn *real_spin_trylock = NULL;
-static spinlock_fcn *real_spin_unlock = NULL;
-static spinlock_fcn *real_spin_destroy = NULL;
-
-
-int
-MONITOR_EXT_WRAP_NAME(pthread_spin_lock)(pthread_spinlock_t* lock)
-{
-  MONITOR_EXT_GET_NAME_WRAP(real_spin_lock, pthread_spin_lock);
-  if (0) { TMSG(MONITOR_EXTS, "%s", __func__); }
-
-  pthread_spinlock_t* real_lock = lock;
-  if (hpcrun_is_initialized()) {
-    real_lock = lushPthr_spinLock_pre(&TD_GET(pthr_metrics), lock);
-  }
-
-#if (LUSH_PTHR_FN_TY == 3)
-  int ret = lushPthr_spin_lock(lock);
-#else
-  int ret = (*real_spin_lock)(real_lock);
-#endif
-
-  if (hpcrun_is_initialized()) {
-    lushPthr_spinLock_post(&TD_GET(pthr_metrics), lock /*,ret*/);
-  }
-
-  return ret;
-}
-
-
-int
-MONITOR_EXT_WRAP_NAME(pthread_spin_trylock)(pthread_spinlock_t* lock)
-{
-  MONITOR_EXT_GET_NAME_WRAP(real_spin_trylock, pthread_spin_trylock);
-  if (0) { TMSG(MONITOR_EXTS, "%s", __func__); }
-
-  pthread_spinlock_t* real_lock = lock;
-  if (hpcrun_is_initialized()) {
-    real_lock = lushPthr_spinTrylock_pre(&TD_GET(pthr_metrics), lock);
-  }
-
-#if (LUSH_PTHR_FN_TY == 3)
-  int ret = lushPthr_spin_trylock(lock);
-#else
-  int ret = (*real_spin_trylock)(real_lock);
-#endif
-
-  if (hpcrun_is_initialized()) {
-    lushPthr_spinTrylock_post(&TD_GET(pthr_metrics), lock, ret);
-  }
-
-  return ret;
-}
-
-
-int
-MONITOR_EXT_WRAP_NAME(pthread_spin_unlock)(pthread_spinlock_t* lock)
-{
-  MONITOR_EXT_GET_NAME_WRAP(real_spin_unlock, pthread_spin_unlock);
-  if (0) { TMSG(MONITOR_EXTS, "%s", __func__); }
-
-  pthread_spinlock_t* real_lock = lock;
-  if (hpcrun_is_initialized()) {
-    real_lock = lushPthr_spinUnlock_pre(&TD_GET(pthr_metrics), lock);
-  }
-
-#if (LUSH_PTHR_FN_TY == 3)
-  int ret = lushPthr_spin_unlock(lock);
-#else
-  int ret = (*real_spin_unlock)(real_lock);
-#endif
-
-  if (hpcrun_is_initialized()) {
-    lushPthr_spinUnlock_post(&TD_GET(pthr_metrics), lock /*,ret*/);
-  }
-
-  return ret;
-}
-
-
-int
-MONITOR_EXT_WRAP_NAME(pthread_spin_destroy)(pthread_spinlock_t* lock)
-{
-  MONITOR_EXT_GET_NAME_WRAP(real_spin_destroy, pthread_spin_destroy);
-  if (0) { TMSG(MONITOR_EXTS, "%s", __func__); }
-
-  pthread_spinlock_t* real_lock = lock;
-  if (hpcrun_is_initialized()) {
-    real_lock = lushPthr_spinDestroy_pre(&TD_GET(pthr_metrics), lock);
-  }
-
-  int ret = (*real_spin_destroy)(real_lock);
-
-  if (hpcrun_is_initialized()) {
-    lushPthr_spinDestroy_post(&TD_GET(pthr_metrics), lock /*,ret*/);
-  }
-
-  return ret;
-}
-
-#endif // LUSH_PTHREADS
-
-
-// ---------------------------------------------------------
-// cond_wait
-// ---------------------------------------------------------
-
-#ifdef LUSH_PTHREADS
-
-typedef int cond_init_fcn(pthread_cond_t *, const pthread_condattr_t *);
-typedef int cond_destroy_fcn(pthread_cond_t *);
-typedef int cond_wait_fcn(pthread_cond_t *, pthread_mutex_t *);
-typedef int cond_timedwait_fcn(pthread_cond_t *, pthread_mutex_t *,
-                               const struct timespec *);
-typedef int cond_signal_fcn(pthread_cond_t *);
-
-static cond_init_fcn    *real_cond_init = NULL;
-static cond_destroy_fcn *real_cond_destroy = NULL;
-static cond_wait_fcn      *real_cond_wait = NULL;
-static cond_timedwait_fcn *real_cond_timedwait = NULL;
-static cond_signal_fcn *real_cond_signal = NULL;
-static cond_signal_fcn *real_cond_broadcast = NULL;
-
-
-// N.B.: glibc defines multiple versions of the cond-wait functions.
-// For some reason, dlsym-ing any one routine does *not* necessarily
-// obtain the correct version.  It turns out to be necessary to
-// override a 'covering set' of the cond-wait functions to obtain a
-// consistent set.
-
-int
-MONITOR_EXT_WRAP_NAME(pthread_cond_init)(pthread_cond_t* cond,
-                                         const pthread_condattr_t* attr)
-{
-  MONITOR_EXT_GET_NAME_WRAP(real_cond_init, pthread_cond_init);
-  if (0) { TMSG(MONITOR_EXTS, "%s", __func__); }
-  return (*real_cond_init)(cond, attr);
-}
-
-
-int
-MONITOR_EXT_WRAP_NAME(pthread_cond_destroy)(pthread_cond_t* cond)
-{
-  MONITOR_EXT_GET_NAME_WRAP(real_cond_destroy, pthread_cond_destroy);
-  if (0) { TMSG(MONITOR_EXTS, "%s", __func__); }
-  return (*real_cond_destroy)(cond);
-}
-
-
-int
-MONITOR_EXT_WRAP_NAME(pthread_cond_wait)(pthread_cond_t* cond,
-                                         pthread_mutex_t* mutex)
-{
-  MONITOR_EXT_GET_NAME_WRAP(real_cond_wait, pthread_cond_wait);
-  if (0) { TMSG(MONITOR_EXTS, "%s", __func__); }
-
-  if (hpcrun_is_initialized()) {
-    lushPthr_condwait_pre(&TD_GET(pthr_metrics));
-  }
-
-  int ret = (*real_cond_wait)(cond, mutex);
-
-  if (hpcrun_is_initialized()) {
-    lushPthr_condwait_post(&TD_GET(pthr_metrics) /*,ret*/);
-  }
-
-  return ret;
-}
-
-
-int
-MONITOR_EXT_WRAP_NAME(pthread_cond_timedwait)(pthread_cond_t* cond,
-                                              pthread_mutex_t* mutex,
-                                              const struct timespec* tspec)
-{
-  MONITOR_EXT_GET_NAME_WRAP(real_cond_timedwait, pthread_cond_timedwait);
-  if (0) { TMSG(MONITOR_EXTS, "%s", __func__); }
-
-  if (hpcrun_is_initialized()) {
-    lushPthr_condwait_pre(&TD_GET(pthr_metrics));
-  }
-
-  int ret = (*real_cond_timedwait)(cond, mutex, tspec);
-
-  if (hpcrun_is_initialized()) {
-    lushPthr_condwait_post(&TD_GET(pthr_metrics) /*,ret*/);
-  }
-
-  return ret;
-}
-
-
-int
-MONITOR_EXT_WRAP_NAME(pthread_cond_signal)(pthread_cond_t* cond)
-{
-  MONITOR_EXT_GET_NAME_WRAP(real_cond_signal, pthread_cond_signal);
-  if (0) { TMSG(MONITOR_EXTS, "%s", __func__); }
-  return (*real_cond_signal)(cond);
-}
-
-
-int
-MONITOR_EXT_WRAP_NAME(pthread_cond_broadcast)(pthread_cond_t* cond)
-{
-  MONITOR_EXT_GET_NAME_WRAP(real_cond_broadcast, pthread_cond_broadcast);
-  if (0) { TMSG(MONITOR_EXTS, "%s", __func__); }
-  return (*real_cond_broadcast)(cond);
-}
-
-#endif // LUSH_PTHREADS
-
 
 //***************************************************************************
 // dynamic linking control (via libmonitor)

@@ -17,9 +17,7 @@
 #include "metrics.h"
 #include "unresolved.h"
 
-#include "../common/lean/lush/lush-support.h"
 #include "../common/lean/placeholders.h"
-#include "lush/lush-backtrace.h"
 #include "thread_data.h"
 #include "hpcrun_stats.h"
 #include "trace.h"
@@ -33,7 +31,6 @@
 
 #include "cct_insert_backtrace.h"
 #include "cct_backtrace_finalize.h"
-#include "lush/lush-backtrace.h"
 #include "unwind/common/backtrace.h"
 #include "thread_data.h"
 #include "utilities/ip-normalized.h"
@@ -78,10 +75,7 @@ cct_insert_raw_backtrace(cct_node_t* cct,
       TMSG(REC_COMPRESS, "recursive routine compression!");
     }
     else {
-      cct_addr_t tmp =
-        (cct_addr_t) {.as_info = path_beg->as_info,
-                      .ip_norm = path_beg->ip_norm,
-                      .lip = path_beg->lip};
+      cct_addr_t tmp = (cct_addr_t) {.ip_norm = path_beg->ip_norm};
       TMSG(BT_INSERT, "inserting addr (%d, %p)", tmp.ip_norm.lm_id, tmp.ip_norm.lm_ip);
       cct = hpcrun_cct_insert_addr(cct, &tmp, true);
     }
@@ -127,22 +121,6 @@ hpcrun_cct_insert_backtrace(cct_node_t* treenode, frame_t* path_beg, frame_t* pa
   cct_node_t* path = cct_insert_raw_backtrace(treenode, path_beg, path_end);
   if (! bt_ins) DISABLE(BT_INSERT);
 
-  // Put lush as_info class correction here
-
-  // N.B. If 'frm' is a 1-to-1 bichord and 'path' is not (i.e., 'path'
-  // is M-to-1 or 1-to-M), then update the association of 'path' to
-  // reflect that 'path' is now a proxy for two bichord types (1-to-1
-  // and M-to-1 or 1-to-M)
-
-  cct_addr_t* addr = hpcrun_cct_addr(path);
-
-  lush_assoc_t as_frm = lush_assoc_info__get_assoc(path_beg->as_info);
-  lush_assoc_t as_path = lush_assoc_info__get_assoc(addr->as_info);
-
-  if (as_frm == LUSH_ASSOC_1_to_1 && as_path != LUSH_ASSOC_1_to_1) {
-    // INVARIANT: path->as_info should be either M-to-1 or 1-to-M
-    lush_assoc_info__set_assoc(hpcrun_cct_addr(path)->as_info, LUSH_ASSOC_1_to_1);
-  }
   return path;
 }
 
@@ -208,17 +186,10 @@ hpcrun_backtrace2cct(cct_bundle_t* cct, ucontext_t* context,
                      int skipInner, int isSync, void *data)
 {
   cct_node_t* n = NULL;
-  if (hpcrun_isLogicalUnwind()) {
-    TMSG(LUSH,"lush backtrace2cct invoked");
-    n = lush_backtrace2cct(cct, context, metricId, metricIncr, skipInner,
-                           isSync);
-  }
-  else {
-    TMSG(BT_INSERT,"regular (NON-lush) backtrace2cct invoked");
-    n = help_hpcrun_backtrace2cct(cct, context,
-                                  metricId, metricIncr,
-                                  skipInner, isSync, data);
-  }
+  TMSG(BT_INSERT,"regular (NON-lush) backtrace2cct invoked");
+  n = help_hpcrun_backtrace2cct(cct, context,
+                                metricId, metricIncr,
+                                skipInner, isSync, data);
 
   // N.B.: for lush_backtrace() it may be that n = NULL
 

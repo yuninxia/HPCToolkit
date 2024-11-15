@@ -16,8 +16,6 @@
 
 /* represents options for the library */
 typedef struct hpcrun_options_s {
-  char lush_agent_paths[CSPROF_PATH_SZ]; /* paths for LUSH agents */
-
   char out_path[CSPROF_PATH_SZ]; /* path for output */
   char addr_file[CSPROF_PATH_SZ]; /* path for "bad address" file */
 
@@ -36,6 +34,5 @@ typedef struct hpcrun_options_s {
 
 int hpcrun_options__init(hpcrun_options_t* x);
 int hpcrun_options__fini(hpcrun_options_t* x);
-int hpcrun_options__getopts(hpcrun_options_t* x);
 
 #endif

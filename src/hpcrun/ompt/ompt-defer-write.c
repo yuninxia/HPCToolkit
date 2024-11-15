@@ -29,6 +29,7 @@
 
 #include "../../common/lean/spinlock.h"
 
+#include "../memory/hpcrun-malloc.h"
 #include "../trace.h"
 #include "../write_data.h"
 

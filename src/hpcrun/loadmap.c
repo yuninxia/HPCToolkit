@@ -21,6 +21,7 @@
 
 #include "../common/lean/hpcfmt.h"
 #include "../common/lean/spinlock.h"
+#include "memory/hpcrun-malloc.h"
 
 #define LOADMAP_DEBUG 0
 

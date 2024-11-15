@@ -11,8 +11,6 @@
 #include <stdlib.h>
 
 // Names for option environment variables
-const char* HPCRUN_OPT_LUSH_AGENTS = "HPCRUN_OPT_LUSH_AGENTS";
-
 const char* HPCRUN_OUT_PATH        = "HPCRUN_OUT_PATH";
 const char* HPCRUN_TRACE           = "HPCRUN_TRACE";
 

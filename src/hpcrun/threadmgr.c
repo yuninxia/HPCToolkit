@@ -32,6 +32,7 @@
 #include "write_data.h"
 #include "trace.h"
 #include "sample_sources_all.h"
+#include "memory/hpcrun-malloc.h"
 
 #include <stdatomic.h>
 #include "../common/lean/spinlock.h"

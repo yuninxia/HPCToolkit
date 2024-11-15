@@ -112,7 +112,7 @@ METHOD_FN(supports_event, const char *ev_str)
 // IO metrics: bytes read and bytes written.
 
 static void
-METHOD_FN(process_event_list, int lush_metrics)
+METHOD_FN(process_event_list)
 {
   TMSG(IO, "create metrics for IO bytes read and bytes written");
   kind_info_t *io_kind = hpcrun_metrics_new_kind();
@@ -128,7 +128,7 @@ METHOD_FN(finalize_event_list)
 }
 
 static void
-METHOD_FN(gen_event_set, int lush_metrics)
+METHOD_FN(gen_event_set)
 {
   TMSG(IO, "gen event set (no-op)");
 }

@@ -55,7 +55,6 @@
 #include "blame-shift/blame-shift.h"
 #include "../utilities/tokenize.h"
 #include "../messages/messages.h"
-#include "../lush/lush-backtrace.h"
 #include "../../common/lean/hpcrun-fmt.h"
 
 
@@ -313,14 +312,13 @@ METHOD_FN(supports_event, const char *ev_str)
 }
 
 static void
-METHOD_FN(process_event_list, int lush_metrics)
+METHOD_FN(process_event_list)
 {
   TMSG(PAPI, "process event list");
   if (papi_unavail) { return; }
 
   char *event;
   int i, ret;
-  int num_lush_metrics = 0;
 
   char* evlist = METHOD_CALL(self, get_event_str);
   for (event = start_tok(evlist); more_tok(); event = next_tok()) {
@@ -346,18 +344,13 @@ METHOD_FN(process_event_list, int lush_metrics)
       hpcrun_ssfail_unsupported("PAPI", name);
     }
 
-    // FIXME:LUSH: need a more flexible metric interface
-    if (lush_metrics == 1 && strncmp(event, "PAPI_TOT_CYC", 12) == 0) {
-      num_lush_metrics++;
-    }
-
     TMSG(PAPI,"got event code = %x, thresh = %ld", evcode, thresh);
     METHOD_CALL(self, store_event, evcode, thresh);
   }
   int nevents = (self->evl).nevents;
   TMSG(PAPI,"nevents = %d", nevents);
 
-  hpcrun_pre_allocate_metrics(nevents + num_lush_metrics);
+  hpcrun_pre_allocate_metrics(nevents);
 
   kind_info_t *papi_kind = hpcrun_metrics_new_kind();
 
@@ -397,21 +390,6 @@ METHOD_FN(process_event_list, int lush_metrics)
         MetricFlags_ValFmt_Int,
         self->evl.events[i].thresh, prop);
     METHOD_CALL(self, store_metric_id, i, metric_id);
-
-    // FIXME:LUSH: need a more flexible metric interface
-    if (num_lush_metrics > 0 && strcmp(buffer, "PAPI_TOT_CYC") == 0) {
-      // there should be one lush metric; its source is the last event
-      int mid_idleness =
-        hpcrun_set_new_metric_info_and_period(
-          papi_kind,
-          "idleness",
-          MetricFlags_ValFmt_Real,
-          self->evl.events[i].thresh, prop);
-      if (num_lush_metrics != 1 || i != (nevents - 1))
-        hpcrun_terminate();
-      lush_agents->metric_time = metric_id;
-      lush_agents->metric_idleness = mid_idleness;
-    }
   }
 
   hpcrun_close_kind(papi_kind);
@@ -422,7 +400,7 @@ METHOD_FN(process_event_list, int lush_metrics)
 }
 
 static void
-METHOD_FN(gen_event_set,int lush_metrics)
+METHOD_FN(gen_event_set)
 {
   int i;
   int ret;

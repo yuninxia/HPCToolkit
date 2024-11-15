@@ -83,10 +83,9 @@
   bool isSampled = false;                                               \
   thread_data_t* threadData = hpcrun_get_thread_data();                 \
   {                                                                     \
-    lushPthr_t* xxx = &threadData->pthr_metrics;                        \
-    xxx->doIdlenessCnt++;                                               \
-    if (xxx->doIdlenessCnt == hpcrun_ga_period) {                       \
-      xxx->doIdlenessCnt = 0;                                           \
+    threadData->ga_idleness_count++;                                    \
+    if (threadData->ga_idleness_count == hpcrun_ga_period) {            \
+      threadData->ga_idleness_count = 0;                                \
       isSampled = true;                                                 \
     }                                                                   \
   }

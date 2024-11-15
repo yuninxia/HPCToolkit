@@ -135,9 +135,7 @@ cct_node_create(cct_addr_t* addr, bool unwound, cct_node_t* parent)
 
   memset(node, 0, sz);
 
-  node->addr.as_info = addr->as_info; // LUSH
   node->addr.ip_norm = addr->ip_norm;
-  node->addr.lip = addr->lip;         // LUSH
 
   node->persistent_id = new_persistent_id();
 
@@ -387,13 +385,6 @@ lwrite(cct_node_t* node, cct_op_arg_t arg, size_t level)
   tmp->id_parent = parent ? hpcrun_cct_persistent_id(parent) : 0;
   tmp->unwound = node->unwound;
 
-  if (flags.fields.isLogicalUnwind){
-    tmp->as_info = addr->as_info;
-    lush_lip_init(&tmp->lip);
-    if (addr->lip) {
-      memcpy(&(tmp->lip), &(addr->lip), sizeof(lush_lip_t));
-    }
-  }
   tmp->lm_id = (addr->ip_norm).lm_id;
 
   // double casts to avoid warnings when pointer is < 64 bits

@@ -55,6 +55,7 @@
 #include "../common.h"
 #include "../ss-errno.h"
 
+#include "../../memory/hpcrun-malloc.h"
 #include "../../main.h"
 #include "../../cct_insert_backtrace.h"
 #include "../../files.h"
@@ -809,7 +810,7 @@ METHOD_FN(supports_event, const char *ev_str)
 // handle a list of events
 // --------------------------------------------------------------------------
 static void
-METHOD_FN(process_event_list, int lush_metrics)
+METHOD_FN(process_event_list)
 {
   TMSG(LINUX_PERF, "process event list");
 
@@ -959,7 +960,7 @@ METHOD_FN(finalize_event_list)
 // --------------------------------------------------------------------------
 // --------------------------------------------------------------------------
 static void
-METHOD_FN(gen_event_set, int lush_metrics)
+METHOD_FN(gen_event_set)
 {
   TMSG(LINUX_PERF, "gen_event_set");
 

@@ -29,6 +29,7 @@
 
 #include "../safe-sampling.h"
 #include "../thread_data.h"
+#include "../memory/hpcrun-malloc.h"
 
 #include "ompt-callback.h"
 #include "ompt-callstack.h"

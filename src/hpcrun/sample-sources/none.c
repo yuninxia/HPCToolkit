@@ -114,7 +114,7 @@ METHOD_FN(supports_event,const char *ev_str)
 //     no log file or any other evidence of hpcrun
 //
 static void
-METHOD_FN(process_event_list,int lush_metrics)
+METHOD_FN(process_event_list)
 {
   char *event_str = METHOD_CALL(self,get_event_str);
   char *none_str = strstr(event_str,"NONE");
@@ -136,7 +136,7 @@ METHOD_FN(finalize_event_list)
 // It DOES NOT SAMPLE, so there are NO event sets
 //
 static void
-METHOD_FN(gen_event_set,int lush_metrics)
+METHOD_FN(gen_event_set)
 {
 }
 
@@ -168,7 +168,7 @@ hpcrun_process_sample_source_none(void)
 {
   sample_source_t *none = &_none_obj;
 
-  METHOD_CALL(none, process_event_list, 0);
+  METHOD_CALL(none, process_event_list);
 
   if (getenv("SHOW_NONE") && hpcrun_get_disabled()) {
     static char none_msg[] = "NOTE: sample source NONE is specified\n";

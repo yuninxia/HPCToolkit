@@ -301,7 +301,7 @@ METHOD_FN(supports_event, const char *ev_str)
 // sample sources' lifetimes.
 
 static void
-METHOD_FN(process_event_list, int lush_metrics)
+METHOD_FN(process_event_list)
 {
   int nevents = (self->evl).nevents;
 
@@ -413,7 +413,7 @@ METHOD_FN(finalize_event_list)
 }
 
 static void
-METHOD_FN(gen_event_set,int lush_metrics)
+METHOD_FN(gen_event_set)
 {
 }
 

@@ -27,6 +27,7 @@
 #include "unw-throw.h"
 #include "../../hpcrun_stats.h"
 #include "../../control-knob.h"
+#include "../../memory/hpcrun-malloc.h"
 
 #include "../../libmonitor/monitor.h"
 
@@ -41,14 +42,6 @@ extern bool hpcrun_get_retain_recursion_mode();
 // local constants & macros
 //***************************************************************************
 
-
-//***************************************************************************
-// forward declarations
-//***************************************************************************
-
-static void lush_assoc_info2str(char* buf, size_t len, lush_assoc_info_t info);
-static void lush_lip2str(char* buf, size_t len, lush_lip_t* lip);
-
 //***************************************************************************
 // interface functions
 //***************************************************************************
@@ -59,25 +52,19 @@ hpcrun_bt_dump(frame_t* unwind, const char* tag)
   static const int msg_limit = 100;
   int msg_cnt = 0;
 
-  char as_str[LUSH_ASSOC_INFO_STR_MIN_LEN];
-  char lip_str[LUSH_LIP_STR_MIN_LEN];
-
   const char* mytag = (tag) ? tag : "";
   EMSG("-- begin new backtrace (innermost first) [%s] ----------", mytag);
 
   thread_data_t* td = hpcrun_get_thread_data();
   if (unwind) {
     for (frame_t* x = td->btbuf_beg; x < unwind; ++x) {
-      lush_assoc_info2str(as_str, sizeof(as_str), x->as_info);
-      lush_lip2str(lip_str, sizeof(lip_str), x->lip);
-
       void* ip;
       hpcrun_unw_get_ip_unnorm_reg(&(x->cursor), &ip);
 
       load_module_t* lm = hpcrun_loadmap_findById(x->ip_norm.lm_id);
       const char* lm_name = (lm) ? lm->name : "(null)";
 
-      EMSG("%s: ip = %p (%p), load module = %s | lip %s", as_str, ip, x->ip_norm.lm_ip, lm_name, lip_str);
+      EMSG("ip = %p (%p), load module = %s", ip, x->ip_norm.lm_ip, lm_name);
 
       msg_cnt++;
       if (msg_cnt > msg_limit) {
@@ -90,10 +77,7 @@ hpcrun_bt_dump(frame_t* unwind, const char* tag)
   if (msg_cnt <= msg_limit && td->btbuf_sav != td->btbuf_end) {
     EMSG("-- begin cached backtrace ---------------------------");
     for (frame_t* x = td->btbuf_sav; x < td->btbuf_end; ++x) {
-      lush_assoc_info2str(as_str, sizeof(as_str), x->as_info);
-      lush_lip2str(lip_str, sizeof(lip_str), x->lip);
-      EMSG("%s: ip.lm_id = %d | ip.lm_ip = %p | lip %s", as_str,
-           x->ip_norm.lm_id, x->ip_norm.lm_ip, lip_str);
+      EMSG("ip.lm_id = %d | ip.lm_ip = %p", x->ip_norm.lm_id, x->ip_norm.lm_ip);
       msg_cnt++;
       if (msg_cnt > msg_limit) {
         EMSG("!!! message limit !!!");
@@ -123,13 +107,6 @@ hpcrun_skip_chords(frame_t* bt_outer, frame_t* bt_inner,
   int nFrames = bt_outer - bt_inner;
   if (skip > nFrames)
     skip = nFrames;
-  for (int i = 0; i < skip; ++i) {
-    // for now, do not support M chords
-    lush_assoc_t as = lush_assoc_info__get_assoc(bt_inner[i].as_info);
-    if (as != LUSH_ASSOC_NULL && as != LUSH_ASSOC_1_to_1 &&
-        as != LUSH_ASSOC_1_to_0)
-      hpcrun_terminate();
-  }
   return &bt_inner[skip];
 }
 
@@ -434,40 +411,4 @@ hpcrun_generate_backtrace(backtrace_info_t* bt,
   }
 
   return true;
-}
-
-//***************************************************************************
-// private operations
-//***************************************************************************
-
-static void
-lush_assoc_info2str(char* buf, size_t len, lush_assoc_info_t info)
-{
-  // INVARIANT: buf must have at least LUSH_ASSOC_INFO_STR_MIN_LEN slots
-
-  lush_assoc_t as = info.u.as;
-  unsigned info_len = info.u.len;
-
-  const char* as_str = lush_assoc_tostr(as);
-  hpcrun_msg_ns(buf, LUSH_ASSOC_INFO_STR_MIN_LEN, "%s (%u)", as_str, info_len);
-  buf[LUSH_ASSOC_INFO_STR_MIN_LEN - 1] = '\0';
-}
-
-static void
-lush_lip2str(char* buf, size_t len, lush_lip_t* lip)
-{
-  *buf = '\0';
-
-  if (lip) {
-    for (int i = 0; i < LUSH_LIP_DATA8_SZ; ++i) {
-      if (i != 0) {
-        *(buf++) = ' ';
-        *(buf) = '\0';
-        len--;
-      }
-      int num = hpcrun_msg_ns(buf, len, "0x%"PRIx64, lip->data8[i]);
-      buf += num;
-      len -= num;
-    }
-  }
 }

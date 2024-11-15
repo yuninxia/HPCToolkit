@@ -34,12 +34,10 @@
                            + __GNUC_PATCHLEVEL__)
 #  define GCC_ATTR_NORETURN __attribute__ ((noreturn))
 #  define GCC_ATTR_UNUSED   __attribute__ ((unused))
-#  define GCC_ATTR_VAR_CACHE_ALIGN __attribute__ ((aligned (HOST_CACHE_LINE_SZ)))
 #else
 #  define HPC_GCC_VERSION 0
 #  define GCC_ATTR_NORETURN
 #  define GCC_ATTR_UNUSED
-#  define GCC_ATTR_VAR_CACHE_ALIGN
 #endif
 
 
