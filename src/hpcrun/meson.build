@@ -62,7 +62,6 @@ srcs = files(
   'cct_insert_backtrace.c',
   'closure-registry.c',
   'control-knob.c',
-  'custom-init-dynamic.c',
   'device-finalizers.c',
   'device-initializers.c',
   'disabled.c',

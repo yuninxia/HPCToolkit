@@ -171,7 +171,6 @@
  E(LOGICAL_CTX_PYTHON), \
  E(BT), \
  E(BT_INSERT), \
- E(CUSTOM_INIT), \
  E(NORM_IP), \
  E(NORM_IP_DBG), \
  E(PARTIAL_UNW), \
