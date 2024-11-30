@@ -5,8 +5,8 @@
 
 // -*-Mode: C++;-*-
 
-#ifndef LEVEL0_BUFFER_H_
-#define LEVEL0_BUFFER_H_
+#ifndef LEVEL0_METRIC_STREAMER_HPP
+#define LEVEL0_METRIC_STREAMER_HPP
 
 //*****************************************************************************
 // level zero includes
@@ -17,15 +17,21 @@
 
 
 //*****************************************************************************
+// system includes
+//*****************************************************************************
+
+#include <iostream>
+
+//*****************************************************************************
 // local includes
 //*****************************************************************************
 
-#include "level0-device.hpp"
+#include "level0-assert.hpp"
 
 
-//*****************************************************************************
+//******************************************************************************
 // global variables
-//*****************************************************************************
+//******************************************************************************
 
 extern uint32_t max_metric_samples;
 
@@ -35,11 +41,22 @@ extern uint32_t max_metric_samples;
 //******************************************************************************
 
 void
-zeroFlushStreamerBuffer
+zeroInitializeMetricStreamer
 (
-  zet_metric_streamer_handle_t& streamer,
-  ZeDeviceDescriptor* desc
+  ze_context_handle_t context,
+  ze_device_handle_t device,
+  zet_metric_group_handle_t group,
+  zet_metric_streamer_handle_t& streamer
+);
+
+void
+zeroCleanupMetricStreamer
+(
+  ze_context_handle_t context,
+  ze_device_handle_t device,
+  zet_metric_group_handle_t group,
+  zet_metric_streamer_handle_t streamer
 );
 
 
-#endif // LEVEL0_BUFFER_H_
+#endif // LEVEL0_METRIC_STREAMER_HPP
