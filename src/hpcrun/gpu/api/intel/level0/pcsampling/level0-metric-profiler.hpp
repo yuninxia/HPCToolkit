@@ -37,12 +37,12 @@
 #include "level0-activity-send.hpp"
 #include "level0-activity-translate.hpp"
 #include "level0-assert.hpp"
-#include "level0-streamer-buffer.hpp"
 #include "level0-cmdlist-device-map.hpp"
 #include "level0-correlation-id.hpp"
 #include "level0-device.hpp"
 #include "level0-kernel-properties.hpp"
 #include "level0-metric-list.hpp"
+#include "level0-metric-streamer.hpp"
 #include "level0-metric.hpp"
 
 
@@ -51,13 +51,6 @@
 //*****************************************************************************
 
 constexpr static uint32_t max_metric_size = 512;
-
-
-//*****************************************************************************
-// global variables
-//*****************************************************************************
-
-extern uint32_t max_metric_samples;
 
 
 //*****************************************************************************
