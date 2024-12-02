@@ -67,7 +67,8 @@ void
 OnExitModuleCreate
 (
   ze_module_create_params_t* params,
-  ze_result_t result
+  ze_result_t result,
+  const struct hpcrun_foil_appdispatch_level0* dispatch
 );
 
 void
@@ -80,19 +81,22 @@ void
 OnExitKernelCreate
 (
   ze_kernel_create_params_t *params,
-  ze_result_t result
+  ze_result_t result,
+  const struct hpcrun_foil_appdispatch_level0* dispatch
 );
 
 void
 OnEnterCommandListAppendLaunchKernel
 (
-  ze_command_list_append_launch_kernel_params_t* params
+  ze_command_list_append_launch_kernel_params_t* params,
+  const struct hpcrun_foil_appdispatch_level0* dispatch
 );
 
 void
 OnExitCommandListAppendLaunchKernel
 (
-  ze_command_list_append_launch_kernel_params_t* params
+  ze_command_list_append_launch_kernel_params_t* params,
+  const struct hpcrun_foil_appdispatch_level0* dispatch
 );
 
 void

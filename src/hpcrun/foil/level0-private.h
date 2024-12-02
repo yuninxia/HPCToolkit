@@ -72,6 +72,38 @@ struct hpcrun_foil_appdispatch_level0 {
   ze_result_t (*zetModuleGetDebugInfo)(zet_module_handle_t,
                                        zet_module_debug_info_format_t, size_t*,
                                        uint8_t*);
+  ze_result_t (*zetMetricGroupGetProperties)(zet_metric_group_handle_t,
+                                             zet_metric_group_properties_t*);
+  ze_result_t (*zeContextCreate)(ze_driver_handle_t, const ze_context_desc_t*, ze_context_handle_t*);
+  ze_result_t (*zeDeviceGetSubDevices)(ze_device_handle_t, uint32_t*, ze_device_handle_t*);
+  ze_result_t (*zeDeviceGetRootDevice)(ze_device_handle_t, ze_device_handle_t*);
+  ze_result_t (*zeDriverGetApiVersion)(ze_driver_handle_t, ze_api_version_t*);
+  ze_result_t (*zeEventHostSynchronize)(ze_event_handle_t, uint64_t);
+  ze_result_t (*zeEventHostSignal)(ze_event_handle_t);
+  ze_result_t (*zeModuleGetKernelNames)(ze_module_handle_t, uint32_t*, const char**);
+  ze_result_t (*zeModuleGetFunctionPointer)(ze_module_handle_t, const char*, void**);
+  ze_result_t (*zeKernelGetProperties)(ze_kernel_handle_t, ze_kernel_properties_t*);
+  ze_result_t (*zeCommandListGetDeviceHandle)(ze_command_list_handle_t, ze_device_handle_t*);
+  ze_result_t (*zetMetricGet)(zet_metric_group_handle_t, uint32_t*, zet_metric_handle_t*);
+  ze_result_t (*zetMetricGetProperties)(zet_metric_handle_t, zet_metric_properties_t*);
+  ze_result_t (*zetContextActivateMetricGroups)(zet_context_handle_t, ze_device_handle_t,
+                                                uint32_t, zet_metric_group_handle_t*);
+  ze_result_t (*zetMetricStreamerOpen)(zet_context_handle_t, ze_device_handle_t,
+                                       zet_metric_group_handle_t, ze_event_handle_t,
+                                       zet_metric_streamer_desc_t*, zet_metric_streamer_handle_t*);
+  ze_result_t (*zetMetricStreamerClose)(zet_metric_streamer_handle_t);
+  ze_result_t (*zetMetricGroupGet)(zet_device_handle_t, uint32_t*,
+                                   zet_metric_group_handle_t*);
+  ze_result_t (*zetMetricStreamerReadData)(zet_metric_streamer_handle_t,
+                                           uint32_t, size_t*, uint8_t*);
+  ze_result_t (*zetMetricGroupCalculateMultipleMetricValuesExp)(
+                zet_metric_group_handle_t, zet_metric_group_calculation_type_t, size_t,
+                const uint8_t*, uint32_t*, uint32_t*, uint32_t*, zet_typed_value_t*);
+  ze_result_t (*zelTracerSetPrologues)(zel_tracer_handle_t, zel_core_callbacks_t*);
+  ze_result_t (*zelTracerSetEpilogues)(zel_tracer_handle_t, zel_core_callbacks_t*);
+  ze_result_t (*zelTracerSetEnabled)(zel_tracer_handle_t, ze_bool_t);
+  ze_result_t (*zelTracerCreate)(const zel_tracer_desc_t*, zel_tracer_handle_t*);
+  ze_result_t (*zelTracerDestroy)(zel_tracer_handle_t);
 };
 
 struct hpcrun_foil_hookdispatch_level0 {

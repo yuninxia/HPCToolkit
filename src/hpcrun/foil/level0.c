@@ -213,3 +213,149 @@ ze_result_t f_zetModuleGetDebugInfo(
     uint8_t* pDebugInfo, const struct hpcrun_foil_appdispatch_level0* dispatch) {
   return dispatch->zetModuleGetDebugInfo(hModule, format, pSize, pDebugInfo);
 }
+
+ze_result_t f_zetMetricGroupGetProperties(
+    zet_metric_group_handle_t hMetricGroup, zet_metric_group_properties_t* pProperties,
+    const struct hpcrun_foil_appdispatch_level0* dispatch) {
+  return dispatch->zetMetricGroupGetProperties(hMetricGroup, pProperties);
+}
+
+ze_result_t f_zeContextCreate(
+    ze_driver_handle_t hDriver, const ze_context_desc_t* desc,
+    ze_context_handle_t* phContext, const struct hpcrun_foil_appdispatch_level0* dispatch) {
+  return dispatch->zeContextCreate(hDriver, desc, phContext);
+}
+
+ze_result_t f_zeDeviceGetSubDevices(
+    ze_device_handle_t hDevice, uint32_t* pCount, ze_device_handle_t* phSubdevices,
+    const struct hpcrun_foil_appdispatch_level0* dispatch) {
+  return dispatch->zeDeviceGetSubDevices(hDevice, pCount, phSubdevices);
+}
+
+ze_result_t f_zeDeviceGetRootDevice(
+    ze_device_handle_t hDevice, ze_device_handle_t* phRootDevice,
+    const struct hpcrun_foil_appdispatch_level0* dispatch) {
+  return dispatch->zeDeviceGetRootDevice(hDevice, phRootDevice);
+}
+
+ze_result_t f_zeDriverGetApiVersion(
+    ze_driver_handle_t hDriver, ze_api_version_t* version,
+    const struct hpcrun_foil_appdispatch_level0* dispatch) {
+  return dispatch->zeDriverGetApiVersion(hDriver, version);
+}
+
+ze_result_t f_zeEventHostSynchronize(
+    ze_event_handle_t hEvent, uint64_t timeout,
+    const struct hpcrun_foil_appdispatch_level0* dispatch) {
+  return dispatch->zeEventHostSynchronize(hEvent, timeout);
+}
+
+ze_result_t f_zeEventHostSignal(ze_event_handle_t hEvent,
+    const struct hpcrun_foil_appdispatch_level0* dispatch) {
+  return dispatch->zeEventHostSignal(hEvent);
+}
+
+ze_result_t f_zeModuleGetKernelNames(ze_module_handle_t hModule,
+    uint32_t* pCount, const char** pNames,
+    const struct hpcrun_foil_appdispatch_level0* dispatch) {
+  return dispatch->zeModuleGetKernelNames(hModule, pCount, pNames);
+}
+
+ze_result_t f_zeModuleGetFunctionPointer(ze_module_handle_t hModule,
+    const char* pFunctionName, void** pfnFunction,
+    const struct hpcrun_foil_appdispatch_level0* dispatch) {
+  return dispatch->zeModuleGetFunctionPointer(hModule, pFunctionName, pfnFunction);
+}
+
+ze_result_t f_zeKernelGetProperties(ze_kernel_handle_t hKernel,
+    ze_kernel_properties_t* pKernelProperties,
+    const struct hpcrun_foil_appdispatch_level0* dispatch) {
+  return dispatch->zeKernelGetProperties(hKernel, pKernelProperties);
+}
+
+ze_result_t f_zeCommandListGetDeviceHandle(ze_command_list_handle_t hCommandList,
+    ze_device_handle_t* phDevice, const struct hpcrun_foil_appdispatch_level0* dispatch) {
+  return dispatch->zeCommandListGetDeviceHandle(hCommandList, phDevice);
+}
+
+ze_result_t f_zetMetricGet(zet_metric_group_handle_t hMetricGroup,
+    uint32_t* pCount, zet_metric_handle_t* phMetrics,
+    const struct hpcrun_foil_appdispatch_level0* dispatch) {
+  return dispatch->zetMetricGet(hMetricGroup, pCount, phMetrics);
+}
+
+ze_result_t f_zetMetricGetProperties(zet_metric_handle_t hMetric,
+    zet_metric_properties_t* pProperties, const struct hpcrun_foil_appdispatch_level0* dispatch) {
+  return dispatch->zetMetricGetProperties(hMetric, pProperties);
+}
+
+ze_result_t f_zetContextActivateMetricGroups(zet_context_handle_t hContext,
+    ze_device_handle_t hDevice, uint32_t count, zet_metric_group_handle_t* phMetricGroups,
+    const struct hpcrun_foil_appdispatch_level0* dispatch) {
+  return dispatch->zetContextActivateMetricGroups(hContext, hDevice, count, phMetricGroups);
+}
+
+ze_result_t f_zetMetricStreamerOpen(zet_context_handle_t hContext,
+    ze_device_handle_t hDevice, zet_metric_group_handle_t hMetricGroup,
+    zet_metric_streamer_desc_t* desc, ze_event_handle_t hNotificationEvent,
+    zet_metric_streamer_handle_t* phMetricStreamer,
+    const struct hpcrun_foil_appdispatch_level0* dispatch) {
+  return dispatch->zetMetricStreamerOpen(hContext, hDevice, hMetricGroup, desc, hNotificationEvent, phMetricStreamer);
+}
+
+ze_result_t f_zetMetricStreamerClose(zet_metric_streamer_handle_t hMetricStreamer,
+    const struct hpcrun_foil_appdispatch_level0* dispatch) {
+  return dispatch->zetMetricStreamerClose(hMetricStreamer);
+}
+
+ze_result_t f_zetMetricGroupGet(zet_device_handle_t hDevice,
+    uint32_t* pCount, zet_metric_group_handle_t* phMetricGroups,
+    const struct hpcrun_foil_appdispatch_level0* dispatch) {
+  return dispatch->zetMetricGroupGet(hDevice, pCount, phMetricGroups);
+}
+
+ze_result_t f_zetMetricStreamerReadData(zet_metric_streamer_handle_t hMetricStreamer,
+    uint32_t maxReportCount, size_t* pRawDataSize, uint8_t* pRawData,
+    const struct hpcrun_foil_appdispatch_level0* dispatch) {
+  return dispatch->zetMetricStreamerReadData(hMetricStreamer, maxReportCount, pRawDataSize, pRawData);
+}
+
+ze_result_t f_zetMetricGroupCalculateMultipleMetricValuesExp(
+    zet_metric_group_handle_t hMetricGroup, zet_metric_group_calculation_type_t type,
+    size_t rawDataSize, const uint8_t *pRawData, uint32_t *pSetCount,
+    uint32_t *pTotalMetricValueCount, uint32_t *pMetricCounts, zet_typed_value_t *pMetricValues,
+    const struct hpcrun_foil_appdispatch_level0* dispatch) {
+  return dispatch->zetMetricGroupCalculateMultipleMetricValuesExp(
+    hMetricGroup, type,
+    rawDataSize, pRawData, pSetCount, pTotalMetricValueCount, 
+    pMetricCounts, pMetricValues);
+}
+
+ze_result_t f_zelTracerSetPrologues(zel_tracer_handle_t tracer,
+    zel_core_callbacks_t* prologues,
+    const struct hpcrun_foil_appdispatch_level0* dispatch) {
+  return dispatch->zelTracerSetPrologues(tracer, prologues);
+}
+
+ze_result_t f_zelTracerSetEpilogues(zel_tracer_handle_t tracer,
+    zel_core_callbacks_t* epilogues,
+    const struct hpcrun_foil_appdispatch_level0* dispatch) {
+  return dispatch->zelTracerSetEpilogues(tracer, epilogues);
+}
+
+ze_result_t f_zelTracerSetEnabled(zel_tracer_handle_t tracer,
+    ze_bool_t enable,
+    const struct hpcrun_foil_appdispatch_level0* dispatch) {
+  return dispatch->zelTracerSetEnabled(tracer, enable);
+}
+
+ze_result_t f_zelTracerCreate(const zel_tracer_desc_t* desc,
+    zel_tracer_handle_t* tracer,
+    const struct hpcrun_foil_appdispatch_level0* dispatch) {
+  return dispatch->zelTracerCreate(desc, tracer);
+}
+
+ze_result_t f_zelTracerDestroy(zel_tracer_handle_t tracer,
+    const struct hpcrun_foil_appdispatch_level0* dispatch) {
+  return dispatch->zelTracerDestroy(tracer);
+}

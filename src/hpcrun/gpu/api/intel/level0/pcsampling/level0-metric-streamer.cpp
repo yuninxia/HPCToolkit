@@ -29,10 +29,11 @@ zeroInitializeMetricStreamer
   ze_context_handle_t context,
   ze_device_handle_t device,
   zet_metric_group_handle_t group,
-  zet_metric_streamer_handle_t& streamer
+  zet_metric_streamer_handle_t& streamer,
+  const struct hpcrun_foil_appdispatch_level0* dispatch
 )
 {
-  ze_result_t status = zetContextActivateMetricGroups(context, device, 1, &group);
+  ze_result_t status = f_zetContextActivateMetricGroups(context, device, 1, &group, dispatch);
   level0_check_result(status, __LINE__);
 
   uint32_t interval = 500000; // ns
@@ -44,7 +45,7 @@ zeroInitializeMetricStreamer
     interval 
   };
 
-  status = zetMetricStreamerOpen(context, device, group, &streamer_desc, nullptr, &streamer);
+  status = f_zetMetricStreamerOpen(context, device, group, &streamer_desc, nullptr, &streamer, dispatch);
   if (status != ZE_RESULT_SUCCESS) {
     std::cerr << "[ERROR] Failed to open metric streamer (" << status 
               << "). The sampling interval might be too small." << std::endl;
@@ -62,12 +63,13 @@ zeroCleanupMetricStreamer
   ze_context_handle_t context,
   ze_device_handle_t device,
   zet_metric_group_handle_t group,
-  zet_metric_streamer_handle_t streamer
+  zet_metric_streamer_handle_t streamer,
+  const struct hpcrun_foil_appdispatch_level0* dispatch
 )
 {
-  ze_result_t status = zetMetricStreamerClose(streamer);
+  ze_result_t status = f_zetMetricStreamerClose(streamer, dispatch);
   level0_check_result(status, __LINE__);
 
-  status = zetContextActivateMetricGroups(context, device, 0, &group);
+  status = f_zetContextActivateMetricGroups(context, device, 0, &group, dispatch);
   level0_check_result(status, __LINE__);
 }

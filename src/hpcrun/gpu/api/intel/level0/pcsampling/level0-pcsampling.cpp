@@ -48,10 +48,11 @@ isPcSamplingEnabled
 static void
 enableProfiling
 (
-  char *dir
+  char *dir,
+  const struct hpcrun_foil_appdispatch_level0* dispatch
 )
 {
-  metric_profiler = ZeMetricProfiler::Create(dir);
+  metric_profiler = ZeMetricProfiler::Create(dir, dispatch);
 }
 
 static void
@@ -69,11 +70,11 @@ disableProfiling
 static void
 pcSamplingEnableHelper
 (
-  void
+  const struct hpcrun_foil_appdispatch_level0* dispatch
 )
 {
-  enableProfiling(data_dir_name);
-  ze_collector = ZeCollector::Create(data_dir_name); // kernel collector
+  enableProfiling(data_dir_name, dispatch);
+  ze_collector = ZeCollector::Create(data_dir_name, dispatch);
   if (ze_collector == nullptr) {
     std::cerr << "[ERROR] Failed to create ZeCollector instance." << std::endl;
     exit(-1);
@@ -108,11 +109,12 @@ zeroPCSamplingInit
 void 
 zeroPCSamplingEnable
 (
-  void
+  const struct hpcrun_foil_appdispatch_level0* dispatch
 )
 {
   if (isPcSamplingEnabled()) {
-    pthread_once(&level0_pcsampling_init_once, pcSamplingEnableHelper);
+    static const struct hpcrun_foil_appdispatch_level0* saved_dispatch = dispatch;
+    pthread_once(&level0_pcsampling_init_once, []() { pcSamplingEnableHelper(saved_dispatch); });
   }
 }
 
@@ -124,7 +126,6 @@ zeroPCSamplingFini
 {
   if (isPcSamplingEnabled()) {
     if (ze_collector != nullptr) {
-      zeroDisableTracing();
       delete ze_collector;
     }
     disableProfiling();

@@ -22,7 +22,8 @@ zeroCreateEvent
   ze_event_pool_handle_t event_pool,
   uint32_t event_index,
   ze_event_scope_flag_t signal_scope,
-  ze_event_scope_flag_t wait_scope
+  ze_event_scope_flag_t wait_scope,
+  const struct hpcrun_foil_appdispatch_level0* dispatch
 )
 {
   ze_event_handle_t event = nullptr;
@@ -34,7 +35,7 @@ zeroCreateEvent
     wait_scope
   };
   
-  ze_result_t status = zeEventCreate(event_pool, &event_desc, &event);
+  ze_result_t status = f_zeEventCreate(event_pool, &event_desc, &event, dispatch);
   level0_check_result(status, __LINE__);
   return event;
 }

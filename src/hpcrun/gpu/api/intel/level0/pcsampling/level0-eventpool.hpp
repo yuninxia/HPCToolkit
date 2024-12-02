@@ -19,6 +19,7 @@
 // local includes
 //*****************************************************************************
 
+#include "../../../../../foil/level0.h"
 #include "level0-assert.hpp"
 
 
@@ -32,7 +33,8 @@ zeroCreateEventPool
   ze_context_handle_t context,
   ze_device_handle_t device,
   uint32_t event_count,
-  ze_event_pool_flag_t event_pool_flag
+  ze_event_pool_flag_t event_pool_flag,
+  const struct hpcrun_foil_appdispatch_level0* dispatch
 );
 
 #endif // LEVEL0_EVENTPOOL_HPP

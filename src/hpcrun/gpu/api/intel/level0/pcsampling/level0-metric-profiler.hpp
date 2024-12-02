@@ -66,19 +66,19 @@ constexpr static uint32_t max_metric_size = 512;
 
 class ZeMetricProfiler {
  public:
-  static ZeMetricProfiler* Create(char *dir);
+  static ZeMetricProfiler* Create(char *dir, const struct hpcrun_foil_appdispatch_level0* dispatch);
   ~ZeMetricProfiler();
   ZeMetricProfiler(const ZeMetricProfiler& that) = delete;
   ZeMetricProfiler& operator=(const ZeMetricProfiler& that) = delete;
 
  private:
-  ZeMetricProfiler();
-  void StartProfilingMetrics();
+  ZeMetricProfiler(const struct hpcrun_foil_appdispatch_level0* dispatch);
+  void StartProfilingMetrics(const struct hpcrun_foil_appdispatch_level0* dispatch);
   void StopProfilingMetrics();
 
-  static void MetricProfilingThread(ZeMetricProfiler* profiler, ZeDeviceDescriptor *desc);
-  static void RunProfilingLoop(ZeDeviceDescriptor* desc, zet_metric_streamer_handle_t& streamer, std::vector<std::string>& metric_list);
-  static void CollectAndProcessMetrics(ZeDeviceDescriptor* desc, zet_metric_streamer_handle_t& streamer, std::vector<uint8_t>& raw_metrics, std::vector<std::string>& metric_list);
+  static void MetricProfilingThread(ZeMetricProfiler* profiler, ZeDeviceDescriptor *desc, const struct hpcrun_foil_appdispatch_level0* dispatch);
+  static void RunProfilingLoop(ZeDeviceDescriptor* desc, zet_metric_streamer_handle_t& streamer, std::vector<std::string>& metric_list, const struct hpcrun_foil_appdispatch_level0* dispatch);
+  static void CollectAndProcessMetrics(ZeDeviceDescriptor* desc, zet_metric_streamer_handle_t& streamer, std::vector<uint8_t>& raw_metrics, std::vector<std::string>& metric_list, const struct hpcrun_foil_appdispatch_level0* dispatch);
 
  private: // Data
   static std::string data_dir_name_;

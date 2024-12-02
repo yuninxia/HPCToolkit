@@ -22,7 +22,8 @@ zeroCreateEventPool
   ze_context_handle_t context,
   ze_device_handle_t device,
   uint32_t event_count,
-  ze_event_pool_flag_t event_pool_flag
+  ze_event_pool_flag_t event_pool_flag,
+  const struct hpcrun_foil_appdispatch_level0* dispatch
 )
 {
   ze_event_pool_handle_t event_pool = nullptr;
@@ -33,12 +34,13 @@ zeroCreateEventPool
     event_count
   };
   
-  ze_result_t status = zeEventPoolCreate(
+  ze_result_t status = f_zeEventPoolCreate(
     context, 
     &event_pool_desc, 
     1,
     &device,
-    &event_pool
+    &event_pool,
+    dispatch
   );
   
   level0_check_result(status, __LINE__);
