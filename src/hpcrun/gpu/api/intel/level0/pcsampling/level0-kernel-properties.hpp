@@ -33,6 +33,7 @@
 // local includes
 //*****************************************************************************
 
+#include "../../../../../foil/level0.h"
 #include "level0-module.hpp"
 
 
@@ -105,13 +106,14 @@ zeroReadKernelProperties
 void
 zeroInitializeKernelBaseAddressFunction
 (
-  void
+  const struct hpcrun_foil_appdispatch_level0* dispatch
 );
 
 uint64_t
 zeroGetKernelBaseAddress
 (
-  ze_kernel_handle_t kernel
+  ze_kernel_handle_t kernel,
+  const struct hpcrun_foil_appdispatch_level0* dispatch
 );
 
 void

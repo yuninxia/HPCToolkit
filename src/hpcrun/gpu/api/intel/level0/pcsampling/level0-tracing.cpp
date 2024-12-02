@@ -13,20 +13,21 @@
 
 
 //*****************************************************************************
-// global variables
+// local variables
 //*****************************************************************************
 
-zel_tracer_handle_t tracer_ = nullptr;
+static zel_tracer_handle_t tracer_ = nullptr;
 
 
 //******************************************************************************
-// interface operations
+// private operations
 //******************************************************************************
 
-void
-zeroEnableTracing
+static void
+configureTracerCallbacks
 (
-  zel_tracer_handle_t tracer
+  zel_tracer_handle_t tracer,
+  const struct hpcrun_foil_appdispatch_level0* dispatch
 )
 {
   zet_core_callbacks_t prologue = {};
@@ -40,30 +41,24 @@ zeroEnableTracing
   epilogue.CommandList.pfnCreateImmediateCb = zeCommandListCreateImmediateOnExit;
 
   ze_result_t status = ZE_RESULT_SUCCESS;
-  status = zelTracerSetPrologues(tracer, &prologue);
+  status = f_zelTracerSetPrologues(tracer, &prologue, dispatch);
   level0_check_result(status, __LINE__);
-  status = zelTracerSetEpilogues(tracer, &epilogue);
+  status = f_zelTracerSetEpilogues(tracer, &epilogue, dispatch);
   level0_check_result(status, __LINE__);
-  status = zelTracerSetEnabled(tracer, true);
-  level0_check_result(status, __LINE__);
-
-  tracer_ = tracer;
-}
-
-void
-zeroDisableTracing
-(
-  void
-)
-{
-  ze_result_t status = zelTracerSetEnabled(tracer_, false);
+  status = f_zelTracerSetEnabled(tracer, true, dispatch);
   level0_check_result(status, __LINE__);
 }
 
-zel_tracer_handle_t
+
+//******************************************************************************
+// interface operations
+//******************************************************************************
+
+bool
 zeroCreateTracer
 (
-  ZeCollector* collector
+  ZeCollector* collector,
+  const struct hpcrun_foil_appdispatch_level0* dispatch
 )
 {
   zel_tracer_desc_t tracer_desc = {
@@ -71,23 +66,27 @@ zeroCreateTracer
     nullptr,                             ///< [in][optional] pointer to extension-specific structure
     collector                            ///< [in] pointer passed to every tracer's callbacks
   };
-  zel_tracer_handle_t tracer = nullptr;
-  ze_result_t status = zelTracerCreate(&tracer_desc, &tracer);
+
+  ze_result_t status = f_zelTracerCreate(&tracer_desc, &tracer_, dispatch);
   if (status != ZE_RESULT_SUCCESS) {
     std::cerr << "[WARNING] Unable to create Level Zero tracer" << std::endl;
-    return nullptr;
+    return false;
   }
-  return tracer;
+
+  configureTracerCallbacks(tracer_, dispatch);
+  return true;
 }
 
 void
 zeroDestroyTracer
 (
-  zel_tracer_handle_t tracer
+  const struct hpcrun_foil_appdispatch_level0* dispatch
 )
 {
-  if (tracer != nullptr) {
-    ze_result_t status = zelTracerDestroy(tracer);
+  if (tracer_ != nullptr) {
+    ze_result_t status = f_zelTracerSetEnabled(tracer_, false, dispatch);
+    level0_check_result(status, __LINE__);
+    status = f_zelTracerDestroy(tracer_, dispatch);
     level0_check_result(status, __LINE__);
   }
 }

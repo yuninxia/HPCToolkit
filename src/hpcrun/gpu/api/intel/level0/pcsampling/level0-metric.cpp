@@ -19,11 +19,12 @@
 static uint32_t
 getNumberOfMetricGroups
 (
-  ze_device_handle_t device
+  ze_device_handle_t device,
+  const struct hpcrun_foil_appdispatch_level0* dispatch
 )
 {
   uint32_t num_groups = 0;
-  ze_result_t status = zetMetricGroupGet(device, &num_groups, nullptr);
+  ze_result_t status = f_zetMetricGroupGet(device, &num_groups, nullptr, dispatch);
   level0_check_result(status, __LINE__);
   return num_groups;
 }
@@ -32,11 +33,12 @@ static std::vector<zet_metric_group_handle_t>
 getMetricGroups
 (
   ze_device_handle_t device,
-  uint32_t num_groups
+  uint32_t num_groups,
+  const struct hpcrun_foil_appdispatch_level0* dispatch
 )
 {
   std::vector<zet_metric_group_handle_t> groups(num_groups, nullptr);
-  ze_result_t status = zetMetricGroupGet(device, &num_groups, groups.data());
+  ze_result_t status = f_zetMetricGroupGet(device, &num_groups, groups.data(), dispatch);
   level0_check_result(status, __LINE__);
   return groups;
 }
@@ -44,12 +46,13 @@ getMetricGroups
 static zet_metric_group_properties_t
 getMetricGroupProperties
 (
-  zet_metric_group_handle_t group
+  zet_metric_group_handle_t group,
+  const struct hpcrun_foil_appdispatch_level0* dispatch
 )
 {
   zet_metric_group_properties_t group_props{};
   group_props.stype = ZET_STRUCTURE_TYPE_METRIC_GROUP_PROPERTIES;
-  ze_result_t status = zetMetricGroupGetProperties(group, &group_props);
+  ze_result_t status = f_zetMetricGroupGetProperties(group, &group_props, dispatch);
   level0_check_result(status, __LINE__);
   return group_props;
 }
@@ -69,11 +72,12 @@ static zet_metric_group_handle_t
 findMatchingMetricGroup
 (
   const std::vector<zet_metric_group_handle_t>& groups,
-  const std::string& metric_group_name
+  const std::string& metric_group_name,
+  const struct hpcrun_foil_appdispatch_level0* dispatch
 )
 {
   for (auto& current_group : groups) {
-    zet_metric_group_properties_t group_props = getMetricGroupProperties(current_group);
+    zet_metric_group_properties_t group_props = getMetricGroupProperties(current_group, dispatch);
     if (isMatchingMetricGroup(group_props, metric_group_name)) {
       return current_group;
     }
@@ -147,18 +151,19 @@ zeroGetMetricGroup
 (
   ze_device_handle_t device,
   const std::string& metric_group_name,
-  zet_metric_group_handle_t& group
+  zet_metric_group_handle_t& group,
+  const struct hpcrun_foil_appdispatch_level0* dispatch
 )
 {
-  uint32_t num_groups = getNumberOfMetricGroups(device);
+  uint32_t num_groups = getNumberOfMetricGroups(device, dispatch);
   if (num_groups == 0) {
     std::cerr << "[WARNING] No metric groups found" << std::endl;
     group = nullptr;
     return;
   }
 
-  std::vector<zet_metric_group_handle_t> groups = getMetricGroups(device, num_groups);
-  group = findMatchingMetricGroup(groups, metric_group_name);
+  std::vector<zet_metric_group_handle_t> groups = getMetricGroups(device, num_groups, dispatch);
+  group = findMatchingMetricGroup(groups, metric_group_name, dispatch);
   if (group == nullptr) {
     std::cerr << "[ERROR] Invalid metric group " << metric_group_name << std::endl;
     exit(-1);
@@ -170,11 +175,12 @@ zeroMetricStreamerReadData
 (
   zet_metric_streamer_handle_t streamer,
   std::vector<uint8_t>& storage,
-  uint64_t ssize
+  uint64_t ssize,
+  const struct hpcrun_foil_appdispatch_level0* dispatch
 )
 {
   uint64_t actual_data_size = 0;
-  ze_result_t status = zetMetricStreamerReadData(streamer, UINT32_MAX, &actual_data_size, nullptr);
+  ze_result_t status = f_zetMetricStreamerReadData(streamer, UINT32_MAX, &actual_data_size, nullptr, dispatch);
   level0_check_result(status, __LINE__);
   assert(actual_data_size > 0);
 
@@ -183,7 +189,7 @@ zeroMetricStreamerReadData
     std::cerr << "[WARNING] Metric samples dropped." << std::endl;
   }
 
-  status = zetMetricStreamerReadData(streamer, UINT32_MAX, &actual_data_size, storage.data());
+  status = f_zetMetricStreamerReadData(streamer, UINT32_MAX, &actual_data_size, storage.data(), dispatch);
   level0_check_result(status, __LINE__);
   return actual_data_size;
 }
@@ -195,17 +201,18 @@ zeroMetricGroupCalculateMultipleMetricValuesExp
   int raw_size,
   const std::vector<uint8_t>& raw_metrics,
   std::vector<uint32_t>& samples,
-  std::vector<zet_typed_value_t>& metrics
+  std::vector<zet_typed_value_t>& metrics,
+  const struct hpcrun_foil_appdispatch_level0* dispatch
 )
 {
   uint32_t num_samples = 0;
   uint32_t num_metrics = 0;
 
   // First call to get the number of samples and metrics
-  ze_result_t status = zetMetricGroupCalculateMultipleMetricValuesExp(
+  ze_result_t status = f_zetMetricGroupCalculateMultipleMetricValuesExp(
     metric_group, ZET_METRIC_GROUP_CALCULATION_TYPE_METRIC_VALUES,
     raw_size, raw_metrics.data(), &num_samples, &num_metrics,
-    nullptr, nullptr);
+    nullptr, nullptr, dispatch);
 
   if (status != ZE_RESULT_SUCCESS || num_samples == 0 || num_metrics == 0) {
     return;
@@ -216,10 +223,10 @@ zeroMetricGroupCalculateMultipleMetricValuesExp
   metrics.resize(num_metrics);
 
   // Second call to actually get the data
-  status = zetMetricGroupCalculateMultipleMetricValuesExp(
+  status = f_zetMetricGroupCalculateMultipleMetricValuesExp(
     metric_group, ZET_METRIC_GROUP_CALCULATION_TYPE_METRIC_VALUES,
     raw_size, raw_metrics.data(), &num_samples, &num_metrics,
-    samples.data(), metrics.data());
+    samples.data(), metrics.data(), dispatch);
 
   if (status != ZE_RESULT_SUCCESS && status != ZE_RESULT_WARNING_DROPPED_DATA) {
     std::cerr << "[WARNING] Unable to calculate metrics" << std::endl;

@@ -94,45 +94,51 @@ extern std::map<ze_device_handle_t, ZeDevice> *devices_;
 std::vector<ze_device_handle_t>
 zeroGetDevices
 (
-  ze_driver_handle_t driver
+  ze_driver_handle_t driver,
+  const struct hpcrun_foil_appdispatch_level0* dispatch
 );
 
 std::vector<ze_device_handle_t>
 zeroGetSubDevices
 (
   ze_device_handle_t device,
-  uint32_t num_sub_devices
+  uint32_t num_sub_devices,
+  const struct hpcrun_foil_appdispatch_level0* dispatch
 );
 
 uint32_t
 zeroGetSubDeviceCount
 (
-  ze_device_handle_t device
+  ze_device_handle_t device,
+  const struct hpcrun_foil_appdispatch_level0* dispatch
 );
 
 void 
 zeroEnumerateDevices
 (
   std::map<ze_device_handle_t, ZeDeviceDescriptor*>& device_descriptors_,
-  std::vector<ze_context_handle_t>& metric_contexts
+  std::vector<ze_context_handle_t>& metric_contexts,
+  const struct hpcrun_foil_appdispatch_level0* dispatch
 );
 
 ze_device_properties_t
 zeroGetDeviceProperties
 (
-  ze_device_handle_t device
+  ze_device_handle_t device,
+  const struct hpcrun_foil_appdispatch_level0* dispatch
 );
 
 ze_device_handle_t
 zeroDeviceGetRootDevice
 (
-  ze_device_handle_t device
+  ze_device_handle_t device,
+  const struct hpcrun_foil_appdispatch_level0* dispatch
 );
 
 void
 zeroEnumerateAndSetupDevices
 (
-  void
+  const struct hpcrun_foil_appdispatch_level0* dispatch
 );
 
 

@@ -26,7 +26,8 @@ zeModuleCreateOnExit
   void** instance_user_data
 )
 {
-  OnExitModuleCreate(params, result);
+  ZeCollector* collector = static_cast<ZeCollector*>(global_user_data);
+  OnExitModuleCreate(params, result, collector->getDispatch());
 }
 
 void
@@ -50,9 +51,8 @@ zeKernelCreateOnExit
   void** instance_user_data
 )
 {
-  OnExitKernelCreate(params, result);
-  
   ZeCollector* collector = static_cast<ZeCollector*>(global_user_data);
+  OnExitKernelCreate(params, result, collector->getDispatch());
   zeroDumpKernelProfiles(collector->GetDataDir());
 }
 
@@ -65,7 +65,8 @@ zeCommandListAppendLaunchKernelOnEnter
   void** instance_user_data
 )
 {
-  OnEnterCommandListAppendLaunchKernel(params);
+  auto collector = static_cast<ZeCollector*>(global_user_data);
+  OnEnterCommandListAppendLaunchKernel(params, collector->getDispatch());
 }
 
 void
@@ -77,7 +78,8 @@ zeCommandListAppendLaunchKernelOnExit
   void** instance_user_data
 )
 {
-  OnExitCommandListAppendLaunchKernel(params);
+  auto collector = static_cast<ZeCollector*>(global_user_data);
+  OnExitCommandListAppendLaunchKernel(params, collector->getDispatch());
 }
 
 void

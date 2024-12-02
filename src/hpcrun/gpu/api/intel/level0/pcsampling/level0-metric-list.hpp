@@ -27,6 +27,7 @@
 // local includes
 //*****************************************************************************
 
+#include "../../../../../foil/level0.h"
 #include "level0-assert.hpp"
 
 
@@ -38,7 +39,8 @@ void
 zeroGetMetricList
 (
   zet_metric_group_handle_t group,
-  std::vector<std::string>& name_list
+  std::vector<std::string>& name_list,
+  const struct hpcrun_foil_appdispatch_level0* dispatch
 );
 
 bool

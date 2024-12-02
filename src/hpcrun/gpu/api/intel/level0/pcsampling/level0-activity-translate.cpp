@@ -22,11 +22,11 @@ static const struct {
   uint64_t EuStalls::* stall_value;
   gpu_inst_stall_t reason;
 } stall_mappings[] = {
-    {&EuStalls::control_, GPU_INST_STALL_OTHER}, // TBD
+    {&EuStalls::control_, GPU_INST_STALL_OTHER},  // TBD
     {&EuStalls::pipe_, GPU_INST_STALL_PIPE_BUSY},
-    {&EuStalls::send_, GPU_INST_STALL_GMEM}, // TBD
+    {&EuStalls::send_, GPU_INST_STALL_GMEM},      // TBD
     {&EuStalls::dist_, GPU_INST_STALL_PIPE_BUSY}, // TBD
-    {&EuStalls::sbid_, GPU_INST_STALL_IDEPEND}, // TBD
+    {&EuStalls::sbid_, GPU_INST_STALL_IDEPEND},   // TBD
     {&EuStalls::sync_, GPU_INST_STALL_SYNC},
     {&EuStalls::insfetch_, GPU_INST_STALL_IFETCH},
     {&EuStalls::other_, GPU_INST_STALL_OTHER}

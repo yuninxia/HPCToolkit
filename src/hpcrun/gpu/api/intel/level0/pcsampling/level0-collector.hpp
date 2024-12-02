@@ -12,7 +12,6 @@
 // level zero includes
 //*****************************************************************************
 
-#include <level_zero/layers/zel_tracing_api.h>
 #include <level_zero/ze_api.h>
 #include <level_zero/zet_api.h>
 
@@ -47,18 +46,20 @@
 
 class ZeCollector {
  public:
-  static ZeCollector* Create(const std::string& data_dir);
+  static ZeCollector* Create(const std::string& data_dir, const struct hpcrun_foil_appdispatch_level0* dispatch);
   ZeCollector(const ZeCollector& that) = delete;
   ZeCollector& operator=(const ZeCollector& that) = delete;
   ~ZeCollector();
 
   std::string GetDataDir() const { return data_dir_; }
+  const struct hpcrun_foil_appdispatch_level0* getDispatch() const { return dispatch_; }
 
  private:
-  ZeCollector(const std::string& data_dir);
+  ZeCollector(const std::string& data_dir, const struct hpcrun_foil_appdispatch_level0* dispatch);
 
  private:
   std::string data_dir_;
+  const struct hpcrun_foil_appdispatch_level0* dispatch_;
 };
 
 

@@ -34,13 +34,14 @@ std::shared_mutex devices_mutex_;
 static ze_device_handle_t
 getDeviceForCommandList
 (
-  ze_command_list_handle_t hCommandList
+  ze_command_list_handle_t hCommandList,
+  const struct hpcrun_foil_appdispatch_level0* dispatch
 )
 {
   ze_device_handle_t hDevice;
 #if 0
   // Option 1: with compute runtime using level0 >= v1.9.0, but the binary is broken for now
-  ze_result_t status = zeCommandListGetDeviceHandle(hCommandList, &hDevice);
+  ze_result_t status = f_zeCommandListGetDeviceHandle(hCommandList, &hDevice, dispatch);
   level0_check_result(status, __LINE__);
 #else
   // Option 2: manually maintain the mapping, generally more reliable
@@ -48,7 +49,7 @@ getDeviceForCommandList
 #endif
 
   // Use the root device for notification and synchronization
-  return zeroDeviceGetRootDevice(hDevice);
+  return zeroDeviceGetRootDevice(hDevice, dispatch);
 }
 
 static ZeDeviceDescriptor*
@@ -72,13 +73,15 @@ createZeModule
 (
   ze_module_handle_t mod,
   ze_device_handle_t device,
-  const std::vector<uint8_t>& binary)
+  const std::vector<uint8_t>& binary,
+  const struct hpcrun_foil_appdispatch_level0* dispatch
+)
 {
   ZeModule m;
   m.device_ = device;
   m.size_ = binary.size();
   m.module_id_ = zeroGenerateUniqueId(&mod, sizeof(mod));
-  m.kernel_names_ = zeroGetModuleKernelNames(mod);
+  m.kernel_names_ = zeroGetModuleKernelNames(mod, dispatch);
   return m;
 }
 
@@ -90,7 +93,8 @@ extractKernelProperties
   ze_module_handle_t mod,
   bool aot,
   int device_id,
-  ze_device_handle_t device
+  ze_device_handle_t device,
+  const struct hpcrun_foil_appdispatch_level0* dispatch
 )
 {
   ZeKernelCommandProperties desc;
@@ -99,17 +103,17 @@ extractKernelProperties
   desc.module_id_ = module_id;
   desc.kernel_id_ = zeroGenerateUniqueId(&kernel, sizeof(kernel));
   
-  desc.name_ = zeroGetKernelName(kernel);
-  desc.base_addr_ = zeroGetKernelBaseAddress(kernel);
+  desc.name_ = zeroGetKernelName(kernel, dispatch);
+  desc.base_addr_ = zeroGetKernelBaseAddress(kernel, dispatch);
   desc.size_ = zeroGetKernelSize(desc.name_);
-  desc.function_pointer_ = zeroGetFunctionPointer(mod, desc.name_);
+  desc.function_pointer_ = zeroGetFunctionPointer(mod, desc.name_, dispatch);
 
   desc.device_ = device;
   
   ze_kernel_properties_t kprops{};  
   zex_kernel_register_file_size_exp_t regsize{};
   kprops.pNext = (void *)&regsize;
-  ze_result_t status = zeKernelGetProperties(kernel, &kprops);
+  ze_result_t status = f_zeKernelGetProperties(kernel, &kprops, dispatch);
   level0_check_result(status, __LINE__);
   desc.simd_width_ = kprops.maxSubgroupSize;
   desc.nargs_ = kprops.numKernelArgs;
@@ -134,7 +138,8 @@ void
 OnExitModuleCreate
 (
   ze_module_create_params_t* params,
-  ze_result_t result
+  ze_result_t result,
+  const struct hpcrun_foil_appdispatch_level0* dispatch
 )
 {
   assert(result == ZE_RESULT_SUCCESS && "Module creation failed unexpectedly");
@@ -142,12 +147,12 @@ OnExitModuleCreate
   ze_module_handle_t mod = **(params->pphModule);
   ze_device_handle_t device = *(params->phDevice);
 
-  std::vector<uint8_t> binary = zeroGetModuleDebugInfo(mod);
+  std::vector<uint8_t> binary = zeroGetModuleDebugInfo(mod, dispatch);
   if (binary.empty()) {
     return;
   }
 
-  ZeModule m = createZeModule(mod, device, binary);
+  ZeModule m = createZeModule(mod, device, binary, dispatch);
 
   modules_on_devices_mutex_.lock();
   modules_on_devices_.insert({mod, std::move(m)});
@@ -170,7 +175,8 @@ void
 OnExitKernelCreate
 (
   ze_kernel_create_params_t *params,
-  ze_result_t result
+  ze_result_t result,
+  const struct hpcrun_foil_appdispatch_level0* dispatch
 )
 {
   assert(result == ZE_RESULT_SUCCESS && "Kernel creation failed unexpectedly");
@@ -209,7 +215,7 @@ OnExitKernelCreate
   kernel_command_properties_mutex_.lock();
 
   ze_kernel_handle_t kernel = **(params->pphKernel);
-  ZeKernelCommandProperties desc = extractKernelProperties(kernel, module_id, mod, aot, device_id, device);
+  ZeKernelCommandProperties desc = extractKernelProperties(kernel, module_id, mod, aot, device_id, device, dispatch);
   
   kernel_command_properties_->insert({desc.kernel_id_, std::move(desc)});
   kernel_command_properties_mutex_.unlock();
@@ -218,13 +224,14 @@ OnExitKernelCreate
 void
 OnEnterCommandListAppendLaunchKernel
 (
-  ze_command_list_append_launch_kernel_params_t* params
+  ze_command_list_append_launch_kernel_params_t* params,
+  const struct hpcrun_foil_appdispatch_level0* dispatch
 )
 {
   ze_command_list_handle_t hCommandList = *(params->phCommandList);
   ze_kernel_handle_t hKernel = *(params->phKernel);
   ze_event_handle_t hSignalEvent = *(params->phSignalEvent);
-  ze_device_handle_t hDevice = getDeviceForCommandList(hCommandList);
+  ze_device_handle_t hDevice = getDeviceForCommandList(hCommandList, dispatch);
 
 #if 0
   std::cout << "OnEnterCommandListAppendLaunchKernel: hKernel=" << hKernel << ", hDevice=" << hDevice << std::endl;
@@ -237,7 +244,7 @@ OnEnterCommandListAppendLaunchKernel
     desc->kernel_started_.store(true, std::memory_order_release);
     
     // Signal event to notify kernel start
-    ze_result_t status = zeEventHostSignal(desc->serial_kernel_start_);
+    ze_result_t status = f_zeEventHostSignal(desc->serial_kernel_start_, dispatch);
     level0_check_result(status, __LINE__);
   }
 }
@@ -245,16 +252,17 @@ OnEnterCommandListAppendLaunchKernel
 void
 OnExitCommandListAppendLaunchKernel
 (
-  ze_command_list_append_launch_kernel_params_t* params
+  ze_command_list_append_launch_kernel_params_t* params,
+  const struct hpcrun_foil_appdispatch_level0* dispatch
 )
 {
   ze_command_list_handle_t hCommandList = *(params->phCommandList);
-  ze_device_handle_t hDevice = getDeviceForCommandList(hCommandList);
+  ze_device_handle_t hDevice = getDeviceForCommandList(hCommandList, dispatch);
 
 #if 0
   ze_kernel_handle_t hKernel = *(params->phKernel);
   ze_event_handle_t hSignalEvent = *(params->phSignalEvent);
-  KernelExecutionTime executionTime = zeroGetKernelExecutionTime(hSignalEvent, hDevice);
+  KernelExecutionTime executionTime = zeroGetKernelExecutionTime(hSignalEvent, hDevice, dispatch);
   std::cout << "OnExitCommandListAppendLaunchKernel:  hKernel=" << hKernel << ", hDevice=" << hDevice
             << ", Start time: " << executionTime.startTimeNs << " ns" << ", End time: " << executionTime.endTimeNs << " ns"
             << "  Execution time: " << executionTime.executionTimeNs << " ns" << std::endl;
@@ -263,12 +271,12 @@ OnExitCommandListAppendLaunchKernel
   ZeDeviceDescriptor* desc = getDeviceDescriptor(hDevice);
   if (desc) {
     // Host reset event to indicate kernel execution has ended
-    ze_result_t status = zeEventHostReset(desc->serial_kernel_start_);
+    ze_result_t status = f_zeEventHostReset(desc->serial_kernel_start_, dispatch);
     level0_check_result(status, __LINE__);
 
-    status = zeEventHostSynchronize(desc->serial_data_ready_, UINT64_MAX - 1);
+    status = f_zeEventHostSynchronize(desc->serial_data_ready_, UINT64_MAX - 1, dispatch);
     level0_check_result(status, __LINE__);
-    status = zeEventHostReset(desc->serial_data_ready_);
+    status = f_zeEventHostReset(desc->serial_data_ready_, dispatch);
     level0_check_result(status, __LINE__);
   }
 }

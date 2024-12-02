@@ -544,7 +544,7 @@ hpcrun_zeInit
 
   // Exit action
   get_gpu_driver_and_device(dispatch);
-  zeroPCSamplingEnable();
+  zeroPCSamplingEnable(dispatch);
   return ret;
 }
 

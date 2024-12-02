@@ -19,6 +19,7 @@
 // local includes
 //*****************************************************************************
 
+#include "../../../../../foil/level0.h"
 #include "level0-assert.hpp"
 
 
@@ -29,7 +30,8 @@
 ze_context_handle_t
 zeroCreateContext
 (
-  ze_driver_handle_t driver
+  ze_driver_handle_t driver,
+  const struct hpcrun_foil_appdispatch_level0* dispatch
 );
 
 

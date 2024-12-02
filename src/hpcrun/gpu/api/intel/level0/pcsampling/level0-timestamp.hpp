@@ -42,7 +42,8 @@ KernelExecutionTime
 zeroGetKernelExecutionTime
 (
   ze_event_handle_t hSignalEvent,
-  ze_device_handle_t hDevice
+  ze_device_handle_t hDevice,
+  const struct hpcrun_foil_appdispatch_level0* dispatch
 );
 
 

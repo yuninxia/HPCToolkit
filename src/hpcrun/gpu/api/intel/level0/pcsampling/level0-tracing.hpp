@@ -30,47 +30,21 @@
 class ZeCollector;
 
 
-//*****************************************************************************
-// global variables
-//*****************************************************************************
-
-extern zel_tracer_handle_t tracer_;
-
-
 //******************************************************************************
 // interface operations
 //******************************************************************************
 
-#ifdef __cplusplus
-extern "C" {
-#endif
-
-void
-zeroEnableTracing
-(
-  zel_tracer_handle_t tracer
-);
-
-#ifdef __cplusplus
-}
-#endif
-
-void
-zeroDisableTracing
-(
-  void
-);
-
-zel_tracer_handle_t
+bool
 zeroCreateTracer
 (
-  ZeCollector* collector
+  ZeCollector* collector,
+  const struct hpcrun_foil_appdispatch_level0* dispatch
 );
 
 void
 zeroDestroyTracer
 (
-  zel_tracer_handle_t tracer
+  const struct hpcrun_foil_appdispatch_level0* dispatch
 );
 
 

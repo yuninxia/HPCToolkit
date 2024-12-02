@@ -25,7 +25,7 @@ zeroPCSamplingInit
 void
 zeroPCSamplingEnable
 (
-  void
+  const struct hpcrun_foil_appdispatch_level0* dispatch
 );
 
 void 

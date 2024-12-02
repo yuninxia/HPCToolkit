@@ -30,6 +30,7 @@
 // local includes
 //*****************************************************************************
 
+#include "../../../../../foil/level0.h"
 #include "level0-assert.hpp"
 
 
@@ -59,7 +60,8 @@ zeroGetMetricGroup
 (
   ze_device_handle_t device,
   const std::string& metric_group_name,
-  zet_metric_group_handle_t& group
+  zet_metric_group_handle_t& group,
+  const struct hpcrun_foil_appdispatch_level0* dispatch
 );
 
 uint64_t
@@ -67,7 +69,8 @@ zeroMetricStreamerReadData
 (
   zet_metric_streamer_handle_t streamer,
   std::vector<uint8_t>& storage,
-  uint64_t ssize
+  uint64_t ssize,
+  const struct hpcrun_foil_appdispatch_level0* dispatch
 );
 
 void
@@ -77,7 +80,8 @@ zeroMetricGroupCalculateMultipleMetricValuesExp
   int raw_size,
   const std::vector<uint8_t>& raw_metrics,
   std::vector<uint32_t>& samples,
-  std::vector<zet_typed_value_t>& metrics
+  std::vector<zet_typed_value_t>& metrics,
+  const struct hpcrun_foil_appdispatch_level0* dispatch
 );
 
 void
