@@ -117,12 +117,12 @@ zeroReadKernelProperties
 void
 zeroInitializeKernelBaseAddressFunction
 (
-  void
+  const struct hpcrun_foil_appdispatch_level0* dispatch
 )
 {
   ze_driver_handle_t driver;
   uint32_t count = 1;
-  if (zeDriverGet(&count, &driver) == ZE_RESULT_SUCCESS) {
+  if (f_zeDriverGet(&count, &driver, dispatch) == ZE_RESULT_SUCCESS) {
     if (zeDriverGetExtensionFunctionAddress(driver, "zexKernelGetBaseAddress", (void **)&zexKernelGetBaseAddress) != ZE_RESULT_SUCCESS) {
       zexKernelGetBaseAddress = nullptr;
     }
@@ -132,14 +132,15 @@ zeroInitializeKernelBaseAddressFunction
 uint64_t
 zeroGetKernelBaseAddress
 (
-  ze_kernel_handle_t kernel
+  ze_kernel_handle_t kernel,
+  const struct hpcrun_foil_appdispatch_level0* dispatch
 )
 {
   uint64_t base_addr = 0;
   if (zexKernelGetBaseAddress != nullptr && zexKernelGetBaseAddress(kernel, &base_addr) == ZE_RESULT_SUCCESS) {
     return base_addr;
   }
-  std::cout << "[WARNING] Unable to get base address for kernel: " << zeroGetKernelName(kernel) << std::endl;
+  std::cout << "[WARNING] Unable to get base address for kernel: " << zeroGetKernelName(kernel, dispatch) << std::endl;
   return 0;
 }
 

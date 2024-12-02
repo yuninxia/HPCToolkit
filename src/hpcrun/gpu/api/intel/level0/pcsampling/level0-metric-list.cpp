@@ -36,12 +36,13 @@ getMetricUnits
 static uint32_t
 getMetricCount
 (
-  zet_metric_group_handle_t group
+  zet_metric_group_handle_t group,
+  const struct hpcrun_foil_appdispatch_level0* dispatch
 )
 {
   zet_metric_group_properties_t group_props{};
   group_props.stype = ZET_STRUCTURE_TYPE_METRIC_GROUP_PROPERTIES;
-  ze_result_t status = zetMetricGroupGetProperties(group, &group_props);
+  ze_result_t status = f_zetMetricGroupGetProperties(group, &group_props, dispatch);
   level0_check_result(status, __LINE__);
   return group_props.metricCount;
 }
@@ -50,11 +51,12 @@ static std::vector<zet_metric_handle_t>
 getMetricHandles
 (
   zet_metric_group_handle_t group,
-  uint32_t metric_count
+  uint32_t metric_count,
+  const struct hpcrun_foil_appdispatch_level0* dispatch
 )
 {
   std::vector<zet_metric_handle_t> metric_list(metric_count);
-  ze_result_t status = zetMetricGet(group, &metric_count, metric_list.data());
+  ze_result_t status = f_zetMetricGet(group, &metric_count, metric_list.data(), dispatch);
   level0_check_result(status, __LINE__);
   assert(metric_count == metric_list.size());
   return metric_list;
@@ -63,11 +65,12 @@ getMetricHandles
 static zet_metric_properties_t
 getMetricProperties
 (
-  zet_metric_handle_t metric
+  zet_metric_handle_t metric,
+  const struct hpcrun_foil_appdispatch_level0* dispatch
 )
 {
   zet_metric_properties_t metric_props{ZET_STRUCTURE_TYPE_METRIC_PROPERTIES};
-  ze_result_t status = zetMetricGetProperties(metric, &metric_props);
+  ze_result_t status = f_zetMetricGetProperties(metric, &metric_props, dispatch);
   level0_check_result(status, __LINE__);
   return metric_props;
 }
@@ -117,18 +120,19 @@ void
 zeroGetMetricList
 (
   zet_metric_group_handle_t group,
-  std::vector<std::string>& name_list
+  std::vector<std::string>& name_list,
+  const struct hpcrun_foil_appdispatch_level0* dispatch
 )
 {
   assert(group != nullptr);
-  uint32_t metric_count = getMetricCount(group);
+  uint32_t metric_count = getMetricCount(group, dispatch);
   assert(metric_count > 0);
 
-  std::vector<zet_metric_handle_t> metric_list = getMetricHandles(group, metric_count);
+  std::vector<zet_metric_handle_t> metric_list = getMetricHandles(group, metric_count, dispatch);
 
   name_list.clear();
   for (auto metric : metric_list) {
-    zet_metric_properties_t metric_props = getMetricProperties(metric);
+    zet_metric_properties_t metric_props = getMetricProperties(metric, dispatch);
     std::string name = buildMetricName(metric_props);
     name_list.push_back(std::move(name));
   }

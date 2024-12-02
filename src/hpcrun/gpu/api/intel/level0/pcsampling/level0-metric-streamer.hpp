@@ -26,6 +26,7 @@
 // local includes
 //*****************************************************************************
 
+#include "../../../../../foil/level0.h"
 #include "level0-assert.hpp"
 
 
@@ -46,7 +47,8 @@ zeroInitializeMetricStreamer
   ze_context_handle_t context,
   ze_device_handle_t device,
   zet_metric_group_handle_t group,
-  zet_metric_streamer_handle_t& streamer
+  zet_metric_streamer_handle_t& streamer,
+  const struct hpcrun_foil_appdispatch_level0* dispatch
 );
 
 void
@@ -55,7 +57,8 @@ zeroCleanupMetricStreamer
   ze_context_handle_t context,
   ze_device_handle_t device,
   zet_metric_group_handle_t group,
-  zet_metric_streamer_handle_t streamer
+  zet_metric_streamer_handle_t streamer,
+  const struct hpcrun_foil_appdispatch_level0* dispatch
 );
 
 

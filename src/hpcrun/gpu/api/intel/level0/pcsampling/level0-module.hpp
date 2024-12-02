@@ -29,6 +29,7 @@
 // local includes
 //*****************************************************************************
 
+#include "../../../../../foil/level0.h"
 #include "level0-assert.hpp"
 #include "level0-module.hpp"
 
@@ -53,26 +54,30 @@ struct ZeModule {
 std::string
 zeroGetKernelName
 (
-  ze_kernel_handle_t kernel
+  ze_kernel_handle_t kernel,
+  const struct hpcrun_foil_appdispatch_level0* dispatch
 );
 
 uint64_t
 zeroGetFunctionPointer
 (
   ze_module_handle_t module,
-  const std::string& kernel_name
+  const std::string& kernel_name,
+  const struct hpcrun_foil_appdispatch_level0* dispatch
 );
 
 std::vector<uint8_t>
 zeroGetModuleDebugInfo
 (
-  ze_module_handle_t module
+  ze_module_handle_t module,
+  const struct hpcrun_foil_appdispatch_level0* dispatch
 );
 
 std::vector<std::string>
 zeroGetModuleKernelNames
 (
-  ze_module_handle_t module
+  ze_module_handle_t module,
+  const struct hpcrun_foil_appdispatch_level0* dispatch
 );
 
 

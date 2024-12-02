@@ -27,6 +27,7 @@
 // local includes
 //*****************************************************************************
 
+#include "../../../../../foil/level0.h"
 #include "level0-assert.hpp"
 
 
@@ -37,13 +38,14 @@
 void
 zeroGetVersion
 (
-  ze_api_version_t& version
+  ze_api_version_t& version,
+  const struct hpcrun_foil_appdispatch_level0* dispatch
 );
 
 std::vector<ze_driver_handle_t>
 zeroGetDrivers
 (
-  void
+  const struct hpcrun_foil_appdispatch_level0* dispatch
 );
 
 void
@@ -51,7 +53,8 @@ zeroCheckDriverVersion
 (
   uint32_t requiredMajor,
   uint32_t requiredMinor,
-  bool printVersion
+  bool printVersion,
+  const struct hpcrun_foil_appdispatch_level0* dispatch
 );
 
 

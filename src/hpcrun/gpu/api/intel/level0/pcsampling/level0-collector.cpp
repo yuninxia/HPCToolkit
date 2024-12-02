@@ -20,36 +20,36 @@
 ZeCollector*
 ZeCollector::Create
 (
-  const std::string& data_dir
+  const std::string& data_dir,
+  const struct hpcrun_foil_appdispatch_level0* dispatch
 )
 {
-  zeroCheckDriverVersion(1, 2, /*printVersion=*/false);
+  zeroCheckDriverVersion(1, 2, /*printVersion=*/false, dispatch);
 
-  ZeCollector* collector = new ZeCollector(data_dir);
-  zel_tracer_handle_t tracer = zeroCreateTracer(collector);
-  if (tracer == nullptr) {
+  ZeCollector* collector = new ZeCollector(data_dir, dispatch);
+  bool tracerCreated = zeroCreateTracer(collector, dispatch);
+  if (!tracerCreated) {
     delete collector;
     return nullptr;
   }
-
-  zeroEnableTracing(tracer);
   
-  zeroInitializeKernelBaseAddressFunction();
+  zeroInitializeKernelBaseAddressFunction(dispatch);
 
   return collector;
 }
 
 ZeCollector::ZeCollector
 (
-  const std::string& data_dir
-) : data_dir_(data_dir)
+  const std::string& data_dir,
+  const struct hpcrun_foil_appdispatch_level0* dispatch
+) : data_dir_(data_dir), dispatch_(dispatch)
 {
-  zeroEnumerateAndSetupDevices();
+  zeroEnumerateAndSetupDevices(dispatch);
   zeroInitializeKernelCommandProperties();
 }
 
 ZeCollector::~ZeCollector()
 {
-  zeroDestroyTracer(tracer_);
+  zeroDestroyTracer(dispatch_);
   zeroDumpKernelProfiles(data_dir_);
 }
