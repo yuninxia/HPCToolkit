@@ -99,9 +99,9 @@ zeroInitializeKernelCommandProperties
 void
 zeroReadKernelProperties
 (
-  const int32_t device_id,
-  const std::string& data_dir_name,
-  std::map<uint64_t, KernelProperties>& kprops
+  const int32_t device_id,                      // [in] id of the GPU device
+  const std::string& data_dir_name,             // [in] directory containing kernel property files
+  std::map<uint64_t, KernelProperties>& kprops  // [out] map from kernel base address to kernel properties
 );
 
 void
