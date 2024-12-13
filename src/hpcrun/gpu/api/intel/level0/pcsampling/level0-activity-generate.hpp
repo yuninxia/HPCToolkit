@@ -35,12 +35,12 @@
 void
 zeroGenerateActivities
 (
-  const std::map<uint64_t, KernelProperties>& kprops, 
-  std::map<uint64_t, EuStalls>& eustalls,
-  uint64_t& correlation_id,
-  std::deque<gpu_activity_t*>& activities,
-  ze_kernel_handle_t running_kernel,
-  const struct hpcrun_foil_appdispatch_level0* dispatch
+  const std::map<uint64_t, KernelProperties>& kprops,    // [in] map from kernel base address to kernel properties
+  std::map<uint64_t, EuStalls>& eustalls,                // [in] map from stall instruction address to EU stall information
+  uint64_t& correlation_id,                              // [in] unique identifier for correlating kernel activities
+  ze_kernel_handle_t running_kernel,                     // [in] handle to the currently running kernel
+  std::deque<gpu_activity_t*>& activities,               // [out] queue for generated activities
+  const struct hpcrun_foil_appdispatch_level0* dispatch  // [in] level0 dispatch interface
 );
 
 

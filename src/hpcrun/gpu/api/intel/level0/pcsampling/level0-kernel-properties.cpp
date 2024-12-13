@@ -75,9 +75,9 @@ zeroInitializeKernelCommandProperties
 void
 zeroReadKernelProperties
 (
-  const int32_t device_id,                      // ID of the GPU device
-  const std::string& data_dir_name,             // Directory containing kernel property files
-  std::map<uint64_t, KernelProperties>& kprops  // Output map to store kernel properties
+  const int32_t device_id,
+  const std::string& data_dir_name,
+  std::map<uint64_t, KernelProperties>& kprops
 )
 {
   // Create a unique cache key combining directory and device ID
