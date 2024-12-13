@@ -140,7 +140,7 @@ ZeMetricProfiler::CollectAndProcessMetrics
     if (eustalls.empty()) return;
 
     std::deque<gpu_activity_t*> activities;
-    zeroGenerateActivities(kprops, eustalls, desc->correlation_id_, activities, desc->running_kernel_, dispatch);
+    zeroGenerateActivities(kprops, eustalls, desc->correlation_id_, desc->running_kernel_, activities, dispatch);
     zeroSendActivities(activities);
 
 #if 0

@@ -36,10 +36,10 @@
 void
 zeroActivityTranslate
 (
-  std::deque<gpu_activity_t*>& activities, 
-  const std::map<uint64_t, EuStalls>::iterator& eustall_iter,
-  const std::map<uint64_t, KernelProperties>::const_iterator& kernel_iter,
-  uint64_t correlation_id
+  const std::map<uint64_t, EuStalls>::iterator& eustall_iter,               // [in] iterator to current EU stall entry (address -> stall info)
+  const std::map<uint64_t, KernelProperties>::const_iterator& kernel_iter,  // [in] iterator to kernel properties entry (base address -> properties)
+  uint64_t correlation_id,                                                  // [in] unique identifier to correlate related activities
+  std::deque<gpu_activity_t*>& activities                                   // [out] queue for translated GPU activities
 );
 
 

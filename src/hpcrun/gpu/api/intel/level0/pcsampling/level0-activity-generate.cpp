@@ -19,8 +19,8 @@
 static std::unordered_map<std::string, uint64_t>
 generateKernelCorrelationIds
 (
-  const std::map<uint64_t, KernelProperties>& kprops,
-  uint64_t& correlation_id
+  const std::map<uint64_t, KernelProperties>& kprops,  // [in] map from kernel base address to kernel properties
+  uint64_t& correlation_id                             // [in] unique identifier for correlating kernel activities
 )
 {
   std::unordered_map<std::string, uint64_t> kernel_cids;
@@ -47,11 +47,11 @@ stripEdgeQuotes
 static void
 generateActivities
 (
-  const std::map<uint64_t, KernelProperties>& kprops,            // Map of kernel addresses to their properties
-  std::map<uint64_t, EuStalls>& eustalls,                        // Map of EU stall addresses to stall information
-  const std::unordered_map<std::string, uint64_t>& kernel_cids,  // Map of kernel names to correlation IDs
-  std::deque<gpu_activity_t*>& activities,                       // Output queue for generated activities
-  const std::string& running_kernel_name                         // Name of currently running kernel
+  const std::map<uint64_t, KernelProperties>& kprops,            // [in] map of kernel addresses to their properties
+  std::map<uint64_t, EuStalls>& eustalls,                        // [in] map of EU stall addresses to stall information
+  const std::unordered_map<std::string, uint64_t>& kernel_cids,  // [in] map of kernel names to correlation IDs
+  const std::string& running_kernel_name,                        // [in] name of currently running kernel
+  std::deque<gpu_activity_t*>& activities                        // [out] queue for generated activities
 )
 {
   // Early return if no kernel is running
@@ -100,9 +100,9 @@ generateActivities
       --it;  // Move to previous range
       if (eustall_addr >= it->first && eustall_addr < it->second) {
         // Found matching kernel range, retrieve kernel properties and generate activity
-        auto kernel_it = kprops.find(it->first);
-        if (kernel_it != kprops.end()) {
-            zeroActivityTranslate(activities, eustall_iter, kernel_it, cid);
+        auto kernel_iter = kprops.find(it->first);
+        if (kernel_iter != kprops.end()) {
+            zeroActivityTranslate(eustall_iter, kernel_iter, cid, activities);
         }
       }
     }
@@ -120,8 +120,8 @@ zeroGenerateActivities
   const std::map<uint64_t, KernelProperties>& kprops, 
   std::map<uint64_t, EuStalls>& eustalls,
   uint64_t& correlation_id,
-  std::deque<gpu_activity_t*>& activities,
   ze_kernel_handle_t running_kernel,
+  std::deque<gpu_activity_t*>& activities,
   const struct hpcrun_foil_appdispatch_level0* dispatch
 )
 {
@@ -138,5 +138,5 @@ zeroGenerateActivities
   auto kernel_cids = generateKernelCorrelationIds(kprops, correlation_id);
 
   // Generate activities
-  generateActivities(kprops, eustalls, kernel_cids, activities, running_kernel_name);
+  generateActivities(kprops, eustalls, kernel_cids, running_kernel_name, activities);
 }

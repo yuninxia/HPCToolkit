@@ -30,11 +30,11 @@
 ze_event_handle_t
 zeroCreateEvent
 (
-  ze_event_pool_handle_t event_pool,
-  uint32_t event_index,
-  ze_event_scope_flag_t signal_scope,
-  ze_event_scope_flag_t wait_scope,
-  const struct hpcrun_foil_appdispatch_level0* dispatch
+  ze_event_pool_handle_t event_pool,                     // [in] handle to the event pool for creating the event
+  uint32_t event_index,                                  // [in] index of the event within the pool
+  ze_event_scope_flag_t signal_scope,                    // [in] scope of event signal (device, subdevice, or host)
+  ze_event_scope_flag_t wait_scope,                      // [in] scope of event wait (device, subdevice, or host)
+  const struct hpcrun_foil_appdispatch_level0* dispatch  // [in] level0 dispatch interface
 );
 
 

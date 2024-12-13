@@ -35,12 +35,12 @@ static const struct {
 static bool
 convertPCSampling
 (
-  gpu_activity_t* activity, 
-  const std::map<uint64_t, EuStalls>::iterator& eustall_iter,
-  const std::map<uint64_t, KernelProperties>::const_iterator& kernel_iter,
-  uint64_t correlation_id,
-  gpu_inst_stall_t stall_reason,
-  uint64_t stall_count
+  const std::map<uint64_t, EuStalls>::iterator& eustall_iter,               // [in] iterator to current EU stall entry (address -> stall info)
+  const std::map<uint64_t, KernelProperties>::const_iterator& kernel_iter,  // [in] iterator to kernel properties entry (base address -> properties)
+  uint64_t correlation_id,                                                  // [in] unique identifier to correlate related activities
+  gpu_inst_stall_t stall_reason,                                            // [in] type of stall that occurred
+  uint64_t stall_count,                                                     // [in] number of times this stall occurred
+  gpu_activity_t* activity                                                  // [out] activity structure to be filled with PC sampling data
 )
 {
   if (!activity) return false;
@@ -90,10 +90,10 @@ convertPCSampling
 void
 zeroActivityTranslate
 (
-  std::deque<gpu_activity_t*>& activities, 
   const std::map<uint64_t, EuStalls>::iterator& eustall_iter,
   const std::map<uint64_t, KernelProperties>::const_iterator& kernel_iter,
-  uint64_t correlation_id
+  uint64_t correlation_id,
+  std::deque<gpu_activity_t*>& activities
 )
 {
   const EuStalls& stall = eustall_iter->second;
@@ -104,7 +104,7 @@ zeroActivityTranslate
 
     auto activity = std::make_unique<gpu_activity_t>();
     gpu_activity_init(activity.get());
-    if (convertPCSampling(activity.get(), eustall_iter, kernel_iter, correlation_id, mapping.reason, stall_count)) {
+    if (convertPCSampling(eustall_iter, kernel_iter, correlation_id, mapping.reason, stall_count, activity.get())) {
       activities.push_back(activity.release());
     }
   }
