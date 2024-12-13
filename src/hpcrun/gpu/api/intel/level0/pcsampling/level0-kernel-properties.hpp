@@ -27,6 +27,7 @@
 #include <shared_mutex>
 #include <string>
 #include <unistd.h>
+#include <unordered_map>
 
 
 //*****************************************************************************
