@@ -63,7 +63,7 @@ ZeMetricProfiler::RunProfilingLoop
   while (desc->profiling_state_.load(std::memory_order_acquire) != PROFILER_DISABLED) {
     // Wait for the kernel to start running
     while (true) {
-      status = f_zeEventHostSynchronize(desc->serial_kernel_start_, 50000000, dispatch);
+      status = f_zeEventQueryStatus(desc->serial_kernel_start_, dispatch);
       if (status == ZE_RESULT_SUCCESS) break;
 
       // Handle case where kernel execution is extremely short:
@@ -75,6 +75,8 @@ ZeMetricProfiler::RunProfilingLoop
       if (desc->kernel_started_.load(std::memory_order_acquire)) break;
 
       if (desc->profiling_state_.load(std::memory_order_acquire) == PROFILER_DISABLED) return;
+      
+      std::this_thread::yield();
     }
 
     // Kernel is running, enter sampling loop
@@ -83,10 +85,14 @@ ZeMetricProfiler::RunProfilingLoop
       gpu_correlation_channel_receive(1, zeroUpdateCorrelationId, desc);
 
       // Wait for the next interval
-      status = f_zeEventHostSynchronize(desc->serial_kernel_end_, 5000, dispatch);
+      status = f_zeEventQueryStatus(desc->serial_kernel_end_, dispatch);
       if (status == ZE_RESULT_SUCCESS) break;
 
       CollectAndProcessMetrics(desc, streamer, raw_metrics, metric_list, dispatch);
+
+      if (desc->profiling_state_.load(std::memory_order_acquire) == PROFILER_DISABLED) return;
+
+      std::this_thread::yield();
     }
 
     // Kernel has finished, perform final sampling and cleanup

@@ -12,6 +12,7 @@
 // system includes
 //*****************************************************************************
 
+#include <algorithm>
 #include <deque>
 #include <unordered_map>
 

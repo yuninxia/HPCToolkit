@@ -24,6 +24,9 @@ std::map<std::string, ZeKernelCommandProperties> *kernel_command_properties_ = n
 // local variables
 //*****************************************************************************
 
+static std::mutex g_kprops_mutex;
+static std::unordered_map<std::string, std::map<uint64_t, KernelProperties>> g_kprops_cache;
+static std::unordered_map<std::string, std::filesystem::file_time_type> g_kprops_timestamps;
 static ze_result_t (*zexKernelGetBaseAddress)(ze_kernel_handle_t hKernel, uint64_t *baseAddress) = nullptr;
 
 
@@ -72,45 +75,93 @@ zeroInitializeKernelCommandProperties
 void
 zeroReadKernelProperties
 (
-  const int32_t device_id,
-  const std::string& data_dir_name,
-  std::map<uint64_t, KernelProperties>& kprops
+  const int32_t device_id,                      // ID of the GPU device
+  const std::string& data_dir_name,             // Directory containing kernel property files
+  std::map<uint64_t, KernelProperties>& kprops  // Output map to store kernel properties
 )
 {
-  kprops.clear();
-  // kernel properties file path: <data_dir>/.kprops.<device_id>.<pid>.txt
-  std::string kprops_filename = ".kprops." + std::to_string(device_id) + "." + std::to_string(getpid()) + ".txt";
+  // Create a unique cache key combining directory and device ID
+  // This allows caching data for different device/directory combinations
+  std::string cache_key = data_dir_name + "_" + std::to_string(device_id);
   
-  // Find and process the kernel property file for the current process
-  for (const auto& entry : std::filesystem::directory_iterator(data_dir_name)) {
-    if (entry.path().filename() == kprops_filename) {
-      std::ifstream kpf(entry.path());
-      if (!kpf.is_open()) {
-        continue;
+  // Construct the expected file path for kernel properties
+  // Format: <data_dir>/.kprops.<device_id>.<pid>.txt
+  std::string kprops_filename = ".kprops." + std::to_string(device_id) + "." + 
+                                std::to_string(getpid()) + ".txt";
+  std::filesystem::path file_path = std::filesystem::path(data_dir_name) / kprops_filename;
+  
+  // Check cache status under mutex protection
+  // This section handles cache lookup and validation
+  {
+    std::lock_guard<std::mutex> lock(g_kprops_mutex);  // Thread-safe cache access
+    
+    // If file exists, verify if we have valid cached data
+    if (std::filesystem::exists(file_path)) {
+      // Get current file timestamp for cache validation
+      auto current_timestamp = std::filesystem::last_write_time(file_path);
+      
+      // Look up cache entries
+      auto cache_it = g_kprops_cache.find(cache_key);
+      auto timestamp_it = g_kprops_timestamps.find(cache_key);
+      
+      // Check if we have a valid cache entry with matching timestamp
+      // This prevents using stale cache data if file has been modified
+      if (cache_it != g_kprops_cache.end() && 
+          timestamp_it != g_kprops_timestamps.end() &&
+          timestamp_it->second == current_timestamp) {
+        // Cache hit - return cached data without reading file
+        kprops = cache_it->second;
+        return;
       }
-
+    }
+  }
+  
+  // Cache miss or file modified - need to read from file
+  std::map<uint64_t, KernelProperties> new_props;
+  if (std::filesystem::exists(file_path)) {
+    // Open and read the kernel properties file
+    std::ifstream kpf(file_path);
+    if (kpf.is_open()) {
+      // Read file contents line by line
+      // Format: name, base_address, kernel_id, module_id, size (one per line)
       while (!kpf.eof()) {
         KernelProperties props;
         std::string line;
 
+        // Read kernel name
         std::getline(kpf, props.name);
         if (kpf.eof()) break;
 
+        // Read and parse base address
         std::getline(kpf, line);
         if (kpf.eof()) break;
         props.base_address = std::strtoul(line.c_str(), nullptr, 0);
 
+        // Read kernel and module IDs
         std::getline(kpf, props.kernel_id);
         std::getline(kpf, props.module_id);
 
+        // Read and parse size
         std::getline(kpf, line);
         props.size = std::strtoul(line.c_str(), nullptr, 0);
 
-        kprops.insert({props.base_address, std::move(props)});
+        // Store properties in map using base address as key
+        new_props.insert({props.base_address, std::move(props)});
       }
       kpf.close();
-      break;  // We've found and processed the file, no need to continue searching
+      
+      // Update cache with new data under mutex protection
+      std::lock_guard<std::mutex> lock(g_kprops_mutex);
+      g_kprops_cache[cache_key] = new_props;
+      g_kprops_timestamps[cache_key] = std::filesystem::last_write_time(file_path);
+      kprops = std::move(new_props);
     }
+  } else {
+    // File doesn't exist - clean up any stale cache entries
+    std::lock_guard<std::mutex> lock(g_kprops_mutex);
+    g_kprops_cache.erase(cache_key);
+    g_kprops_timestamps.erase(cache_key);
+    kprops.clear();
   }
 }
 

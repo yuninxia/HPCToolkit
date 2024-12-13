@@ -37,7 +37,7 @@ convertPCSampling
 (
   gpu_activity_t* activity, 
   const std::map<uint64_t, EuStalls>::iterator& eustall_iter,
-  const std::map<uint64_t, KernelProperties>::const_reverse_iterator& kernel_iter,
+  const std::map<uint64_t, KernelProperties>::const_iterator& kernel_iter,
   uint64_t correlation_id,
   gpu_inst_stall_t stall_reason,
   uint64_t stall_count
@@ -92,9 +92,9 @@ zeroActivityTranslate
 (
   std::deque<gpu_activity_t*>& activities, 
   const std::map<uint64_t, EuStalls>::iterator& eustall_iter,
-  const std::map<uint64_t, KernelProperties>::const_reverse_iterator& kernel_iter,
+  const std::map<uint64_t, KernelProperties>::const_iterator& kernel_iter,
   uint64_t correlation_id
-) 
+)
 {
   const EuStalls& stall = eustall_iter->second;
 
