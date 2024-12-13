@@ -68,7 +68,7 @@ getDeviceDescriptor
   return it->second;
 }
 
-ZeModule
+static ZeModule
 createZeModule
 (
   ze_module_handle_t mod,
@@ -85,7 +85,7 @@ createZeModule
   return m;
 }
 
-ZeKernelCommandProperties
+static ZeKernelCommandProperties
 extractKernelProperties
 (
   ze_kernel_handle_t kernel,
@@ -127,6 +127,28 @@ extractKernelProperties
   desc.aot_ = aot;
 
   return desc;
+}
+
+static void
+waitForEventReady
+(
+  ze_event_handle_t event,
+  const struct hpcrun_foil_appdispatch_level0* dispatch
+)
+{
+  while (true) {
+    ze_result_t status = f_zeEventQueryStatus(event, dispatch);
+    if (status == ZE_RESULT_SUCCESS) {
+      // Event is ready
+      return;
+    } else if (status != ZE_RESULT_NOT_READY) {
+      // An error occurred, check and handle it
+      level0_check_result(status, __LINE__);
+    }
+
+    // Event not ready, yield CPU time to avoid busy-wait burning CPU
+    std::this_thread::yield();
+  }
 }
 
 
@@ -274,8 +296,10 @@ OnExitCommandListAppendLaunchKernel
     ze_result_t status = f_zeEventHostReset(desc->serial_kernel_start_, dispatch);
     level0_check_result(status, __LINE__);
 
-    status = f_zeEventHostSynchronize(desc->serial_data_ready_, UINT64_MAX - 1, dispatch);
-    level0_check_result(status, __LINE__);
+    // Wait for data ready event to become signaled
+    waitForEventReady(desc->serial_data_ready_, dispatch);
+
+    // Reset the event after data is processed
     status = f_zeEventHostReset(desc->serial_data_ready_, dispatch);
     level0_check_result(status, __LINE__);
   }
