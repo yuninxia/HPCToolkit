@@ -1,6 +1,0 @@
-# SPDX-FileCopyrightText: Contributors to the HPCToolkit Project
-#
-# SPDX-License-Identifier: CC0-1.0
-
-# These are vendored sources that should never be autoformatted.
-src/vendor/valgrind/*.h

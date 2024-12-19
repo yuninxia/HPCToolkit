@@ -11,7 +11,8 @@
    This file is part of Helgrind, a Valgrind tool for detecting errors
    in threaded programs.
 
-   SPDX-FileCopyrightText: 2007-2017 OpenWorks LLP <info@open-works.co.uk>
+   Copyright (C) 2007-2017 OpenWorks LLP
+      info@open-works.co.uk
 
    Redistribution and use in source and binary forms, with or without
    modification, are permitted provided that the following conditions
@@ -20,16 +21,16 @@
    1. Redistributions of source code must retain the above copyright
       notice, this list of conditions and the following disclaimer.
 
-   2. The origin of this software must not be misrepresented; you must
-      not claim that you wrote the original software.  If you use this
-      software in a product, an acknowledgment in the product
+   2. The origin of this software must not be misrepresented; you must 
+      not claim that you wrote the original software.  If you use this 
+      software in a product, an acknowledgment in the product 
       documentation would be appreciated but is not required.
 
    3. Altered source versions must be plainly marked as such, and must
       not be misrepresented as being the original software.
 
-   4. The name of the author may not be used to endorse or promote
-      products derived from this software without specific prior written
+   4. The name of the author may not be used to endorse or promote 
+      products derived from this software without specific prior written 
       permission.
 
    THIS SOFTWARE IS PROVIDED BY THE AUTHOR ``AS IS'' AND ANY EXPRESS
@@ -44,8 +45,6 @@
    NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
    SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-   SPDX-License-Identifier: bzip2-1.0.6
-
    ----------------------------------------------------------------
 
    Notice that the above BSD-style license applies to this one file
@@ -58,7 +57,7 @@
    Changed by Jonathon Anderson to remove temporary variables in
    core wrapper macros. Removes warnings when NVALGRIND is set.
 
-   ----------------------------------------------------------------
+   ---------------------------------------------------------------- 
 */
 
 #ifndef __HELGRIND_H
@@ -78,7 +77,7 @@ typedef
          use.  Do not use them unless you are a Valgrind developer. */
 
       /* Notify the tool what this thread's pthread_t is. */
-      _VG_USERREQ__HG_SET_MY_PTHREAD_T = VG_USERREQ_TOOL_BASE('H','G')
+      _VG_USERREQ__HG_SET_MY_PTHREAD_T = VG_USERREQ_TOOL_BASE('H','G') 
                                          + 256,
       _VG_USERREQ__HG_PTH_API_ERROR,              /* char*, int */
       _VG_USERREQ__HG_PTHREAD_JOIN_POST,          /* pthread_t of quitter */
@@ -152,6 +151,27 @@ typedef
 /*---                                                          ---*/
 /*----------------------------------------------------------------*/
 
+#if defined(NVALGRIND)
+
+#define DO_CREQ_v_W(_creqF, _ty1F,_arg1F) \
+   do { } while (0)
+
+#define DO_CREQ_W_W(_resF, _dfltF, _creqF, _ty1F,_arg1F) \
+   do { _resF = (long int)(_dfltF); } while (0)
+
+#define DO_CREQ_v_WW(_creqF, _ty1F,_arg1F, _ty2F,_arg2F) \
+   do { } while (0)
+
+#define DO_CREQ_v_WWW(_creqF, _ty1F,_arg1F,              \
+                      _ty2F,_arg2F, _ty3F, _arg3F)       \
+   do { } while (0)
+
+#define DO_CREQ_W_WWW(_resF, _dfltF, _creqF, _ty1F,_arg1F, \
+                      _ty2F,_arg2F, _ty3F, _arg3F)       \
+   do { _resF = (long int)(_dfltF); } while (0)
+
+#else /* NVALGRIND */
+
 /* Do a client request.  These are macros rather than a functions so
    as to avoid having an extra frame in stack traces.
 
@@ -168,43 +188,70 @@ typedef
 
 #define DO_CREQ_v_W(_creqF, _ty1F,_arg1F)                \
    do {                                                  \
+      long int _arg1;                                    \
+      /* assert(sizeof(_ty1F) == sizeof(long int)); */   \
+      _arg1 = (long int)(_arg1F);                        \
       VALGRIND_DO_CLIENT_REQUEST_STMT(                   \
                                  (_creqF),               \
-                                 (_arg1F), 0,0,0,0);     \
+                                 _arg1, 0,0,0,0);        \
    } while (0)
 
 #define DO_CREQ_W_W(_resF, _dfltF, _creqF, _ty1F,_arg1F) \
    do {                                                  \
-      (_resF) = VALGRIND_DO_CLIENT_REQUEST_EXPR(         \
+      long int _arg1;                                    \
+      /* assert(sizeof(_ty1F) == sizeof(long int)); */   \
+      _arg1 = (long int)(_arg1F);                        \
+      _qzz_res = VALGRIND_DO_CLIENT_REQUEST_EXPR(        \
                                  (_dfltF),               \
                                  (_creqF),               \
-                                 (_arg1F), 0,0,0,0);     \
+                                 _arg1, 0,0,0,0);        \
+      _resF = _qzz_res;                                  \
    } while (0)
 
 #define DO_CREQ_v_WW(_creqF, _ty1F,_arg1F, _ty2F,_arg2F) \
    do {                                                  \
+      long int _arg1, _arg2;                             \
+      /* assert(sizeof(_ty1F) == sizeof(long int)); */   \
+      /* assert(sizeof(_ty2F) == sizeof(long int)); */   \
+      _arg1 = (long int)(_arg1F);                        \
+      _arg2 = (long int)(_arg2F);                        \
       VALGRIND_DO_CLIENT_REQUEST_STMT(                   \
                                  (_creqF),               \
-                                 (_arg1F),(_arg2F),0,0,0); \
+                                 _arg1,_arg2,0,0,0);     \
    } while (0)
 
 #define DO_CREQ_v_WWW(_creqF, _ty1F,_arg1F,              \
                       _ty2F,_arg2F, _ty3F, _arg3F)       \
    do {                                                  \
+      long int _arg1, _arg2, _arg3;                      \
+      /* assert(sizeof(_ty1F) == sizeof(long int)); */   \
+      /* assert(sizeof(_ty2F) == sizeof(long int)); */   \
+      /* assert(sizeof(_ty3F) == sizeof(long int)); */   \
+      _arg1 = (long int)(_arg1F);                        \
+      _arg2 = (long int)(_arg2F);                        \
+      _arg3 = (long int)(_arg3F);                        \
       VALGRIND_DO_CLIENT_REQUEST_STMT(                   \
                                  (_creqF),               \
-                                 (_arg1F),(_arg2F),(_arg3F),0,0); \
+                                 _arg1,_arg2,_arg3,0,0); \
    } while (0)
 
 #define DO_CREQ_W_WWW(_resF, _dfltF, _creqF, _ty1F,_arg1F, \
                       _ty2F,_arg2F, _ty3F, _arg3F)       \
    do {                                                  \
-      (_resF) = VALGRIND_DO_CLIENT_REQUEST_EXPR(         \
+      long int _qzz_res;                                 \
+      long int _arg1, _arg2, _arg3;                      \
+      /* assert(sizeof(_ty1F) == sizeof(long int)); */   \
+      _arg1 = (long int)(_arg1F);                        \
+      _arg2 = (long int)(_arg2F);                        \
+      _arg3 = (long int)(_arg3F);                        \
+      _qzz_res = VALGRIND_DO_CLIENT_REQUEST_EXPR(        \
                                  (_dfltF),               \
                                  (_creqF),               \
-                                 (_arg1F),(_arg2F),(_arg3F),0,0); \
+                                 _arg1,_arg2,_arg3,0,0); \
+      _resF = _qzz_res;                                  \
    } while (0)
 
+#endif /* !NVALGRIND */
 
 
 #define _HG_CLIENTREQ_UNIMP(_qzz_str)                    \
@@ -407,7 +454,7 @@ typedef
 
 /* End-user request for Ada applications compiled with GNAT.
    Helgrind understands the Ada concept of Ada task dependencies and
-   terminations. See Ada Reference Manual section 9.3 "Task Dependence
+   terminations. See Ada Reference Manual section 9.3 "Task Dependence 
    - Termination of Tasks".
    However, in some cases, the master of (terminated) tasks completes
    only when the application exits. An example of this is dynamically
@@ -497,7 +544,7 @@ typedef
    address CV. */
 #define ANNOTATE_CONDVAR_SIGNAL(cv) \
    _HG_CLIENTREQ_UNIMP("ANNOTATE_CONDVAR_SIGNAL")
-
+  
 /* Report that we are about to signal_all on the condition variable at
    CV. */
 #define ANNOTATE_CONDVAR_SIGNAL_ALL(cv) \
@@ -529,7 +576,7 @@ typedef
    of describing arbitrary inter-thread synchronisation events to
    Helgrind.  You can get a long way just with them alone.
 
-   See also, extensive discussion on semantics of this in
+   See also, extensive discussion on semantics of this in 
    https://bugs.kde.org/show_bug.cgi?id=243935
 
    ANNOTATE_HAPPENS_BEFORE_FORGET_ALL(obj) is interim until such time
@@ -581,7 +628,7 @@ typedef
 
 /* ----------------------------------------------------------------
    TSan sources say:
-
+   
      Instruct the tool to create a happens-before arc between
      MU->Unlock() and MU->Lock().  This annotation may slow down the
      race detector; normally it is used only when it would be
@@ -591,7 +638,7 @@ typedef
    If MU is a posix pthread_mutex_t then Helgrind will do this anyway.
    In any case, leave as unimp for now.  I'm unsure about the intended
    behaviour.
-   ----------------------------------------------------------------
+   ---------------------------------------------------------------- 
 */
 #define ANNOTATE_PURE_HAPPENS_BEFORE_MUTEX(mu) \
    _HG_CLIENTREQ_UNIMP("ANNOTATE_PURE_HAPPENS_BEFORE_MUTEX")
@@ -602,7 +649,7 @@ typedef
 
 /* ----------------------------------------------------------------
    TSan sources say:
-
+   
      Annotations useful when defining memory allocators, or when
      memory that was protected in one way starts to be protected in
      another.
@@ -613,7 +660,7 @@ typedef
      discipline for a variable changes.
 
    AFAICS this is the same as VALGRIND_HG_CLEAN_MEMORY.
-   ----------------------------------------------------------------
+   ---------------------------------------------------------------- 
 */
 #define ANNOTATE_NEW_MEMORY(address, size) \
    VALGRIND_HG_CLEAN_MEMORY((address), (size))
@@ -626,7 +673,7 @@ typedef
      between threads.
 
    All unimplemented.  Am not claiming to understand this (yet).
-   ----------------------------------------------------------------
+   ---------------------------------------------------------------- 
 */
 
 /* Report that the producer-consumer queue object at address PCQ has
@@ -744,7 +791,7 @@ typedef
 #define ANNOTATE_RWLOCK_CREATE(lock)                         \
    DO_CREQ_v_W(_VG_USERREQ__HG_PTHREAD_RWLOCK_INIT_POST,     \
                void*,(lock))
-
+    
 /* Report that the lock at address LOCK is about to be destroyed. */
 #define ANNOTATE_RWLOCK_DESTROY(lock)                        \
    DO_CREQ_v_W(_VG_USERREQ__HG_PTHREAD_RWLOCK_DESTROY_PRE,   \

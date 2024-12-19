@@ -1087,7 +1087,12 @@ if not cpp.links(_fs_code)
 endif
 
 
-# If Valgrind annotations aren't requested, inject an option to disable them.
+# Add Valgrind headers for Valgrind annotations. If they aren't requested, inject a
+# compiler flag to globally disable them.
+add_project_dependencies(
+  subproject('valgrind-headers').get_variable('valgrind_headers_dep'),
+  language: ['c', 'cpp'],
+)
 if not get_option('valgrind_annotations')
   add_project_arguments('-DNVALGRIND', language: ['c', 'cpp'])
 endif

@@ -12,8 +12,7 @@
   This file is part of DRD, a Valgrind tool for verification of
   multithreaded programs.
 
-  SPDX-FileCopyrightText: 2006-2020 Bart Van Assche <bvanassche@acm.org>
-
+  Copyright (C) 2006-2020 Bart Van Assche <bvanassche@acm.org>.
   All rights reserved.
 
   Redistribution and use in source and binary forms, with or without
@@ -46,8 +45,6 @@
   WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING
   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-
-  SPDX-License-Identifier: bzip2-1.0.6
 
   ----------------------------------------------------------------
 
@@ -555,17 +552,17 @@ inline T ANNOTATE_UNPROTECTED_READ(const volatile T& x) {
    return result;
 }
 /* Apply ANNOTATE_BENIGN_RACE_SIZED to a static variable. */
-#define ANNOTATE_BENIGN_RACE_STATIC(static_var, description)            \
-   namespace {                                                          \
-      static class static_var##_annotator                               \
-      {                                                                 \
-      public:                                                           \
-         static_var##_annotator()                                       \
-         {                                                              \
-            ANNOTATE_BENIGN_RACE_SIZED(&static_var, sizeof(static_var), \
-                                       #static_var ": " description);   \
-         }                                                              \
-      } the_##static_var##_annotator;                                   \
+#define ANNOTATE_BENIGN_RACE_STATIC(static_var, description)		\
+   namespace {								\
+      static class static_var##_annotator				\
+      {									\
+      public:								\
+	 static_var##_annotator()					\
+	 {								\
+	    ANNOTATE_BENIGN_RACE_SIZED(&static_var, sizeof(static_var),	\
+				       #static_var ": " description);	\
+	 }								\
+      } the_##static_var##_annotator;					\
    }
 #endif
 
