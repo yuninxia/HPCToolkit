@@ -42,6 +42,7 @@ class ProcInfo;
 typedef map <string, FileInfo *> FileMap;
 typedef map <VMA, GroupInfo *> GroupMap;
 typedef map <VMA, ProcInfo *> ProcMap;
+typedef map <VMA, VMA> VMAMap;
 
 
 // FileInfo and FileMap are the top-level classes for files and
@@ -80,6 +81,7 @@ public:
   VMA  start;
   VMA  end;
   ProcMap procMap;
+  VMAMap callMap;
   VMAIntervalSet gapSet;
   bool  alt_file;
 
@@ -89,6 +91,7 @@ public:
     start = st;
     end = en;
     procMap.clear();
+    callMap.clear();
     gapSet.clear();
     alt_file = alt;
   }
