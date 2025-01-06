@@ -259,7 +259,7 @@ debugInlineTree(TreeNode *, LoopInfo *, HPC::StringTable &, int, bool);
 
 static void
 dumpWorkList(WorkList &);
-  
+
 static void
 debugNewGaps(CodeObject *, string);
 
@@ -1783,7 +1783,6 @@ doFunction(WorkEnv & env, FileInfo * finfo, GroupInfo * ginfo, ProcInfo * pinfo,
        << "parse:  '" << func->name() << "'\n";
 #endif
 
-#if 0
   // computeGaps relies Block::start() and Block::end() to have
   // the correct address range for a block to detect gaps.
   //
@@ -1793,18 +1792,25 @@ doFunction(WorkEnv & env, FileInfo * finfo, GroupInfo * ginfo, ProcInfo * pinfo,
   // do not include delay slot instructions, which causes samples taken
   // for delay slot instructions to be out of function ranges.
   // We use gap computation to mitigate this problem.
-  if (intel_gpu_arch == 0) {
-    // add unclaimed regions (gaps) to the group leader, but skip groups
-    // in an alternate file (handled in orig file).
-    if (! ginfo->alt_file) {
-      computeGaps(covered, ginfo->gapSet, ginfo->start, ginfo->end);
+  //
+  if (num_funcs == 1 && intel_gpu_arch == 0) {
+    //
+    // add unclaimed regions (gaps) to the group leader, but only for
+    // standard functions (only one func in group)
+    //
+    VMAIntervalSet covered;
 
-      if (! fullGaps) {
-        addGaps(env, finfo, ginfo);
-      }
+    for (auto bit = bvec.begin(); bit != bvec.end(); ++bit) {
+      Block * block = *bit;
+      covered.insert(block->start(), block->end());
+    }
+
+    computeGaps(covered, ginfo->gapSet, ginfo->start, ginfo->end);
+
+    if (! fullGaps) {
+      addGaps(env, finfo, ginfo);
     }
   }
-#endif
 
 #if DEBUG_SHOW_GAPS
   debug_mutex.lock();
