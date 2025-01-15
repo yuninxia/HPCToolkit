@@ -290,7 +290,6 @@ include:
     <<: *ci_predeps_shared
     name: intel-amd64
     containerfile: .ci.predeps/Containerfile.intel
-    build_args: ONEAPI_VERSION=2024.0.1
 
 # Image(s) containing system software in uncommon arrangements
 - component: *ci_predeps
