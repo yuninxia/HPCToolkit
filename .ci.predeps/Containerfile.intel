@@ -3,8 +3,6 @@
 #
 # SPDX-License-Identifier: BSD-3-Clause
 
-ARG ONEAPI_VERSION=2024.0.1
-
 # Intel doesn't always update their repository keys very fast. Download them
 # ahead of time so that they are up-to-date for later.
 FROM docker.io/alpine:3 as intel-keys
@@ -15,7 +13,7 @@ ADD https://apt.repos.intel.com/intel-gpg-keys/GPG-PUB-KEY-INTEL-SW-PRODUCTS.PUB
 RUN gpg --yes --dearmor --output /keyrings/intel-oneapi-archive-keyring.gpg < /tmp/a.key && rm /tmp/a.key
 
 # OS installation stage: Install build tools from the OS
-FROM docker.io/intel/oneapi-basekit:${ONEAPI_VERSION}-devel-ubuntu22.04 as os-install
+FROM docker.io/intel/oneapi-basekit:2024.0.1-devel-ubuntu22.04 as os-install
 
 # Install the required OS packages
 COPY --from=intel-keys /keyrings/*.gpg /usr/share/keyrings/
@@ -56,8 +54,8 @@ RUN --mount=type=cache,target=/var/cache/apt,sharing=locked \
     libgmock-dev \
     libgtest-dev \
     libiberty-dev \
-    libigc-dev \
-    libigdfcl-dev \
+    'libigc-dev=1.*'  `# FIXME: This is for compatibility with OneAPI 2024` \
+    'libigdfcl-dev=1.*'  `# FIXME: This is for compatibility with OneAPI 2024` \
     liblzma-dev \
     libomp-dev \
     libpapi-dev \
