@@ -62,11 +62,10 @@ struct ZeDeviceDescriptor {
   bool stall_sampling_;
   uint64_t correlation_id_;
   uint64_t last_correlation_id_;
-  ze_event_handle_t serial_kernel_start_;
-  ze_event_handle_t serial_kernel_end_;
-  ze_event_handle_t serial_data_ready_;
   ze_kernel_handle_t running_kernel_;
+  ze_event_handle_t running_kernel_end_;
   std::atomic<bool> kernel_started_{false};
+  std::atomic<bool> serial_data_ready_{false};
 };
 
 struct ZeDevice {
