@@ -115,6 +115,8 @@ zeroPCSamplingEnable
   if (isPcSamplingEnabled()) {
     static const struct hpcrun_foil_appdispatch_level0* saved_dispatch = dispatch;
     pthread_once(&level0_pcsampling_init_once, []() { pcSamplingEnableHelper(saved_dispatch); });
+  } else {
+    std::cerr << "[WARNING] PC sampling is not enabled in the current configuration." << std::endl;
   }
 }
 
@@ -124,16 +126,21 @@ zeroPCSamplingFini
   void
 )
 {
+  static const bool keep_data_dir_for_debug = false;
+
   if (isPcSamplingEnabled()) {
     if (ze_collector != nullptr) {
       delete ze_collector;
     }
     disableProfiling();
-    for (const auto& e: std::filesystem::directory_iterator(std::filesystem::path(data_dir_name))) {
-      std::filesystem::remove_all(e.path());
-    }
-    if (remove(data_dir_name)) {
-      std::cerr << "[WARNING] " << data_dir_name << " is not removed. Please manually remove it." << std::endl;
+
+    if (!keep_data_dir_for_debug) {
+      for (const auto& e: std::filesystem::directory_iterator(std::filesystem::path(data_dir_name))) {
+        std::filesystem::remove_all(e.path());
+      }
+      if (remove(data_dir_name)) {
+        std::cerr << "[WARNING] " << data_dir_name << " is not removed. Please manually remove it." << std::endl;
+      }
     }
   }
 }
