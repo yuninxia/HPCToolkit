@@ -63,15 +63,7 @@ ZeMetricProfiler::RunProfilingLoop
   while (desc->profiling_state_.load(std::memory_order_acquire) != PROFILER_DISABLED) {
     // Wait for the kernel to start running
     while (true) {
-      status = f_zeEventQueryStatus(desc->serial_kernel_start_, dispatch);
-      if (status == ZE_RESULT_SUCCESS) break;
 
-      // Handle case where kernel execution is extremely short:
-      // In such cases, the kernel might finish before zeEventHostSynchronize can detect the start event.
-      // Without this check, a deadlock could occur:
-      // - The Profiling thread would keep waiting for the start event (which has already been reset).
-      // - The App thread would be waiting for the Profiling thread to complete data processing.
-      // kernel_started_ allows Profiling thread to proceed, avoiding deadlock.
       if (desc->kernel_started_.load(std::memory_order_acquire)) break;
 
       if (desc->profiling_state_.load(std::memory_order_acquire) == PROFILER_DISABLED) return;
@@ -79,13 +71,13 @@ ZeMetricProfiler::RunProfilingLoop
       std::this_thread::yield();
     }
 
+    // Update correlation ID
+    gpu_correlation_channel_receive(1, zeroUpdateCorrelationId, desc);
+
     // Kernel is running, enter sampling loop
     while (true) {
-      // Update correlation ID
-      gpu_correlation_channel_receive(1, zeroUpdateCorrelationId, desc);
-
       // Wait for the next interval
-      status = f_zeEventQueryStatus(desc->serial_kernel_end_, dispatch);
+      status = f_zeEventQueryStatus(desc->running_kernel_end_, dispatch);
       if (status == ZE_RESULT_SUCCESS) break;
 
       CollectAndProcessMetrics(desc, streamer, raw_metrics, metric_list, dispatch);
@@ -102,8 +94,7 @@ ZeMetricProfiler::RunProfilingLoop
     desc->kernel_started_.store(false, std::memory_order_release);
     
     // Notify the app thread that data processing is complete
-    status = f_zeEventHostSignal(desc->serial_data_ready_, dispatch);
-    level0_check_result(status, __LINE__);
+    desc->serial_data_ready_.store(true, std::memory_order_release);
   }
 }
 

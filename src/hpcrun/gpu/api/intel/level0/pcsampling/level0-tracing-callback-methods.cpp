@@ -132,21 +132,16 @@ extractKernelProperties
 static void
 waitForEventReady
 (
-  ze_event_handle_t event,
+  std::atomic<bool>& shared_var,
   const struct hpcrun_foil_appdispatch_level0* dispatch
 )
 {
   while (true) {
-    ze_result_t status = f_zeEventQueryStatus(event, dispatch);
-    if (status == ZE_RESULT_SUCCESS) {
-      // Event is ready
+    if (shared_var.load(std::memory_order_acquire)) {
       return;
-    } else if (status != ZE_RESULT_NOT_READY) {
-      // An error occurred, check and handle it
-      level0_check_result(status, __LINE__);
     }
 
-    // Event not ready, yield CPU time to avoid busy-wait burning CPU
+    // Yield CPU time to avoid busy-waiting
     std::this_thread::yield();
   }
 }
@@ -255,19 +250,11 @@ OnEnterCommandListAppendLaunchKernel
   ze_event_handle_t hSignalEvent = *(params->phSignalEvent);
   ze_device_handle_t hDevice = getDeviceForCommandList(hCommandList, dispatch);
 
-#if 0
-  std::cout << "OnEnterCommandListAppendLaunchKernel: hKernel=" << hKernel << ", hDevice=" << hDevice << std::endl;
-#endif
-
   ZeDeviceDescriptor* desc = getDeviceDescriptor(hDevice);
   if (desc) {
     desc->running_kernel_ = hKernel;
-    desc->serial_kernel_end_ = hSignalEvent;
+    desc->running_kernel_end_ = hSignalEvent;
     desc->kernel_started_.store(true, std::memory_order_release);
-    
-    // Signal event to notify kernel start
-    ze_result_t status = f_zeEventHostSignal(desc->serial_kernel_start_, dispatch);
-    level0_check_result(status, __LINE__);
   }
 }
 
@@ -293,15 +280,13 @@ OnExitCommandListAppendLaunchKernel
   ZeDeviceDescriptor* desc = getDeviceDescriptor(hDevice);
   if (desc) {
     // Host reset event to indicate kernel execution has ended
-    ze_result_t status = f_zeEventHostReset(desc->serial_kernel_start_, dispatch);
-    level0_check_result(status, __LINE__);
+    desc->kernel_started_.store(false, std::memory_order_release);
 
     // Wait for data ready event to become signaled
     waitForEventReady(desc->serial_data_ready_, dispatch);
 
     // Reset the event after data is processed
-    status = f_zeEventHostReset(desc->serial_data_ready_, dispatch);
-    level0_check_result(status, __LINE__);
+    desc->serial_data_ready_.store(false, std::memory_order_release);
   }
 }
 

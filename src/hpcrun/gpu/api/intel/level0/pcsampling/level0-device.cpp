@@ -54,11 +54,7 @@ createDeviceDescriptor
   desc->profiling_thread_ = nullptr;
   desc->profiling_state_.store(PROFILER_DISABLED, std::memory_order_release);
   desc->running_kernel_ = nullptr;
-
-  ze_event_pool_handle_t event_pool = zeroCreateEventPool(context, device, 2, ZE_EVENT_POOL_FLAG_HOST_VISIBLE, dispatch);
-  desc->serial_kernel_start_ = zeroCreateEvent(event_pool, 0, ZE_EVENT_SCOPE_FLAG_HOST, ZE_EVENT_SCOPE_FLAG_HOST, dispatch);
-  desc->serial_data_ready_ = zeroCreateEvent(event_pool, 1, ZE_EVENT_SCOPE_FLAG_HOST, ZE_EVENT_SCOPE_FLAG_HOST, dispatch);
-  desc->serial_kernel_end_ = nullptr;
+  desc->running_kernel_end_ = nullptr;
 
   return desc;
 }

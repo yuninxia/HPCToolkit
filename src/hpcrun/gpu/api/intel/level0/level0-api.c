@@ -573,10 +573,12 @@ hpcrun_zeCommandListAppendLaunchKernel
   // Execute the real level0 API
   ze_result_t ret = f_zeCommandListAppendLaunchKernel(hCommandList, hKernel, pLaunchFuncArgs,
     new_event_handle, numWaitEvents, phWaitEvents, dispatch);
-  
+
+#if 0  
   if (level0_pcsampling_enabled()) {
-    zeEventHostSynchronize(new_event_handle, UINT64_MAX - 1);
+    f_zeEventHostSynchronize(new_event_handle, UINT64_MAX - 1, dispatch);
   }
+#endif
 
   // Exit action
   level0_process_immediate_command_list(new_event_handle, hCommandList, dispatch);
