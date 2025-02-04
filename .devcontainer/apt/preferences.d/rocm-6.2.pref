@@ -1,0 +1,9 @@
+# SPDX-FileCopyrightText: 2024-2025 Contributors to the HPCToolkit Project
+#
+# SPDX-License-Identifier: Apache-2.0
+
+# Target ROCm version 6.2. A number of ROCm packages don't use multiple version numbers,
+# so we need to pin the entire source to catch all the packages.
+Package: *
+Pin: release o=repo.radeon.com, v=6.2*
+Pin-Priority: 990
