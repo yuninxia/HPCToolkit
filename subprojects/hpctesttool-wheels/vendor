@@ -1,10 +1,11 @@
-#!/bin/sh
+#!/bin/sh -e
 
 # SPDX-FileCopyrightText: Contributors to the HPCToolkit Project
 #
-# SPDX-License-Identifier: BSD-3-Clause
+# SPDX-License-Identifier: MIT
 
 cd "$(dirname "$(realpath "$0")")" || exit $?
+project=$(realpath ../../src/hpctesttool/) || exit $?
 
 rm -rf wheels/
 mkdir wheels/
@@ -13,12 +14,12 @@ trap 'rm -f "$tmpfile"' EXIT
 tmpfile=$(mktemp --tmpdir=.)
 
 # Download a wheel for Pip
-python -m pip download \
+python3 -m pip download \
   --platform none --python-version 38 \
   --no-deps -d wheels/ pip
 
 # Download all the wheels
-poetry export --with=implicit -f requirements.txt -o "$tmpfile"
+poetry -C "$project" export --with=implicit -f requirements.txt -o "$tmpfile"
 sed -i 's/;.*\\$/\\/' "$tmpfile"
 python3 -m pip download \
   --platform none --python-version 38 \
