@@ -1,4 +1,4 @@
-# SPDX-FileCopyrightText: 2024 Contributors to the HPCToolkit Project
+# SPDX-FileCopyrightText: 2024-2025 Contributors to the HPCToolkit Project
 #
 # SPDX-License-Identifier: BSD-3-Clause
 
@@ -33,8 +33,8 @@ COPY --from=keys /usr/share/keyrings /usr/share/keyrings
 # the architecture in question.
 RUN --mount=type=cache,target=/var/cache/apt,sharing=locked \
   rm -f /etc/apt/apt.conf.d/docker-clean \
-  && apt-get update -y \
-  && DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends \
+  && DEBIAN_FRONTEND=noninteractive apt-get upgrade -y \
+    --update --with-new-pkgs --autoremove --no-install-recommends \
     ccache \
     clang \
     clang-format \
@@ -100,7 +100,7 @@ RUN --mount=type=cache,target=/var/cache/apt,sharing=locked \
     }) \
     $({ \
       case "$(dpkg --print-architecture)" in \
-      amd64) echo 'intel-oneapi-compiler-dpcpp-cpp libze-dev libigdfcl-dev libigc-dev libigfxcmrt-dev'; ;; \
+      amd64) echo 'intel-oneapi-compiler-dpcpp-cpp libze-dev libigdfcl-dev libigc-dev'; ;; \
       esac; \
     }) \
   && : # END

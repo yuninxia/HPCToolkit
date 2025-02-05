@@ -1,0 +1,9 @@
+# SPDX-FileCopyrightText: 2024 Contributors to the HPCToolkit Project
+#
+# SPDX-License-Identifier: Apache-2.0
+
+# Target CUDA version 12.6. Most CUDA packages use different names for different versions,
+# so this pin only affects the (few) packages with generic names.
+Package: cuda cuda-toolkit cuda-*-12
+Pin: version 12.6.*
+Pin-Priority: 990

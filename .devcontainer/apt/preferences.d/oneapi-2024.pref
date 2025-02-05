@@ -1,0 +1,14 @@
+# SPDX-FileCopyrightText: 2025 Contributors to the HPCToolkit Project
+#
+# SPDX-License-Identifier: Apache-2.0
+
+# Target OneAPI version 2024. Not all packages use OneAPI version numbers, this
+# pinning only affects those that do, which may cause resolution failures.
+Package: intel-*
+Pin: version 2024.*
+Pin-Priority: 990
+
+# These packages are known to cause resolution failures if not pinned.
+Package: src:level-zero-loader src:intel-graphics-compiler
+Pin: version 1.*
+Pin-Priority: 990
