@@ -115,11 +115,12 @@ using namespace std;
 #define DEBUG_SHOW_GAPS   0
 #define DEBUG_SKEL_SUMMARY  0
 
+#define DEBUG_WORK_LIST  0
 #define DEBUG_UNKNOWN_CALLBACK  0
 #define DEBUG_NEW_GAPS  0
 
 #if DEBUG_CFG_SOURCE || DEBUG_MAKE_SKEL || DEBUG_SHOW_GAPS || DEBUG_NEW_GAPS  \
-    || DEBUG_SKEL_SUMMARY || DEBUG_UNKNOWN_CALLBACK
+    || DEBUG_SKEL_SUMMARY || DEBUG_UNKNOWN_CALLBACK || DEBUG_WORK_LIST
 #define DEBUG_ANY_ON  1
 #else
 #define DEBUG_ANY_ON  0
@@ -188,7 +189,7 @@ static void
 printWorkList(WorkList &, unsigned int &, ostream *, ostream *, string &);
 
 static void
-doFunctionList(WorkEnv &, FileInfo *, GroupInfo *, bool);
+doFunction(WorkEnv &, FileInfo *, GroupInfo *, ProcInfo *, bool);
 
 static LoopList *
 doLoopTree(WorkEnv &, FileInfo *, GroupInfo *, ParseAPI::Function *,
@@ -255,6 +256,9 @@ debugLoop(GroupInfo *, ParseAPI::Function *, Loop *, const string &,
 
 static void
 debugInlineTree(TreeNode *, LoopInfo *, HPC::StringTable &, int, bool);
+
+static void
+dumpWorkList(WorkList &);
 
 static void
 debugNewGaps(CodeObject *, string);
@@ -332,6 +336,7 @@ class WorkItem {
 public:
   FileInfo * finfo;
   GroupInfo * ginfo;
+  ProcInfo * pinfo;
   WorkEnv env;
   double cost;
   stringstream obuf;
@@ -340,10 +345,12 @@ public:
   bool promote;
   boost::atomic <bool> is_done;
 
-  WorkItem(FileInfo * fi, GroupInfo * gi, bool first, bool last, double cst)
+  WorkItem(FileInfo * fi, GroupInfo * gi, ProcInfo * pi,
+           bool first, bool last, double cst)
   {
     finfo = fi;
     ginfo = gi;
+    pinfo = pi;
     cost = cst;
     first_proc = first;
     last_proc = last;
@@ -850,6 +857,10 @@ makeStructure(string absfilepath,
 
     makeWorkList(fileMap, wlPrint, wlLaunch);
 
+#if DEBUG_WORK_LIST
+    dumpWorkList(wlPrint);
+#endif
+
     Output::printLoadModuleBegin(outFile, filename, has_calls);
 
 #pragma omp parallel  default(none)                             \
@@ -911,6 +922,7 @@ doWorkItem(WorkItem * witem, string & search_path, bool parsable, bool do_gaps)
 {
   FileInfo * finfo = witem->finfo;
   GroupInfo * ginfo = witem->ginfo;
+  ProcInfo * pinfo = witem->pinfo;
 
   // each work item gets its own string table and path manager to
   // avoid lock contention.
@@ -927,28 +939,45 @@ doWorkItem(WorkItem * witem, string & search_path, bool parsable, bool do_gaps)
 
   // make the inline tree for every proc in this group
   if (parsable) {
-    doFunctionList(witem->env, finfo, ginfo, do_gaps);
+    doFunction(witem->env, finfo, ginfo, pinfo, do_gaps);
   } else {
     doUnparsableFunctionList(witem->env, finfo, ginfo);
   }
 
   // partially format the output (except for index and gap fields)
   // into a string stream
-  for (auto pit = ginfo->procMap.begin(); pit != ginfo->procMap.end(); ++pit) {
-    ProcInfo * pinfo = pit->second;
-
-    if (! pinfo->gap_only) {
-      Output::earlyFormatProc(&(witem->obuf), finfo, ginfo, pinfo, do_gaps, *strTab);
-    }
-    delete pinfo->root;
-    pinfo->root = NULL;
+  if (! pinfo->gap_only) {
+    Output::earlyFormatProc(&(witem->obuf), finfo, ginfo, pinfo, do_gaps, *strTab);
   }
+  delete pinfo->root;
+  pinfo->root = NULL;
 
   ANNOTATE_HAPPENS_BEFORE(&witem->is_done);
   witem->is_done.exchange(true);
 }
 
 //----------------------------------------------------------------------
+
+// Make a map of internal call edges (from target to source) across
+// all funcs in this group.  We use this to strip the inline seqn at
+// the call source from the target func.
+//
+static void
+makeCallMap(GroupInfo * ginfo)
+{
+  if (ginfo->sym_func != NULL && !ginfo->alt_file) {
+    for (auto pit = ginfo->procMap.begin(); pit != ginfo->procMap.end(); ++pit) {
+      ParseAPI::Function * func = pit->second->func;
+      const ParseAPI::Function::edgelist & elist = func->callEdges();
+
+      for (auto eit = elist.begin(); eit != elist.end(); ++eit) {
+        VMA src = (*eit)->src()->last();
+        VMA targ = (*eit)->trg()->start();
+        ginfo->callMap[targ] = src;
+      }
+    }
+  }
+}
 
 //
 // Make work lists for the print order and parallel launch order from
@@ -972,22 +1001,44 @@ makeWorkList(FileMap * fileMap, WorkList & wlPrint, WorkList & wlLaunch)
   // groups in the skeleton.
   for (auto fit = fileMap->begin(); fit != fileMap->end(); ++fit) {
     FileInfo * finfo = fit->second;
-    auto group_begin = finfo->groupMap.begin();
-    auto group_end = finfo->groupMap.end();
+    bool first_proc = true;
+    WorkItem * last_item = NULL;
 
-    for (auto git = group_begin; git != group_end; ++git) {
+    for (auto git = finfo->groupMap.begin(); git != finfo->groupMap.end(); ++git) {
       GroupInfo * ginfo = git->second;
-      auto next_git = git;  ++next_git;
+      long num_funcs = ginfo->procMap.size();
 
-      // the estimated time is non-linear in the size of the region
-      double cost = ginfo->end - ginfo->start;
-      cost *= cost;
-      total_cost += cost;
+      if (num_funcs > 1) {
+        makeCallMap(ginfo);
+      }
 
-      WorkItem * witem =
-        new WorkItem(finfo, ginfo, (git == group_begin), (next_git == group_end), cost);
+      for (auto pit = ginfo->procMap.begin(); pit != ginfo->procMap.end(); ++pit) {
+        ProcInfo * pinfo = pit->second;
+        ParseAPI::Function * func = pinfo->func;
 
-      wlPrint.push_back(witem);
+        // if this function is entirely contained within another
+        // function (as determined by its entry block), then skip the
+        // function
+        if (num_funcs > 1 && func->entry()->containingFuncs() > 1) {
+          DEBUG_CFG("\nskipping duplicated function:  '" << func->name() << "'\n");
+          continue;
+        }
+
+        // the estimated time is non-linear in the size of the region
+        double cost = (ginfo->end - ginfo->start)/ginfo->procMap.size();
+        cost *= cost;
+        total_cost += cost;
+
+        WorkItem * witem = new WorkItem(finfo, ginfo, pinfo, first_proc, false, cost);
+        wlPrint.push_back(witem);
+
+        first_proc = false;
+        last_item = witem;
+      }
+    }
+
+    if (last_item != NULL) {
+      last_item->last_proc = true;
     }
   }
 
@@ -1487,13 +1538,15 @@ makeSkeleton(CodeObject * code_obj, const string & basename)
           // add proc info to both files: outline file for full parse
           // (but no gaps), and symtab file for gap only.
           //
-          DEBUG_SKEL("(case 3)\n");
+          DEBUG_SKEL("(case 3 -- modified)\n");
 
           ProcInfo * pinfo = new ProcInfo(func, NULL, linknm, prettynm, parse_line);
-          addProc(fileMap, pinfo, parse_filenm, sym_func, sym_start, sym_end, true);
+          addProc(fileMap, pinfo, parse_filenm, sym_func, sym_start, sym_end);
 
+#if 0
           pinfo = new ProcInfo(func, NULL, "", "", 0, 0, true);
           addProc(fileMap, pinfo, filenm, sym_func, sym_start, sym_end);
+#endif
         }
       }
     }
@@ -1622,186 +1675,113 @@ makeSkeleton(CodeObject * code_obj, const string & basename)
 // and strip the inline prefix at the call source from the embed
 // function.  This often happens with openmp parallel pragmas.
 //
+// Now make separate work items for each function in a group.
+//
 static void
-doFunctionList(WorkEnv & env, FileInfo * finfo, GroupInfo * ginfo, bool fullGaps)
+doFunction(WorkEnv & env, FileInfo * finfo, GroupInfo * ginfo, ProcInfo * pinfo,
+           bool fullGaps)
 {
+  ParseAPI::Function * func = pinfo->func;
+  Address entry_addr = func->addr();
   long num_funcs = ginfo->procMap.size();
-  set <Address> coveredFuncs;
-  VMAIntervalSet covered;
 
-  // make a map of internal call edges (from target to source) across
-  // all funcs in this group.  we use this to strip the inline seqn at
-  // the call source from the target func.
-  //
-  map <VMA, VMA> callMap;
+  [[maybe_unused]] int num = 1;
 
-  if (ginfo->sym_func != NULL && !ginfo->alt_file && num_funcs > 1) {
-    for (auto pit = ginfo->procMap.begin(); pit != ginfo->procMap.end(); ++pit) {
-      ParseAPI::Function * func = pit->second->func;
-      const ParseAPI::Function::edgelist & elist = func->callEdges();
+  // only used for cuda functions
+  pinfo->symbol_index = 0;
 
-      for (auto eit = elist.begin(); eit != elist.end(); ++eit) {
-        VMA src = (*eit)->src()->last();
-        VMA targ = (*eit)->trg()->start();
-        callMap[targ] = src;
-      }
-    }
-  }
+  // compute the inline seqn for the call site for this func, if
+  // there is one.
+  Inline::InlineSeqn prefix;
+  auto call_it = ginfo->callMap.end();
 
-  // one binutils proc may contain several parseapi funcs
-  [[maybe_unused]] long num = 0;
-  for (auto pit = ginfo->procMap.begin(); pit != ginfo->procMap.end(); ++pit) {
-    ProcInfo * pinfo = pit->second;
-    ParseAPI::Function * func = pinfo->func;
-    Address entry_addr = func->addr();
-    num++;
-
-    // only used for cuda functions
-    pinfo->symbol_index = 0;
-
-    // compute the inline seqn for the call site for this func, if
-    // there is one.
-    Inline::InlineSeqn prefix;
-    auto call_it = callMap.find(entry_addr);
-
-    if (call_it != callMap.end()) {
+  if (num_funcs > 1) {
+    call_it = ginfo->callMap.find(entry_addr);
+    if (call_it != ginfo->callMap.end()) {
       analyzeAddr(prefix, call_it->second, env.realPath);
     }
-
-#if DEBUG_CFG_SOURCE
-    debugFuncHeader(finfo, pinfo, num, num_funcs);
-
-    if (call_it != callMap.end()) {
-      cout << "\ncall site prefix:  0x" << hex << call_it->second
-           << " -> 0x" << call_it->first << dec << "\n";
-      for (auto pit = prefix.begin(); pit != prefix.end(); ++pit) {
-        cout << "inline:  l=" << pit->getLineNum()
-             << "  f='" << pit->getFileName()
-             << "'  p='" << debugPrettyName(pit->getPrettyName()) << "'\n";
-      }
-    }
-#endif
-
-    // see if this function is entirely contained within another
-    // function (as determined by its entry block).  if yes, then we
-    // don't parse the func.  but we still use its blocks for gaps,
-    // unless we've already added the containing func.
-    //
-    int num_contain = func->entry()->containingFuncs();
-    bool add_blocks = true;
-
-    if (num_contain > 1) {
-      vector <ParseAPI::Function *> funcVec;
-      func->entry()->getFuncs(funcVec);
-
-      // see if we've already added the containing func
-      for (auto fit = funcVec.begin(); fit != funcVec.end(); ++fit) {
-        Address entry = (*fit)->addr();
-
-        if (coveredFuncs.find(entry) != coveredFuncs.end()) {
-          add_blocks = false;
-          break;
-        }
-      }
-    }
-
-    // skip duplicated function, blocks already added
-    if (! add_blocks) {
-      DEBUG_CFG("\nskipping duplicated function:  '" << func->name() << "'\n");
-      continue;
-    }
-
-    // basic blocks for this function.  put into a vector and sort by
-    // start VMA for deterministic output.
-    vector <Block *> bvec;
-    BlockSet visited;
-
-    const ParseAPI::Function::blocklist & blist = func->blocks();
-
-    for (auto bit = blist.begin(); bit != blist.end(); ++bit) {
-      Block * block = *bit;
-      bvec.push_back(block);
-      visited[block] = false;
-    }
-
-    std::sort(bvec.begin(), bvec.end(), BlockLessThan);
-
-    // add to the group's set of covered blocks
-    if (! ginfo->alt_file) {
-      for (auto bit = bvec.begin(); bit != bvec.end(); ++bit) {
-        Block * block = *bit;
-        covered.insert(block->start(), block->end());
-      }
-      coveredFuncs.insert(entry_addr);
-    }
-
-    // skip duplicated function, blocks added just now
-    if (num_contain > 1) {
-      DEBUG_CFG("\nskipping duplicated function:  '" << func->name() << "'\n");
-      continue;
-    }
-
-    // if the outline func file name does not match the enclosing
-    // symtab func, then do the full parse in the outline file
-    // (alt-file) and use the symtab file for gaps only.
-    if (pinfo->gap_only) {
-      DEBUG_CFG("\nskipping full parse (gap only) for function:  '"
-                << func->name() << "'\n");
-      continue;
-    }
-
-    TreeNode * root = new TreeNode;
-
-    // traverse the loop (Tarjan) tree
-    LoopList *llist =
-      doLoopTree(env, finfo, ginfo, func, visited, func->getLoopTree());
-
-    DEBUG_CFG("\nnon-loop blocks:\n");
-
-    // process any blocks not in a loop
-    for (auto bit = bvec.begin(); bit != bvec.end(); ++bit) {
-      Block * block = *bit;
-      if (! visited[block]) {
-        doBlock(env, ginfo, func, visited, block, root);
-      }
-    }
-
-    // merge the loops into the proc's inline tree
-    FLPSeqn empty;
-
-    for (auto it = llist->begin(); it != llist->end(); ++it) {
-      mergeInlineLoop(root, empty, *it);
-    }
-
-    // delete the inline prefix from this func, if non-empty
-    if (! prefix.empty()) {
-      root = deleteInlinePrefix(env, root, prefix);
-    }
-
-    // add inline tree to proc info
-    pinfo->root = root;
-
-#if DEBUG_CFG_SOURCE
-    cout << "\nfinal inline tree:  (" << num << "/" << num_funcs << ")"
-         << "  link='" << pinfo->linkName << "'\n"
-         << "parse:  '" << func->name() << "'\n";
-
-    if (call_it != callMap.end()) {
-      cout << "\ncall site prefix:  0x" << hex << call_it->second
-           << " -> 0x" << call_it->first << dec << "\n";
-      for (auto pit = prefix.begin(); pit != prefix.end(); ++pit) {
-        cout << "inline:  l=" << pit->getLineNum()
-             << "  f='" << pit->getFileName()
-             << "'  p='" << debugPrettyName(pit->getPrettyName()) << "'\n";
-      }
-    }
-    cout << "\n";
-    debugInlineTree(root, NULL, *(env.strTab), 0, true);
-    cout << "\nend proc:  (" << num << "/" << num_funcs << ")"
-         << "  link='" << pinfo->linkName << "'\n"
-         << "parse:  '" << func->name() << "'\n";
-#endif
   }
+
+#if DEBUG_CFG_SOURCE
+  debugFuncHeader(finfo, pinfo, num, num_funcs);
+
+  if (call_it != ginfo->callMap.end()) {
+    cout << "\ncall site prefix:  0x" << hex << call_it->second
+         << " -> 0x" << call_it->first << dec << "\n";
+    for (auto pit = prefix.begin(); pit != prefix.end(); ++pit) {
+      cout << "inline:  l=" << pit->getLineNum()
+           << "  f='" << pit->getFileName()
+           << "'  p='" << debugPrettyName(pit->getPrettyName()) << "'\n";
+    }
+  }
+#endif
+
+  // basic blocks for this function.  put into a vector and sort by
+  // start VMA for deterministic output.
+  vector <Block *> bvec;
+  BlockSet visited;
+
+  const ParseAPI::Function::blocklist & blist = func->blocks();
+
+  for (auto bit = blist.begin(); bit != blist.end(); ++bit) {
+    Block * block = *bit;
+    bvec.push_back(block);
+    visited[block] = false;
+  }
+
+  std::sort(bvec.begin(), bvec.end(), BlockLessThan);
+
+  TreeNode * root = new TreeNode;
+
+  // traverse the loop (Tarjan) tree
+  LoopList *llist =
+    doLoopTree(env, finfo, ginfo, func, visited, func->getLoopTree());
+
+  DEBUG_CFG("\nnon-loop blocks:\n");
+
+  // process any blocks not in a loop
+  for (auto bit = bvec.begin(); bit != bvec.end(); ++bit) {
+    Block * block = *bit;
+    if (! visited[block]) {
+      doBlock(env, ginfo, func, visited, block, root);
+    }
+  }
+
+  // merge the loops into the proc's inline tree
+  FLPSeqn empty;
+
+  for (auto it = llist->begin(); it != llist->end(); ++it) {
+    mergeInlineLoop(root, empty, *it);
+  }
+
+  // delete the inline prefix from this func, if non-empty
+  if (! prefix.empty()) {
+    root = deleteInlinePrefix(env, root, prefix);
+  }
+
+  // add inline tree to proc info
+  pinfo->root = root;
+
+#if DEBUG_CFG_SOURCE
+  cout << "\nfinal inline tree:  (" << num << "/" << num_funcs << ")"
+       << "  link='" << pinfo->linkName << "'\n"
+       << "parse:  '" << func->name() << "'\n";
+
+  if (call_it != ginfo->callMap.end()) {
+    cout << "\ncall site prefix:  0x" << hex << call_it->second
+         << " -> 0x" << call_it->first << dec << "\n";
+    for (auto pit = prefix.begin(); pit != prefix.end(); ++pit) {
+      cout << "inline:  l=" << pit->getLineNum()
+           << "  f='" << pit->getFileName()
+           << "'  p='" << debugPrettyName(pit->getPrettyName()) << "'\n";
+    }
+  }
+  cout << "\n";
+  debugInlineTree(root, NULL, *(env.strTab), 0, true);
+  cout << "\nend proc:  (" << num << "/" << num_funcs << ")"
+       << "  link='" << pinfo->linkName << "'\n"
+       << "parse:  '" << func->name() << "'\n";
+#endif
 
   // computeGaps relies Block::start() and Block::end() to have
   // the correct address range for a block to detect gaps.
@@ -1812,15 +1792,23 @@ doFunctionList(WorkEnv & env, FileInfo * finfo, GroupInfo * ginfo, bool fullGaps
   // do not include delay slot instructions, which causes samples taken
   // for delay slot instructions to be out of function ranges.
   // We use gap computation to mitigate this problem.
-  if (intel_gpu_arch == 0) {
-    // add unclaimed regions (gaps) to the group leader, but skip groups
-    // in an alternate file (handled in orig file).
-    if (! ginfo->alt_file) {
-      computeGaps(covered, ginfo->gapSet, ginfo->start, ginfo->end);
+  //
+  if (num_funcs == 1 && intel_gpu_arch == 0) {
+    //
+    // add unclaimed regions (gaps) to the group leader, but only for
+    // standard functions (only one func in group)
+    //
+    VMAIntervalSet covered;
 
-      if (! fullGaps) {
-        addGaps(env, finfo, ginfo);
-      }
+    for (auto bit = bvec.begin(); bit != bvec.end(); ++bit) {
+      Block * block = *bit;
+      covered.insert(block->start(), block->end());
+    }
+
+    computeGaps(covered, ginfo->gapSet, ginfo->start, ginfo->end);
+
+    if (! fullGaps) {
+      addGaps(env, finfo, ginfo);
     }
   }
 
@@ -3031,6 +3019,46 @@ debugInlineTree(TreeNode * node, LoopInfo * info, HPC::StringTable & strTab,
     }
   }
 }
+
+//----------------------------------------------------------------------
+
+#if DEBUG_WORK_LIST
+
+static void
+dumpWorkList(WorkList & wl)
+{
+  cout << "\n--------------------------------------------------\n";
+  cout << "work list\n\n";
+
+  for (auto i = 0; i < wl.size(); i++) {
+    WorkItem * wi = wl[i];
+    FileInfo * finfo = wi->finfo;
+    GroupInfo * ginfo = wi->ginfo;
+    ProcInfo * pinfo = wi->pinfo;
+
+    cout << "file:  " << finfo->fileName << "\n"
+         << "group: 0x" << hex << ginfo->start << dec
+         << "  (" << ginfo->procMap.size() << ")\n"
+         << "proc:  0x" << hex << pinfo->entry_vma << dec
+         << "  " << wi->pinfo->linkName << "\n"
+         << "cost:  " << wi->cost;
+
+    if (wi->promote) {
+      cout << "  promote";
+    }
+    if (wi->first_proc) {
+      cout << "  first-proc";
+    }
+    if (wi->last_proc) {
+      cout << "  last-proc";
+    }
+    cout << "\n\n";
+  }
+
+  cout << "\n--------------------------------------------------\n\n";
+}
+
+#endif
 
 //----------------------------------------------------------------------
 
