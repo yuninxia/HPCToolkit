@@ -22,6 +22,6 @@ hpcrun_mpi_comm_rank_fortran1(int *comm, int *rank, int *ierror, const struct hp
 
     MONITOR_DEBUG("comm = %d\n", *comm);
     f_mpi_comm_size_fortran1(comm, &size, ierror, dispatch);
-    f_mpi_comm_size_fortran1(comm, rank, ierror, dispatch);
+    f_mpi_comm_rank_fortran1(comm, rank, ierror, dispatch);
     monitor_set_mpi_size_rank(size, *rank);
 }
