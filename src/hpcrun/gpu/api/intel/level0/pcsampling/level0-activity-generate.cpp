@@ -16,6 +16,88 @@
 // private operations
 //******************************************************************************
 
+static std::string
+stripEdgeQuotes
+(
+  const std::string& str
+)
+{
+  if (str.length() < 2) return str;
+
+  if (str.front() == '"' && str.back() == '"') {
+    return str.substr(1, str.length() - 2);
+  }
+  return str;
+}
+
+static uint64_t
+getCorrelationId
+(
+  const std::unordered_map<std::string, uint64_t>& kernel_cids,
+  const std::string& running_kernel_name
+)
+{
+  std::string stripped_name = stripEdgeQuotes(running_kernel_name);
+  auto it = kernel_cids.find(stripped_name);
+  if (it != kernel_cids.end()) {
+    return it->second;
+  }
+  return 0;
+}
+
+static void
+processEuStalls
+(
+  const std::map<uint64_t, KernelProperties>& kprops,
+  std::map<uint64_t, EuStalls>& eustalls,
+  const std::vector<std::pair<uint64_t, uint64_t>>& kernel_ranges,
+  uint64_t cid,
+  std::deque<gpu_activity_t*>& activities
+)
+{
+  // Process each EU stall event.
+  for (auto eustall_iter = eustalls.begin(); eustall_iter != eustalls.end(); ++eustall_iter) {
+    uint64_t stall_addr = eustall_iter->first;
+
+    // Use binary search to locate a kernel range that might include the stall address.
+    auto it = std::lower_bound(kernel_ranges.begin(), kernel_ranges.end(),
+      std::make_pair(stall_addr, UINT64_MAX),
+      [](const std::pair<uint64_t, uint64_t>& range, const std::pair<uint64_t, uint64_t>& value) {
+        return range.first < value.first;
+      });
+
+    // Check the previous range in case lower_bound overshoots.
+    if (it != kernel_ranges.begin()) {
+      --it;
+      if (stall_addr >= it->first && stall_addr < it->second) {
+        // Retrieve kernel properties using the start address.
+        auto kernel_iter = kprops.find(it->first);
+        if (kernel_iter != kprops.end()) {
+          zeroActivityTranslate(eustall_iter, kernel_iter, cid, activities);
+        }
+      }
+    }
+  }
+}
+
+static std::vector<std::pair<uint64_t, uint64_t>>
+collectKernelRanges
+(
+  const std::map<uint64_t, KernelProperties>& kprops,
+  const std::string& running_kernel_name
+)
+{
+  std::vector<std::pair<uint64_t, uint64_t>> ranges;
+  std::string stripped_name = stripEdgeQuotes(running_kernel_name);
+  // Iterate in forward order to preserve ascending order of addresses.
+  for (const auto& entry : kprops) {
+    if (stripEdgeQuotes(entry.second.name) == stripped_name) {
+      ranges.emplace_back(entry.first, entry.first + entry.second.size);
+    }
+  }
+  return ranges;
+}
+
 static std::unordered_map<std::string, uint64_t>
 generateKernelCorrelationIds
 (
@@ -24,24 +106,12 @@ generateKernelCorrelationIds
 )
 {
   std::unordered_map<std::string, uint64_t> kernel_cids;
-  for (auto rit = kprops.crbegin(); rit != kprops.crend(); ++rit) {
-    kernel_cids.emplace(rit->second.name, correlation_id);
+  // Iterate in forward order (ascending addresses) for consistency
+  for (auto it = kprops.begin(); it != kprops.end(); ++it) {
+    // Use the stripped kernel name as the key
+    kernel_cids.emplace(stripEdgeQuotes(it->second.name), correlation_id);
   }
   return kernel_cids;
-}
-
-static std::string
-stripEdgeQuotes
-(
-  const std::string& str
-)
-{
-  if (str.length() < 2) return str;
-  
-  if (str.front() == '"' && str.back() == '"') {
-    return str.substr(1, str.length() - 2);
-  }
-  return str;
 }
 
 static void
@@ -54,59 +124,18 @@ generateActivities
   std::deque<gpu_activity_t*>& activities                        // [out] queue for generated activities
 )
 {
-  // Early return if no kernel is running
-  // Prevents unnecessary processing when there's no active kernel
+  // Return early if no kernel is running
   if (running_kernel_name.empty()) return;
 
-  // Pre-collect all address ranges for the running kernel
-  // Each pair contains (start_address, end_address) for a kernel instance
-  std::vector<std::pair<uint64_t, uint64_t>> kernel_ranges;
-  for (auto it = kprops.crbegin(); it != kprops.crend(); ++it) {
-    if (stripEdgeQuotes(it->second.name) == running_kernel_name) {
-      kernel_ranges.emplace_back(it->first, it->first + it->second.size);
-    }
-  }
+  // Collect kernel address ranges matching the running kernel.
+  auto kernel_ranges = collectKernelRanges(kprops, running_kernel_name);
+  if (kernel_ranges.empty()) return; // No matching kernel instances found.
 
-  // Early return if no matching kernel instances found
-  // Prevents unnecessary processing when kernel name doesn't match any known kernels
-  if (kernel_ranges.empty()) return;
+  // Retrieve the correlation ID for the running kernel.
+  uint64_t cid = getCorrelationId(kernel_cids, running_kernel_name);
 
-  // Cache the correlation ID for the running kernel
-  uint64_t cid = 0;
-  for (const auto& kernel : kprops) {
-    if (stripEdgeQuotes(kernel.second.name) == running_kernel_name) {
-      cid = kernel_cids.at(kernel.second.name);
-      break;
-    }
-  }
-
-  // Process each EU stall event
-  for (auto eustall_iter = eustalls.begin(); eustall_iter != eustalls.end(); ++eustall_iter) {
-    uint64_t eustall_addr = eustall_iter->first;
-    
-    // Use binary search to efficiently find potential matching kernel range
-    // This is more efficient than linear search through kernel properties
-    auto it = std::lower_bound(kernel_ranges.begin(), kernel_ranges.end(),
-      std::make_pair(eustall_addr, UINT64_MAX),
-      [](const auto& range, const auto& value) {
-        return range.first < value.first;
-      });
-
-    // Step back to check previous range since lower_bound returns the first range whose start
-    // is >= eustall_addr, but the stall might belong to a previous range. For example:
-    // If ranges are [1000,2000), [3000,4000) and stall_addr=1500, lower_bound returns
-    // [3000,4000) but the stall actually belongs to [1000,2000)
-    if (it != kernel_ranges.begin()) {
-      --it;  // Move to previous range
-      if (eustall_addr >= it->first && eustall_addr < it->second) {
-        // Found matching kernel range, retrieve kernel properties and generate activity
-        auto kernel_iter = kprops.find(it->first);
-        if (kernel_iter != kprops.end()) {
-            zeroActivityTranslate(eustall_iter, kernel_iter, cid, activities);
-        }
-      }
-    }
-  }
+  // Process EU stall events and generate activities.
+  processEuStalls(kprops, eustalls, kernel_ranges, cid, activities);
 }
 
 
@@ -129,14 +158,15 @@ zeroGenerateActivities
     return;
   }
 
+  // Clear any existing activities
   activities.clear();
 
-  // Extract kernel name
+  // Extract the running kernel name
   std::string running_kernel_name = zeroGetKernelName(running_kernel, dispatch);
 
-  // Generate kernel correlation IDs
+  // Generate kernel correlation IDs using stripped kernel names
   auto kernel_cids = generateKernelCorrelationIds(kprops, correlation_id);
 
-  // Generate activities
+  // Generate GPU activities based on kernel properties and EU stall events
   generateActivities(kprops, eustalls, kernel_cids, running_kernel_name, activities);
 }

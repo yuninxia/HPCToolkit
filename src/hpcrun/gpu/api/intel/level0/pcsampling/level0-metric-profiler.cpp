@@ -23,11 +23,84 @@ std::string ZeMetricProfiler::data_dir_name_;
 // private methods
 //******************************************************************************
 
-void 
+static bool
+WaitForKernelStart
+(
+  ZeDeviceDescriptor* desc
+)
+{
+  while (true) {
+    if (desc->kernel_started_.load(std::memory_order_acquire)) return true;
+    if (desc->profiling_state_.load(std::memory_order_acquire) == PROFILER_DISABLED) return false;
+    std::this_thread::yield();
+  }
+}
+
+static bool
+WaitForNextInterval
+(
+  ZeDeviceDescriptor* desc,
+  const struct hpcrun_foil_appdispatch_level0* dispatch,
+  ze_result_t& status
+)
+{
+  while (true) {
+    status = f_zeEventQueryStatus(desc->running_kernel_end_, dispatch);
+    if (status == ZE_RESULT_SUCCESS) return true;
+    if (desc->profiling_state_.load(std::memory_order_acquire) == PROFILER_DISABLED) return false;
+    std::this_thread::yield();
+  }
+}
+
+static bool
+ProcessMetricData
+(
+  ZeDeviceDescriptor* desc,
+  zet_metric_streamer_handle_t& streamer,
+  std::vector<uint8_t>& raw_metrics,
+  const std::vector<std::string>& metric_list,
+  const std::map<uint64_t, KernelProperties>& kprops,
+  const struct hpcrun_foil_appdispatch_level0* dispatch
+)
+{
+  // Define the buffer size
+  uint64_t ssize = MAX_METRIC_BUFFER + 512;
+  
+  // Read raw metric data from the streamer
+  uint64_t raw_size = zeroMetricStreamerReadData(streamer, raw_metrics, ssize, dispatch);
+  if (raw_size == 0) return false;
+
+  // Calculate metric values from the raw data
+  std::vector<uint32_t> samples;
+  std::vector<zet_typed_value_t> metrics;
+  zeroMetricGroupCalculateMultipleMetricValuesExp(desc->metric_group_, raw_size, raw_metrics,
+                                                  samples, metrics, dispatch);
+  if (samples.empty() || metrics.empty()) return false;
+
+  // Process the metric values into stall counts
+  std::map<uint64_t, EuStalls> eustalls;
+  zeroProcessMetrics(metric_list, samples, metrics, eustalls);
+  if (eustalls.empty()) return false;
+
+  // Generate GPU activities based on the processed metrics and kernel properties,
+  // then send these activities to the consumer
+  std::deque<gpu_activity_t*> activities;
+  zeroGenerateActivities(kprops, eustalls, desc->correlation_id_, desc->running_kernel_,
+                         activities, dispatch);
+  zeroSendActivities(activities);
+
+  // Clean up the dynamically allocated activity objects
+  for (auto activity : activities) {
+    delete activity;
+  }
+  return true;
+}
+
+void
 ZeMetricProfiler::MetricProfilingThread
 (
-  ZeMetricProfiler* profiler, 
-  ZeDeviceDescriptor *desc,
+  ZeMetricProfiler* profiler,
+  ZeDeviceDescriptor* desc,
   const struct hpcrun_foil_appdispatch_level0* dispatch
 )
 {
@@ -38,6 +111,7 @@ ZeMetricProfiler::MetricProfilingThread
 
   zeroInitializeMetricStreamer(context, device, group, streamer, dispatch);
 
+  // Get the list of metrics
   std::vector<std::string> metric_list;
   zeroGetMetricList(group, metric_list, dispatch);
   if (!zeroIsValidMetricList(metric_list)) return;
@@ -59,41 +133,33 @@ ZeMetricProfiler::RunProfilingLoop
   std::vector<uint8_t> raw_metrics(MAX_METRIC_BUFFER + 512);
   desc->profiling_state_.store(PROFILER_ENABLED, std::memory_order_release);
   ze_result_t status;
-  
+
+  // Continue while profiling is enabled
   while (desc->profiling_state_.load(std::memory_order_acquire) != PROFILER_DISABLED) {
+
     // Wait for the kernel to start running
-    while (true) {
-
-      if (desc->kernel_started_.load(std::memory_order_acquire)) break;
-
-      if (desc->profiling_state_.load(std::memory_order_acquire) == PROFILER_DISABLED) return;
-      
-      std::this_thread::yield();
-    }
+    if (!WaitForKernelStart(desc)) return;
 
     // Update correlation ID
     gpu_correlation_channel_receive(1, zeroUpdateCorrelationId, desc);
 
-    // Kernel is running, enter sampling loop
-    while (true) {
-      // Wait for the next interval
-      status = f_zeEventQueryStatus(desc->running_kernel_end_, dispatch);
-      if (status == ZE_RESULT_SUCCESS) break;
+    // Wait for the next sampling interval; continuously collect metrics until the event is signaled
+    if (!WaitForNextInterval(desc, dispatch, status)) return;
 
+    while (status != ZE_RESULT_SUCCESS) {
       CollectAndProcessMetrics(desc, streamer, raw_metrics, metric_list, dispatch);
-
       if (desc->profiling_state_.load(std::memory_order_acquire) == PROFILER_DISABLED) return;
-
-      std::this_thread::yield();
+      if (!WaitForNextInterval(desc, dispatch, status)) return;
     }
 
-    // Kernel has finished, perform final sampling and cleanup
+    // Final sampling after the kernel has finished running
     CollectAndProcessMetrics(desc, streamer, raw_metrics, metric_list, dispatch);
 
+    // Reset kernel state
     desc->running_kernel_ = nullptr;
     desc->kernel_started_.store(false, std::memory_order_release);
-    
-    // Notify the app thread that data processing is complete
+
+    // Notify the application thread that data processing is complete
     desc->serial_data_ready_.store(true, std::memory_order_release);
   }
 }
@@ -108,42 +174,15 @@ ZeMetricProfiler::CollectAndProcessMetrics
   const struct hpcrun_foil_appdispatch_level0* dispatch
 )
 {
+  // Read kernel properties from file
   std::map<uint64_t, KernelProperties> kprops;
   zeroReadKernelProperties(desc->device_id_, data_dir_name_, kprops);
   if (kprops.empty()) return;
 
-  uint64_t ssize = MAX_METRIC_BUFFER + 512;
-  
+  // Continuously process metric data while profiling is enabled
   while (desc->profiling_state_.load(std::memory_order_acquire) != PROFILER_DISABLED) {
-    uint64_t raw_size = zeroMetricStreamerReadData(streamer, raw_metrics, ssize, dispatch);
-    if (raw_size == 0) return;
-
-    // Calculate multiple sets of metric values, potentially one set per sub-device
-    // samples: Number of metric value sets (typically one per sub-device)
-    // metrics: Concatenated metric values for all sets/sub-devices
-    std::vector<uint32_t> samples;
-    std::vector<zet_typed_value_t> metrics;
-    zeroMetricGroupCalculateMultipleMetricValuesExp(desc->metric_group_, raw_size, raw_metrics, samples, metrics, dispatch);
-    if (samples.empty() || metrics.empty()) return;
-
-    std::map<uint64_t, EuStalls> eustalls;
-    zeroProcessMetrics(metric_list, samples, metrics, eustalls);
-    if (eustalls.empty()) return;
-
-    std::deque<gpu_activity_t*> activities;
-    zeroGenerateActivities(kprops, eustalls, desc->correlation_id_, desc->running_kernel_, activities, dispatch);
-    zeroSendActivities(activities);
-
-#if 0
-    zeroLogSamplesAndMetrics(samples, metrics);
-    zeroLogMetricList(metric_list);
-    zeroLogActivities(activities, kprops);
-#endif
-
-    for (auto activity : activities) {
-      delete activity;
-    }
-    activities.clear();
+    if (!ProcessMetricData(desc, streamer, raw_metrics, metric_list, kprops, dispatch))
+      return;
   }
 }
 
@@ -152,10 +191,10 @@ ZeMetricProfiler::CollectAndProcessMetrics
 // public methods
 //******************************************************************************
 
-ZeMetricProfiler* 
+ZeMetricProfiler*
 ZeMetricProfiler::Create
 (
-  char *dir,
+  char* dir,
   const struct hpcrun_foil_appdispatch_level0* dispatch
 )
 {
@@ -178,7 +217,7 @@ ZeMetricProfiler::~ZeMetricProfiler()
   StopProfilingMetrics();
 }
 
-void 
+void
 ZeMetricProfiler::StartProfilingMetrics
 (
   const struct hpcrun_foil_appdispatch_level0* dispatch
@@ -192,13 +231,14 @@ ZeMetricProfiler::StartProfilingMetrics
     monitor_disable_new_threads();
     it->second->profiling_thread_ = new std::thread(MetricProfilingThread, this, it->second, dispatch);
     monitor_enable_new_threads();
+    // Wait until profiling is enabled before continuing
     while (it->second->profiling_state_.load(std::memory_order_acquire) != PROFILER_ENABLED) {
       std::this_thread::sleep_for(std::chrono::milliseconds(1));
     }
   }
 }
 
-void 
+void
 ZeMetricProfiler::StopProfilingMetrics
 (
   void

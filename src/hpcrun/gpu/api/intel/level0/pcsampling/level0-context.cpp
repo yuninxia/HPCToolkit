@@ -13,7 +13,26 @@
 
 
 //******************************************************************************
-// interface operations
+// private operations
+//******************************************************************************
+
+static ze_context_desc_t
+initializeContextDescriptor
+(
+  void
+)
+{
+  ze_context_desc_t cdesc = {
+    ZE_STRUCTURE_TYPE_CONTEXT_DESC, // type
+    nullptr,                        // pNext
+    0                               // flags
+  };
+  return cdesc;
+}
+
+
+//******************************************************************************
+// public methods
 //******************************************************************************
 
 ze_context_handle_t
@@ -24,11 +43,7 @@ zeroCreateContext
 )
 {
   ze_context_handle_t context = nullptr;
-  ze_context_desc_t cdesc = {
-    ZE_STRUCTURE_TYPE_CONTEXT_DESC,
-    nullptr,
-    0
-  };
+  ze_context_desc_t cdesc = initializeContextDescriptor();
   ze_result_t status = f_zeContextCreate(driver, &cdesc, &context, dispatch);
   level0_check_result(status, __LINE__);
   return context;
