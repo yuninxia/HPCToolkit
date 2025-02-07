@@ -16,7 +16,7 @@
 // global variables
 //******************************************************************************
 
-std::map<ze_device_handle_t, ZeDevice> *devices_ = nullptr;
+std::map<ze_device_handle_t, ZeDevice>* devices_ = nullptr;
 
 
 //******************************************************************************
@@ -37,24 +37,25 @@ createDeviceDescriptor
 {
   ZeDeviceDescriptor* desc = new ZeDeviceDescriptor;
 
-  desc->stall_sampling_ = stall_sampling;
-  desc->device_ = device;
-  desc->device_id_ = did;
-  desc->parent_device_id_ = -1;    // no parent device
-  desc->parent_device_ = nullptr;
-  desc->subdevice_id_ = -1;        // not a subdevice
-  desc->num_sub_devices_ = zeroGetSubDeviceCount(device, dispatch);
-  desc->driver_ = driver;
-  desc->context_ = context;
-  desc->correlation_id_ = 0;
+  desc->stall_sampling_      = stall_sampling;
+  desc->device_              = device;
+  desc->device_id_           = did;
+  desc->parent_device_id_    = -1;    // No parent device
+  desc->parent_device_       = nullptr;
+  desc->subdevice_id_        = -1;    // Not a subdevice
+  desc->num_sub_devices_     = zeroGetSubDeviceCount(device, dispatch);
+  desc->driver_              = driver;
+  desc->context_             = context;
+  desc->correlation_id_      = 0;
   desc->last_correlation_id_ = 0;
   
+  // Set the metric group based on the provided metric_group string
   zeroGetMetricGroup(device, metric_group, desc->metric_group_, dispatch);
   
-  desc->profiling_thread_ = nullptr;
+  desc->profiling_thread_    = nullptr;
   desc->profiling_state_.store(PROFILER_DISABLED, std::memory_order_release);
-  desc->running_kernel_ = nullptr;
-  desc->running_kernel_end_ = nullptr;
+  desc->running_kernel_      = nullptr;
+  desc->running_kernel_end_  = nullptr;
 
   return desc;
 }
@@ -68,16 +69,16 @@ createSubDeviceDescriptor
 )
 {
   ZeDeviceDescriptor* sub_desc = new ZeDeviceDescriptor;
-  sub_desc->stall_sampling_ = parent_desc->stall_sampling_;
-  sub_desc->device_ = sub_device;
-  sub_desc->device_id_ = parent_desc->device_id_;
+  sub_desc->stall_sampling_   = parent_desc->stall_sampling_;
+  sub_desc->device_           = sub_device;
+  sub_desc->device_id_        = parent_desc->device_id_;
   sub_desc->parent_device_id_ = parent_desc->device_id_;
-  sub_desc->parent_device_ = parent_desc->device_;
-  sub_desc->subdevice_id_ = sub_device_id;
-  sub_desc->num_sub_devices_ = 0;
-  sub_desc->driver_ = parent_desc->driver_;
-  sub_desc->context_ = parent_desc->context_;
-  sub_desc->metric_group_ = parent_desc->metric_group_;
+  sub_desc->parent_device_    = parent_desc->device_;
+  sub_desc->subdevice_id_     = sub_device_id;
+  sub_desc->num_sub_devices_  = 0;
+  sub_desc->driver_           = parent_desc->driver_;
+  sub_desc->context_          = parent_desc->context_;
+  sub_desc->metric_group_     = parent_desc->metric_group_;
   sub_desc->profiling_thread_ = nullptr;
   sub_desc->profiling_state_.store(PROFILER_DISABLED, std::memory_order_release);
   
@@ -97,13 +98,13 @@ SetupDevice
 )
 {
   ZeDevice desc;
-
-  desc.device_ = device;
-  desc.id_ = id; // take parent device's id if it is a subdevice
-  desc.parent_id_ = parent_id;
-  desc.parent_device_ = parent_device;
-  desc.subdevice_id_ = subdevice_id;
-  desc.driver_ = driver;
+  desc.device_         = device;
+  desc.id_             = id; // For subdevices, this is the parent's id
+  desc.parent_id_      = parent_id;
+  desc.parent_device_  = parent_device;
+  desc.subdevice_id_   = subdevice_id;
+  desc.driver_         = driver;
+  // If not a subdevice, query the number of subdevices; otherwise, set to 0
   desc.num_subdevices_ = (subdevice_id == -1) ? zeroGetSubDeviceCount(device, dispatch) : 0;
 
   devices_->insert({device, std::move(desc)});
@@ -178,18 +179,20 @@ zeroEnumerateDevices
 
   int32_t did = 0;
   for (const auto& driver : drivers) {
+    // Create a context for the current driver
     ze_context_handle_t context = zeroCreateContext(driver, dispatch);
     metric_contexts.push_back(context);
 
+    // Retrieve devices associated with the driver
     std::vector<ze_device_handle_t> devices = zeroGetDevices(driver, dispatch);
 
     for (const auto& device : devices) {
-      // Create root device descriptor
+      // Create the root device descriptor
       ZeDeviceDescriptor* root_desc = createDeviceDescriptor(device, did, driver, context, stall_sampling, metric_group, dispatch);
       if (root_desc != nullptr) {
         device_descriptors.insert({device, root_desc});
 
-        // Create sub-device descriptors
+        // If the device has sub-devices, enumerate and create their descriptors
         uint32_t num_sub_devices = root_desc->num_sub_devices_;
         if (num_sub_devices > 0) {
           std::vector<ze_device_handle_t> sub_devices = zeroGetSubDevices(device, num_sub_devices, dispatch);
@@ -250,8 +253,10 @@ zeroEnumerateAndSetupDevices
     std::vector<ze_device_handle_t> devices = zeroGetDevices(driver, dispatch);
     
     for (auto device : devices) {
+      // Set up the root device.
       SetupDevice(device, driver, did, -1, nullptr, -1, dispatch);
       
+      // Set up any sub-devices.
       uint32_t num_sub_devices = zeroGetSubDeviceCount(device, dispatch);
       if (num_sub_devices > 0) {
         std::vector<ze_device_handle_t> sub_devices = zeroGetSubDevices(device, num_sub_devices, dispatch);
@@ -259,7 +264,7 @@ zeroEnumerateAndSetupDevices
           SetupDevice(sub_devices[j], driver, did, did, device, j, dispatch);
         }
       }
-      did++;
+      ++did;
     }
   }
 }

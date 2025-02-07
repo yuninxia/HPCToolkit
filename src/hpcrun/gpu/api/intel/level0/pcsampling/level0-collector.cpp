@@ -26,16 +26,18 @@ ZeCollector::Create
 {
   zeroCheckDriverVersion(1, 2, /*printVersion=*/false, dispatch);
 
-  ZeCollector* collector = new ZeCollector(data_dir, dispatch);
-  bool tracerCreated = zeroCreateTracer(collector, dispatch);
-  if (!tracerCreated) {
-    delete collector;
+  std::unique_ptr<ZeCollector> collector(new ZeCollector(data_dir, dispatch));
+
+  // Create the tracer associated with the collector
+  if (!zeroCreateTracer(collector.get(), dispatch)) {
+    // If tracer creation fails, the collector is automatically deleted
     return nullptr;
   }
   
   zeroInitializeKernelBaseAddressFunction(dispatch);
 
-  return collector;
+  // Release ownership and return the raw pointer to the collector.
+  return collector.release();
 }
 
 ZeCollector::ZeCollector

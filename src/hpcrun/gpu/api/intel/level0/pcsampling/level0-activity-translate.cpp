@@ -22,34 +22,24 @@ static const struct {
   uint64_t EuStalls::* stall_value;
   gpu_inst_stall_t reason;
 } stall_mappings[] = {
-    {&EuStalls::control_, GPU_INST_STALL_OTHER},  // TBD
-    {&EuStalls::pipe_, GPU_INST_STALL_PIPE_BUSY},
-    {&EuStalls::send_, GPU_INST_STALL_GMEM},      // TBD
-    {&EuStalls::dist_, GPU_INST_STALL_PIPE_BUSY}, // TBD
-    {&EuStalls::sbid_, GPU_INST_STALL_IDEPEND},   // TBD
-    {&EuStalls::sync_, GPU_INST_STALL_SYNC},
-    {&EuStalls::insfetch_, GPU_INST_STALL_IFETCH},
-    {&EuStalls::other_, GPU_INST_STALL_OTHER}
+    {&EuStalls::control_,   GPU_INST_STALL_OTHER},    // TBD
+    {&EuStalls::pipe_,      GPU_INST_STALL_PIPE_BUSY},
+    {&EuStalls::send_,      GPU_INST_STALL_GMEM},     // TBD
+    {&EuStalls::dist_,      GPU_INST_STALL_PIPE_BUSY},// TBD
+    {&EuStalls::sbid_,      GPU_INST_STALL_IDEPEND},  // TBD
+    {&EuStalls::sync_,      GPU_INST_STALL_SYNC},
+    {&EuStalls::insfetch_,  GPU_INST_STALL_IFETCH},
+    {&EuStalls::other_,     GPU_INST_STALL_OTHER}
 };
 
-static bool
-convertPCSampling
+static void
+setPCSamplingModuleId
 (
-  const std::map<uint64_t, EuStalls>::iterator& eustall_iter,               // [in] iterator to current EU stall entry (address -> stall info)
-  const std::map<uint64_t, KernelProperties>::const_iterator& kernel_iter,  // [in] iterator to kernel properties entry (base address -> properties)
-  uint64_t correlation_id,                                                  // [in] unique identifier to correlate related activities
-  gpu_inst_stall_t stall_reason,                                            // [in] type of stall that occurred
-  uint64_t stall_count,                                                     // [in] number of times this stall occurred
-  gpu_activity_t* activity                                                  // [out] activity structure to be filled with PC sampling data
+  gpu_activity_t* activity,
+  const KernelProperties& kernel_props
 )
 {
-  if (!activity) return false;
-
-  activity->kind = GPU_ACTIVITY_PC_SAMPLING;
-
-  const KernelProperties& kernel_props = kernel_iter->second;
-
-  // Convert hex string to uint32_t directly
+  // Convert the first 8 characters of the hex string to a uint32_t
   uint32_t module_id_uint32 = 0;
   std::istringstream iss(kernel_props.module_id.substr(0, 8));
   iss >> std::hex >> module_id_uint32;
@@ -59,6 +49,45 @@ convertPCSampling
     uint32_t hpctoolkit_module_id = zebin_id_map_entry_hpctoolkit_id_get(entry);
     activity->details.pc_sampling.pc.lm_id = static_cast<uint16_t>(hpctoolkit_module_id);
   }
+}
+
+static void
+fillPCSamplingActivityFields
+(
+  gpu_activity_t* activity,
+  uint64_t lm_ip,
+  uint64_t correlation_id,
+  uint64_t stall_count,
+  gpu_inst_stall_t stall_reason
+)
+{
+  activity->details.pc_sampling.pc.lm_ip = lm_ip;
+  activity->details.pc_sampling.correlation_id = correlation_id;
+  activity->details.pc_sampling.samples = stall_count;
+
+  // FIXME(Yuning): latencySamples may not be accurate
+  activity->details.pc_sampling.latencySamples = stall_count;
+  activity->details.pc_sampling.stallReason = stall_reason;
+}
+
+static bool
+convertPCSampling
+(
+  const std::map<uint64_t, EuStalls>::iterator& eustall_iter,
+  const std::map<uint64_t, KernelProperties>::const_iterator& kernel_iter,
+  uint64_t correlation_id,
+  gpu_inst_stall_t stall_reason,
+  uint64_t stall_count,
+  gpu_activity_t* activity
+)
+{
+  if (!activity) return false;
+
+  activity->kind = GPU_ACTIVITY_PC_SAMPLING;
+  const KernelProperties& kernel_props = kernel_iter->second;
+
+  // Set the module id (lm_id) using the kernel properties
+  setPCSamplingModuleId(activity, kernel_props);
 
 #if 0
   uint64_t real = eustall_iter->first;
@@ -67,13 +96,8 @@ convertPCSampling
   std::cout << "[INFO] real: " << std::hex << real << " ,base: " << std::hex << base << " ,offset: " << std::hex << offset << std::endl;
 #endif
 
-  activity->details.pc_sampling.pc.lm_ip = eustall_iter->first;
-  activity->details.pc_sampling.correlation_id = correlation_id;
-  activity->details.pc_sampling.samples = stall_count;
-
-  // FIXME(Yuning): latencySamples may not be accurate
-  activity->details.pc_sampling.latencySamples = stall_count;
-  activity->details.pc_sampling.stallReason = stall_reason;
+  // Fill in the remaining fields
+  fillPCSamplingActivityFields(activity, eustall_iter->first, correlation_id, stall_count, stall_reason);
 
 #if 0
   zeroLogPCSample(correlation_id, kernel_props, activity->details.pc_sampling, eustall_iter->second, kernel_iter->first);
@@ -82,6 +106,24 @@ convertPCSampling
   return true;
 }
 
+static std::unique_ptr<gpu_activity_t>
+createAndFillActivity
+(
+  const std::map<uint64_t, EuStalls>::iterator& eustall_iter,
+  const std::map<uint64_t, KernelProperties>::const_iterator& kernel_iter,
+  uint64_t correlation_id,
+  gpu_inst_stall_t stall_reason,
+  uint64_t stall_count
+)
+{
+  auto activity = std::make_unique<gpu_activity_t>();
+  gpu_activity_init(activity.get());
+  if (convertPCSampling(eustall_iter, kernel_iter, correlation_id, stall_reason, stall_count, activity.get())) {
+    return activity;
+  } else {
+    return nullptr;
+  }
+}
 
 //******************************************************************************
 // interface operations
@@ -98,14 +140,14 @@ zeroActivityTranslate
 {
   const EuStalls& stall = eustall_iter->second;
 
+  // Iterate over all stall mappings
   for (const auto& mapping : stall_mappings) {
+    // Get the count of stalls for the current mapping
     uint64_t stall_count = stall.*(mapping.stall_value);
     if (stall_count == 0) continue; // Skip if no stalls of this type
 
-    auto activity = std::make_unique<gpu_activity_t>();
-    gpu_activity_init(activity.get());
-    if (convertPCSampling(eustall_iter, kernel_iter, correlation_id, mapping.reason, stall_count, activity.get())) {
-      activities.push_back(activity.release());
-    }
+    // Create and fill a new GPU activity
+    auto activity = createAndFillActivity(eustall_iter, kernel_iter, correlation_id, mapping.reason, stall_count);
+    if (activity) activities.push_back(activity.release());
   }
 }

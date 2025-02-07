@@ -24,13 +24,17 @@ zeroGetKernelName
 )
 {
   size_t name_len = 0;
+  // First call to determine the required buffer size
   ze_result_t status = f_zeKernelGetName(kernel, &name_len, nullptr, dispatch);
   if (status != ZE_RESULT_SUCCESS || name_len == 0) {
     return "UnknownKernel";
   }
 
+  // Allocate a buffer for the kernel name (including the null terminator)
   std::vector<char> kernel_name(name_len);
   status = f_zeKernelGetName(kernel, &name_len, kernel_name.data(), dispatch);
+  
+  // Construct a std::string excluding the null terminator if successful
   return (status == ZE_RESULT_SUCCESS) ? std::string(kernel_name.begin(), kernel_name.end() - 1) : "UnknownKernel";
 }
 

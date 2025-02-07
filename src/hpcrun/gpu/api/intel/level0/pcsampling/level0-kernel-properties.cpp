@@ -12,9 +12,9 @@
 #include "level0-kernel-properties.hpp"
 
 
-//******************************************************************************
+//*****************************************************************************
 // global variables
-//******************************************************************************
+//*****************************************************************************
 
 std::shared_mutex kernel_command_properties_mutex_;
 std::map<std::string, ZeKernelCommandProperties> *kernel_command_properties_ = nullptr;
@@ -34,7 +34,7 @@ static ze_result_t (*zexKernelGetBaseAddress)(ze_kernel_handle_t hKernel, uint64
 // private operations
 //******************************************************************************
 
-void
+static void
 zeroLogKernelProfiles
 (
   const ZeKernelCommandProperties* kernel,
@@ -47,13 +47,166 @@ zeroLogKernelProfiles
             << ", size=" << size
             << ", device_handle=" << kernel->device_
             << ", device_id=" << kernel->device_id_
-            << ", module_id=" << kernel->module_id_ 
+            << ", module_id=" << kernel->module_id_
             << ", kernel_id=" << kernel->kernel_id_
             << ", work_dim=(x=" << kernel->group_size_.x
             << ", y=" << kernel->group_size_.y
             << ", z=" << kernel->group_size_.z << ")\n\n";
 }
 
+static std::string
+buildKernelPropertiesCacheKey
+(
+  const std::string& data_dir_name,
+  int32_t device_id
+)
+{
+  return data_dir_name + "_" + std::to_string(device_id);
+}
+
+static std::filesystem::path
+buildKernelPropertiesFilePath
+(
+  const std::string& data_dir_name,
+  int32_t device_id
+)
+{
+  std::string filename = ".kprops." + std::to_string(device_id) + "." + std::to_string(getpid()) + ".txt";
+  return std::filesystem::path(data_dir_name) / filename;
+}
+
+static bool
+tryGetCachedKernelProperties
+(
+  const std::string& cache_key,
+  const std::filesystem::path& file_path,
+  std::map<uint64_t, KernelProperties>& outProps
+)
+{
+  std::lock_guard<std::mutex> lock(g_kprops_mutex);
+  if (std::filesystem::exists(file_path)) {
+    auto current_timestamp = std::filesystem::last_write_time(file_path);
+    auto cache_it = g_kprops_cache.find(cache_key);
+    auto ts_it = g_kprops_timestamps.find(cache_key);
+    if (cache_it != g_kprops_cache.end() &&
+        ts_it != g_kprops_timestamps.end() &&
+        ts_it->second == current_timestamp) {
+      outProps = cache_it->second;
+      return true;
+    }
+  }
+  return false;
+}
+
+static std::map<uint64_t, KernelProperties>
+readKernelPropertiesFromFile
+(
+  const std::filesystem::path& file_path
+)
+{
+  std::map<uint64_t, KernelProperties> properties;
+  std::ifstream kpf(file_path);
+  if (kpf.is_open()) {
+    std::string name, baseAddrStr, kernelId, moduleId, sizeStr;
+    // Read file contents in groups of 5 lines.
+    while (std::getline(kpf, name) &&
+           std::getline(kpf, baseAddrStr) &&
+           std::getline(kpf, kernelId) &&
+           std::getline(kpf, moduleId) &&
+           std::getline(kpf, sizeStr)) {
+      KernelProperties props;
+      props.name = name;
+      props.base_address = std::strtoul(baseAddrStr.c_str(), nullptr, 0);
+      props.kernel_id = kernelId;
+      props.module_id = moduleId;
+      props.size = std::strtoul(sizeStr.c_str(), nullptr, 0);
+      properties.insert({ props.base_address, std::move(props) });
+    }
+  }
+  return properties;
+}
+
+static void
+updateKernelPropertiesCache
+(
+  const std::string& cache_key,
+  const std::filesystem::path& file_path,
+  const std::map<uint64_t, KernelProperties>& new_props
+)
+{
+  std::lock_guard<std::mutex> lock(g_kprops_mutex);
+  g_kprops_cache[cache_key] = new_props;
+  g_kprops_timestamps[cache_key] = std::filesystem::last_write_time(file_path);
+}
+
+static void
+clearKernelPropertiesCache
+(
+  const std::string& cache_key,
+  std::map<uint64_t, KernelProperties>& kprops
+)
+{
+  std::lock_guard<std::mutex> lock(g_kprops_mutex);
+  g_kprops_cache.erase(cache_key);
+  g_kprops_timestamps.erase(cache_key);
+  kprops.clear();
+}
+
+static std::map<int32_t, std::map<uint64_t, ZeKernelCommandProperties*>>
+buildDeviceKernelPropsMap
+(
+  void
+)
+{
+  std::map<int32_t, std::map<uint64_t, ZeKernelCommandProperties*>> device_kprops;
+  for (auto& entry : *kernel_command_properties_) {
+    int32_t device_id = entry.second.device_id_;
+    uint64_t base_addr = entry.second.base_addr_;
+    device_kprops[device_id].insert({ base_addr, &entry.second });
+  }
+  return device_kprops;
+}
+
+static void
+writeKernelProfilesToFile
+(
+  const std::string& data_dir,
+  int32_t device_id,
+  const std::map<uint64_t, ZeKernelCommandProperties*>& kprops
+)
+{
+  std::string fpath = data_dir + "/.kprops." + std::to_string(device_id) + "." + std::to_string(getpid()) + ".txt";
+  std::ofstream kpfs(fpath, std::ios::out | std::ios::trunc);
+  if (!kpfs.is_open()) {
+    // Failed to open file; optionally log an error
+    return;
+  }
+  uint64_t prev_base = 0;
+  // Iterate in reverse order to compute the kernel size from the base address
+  for (auto it = kprops.crbegin(); it != kprops.crend(); ++it) {
+    kpfs << "\"" << it->second->name_ << "\"" << std::endl;
+    kpfs << it->second->base_addr_ << std::endl;
+    kpfs << it->second->kernel_id_ << std::endl;
+    kpfs << it->second->module_id_ << std::endl;
+
+    size_t size = 0;
+    if (prev_base == 0) {
+      size = it->second->size_;
+    } else {
+      size = prev_base - it->second->base_addr_;
+      if (size > it->second->size_) {
+        size = it->second->size_;
+      }
+    }
+    kpfs << size << std::endl;
+    prev_base = it->second->base_addr_;
+
+#if 0
+    zeroLogKernelProfiles(it->second, size);
+#endif
+  }
+  kpfs.close();
+}
 
 //******************************************************************************
 // interface operations
@@ -65,11 +218,10 @@ zeroInitializeKernelCommandProperties
   void
 )
 {
-  kernel_command_properties_mutex_.lock();
+  std::lock_guard<std::shared_mutex> lock(kernel_command_properties_mutex_);
   if (kernel_command_properties_ == nullptr) {
     kernel_command_properties_ = new std::map<std::string, ZeKernelCommandProperties>;
   }
-  kernel_command_properties_mutex_.unlock();
 }
 
 void
@@ -81,87 +233,24 @@ zeroReadKernelProperties
 )
 {
   // Create a unique cache key combining directory and device ID
-  // This allows caching data for different device/directory combinations
-  std::string cache_key = data_dir_name + "_" + std::to_string(device_id);
-  
-  // Construct the expected file path for kernel properties
-  // Format: <data_dir>/.kprops.<device_id>.<pid>.txt
-  std::string kprops_filename = ".kprops." + std::to_string(device_id) + "." + 
-                                std::to_string(getpid()) + ".txt";
-  std::filesystem::path file_path = std::filesystem::path(data_dir_name) / kprops_filename;
-  
-  // Check cache status under mutex protection
-  // This section handles cache lookup and validation
-  {
-    std::lock_guard<std::mutex> lock(g_kprops_mutex);  // Thread-safe cache access
-    
-    // If file exists, verify if we have valid cached data
-    if (std::filesystem::exists(file_path)) {
-      // Get current file timestamp for cache validation
-      auto current_timestamp = std::filesystem::last_write_time(file_path);
-      
-      // Look up cache entries
-      auto cache_it = g_kprops_cache.find(cache_key);
-      auto timestamp_it = g_kprops_timestamps.find(cache_key);
-      
-      // Check if we have a valid cache entry with matching timestamp
-      // This prevents using stale cache data if file has been modified
-      if (cache_it != g_kprops_cache.end() && 
-          timestamp_it != g_kprops_timestamps.end() &&
-          timestamp_it->second == current_timestamp) {
-        // Cache hit - return cached data without reading file
-        kprops = cache_it->second;
-        return;
-      }
-    }
+  std::string cache_key = buildKernelPropertiesCacheKey(data_dir_name, device_id);
+  // Construct the expected file path for the kernel properties file
+  std::filesystem::path file_path = buildKernelPropertiesFilePath(data_dir_name, device_id);
+
+  // Attempt to retrieve cached data (under mutex protection)
+  if (tryGetCachedKernelProperties(cache_key, file_path, kprops)) {
+    // Cache hit: return the cached kernel properties
+    return;
   }
-  
-  // Cache miss or file modified - need to read from file
-  std::map<uint64_t, KernelProperties> new_props;
+
+  // Cache miss or file modification: read from file
   if (std::filesystem::exists(file_path)) {
-    // Open and read the kernel properties file
-    std::ifstream kpf(file_path);
-    if (kpf.is_open()) {
-      // Read file contents line by line
-      // Format: name, base_address, kernel_id, module_id, size (one per line)
-      while (!kpf.eof()) {
-        KernelProperties props;
-        std::string line;
-
-        // Read kernel name
-        std::getline(kpf, props.name);
-        if (kpf.eof()) break;
-
-        // Read and parse base address
-        std::getline(kpf, line);
-        if (kpf.eof()) break;
-        props.base_address = std::strtoul(line.c_str(), nullptr, 0);
-
-        // Read kernel and module IDs
-        std::getline(kpf, props.kernel_id);
-        std::getline(kpf, props.module_id);
-
-        // Read and parse size
-        std::getline(kpf, line);
-        props.size = std::strtoul(line.c_str(), nullptr, 0);
-
-        // Store properties in map using base address as key
-        new_props.insert({props.base_address, std::move(props)});
-      }
-      kpf.close();
-      
-      // Update cache with new data under mutex protection
-      std::lock_guard<std::mutex> lock(g_kprops_mutex);
-      g_kprops_cache[cache_key] = new_props;
-      g_kprops_timestamps[cache_key] = std::filesystem::last_write_time(file_path);
-      kprops = std::move(new_props);
-    }
+    auto new_props = readKernelPropertiesFromFile(file_path);
+    updateKernelPropertiesCache(cache_key, file_path, new_props);
+    kprops = std::move(new_props);
   } else {
-    // File doesn't exist - clean up any stale cache entries
-    std::lock_guard<std::mutex> lock(g_kprops_mutex);
-    g_kprops_cache.erase(cache_key);
-    g_kprops_timestamps.erase(cache_key);
-    kprops.clear();
+    // File does not exist: clear any stale cache entries
+    clearKernelPropertiesCache(cache_key, kprops);
   }
 }
 
@@ -201,55 +290,15 @@ zeroDumpKernelProfiles
   const std::string& data_dir_
 )
 {
-  kernel_command_properties_mutex_.lock();
-  std::map<int32_t, std::map<uint64_t, ZeKernelCommandProperties *>> device_kprops; // sorted by device id then base address;
-  for (auto it = kernel_command_properties_->begin(); it != kernel_command_properties_->end(); it++) {
-    auto dkit = device_kprops.find(it->second.device_id_);
-    if (dkit == device_kprops.end()) {
-      std::map<uint64_t, ZeKernelCommandProperties *> kprops;
-      kprops.insert({it->second.base_addr_, &(it->second)});
-      device_kprops.insert({it->second.device_id_, std::move(kprops)});
-    }
-    else {
-      if (dkit->second.find(it->second.base_addr_) != dkit->second.end()) {
-        // already inserted
-        continue;
-      }
-      dkit->second.insert({it->second.base_addr_, &(it->second)});
-    }
+  // Dump kernel profiles into files grouped by device ID
+  std::lock_guard<std::shared_mutex> lock(kernel_command_properties_mutex_);
+  if (!kernel_command_properties_) {
+    // If the kernel command properties map is not initialized, do nothing
+    return;
   }
-
-  for (auto& props : device_kprops) {
-    // kernel properties file path: data_dir/.kprops.<device_id>.<pid>.txt
-    std::string fpath = data_dir_ + "/.kprops."  + std::to_string(props.first) + "." + std::to_string(getpid()) + ".txt";
-    std::ofstream kpfs = std::ofstream(fpath, std::ios::out | std::ios::trunc);
-    uint64_t prev_base = 0;
-    for (auto it = props.second.crbegin(); it != props.second.crend(); it++) {
-      // quote kernel name which may contain "," 
-      kpfs << "\"" << it->second->name_.c_str() << "\"" << std::endl;
-      kpfs << it->second->base_addr_ << std::endl;
-      kpfs << it->second->kernel_id_ << std::endl;
-      kpfs << it->second->module_id_ << std::endl;
-
-      size_t size;
-      if (prev_base == 0) {
-        size = it->second->size_;
-      }
-      else {
-        size = prev_base - it->second->base_addr_;
-        if (size > it->second->size_) {
-          size = it->second->size_;
-        }
-      }
-      kpfs << size << std::endl;
-      prev_base = it->second->base_addr_;
-
-#if 0
-      zeroLogKernelProfiles(it->second, size);
-#endif
-    }
-    kpfs.close();
+  auto device_kprops = buildDeviceKernelPropsMap();
+  for (const auto& device_entry : device_kprops) {
+    int32_t device_id = device_entry.first;
+    writeKernelProfilesToFile(data_dir_, device_id, device_entry.second);
   }
-
-  kernel_command_properties_mutex_.unlock();
 }

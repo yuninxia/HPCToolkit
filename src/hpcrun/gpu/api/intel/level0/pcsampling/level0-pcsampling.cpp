@@ -22,13 +22,20 @@
 #include "level0-tracing-callbacks.hpp"
 #include "level0-metric-profiler.hpp"
 
+
+//*****************************************************************************
+// local variables
+//*****************************************************************************
+
 static ZeCollector* ze_collector = nullptr;
 ZeMetricProfiler* metric_profiler = nullptr;
 
 static pthread_once_t level0_pcsampling_init_once = PTHREAD_ONCE_INIT;
 static std::string level0_pcsampling_enabled_str = (std::getenv("ZET_ENABLE_METRICS") ? std::getenv("ZET_ENABLE_METRICS") : "");
 
+// Buffer for generating a unique directory name
 static char pattern[256];
+// Pointer to the created data directory name
 static char* data_dir_name = nullptr;
 
 
@@ -42,13 +49,13 @@ isPcSamplingEnabled
   void
 )
 {
-  return level0_pcsampling_enabled_str == std::string("1");
+  return level0_pcsampling_enabled_str == "1";
 }
 
 static void
 enableProfiling
 (
-  char *dir,
+  char* dir,
   const struct hpcrun_foil_appdispatch_level0* dispatch
 )
 {
@@ -92,12 +99,15 @@ zeroPCSamplingInit
   void
 )
 {
-  std::string base_path = "/tmp/hpcrun_level0_pc";
+  const std::string base_path = "/tmp/hpcrun_level0_pc";
+  // Create the base directory if it does not exist
   if (!std::filesystem::exists(base_path)) {
     std::filesystem::create_directories(base_path);
+    // Grant all permissions to the base directory
     std::filesystem::permissions(base_path, std::filesystem::perms::all, std::filesystem::perm_options::add);
   }
 
+  // Generate a unique temporary directory name using mkdtemp
   std::snprintf(pattern, sizeof(pattern), "%s/tmpdir.XXXXXX", base_path.c_str());
   data_dir_name = mkdtemp(pattern);
   if (data_dir_name == nullptr) {
@@ -106,13 +116,14 @@ zeroPCSamplingInit
   }
 }
 
-void 
+void
 zeroPCSamplingEnable
 (
   const struct hpcrun_foil_appdispatch_level0* dispatch
 )
 {
   if (isPcSamplingEnabled()) {
+    // Save the dispatch pointer in a static variable for use in the lambda
     static const struct hpcrun_foil_appdispatch_level0* saved_dispatch = dispatch;
     pthread_once(&level0_pcsampling_init_once, []() { pcSamplingEnableHelper(saved_dispatch); });
   } else {
@@ -126,20 +137,23 @@ zeroPCSamplingFini
   void
 )
 {
+  // Set to true if you want to keep the data directory for debugging purposes
   static const bool keep_data_dir_for_debug = false;
 
   if (isPcSamplingEnabled()) {
     if (ze_collector != nullptr) {
       delete ze_collector;
+      ze_collector = nullptr;
     }
     disableProfiling();
 
     if (!keep_data_dir_for_debug) {
-      for (const auto& e: std::filesystem::directory_iterator(std::filesystem::path(data_dir_name))) {
-        std::filesystem::remove_all(e.path());
-      }
-      if (remove(data_dir_name)) {
-        std::cerr << "[WARNING] " << data_dir_name << " is not removed. Please manually remove it." << std::endl;
+      std::error_code ec;
+      // Recursively remove the data directory
+      std::filesystem::remove_all(data_dir_name, ec);
+      if (ec) {
+        std::cerr << "[WARNING] Failed to remove " << data_dir_name 
+                  << ". Please manually remove it." << std::endl;
       }
     }
   }

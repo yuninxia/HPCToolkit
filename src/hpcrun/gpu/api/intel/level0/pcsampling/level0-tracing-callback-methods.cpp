@@ -12,9 +12,9 @@
 #include "level0-tracing-callback-methods.hpp"
 
 
-//******************************************************************************
+//*****************************************************************************
 // global variables
-//******************************************************************************
+//*****************************************************************************
 
 std::shared_mutex modules_on_devices_mutex_;
 std::map<ze_module_handle_t, ZeModule> modules_on_devices_;
@@ -24,7 +24,7 @@ std::map<ze_module_handle_t, ZeModule> modules_on_devices_;
 // local variables
 //******************************************************************************
 
-std::shared_mutex devices_mutex_;
+static std::shared_mutex devices_mutex_;
 
 
 //******************************************************************************
@@ -40,15 +40,15 @@ getDeviceForCommandList
 {
   ze_device_handle_t hDevice;
 #if 0
-  // Option 1: with compute runtime using level0 >= v1.9.0, but the binary is broken for now
+  // Option 1: Use the compute runtime (requires level0 >= v1.9.0)
   ze_result_t status = f_zeCommandListGetDeviceHandle(hCommandList, &hDevice, dispatch);
   level0_check_result(status, __LINE__);
 #else
-  // Option 2: manually maintain the mapping, generally more reliable
+  // Option 2: Manually maintain the mapping
   hDevice = zeroGetDeviceForCmdList(hCommandList);
 #endif
 
-  // Use the root device for notification and synchronization
+  // Return the root device for proper notification and synchronization
   return zeroDeviceGetRootDevice(hDevice, dispatch);
 }
 
@@ -102,19 +102,20 @@ extractKernelProperties
   desc.device_id_ = device_id;
   desc.module_id_ = module_id;
   desc.kernel_id_ = zeroGenerateUniqueId(&kernel, sizeof(kernel));
-  
+
   desc.name_ = zeroGetKernelName(kernel, dispatch);
   desc.base_addr_ = zeroGetKernelBaseAddress(kernel, dispatch);
   desc.size_ = zeroGetKernelSize(desc.name_);
   desc.function_pointer_ = zeroGetFunctionPointer(mod, desc.name_, dispatch);
-
   desc.device_ = device;
-  
-  ze_kernel_properties_t kprops{};  
+
+  // Query kernel properties
+  ze_kernel_properties_t kprops{};
   zex_kernel_register_file_size_exp_t regsize{};
   kprops.pNext = (void *)&regsize;
   ze_result_t status = f_zeKernelGetProperties(kernel, &kprops, dispatch);
   level0_check_result(status, __LINE__);
+
   desc.simd_width_ = kprops.maxSubgroupSize;
   desc.nargs_ = kprops.numKernelArgs;
   desc.nsubgrps_ = kprops.maxNumSubgroups;
@@ -136,11 +137,7 @@ waitForEventReady
   const struct hpcrun_foil_appdispatch_level0* dispatch
 )
 {
-  while (true) {
-    if (shared_var.load(std::memory_order_acquire)) {
-      return;
-    }
-
+  while (!shared_var.load(std::memory_order_acquire)) {
     // Yield CPU time to avoid busy-waiting
     std::this_thread::yield();
   }
@@ -191,7 +188,7 @@ OnEnterModuleDestroy
 void
 OnExitKernelCreate
 (
-  ze_kernel_create_params_t *params,
+  ze_kernel_create_params_t* params,
   ze_result_t result,
   const struct hpcrun_foil_appdispatch_level0* dispatch
 )
@@ -215,7 +212,7 @@ OnExitKernelCreate
   // Fill function size map
   uint32_t zebin_id_uint32;
   sscanf(module_id.c_str(), "%8x", &zebin_id_uint32);
-  zebin_id_map_entry_t *entry = zebin_id_map_lookup(zebin_id_uint32);
+  zebin_id_map_entry_t* entry = zebin_id_map_lookup(zebin_id_uint32);
   if (entry != nullptr) {
     zeroFillKernelSizeMap(entry);
   }
@@ -273,19 +270,16 @@ OnExitCommandListAppendLaunchKernel
   ze_event_handle_t hSignalEvent = *(params->phSignalEvent);
   KernelExecutionTime executionTime = zeroGetKernelExecutionTime(hSignalEvent, hDevice, dispatch);
   std::cout << "OnExitCommandListAppendLaunchKernel:  hKernel=" << hKernel << ", hDevice=" << hDevice
-            << ", Start time: " << executionTime.startTimeNs << " ns" << ", End time: " << executionTime.endTimeNs << " ns"
-            << "  Execution time: " << executionTime.executionTimeNs << " ns" << std::endl;
+            << ", Start time: " << executionTime.startTimeNs << " ns"
+            << ", End time: " << executionTime.endTimeNs << " ns"
+            << ", Execution time: " << executionTime.executionTimeNs << " ns" << std::endl;
 #endif
 
   ZeDeviceDescriptor* desc = getDeviceDescriptor(hDevice);
   if (desc) {
-    // Host reset event to indicate kernel execution has ended
-    desc->kernel_started_.store(false, std::memory_order_release);
-
-    // Wait for data ready event to become signaled
+    // Wait until the data ready event is signaled
     waitForEventReady(desc->serial_data_ready_, dispatch);
-
-    // Reset the event after data is processed
+    // Reset the event flag after processing
     desc->serial_data_ready_.store(false, std::memory_order_release);
   }
 }

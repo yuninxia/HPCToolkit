@@ -18,14 +18,14 @@
 
 // Helper function to format hexadecimal output
 template<typename T>
-std::string
+static std::string
 toHex
 (
   T value
 )
 {
   std::stringstream ss;
-  ss << "0x" << std::hex << std::setw(sizeof(T)*2) << std::setfill('0') << value;
+  ss << "0x" << std::hex << std::setw(sizeof(T) * 2) << std::setfill('0') << value;
   return ss.str();
 }
 
@@ -61,6 +61,19 @@ findKernelInfo
   return (it != kernel_info.end()) ? it->second : unknown_kernel;
 }
 
+static std::map<uint64_t, std::pair<std::string, uint64_t>>
+buildKernelInfoMap
+(
+  const std::map<uint64_t, KernelProperties>& kprops
+)
+{
+  std::map<uint64_t, std::pair<std::string, uint64_t>> kernel_info;
+  for (const auto& [base, prop] : kprops) {
+    kernel_info[base] = {prop.name, base};
+  }
+  return kernel_info;
+}
+
 static void
 logActivity
 (
@@ -94,6 +107,53 @@ printCorrelationIdStatistics
   std::cout << '\n';
 }
 
+static std::string
+formatMetricValue
+(
+  const zet_typed_value_t& metric
+)
+{
+  std::stringstream ss;
+  switch (metric.type) {
+    case ZET_VALUE_TYPE_UINT32:
+      ss << "UINT32, Value = " << metric.value.ui32;
+      break;
+    case ZET_VALUE_TYPE_UINT64:
+      ss << "UINT64, Value = " << metric.value.ui64;
+      break;
+    case ZET_VALUE_TYPE_FLOAT32:
+      ss << "FLOAT32, Value = " << metric.value.fp32;
+      break;
+    case ZET_VALUE_TYPE_FLOAT64:
+      ss << "FLOAT64, Value = " << metric.value.fp64;
+      break;
+    case ZET_VALUE_TYPE_BOOL8:
+      ss << "BOOL8, Value = " << (metric.value.b8 ? "true" : "false");
+      break;
+    default:
+      ss << "Unknown type";
+  }
+  return ss.str();
+}
+
+static void
+logMetricsForSample
+(
+  size_t sampleIndex,
+  uint32_t metricCount,
+  const std::vector<zet_typed_value_t>& metrics
+)
+{
+  std::cout << "Sample " << sampleIndex << ": " << metricCount << " metrics\n";
+  // Compute the starting index for this sample
+  for (uint32_t j = 0; j < metricCount; ++j) {
+    size_t metricIndex = sampleIndex * metricCount + j;
+    if (metricIndex < metrics.size()) {
+      std::cout << "  Metric " << j << ": Type = "
+                << formatMetricValue(metrics[metricIndex]) << "\n";
+    }
+  }
+}
 
 //******************************************************************************
 // interface operations
@@ -106,18 +166,18 @@ zeroLogActivities
   const std::map<uint64_t, KernelProperties>& kprops
 )
 {
-  std::map<uint64_t, std::pair<std::string, uint64_t>> kernel_info;
-  for (const auto& [base, prop] : kprops) {
-    kernel_info[base] = {prop.name, base};
-  }
+  // Build a map from kernel base addresses to kernel names
+  auto kernel_info = buildKernelInfoMap(kprops);
 
   std::cout << '\n';
   std::unordered_map<uint64_t, int> cid_count;
 
+  // Log each GPU activity
   for (const auto* activity : activities) {
     logActivity(activity, kernel_info, cid_count);
   }
 
+  // Print correlation ID statistics
   printCorrelationIdStatistics(cid_count);
 }
 
@@ -131,13 +191,14 @@ zeroLogPCSample
   uint64_t base_address
 )
 {
+  // Calculate the offset of the PC sampling address from the kernel base
   uint64_t offset = pc_sampling.pc.lm_ip - base_address;
   
   std::cout << "[PC_Sample]\n";
   logPCSampleInfo(pc_sampling.pc.lm_ip, correlation_id, kernel_props.name, pc_sampling.pc.lm_id, offset);
   std::cout << "Stall reason: " << pc_sampling.stallReason
             << ", Samples: " << pc_sampling.samples
-            << ", Latency samples: " << pc_sampling.latencySamples << '\n'
+            << ", Latency samples: " << pc_sampling.latencySamples << "\n"
             << "Stall counts: Active: " << stall.active_
             << ", Control: " << stall.control_
             << ", Pipe: " << stall.pipe_
@@ -174,32 +235,9 @@ zeroLogSamplesAndMetrics
   std::cout << "samples: " << samples.size() << '\n';
   std::cout << "metrics: " << metrics.size() << '\n';
 
+  // Iterate over each sample and log its metrics.
   for (size_t i = 0; i < samples.size(); ++i) {
-    std::cout << "Sample " << i << ": " << samples[i] << " metrics\n";
-    for (uint32_t j = 0; j < samples[i]; ++j) {
-      const auto& metric = metrics[i * samples[i] + j];
-      std::cout << "  Metric " << j << ": Type = ";
-      switch (metric.type) {
-        case ZET_VALUE_TYPE_UINT32:
-          std::cout << "UINT32, Value = " << metric.value.ui32;
-          break;
-        case ZET_VALUE_TYPE_UINT64:
-          std::cout << "UINT64, Value = " << metric.value.ui64;
-          break;
-        case ZET_VALUE_TYPE_FLOAT32:
-          std::cout << "FLOAT32, Value = " << metric.value.fp32;
-          break;
-        case ZET_VALUE_TYPE_FLOAT64:
-          std::cout << "FLOAT64, Value = " << metric.value.fp64;
-          break;
-        case ZET_VALUE_TYPE_BOOL8:
-          std::cout << "BOOL8, Value = " << (metric.value.b8 ? "true" : "false");
-          break;
-        default:
-          std::cout << "Unknown type";
-      }
-      std::cout << '\n';
-    }
+    logMetricsForSample(i, samples[i], metrics);
   }
   std::cout << '\n';
 }

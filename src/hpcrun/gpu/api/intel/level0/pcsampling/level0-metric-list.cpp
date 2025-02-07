@@ -58,6 +58,7 @@ getMetricHandles
   std::vector<zet_metric_handle_t> metric_list(metric_count);
   ze_result_t status = f_zetMetricGet(group, &metric_count, metric_list.data(), dispatch);
   level0_check_result(status, __LINE__);
+  // Verify that the retrieved metric count matches the vector size
   assert(metric_count == metric_list.size());
   return metric_list;
 }
@@ -104,11 +105,11 @@ getMetricId
 
   for (size_t i = 0; i < metric_list.size(); ++i) {
     if (metric_list[i].find(metric_name) == 0) {
-      metric_id = i;
+      metric_id = static_cast<uint32_t>(i);
       return;
     }
   }
-  metric_id = metric_list.size();
+  metric_id = static_cast<uint32_t>(metric_list.size());
 }
 
 
@@ -124,14 +125,19 @@ zeroGetMetricList
   const struct hpcrun_foil_appdispatch_level0* dispatch
 )
 {
+  // Retrieve the list of metric names from the given metric group
   assert(group != nullptr);
+
+  // Get the number of metrics in the group
   uint32_t metric_count = getMetricCount(group, dispatch);
   assert(metric_count > 0);
 
-  std::vector<zet_metric_handle_t> metric_list = getMetricHandles(group, metric_count, dispatch);
+  // Retrieve metric handles
+  std::vector<zet_metric_handle_t> metric_handles = getMetricHandles(group, metric_count, dispatch);
 
+  // Clear the output list and populate it with formatted metric names
   name_list.clear();
-  for (auto metric : metric_list) {
+  for (auto metric : metric_handles) {
     zet_metric_properties_t metric_props = getMetricProperties(metric, dispatch);
     std::string name = buildMetricName(metric_props);
     name_list.push_back(std::move(name));
@@ -144,6 +150,7 @@ zeroIsValidMetricList
   const std::vector<std::string>& metric_list
 )
 {
+  // Validate the metric list by checking if a metric starting with "IP" exists
   if (metric_list.empty()) return false;
   uint32_t ip_idx;
   getMetricId(metric_list, "IP", ip_idx);
