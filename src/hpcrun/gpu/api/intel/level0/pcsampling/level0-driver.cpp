@@ -16,44 +16,74 @@
 // private operations
 //******************************************************************************
 
-static void
-zeroGetDriverList
+static uint32_t
+fetchDriverCount
 (
-  std::vector<ze_driver_handle_t>& driver_list,
   const struct hpcrun_foil_appdispatch_level0* dispatch
 )
 {
   uint32_t driver_count = 0;
   ze_result_t status = f_zeDriverGet(&driver_count, nullptr, dispatch);
   level0_check_result(status, __LINE__);
+  return driver_count;
+}
 
-  driver_list.clear();
+static std::vector<ze_driver_handle_t>
+fetchDriverHandles
+(
+  const struct hpcrun_foil_appdispatch_level0* dispatch
+)
+{
+  uint32_t driver_count = fetchDriverCount(dispatch);
   if (driver_count == 0) {
-    return;
+    return {};
   }
-
-  driver_list.resize(driver_count);
-  status = f_zeDriverGet(&driver_count, driver_list.data(), dispatch);
+  
+  std::vector<ze_driver_handle_t> drivers(driver_count);
+  ze_result_t status = f_zeDriverGet(&driver_count, drivers.data(), dispatch);
   level0_check_result(status, __LINE__);
+  
+  return drivers;
 }
 
 static void
-zeroGetDriverVersion
+fetchDriverVersion
 (
   ze_driver_handle_t driver,
   ze_api_version_t& version,
   const struct hpcrun_foil_appdispatch_level0* dispatch
 )
 {
-  assert(driver != nullptr);
+  assert(driver != nullptr && "Invalid driver handle");
   ze_result_t status = f_zeDriverGetApiVersion(driver, &version, dispatch);
   level0_check_result(status, __LINE__);
 }
 
+static void
+validateAndPrintDriverVersion
+(
+  const ze_api_version_t version,
+  uint32_t requiredMajor,
+  uint32_t requiredMinor,
+  bool printVersion
+)
+{
+  uint32_t major = ZE_MAJOR_VERSION(version);
+  uint32_t minor = ZE_MINOR_VERSION(version);
 
-//******************************************************************************
-// interface operations
-//******************************************************************************
+  if (printVersion) {
+    std::cout << "Level Zero API version: " << major << "." << minor << std::endl;
+  }
+
+  // Verify that the driver version is acceptable.
+  if ((major < requiredMajor) || (major == requiredMajor && minor < requiredMinor)) {
+    assert(false && "Level Zero API version is lower than required");
+  }
+}
+
+//*****************************************************************************
+// Interface Operations
+//*****************************************************************************
 
 void
 zeroGetVersion
@@ -62,12 +92,11 @@ zeroGetVersion
   const struct hpcrun_foil_appdispatch_level0* dispatch
 )
 {
-  std::vector<ze_driver_handle_t> driver_list;
-  zeroGetDriverList(driver_list, dispatch);
+  std::vector<ze_driver_handle_t> driver_list = fetchDriverHandles(dispatch);
   if (driver_list.empty()) {
     version = ZE_API_VERSION_FORCE_UINT32;
   } else {
-    zeroGetDriverVersion(driver_list.front(), version, dispatch);
+    fetchDriverVersion(driver_list.front(), version, dispatch);
   }
 }
 
@@ -77,19 +106,7 @@ zeroGetDrivers
   const struct hpcrun_foil_appdispatch_level0* dispatch
 )
 {
-  uint32_t num_drivers = 0;
-  ze_result_t status = f_zeDriverGet(&num_drivers, nullptr, dispatch);
-  level0_check_result(status, __LINE__);
-  
-  if (num_drivers == 0) {
-      return {};
-  }
-  
-  std::vector<ze_driver_handle_t> drivers(num_drivers);
-  status = f_zeDriverGet(&num_drivers, drivers.data(), dispatch);
-  level0_check_result(status, __LINE__);
-  
-  return drivers;
+  return fetchDriverHandles(dispatch);
 }
 
 void
@@ -103,14 +120,5 @@ zeroCheckDriverVersion
 {
   ze_api_version_t version;
   zeroGetVersion(version, dispatch);
-
-  uint32_t major = ZE_MAJOR_VERSION(version);
-  uint32_t minor = ZE_MINOR_VERSION(version);
-
-  if (printVersion) {
-    std::cout << "Level Zero API version: " << major << "." << minor << std::endl;
-  }
-
-  assert((major >= requiredMajor && minor >= requiredMinor) && 
-          "Level Zero API version is lower than required");
+  validateAndPrintDriverVersion(version, requiredMajor, requiredMinor, printVersion);
 }

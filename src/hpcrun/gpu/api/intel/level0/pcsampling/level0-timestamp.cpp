@@ -34,16 +34,18 @@ zeroGetKernelExecutionTime
   ze_result_t status = f_zeEventQueryKernelTimestamp(hSignalEvent, &timestampResult, dispatch);
   level0_check_result(status, __LINE__);
 
-  uint64_t startTime = timestampResult.global.kernelStart;
-  uint64_t endTime = timestampResult.global.kernelEnd;
-  uint64_t executionTime = endTime - startTime;
+  const uint64_t startTimestamp = timestampResult.global.kernelStart;
+  const uint64_t endTimestamp   = timestampResult.global.kernelEnd;
+  const uint64_t kernelDuration = endTimestamp - startTimestamp;
 
+  // Retrieve device properties to obtain the timer resolution
   ze_device_properties_t deviceProps = zeroGetDeviceProperties(hDevice, dispatch);
-  double timerResolution = deviceProps.timerResolution;
+  const double timerResolution = deviceProps.timerResolution;
 
-  result.startTimeNs = startTime * timerResolution;
-  result.endTimeNs = endTime * timerResolution;
-  result.executionTimeNs = executionTime * timerResolution;
+  // Convert timestamps to nanoseconds using the timer resolution
+  result.startTimeNs     = startTimestamp * timerResolution;
+  result.endTimeNs       = endTimestamp   * timerResolution;
+  result.executionTimeNs = kernelDuration * timerResolution;
 
   return result;
 }
