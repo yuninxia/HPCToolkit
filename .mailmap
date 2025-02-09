@@ -1,0 +1,291 @@
+# SPDX-FileCopyrightText: 2025 Contributors to the HPCToolkit Project
+#
+# SPDX-License-Identifier: CC0-1.0
+
+# This file maps commit authors (name + email) to more up-to-date (or otherwise more
+# "canonical") author information. The main intention is for patching up situations
+# where a Git commit was merged with invalid author information (e.g. `user@localhost`).
+# It can also be thought of as a record of past contributors. Most Git commands use the
+# mappings listed in this file, see man gitmailmap for more details.
+#
+# To keep management simple, we ask that any new entries are grouped by individual and
+# added in sorted order, where each group starts with the "canonical" name/email pair.
+# Please include a link to an affected commit for each mapping, and if possible to the
+# GitLab account for the individual at the very top of the group.
+
+# https://github.com/aarontcopal2
+Aaron Cherian <aarontcopal2@gmail.com>
+# https://gitlab.com/hpctoolkit/hpctoolkit/-/commit/c993e27f952db6079674ba8ce82f186a8708f223
+Aaron Cherian <aarontcopal2@gmail.com> Aaron Cherian <aarontcopal2@iris07.ftm.alcf.anl.gov>
+# https://gitlab.com/hpctoolkit/hpctoolkit/-/commit/74b4b838a04fd352e5fabeddd5d7a025d82acb12
+Aaron Cherian <aarontcopal2@gmail.com> Aaron Cherian <aarontcopal2@iris08.ftm.alcf.anl.gov>
+# https://gitlab.com/hpctoolkit/hpctoolkit/-/commit/a793ea0a85a3bbfec76e2bfb92bdd1b777e56ad0
+Aaron Cherian <aarontcopal2@gmail.com> Aaron Cherian <aarontcopal2@iris09.ftm.alcf.anl.gov>
+# https://gitlab.com/hpctoolkit/hpctoolkit/-/commit/5d0f747c5703b97d3a4bb43cefd644a40ec0aa78
+Aaron Cherian <aarontcopal2@gmail.com> Aaron Cherian <aarontcopal2@iris10.ftm.alcf.anl.gov>
+# https://gitlab.com/hpctoolkit/hpctoolkit/-/commit/7eeca680e7f6161ec981ddcde457155e765d47da
+Aaron Cherian <aarontcopal2@gmail.com> Aaron Cherian <aarontcopal2@iris11.ftm.alcf.anl.gov>
+# https://gitlab.com/hpctoolkit/hpctoolkit/-/commit/19c7f2e066559eb3c4239c0ce3f397b6abfc22c0
+Aaron Cherian <aarontcopal2@gmail.com> Aaron Cherian <aarontcopal2@iris16.ftm.alcf.anl.gov>
+# https://gitlab.com/hpctoolkit/hpctoolkit/-/commit/b5b7c1a10cd84f9dab15c06ee081500e394f3b9c
+Aaron Cherian <aarontcopal2@gmail.com> Aaron Cherian <aarontcopal2@iris17.ftm.alcf.anl.gov>
+# https://gitlab.com/hpctoolkit/hpctoolkit/-/commit/0adbcfd332e628af97280968cab68acfb3abcc93
+Aaron Cherian <aarontcopal2@gmail.com> Aaron Cherian <aarontcopal2@iris18.ftm.alcf.anl.gov>
+# https://gitlab.com/hpctoolkit/hpctoolkit/-/commit/aeacef0eb1d56f4c7e947142bbf733e2ad8a7c59
+Aaron Cherian <aarontcopal2@gmail.com> Aaron Cherian <aarontcopal2@iris19.ftm.alcf.anl.gov>
+# https://gitlab.com/hpctoolkit/hpctoolkit/-/commit/5e0147847d3442af1362dac76a44cb0bd5a4db2b
+Aaron Cherian <aarontcopal2@gmail.com> Aaron Cherian <aarontcopal2@jlselogin2.ftm.alcf.anl.gov>
+# https://gitlab.com/hpctoolkit/hpctoolkit/-/commit/5436ff8a392eea4467873e7ea9d50b196c6bca07
+Aaron Cherian <aarontcopal2@gmail.com> Aaron Cherian <atc8@iris.cs.rice.edu>
+# https://gitlab.com/hpctoolkit/hpctoolkit/-/commit/8a2511e7f3d1f824e5dd59209fd4bcfcc9966d3b
+Aaron Cherian <aarontcopal2@gmail.com> Aaron Thomas Cherian <atc8@gpu.cs.rice.edu>
+# https://gitlab.com/hpctoolkit/hpctoolkit/-/commit/e5ff18ac6c624b2a5492e60827bf0fb7737b07e1
+Aaron Cherian <aarontcopal2@gmail.com> aarontcopal2 <aarontcopal2@gmail.com>
+
+# https://gitlab.com/woodard
+Ben Woodard <woodard@redhat.com>
+
+# https://gitlab.com/dejangrubisic
+Dejan Grubisic <grubisic.dejan@yahoo.com>
+# https://gitlab.com/hpctoolkit/hpctoolkit/-/commit/b5f00aa5d884da5de209a3c6739f343923b059ab
+Dejan Grubisic <grubisic.dejan@yahoo.com> Dejan XXX <dx4@llnl.cs.rice.edu>
+# https://gitlab.com/hpctoolkit/hpctoolkit/-/commit/dd5a8e6b7997efc67eebf3cfcdd8f6377bbd59b6
+Dejan Grubisic <grubisic.dejan@yahoo.com> dejangrubisic <40608743+dejangrubisic@users.noreply.github.com>
+# https://gitlab.com/hpctoolkit/hpctoolkit/-/commit/6d4149af6082d89066207b51cc4a6a9fd12fc335
+Dejan Grubisic <grubisic.dejan@yahoo.com> dejangrubisic <grubisic.dejan@yahoo.com>
+
+Doug Moore <unkadoug@gmail.com>
+# https://gitlab.com/hpctoolkit/hpctoolkit/-/commit/fa5ef76a089bc013eb5848f8f02d04deb7bd6c6b
+Doug Moore <unkadoug@gmail.com> Doug Moore <dougm@arm1.cs.rice.edu>
+# https://gitlab.com/hpctoolkit/hpctoolkit/-/commit/1dd5a5f3d501f132e2f0517fea5bce78e64fe1e9
+Doug Moore <unkadoug@gmail.com> Doug Moore <dougm@phi.cs.rice.edu>
+# https://gitlab.com/hpctoolkit/hpctoolkit/-/commit/451c6c8840a2e409385304e3d79640dfbf9499d6
+Doug Moore <unkadoug@gmail.com> Doug Moore <dougm@rice.edu>
+# https://gitlab.com/hpctoolkit/hpctoolkit/-/commit/72f1447a28c0c6fe72934ba1d912ff67621d50c5
+Doug Moore <unkadoug@gmail.com> Doug Moore W. Krentel <dougm@rice.edu>
+# https://gitlab.com/hpctoolkit/hpctoolkit/-/commit/9811b1ca49b8bbb2c625af35c1e43e8c8bbe8673
+Doug Moore <unkadoug@gmail.com> Douglas W Moore <dougm@gpu.cs.rice.edu>
+# https://gitlab.com/hpctoolkit/hpctoolkit/-/commit/dbf6970f967aab987f8fd044d2af8301d8f5d091
+Doug Moore <unkadoug@gmail.com> Moore <dougm@login2.biou.rice.edu>
+# https://gitlab.com/hpctoolkit/hpctoolkit/-/commit/54a34c977fb0ab9d9748e4ca2ec2a685f1fd35d1
+Doug Moore <unkadoug@gmail.com> Moore <dougm@login3.davinci.rice.edu>
+
+# https://gitlab.com/draganaurosgrbic
+Dragana Grbic <dg76@rice.edu>
+# https://gitlab.com/hpctoolkit/hpctoolkit/-/commit/ff587a8590549f345fc41266c157c9585ec919b8
+Dragana Grbic <dg76@rice.edu> Dragana Grbic <dg76@ufront.cs.rice.edu>
+# https://gitlab.com/hpctoolkit/hpctoolkit/-/commit/9aba6d2802cc5a255ea80c48380871ad5e75760b
+Dragana Grbic <dg76@rice.edu> draganagrbicrice <dg76@rice.edu>
+
+Dung X. Nguyen <dxnguyen@rice.edu>
+# https://gitlab.com/hpctoolkit/hpctoolkit/-/commit/0f07fd53007e2f34f53345c5d2610cf6c22841ea
+Dung X. Nguyen <dxnguyen@rice.edu> Dung X. Nguyen <dxnguyen@knl.cs.rice.edu>
+# https://gitlab.com/hpctoolkit/hpctoolkit/-/commit/da9d13ae6622ef0cd7371a1c5ef4014915af5d33
+Dung X. Nguyen <dxnguyen@rice.edu> Dung X. Nguyen <dxnguyen@les.cs.rice.edu>
+# https://gitlab.com/hpctoolkit/hpctoolkit/-/commit/5641cdbcba4d20d79b55223487c95a38749f1a2a
+Dung X. Nguyen <dxnguyen@rice.edu> Dung X. Nguyen <dxnguyen@nancy.cs.rice.edu>
+# https://gitlab.com/hpctoolkit/hpctoolkit/-/commit/57406e64a6d502db05919a97dbe062de20c5a6aa
+Dung X. Nguyen <dxnguyen@rice.edu> Nguyen <dxnguyen@guadalupe.rcsg.rice.edu>
+# https://gitlab.com/hpctoolkit/hpctoolkit/-/commit/a52559b075b56aa8c0a106c80fa77bedc337a675
+Dung X. Nguyen <dxnguyen@rice.edu> Nguyen <dxnguyen@login2.biou.rice.edu>
+
+Fengmei Zhou <fzhao@b1b131fe-c5db-9c05-3d80-cf3d96147e2e>
+# https://gitlab.com/hpctoolkit/hpctoolkit/-/commit/c39a820e09bfc369daf680b329b2cfb390bb0d0f
+Fengmei Zhou <fzhao@b1b131fe-c5db-9c05-3d80-cf3d96147e2e> fzhao <fzhao@b1b131fe-c5db-9c05-3d80-cf3d96147e2e>
+
+Gabriel Marin <mgabi@b1b131fe-c5db-9c05-3d80-cf3d96147e2e>
+# https://gitlab.com/hpctoolkit/hpctoolkit/-/commit/3e60b65123ddcacea35506bc448ec0ba687cdf54
+Gabriel Marin <mgabi@b1b131fe-c5db-9c05-3d80-cf3d96147e2e> mgabi <mgabi@b1b131fe-c5db-9c05-3d80-cf3d96147e2e>
+
+Gaurav Sanghani <gvs1@b1b131fe-c5db-9c05-3d80-cf3d96147e2e>
+# https://gitlab.com/hpctoolkit/hpctoolkit/-/commit/29852b8cb7226c0a3af5c15cd5a5cd948977fe0e
+Gaurav Sanghani <gvs1@b1b131fe-c5db-9c05-3d80-cf3d96147e2e> gvs1 <gvs1@b1b131fe-c5db-9c05-3d80-cf3d96147e2e>
+
+John Garvin <garvin@b1b131fe-c5db-9c05-3d80-cf3d96147e2e>
+# https://gitlab.com/hpctoolkit/hpctoolkit/-/commit/ab3a9772259acf35455d1296f4ffdddad69a16d9
+John Garvin <garvin@b1b131fe-c5db-9c05-3d80-cf3d96147e2e> garvin <garvin@b1b131fe-c5db-9c05-3d80-cf3d96147e2e>
+
+# https://gitlab.com/jmellorcrummey
+John Mellor-Crummey <johnmc@rice.edu>
+# https://gitlab.com/hpctoolkit/hpctoolkit/-/commit/57343684335950cd3e27a1bba1a19f050fb983b5
+John Mellor-Crummey <johnmc@rice.edu> John M Mellor-Crummey <jmmello@vortex60.snl.gov>
+# https://gitlab.com/hpctoolkit/hpctoolkit/-/commit/358999904c1d3f64a5e18fec0d15c2cca7b2e163
+John Mellor-Crummey <johnmc@rice.edu> John M Mellor-Crummey <johnmc@llnl.cs.rice.edu>
+# https://gitlab.com/hpctoolkit/hpctoolkit/-/commit/46cb05bc882a3f442c78769f0d63b49ec9c7e341
+John Mellor-Crummey <johnmc@rice.edu> John M Mellor-Crummey <johnmc@ufront.cs.rice.edu>
+# https://gitlab.com/hpctoolkit/hpctoolkit/-/commit/a7b1698a414d44f93348439c42c06562ebdf581d
+John Mellor-Crummey <johnmc@rice.edu> John M. Mellor-Crummey <johnmc@rzmerl162.llnl.gov>
+# https://gitlab.com/hpctoolkit/hpctoolkit/-/commit/c51bdacf99acbb62944b49ca7b4bb079917344f6
+John Mellor-Crummey <johnmc@rice.edu> John Mellor-Crummey <jmellorcrummey@comcast.net>
+# https://gitlab.com/hpctoolkit/hpctoolkit/-/commit/42b043a0168d165e399637bb00cbfe8fe21d3046
+John Mellor-Crummey <johnmc@rice.edu> John Mellor-Crummey <johnmc@amd2.cs.rice.edu>
+# https://gitlab.com/hpctoolkit/hpctoolkit/-/commit/b2dcb4553abb0ba19c852eacfaa4d99e72069eee
+John Mellor-Crummey <johnmc@rice.edu> John Mellor-Crummey <johnmc@arm1.cs.rice.edu>
+# https://gitlab.com/hpctoolkit/hpctoolkit/-/commit/f1a33db0329667ecd4968e130529babcfe6c05e2
+John Mellor-Crummey <johnmc@rice.edu> John Mellor-Crummey <johnmc@aurora-uan-0010.hostmgmt.cm.aurora.alcf.anl.gov>
+# https://gitlab.com/hpctoolkit/hpctoolkit/-/commit/a3b5309bd69a3320676fe2dea2e980ec0a57b895
+John Mellor-Crummey <johnmc@rice.edu> John Mellor-Crummey <johnmc@iris.cs.rice.edu>
+# https://gitlab.com/hpctoolkit/hpctoolkit/-/commit/03f280f8741dbb1f8c7e91ea1758979770ab0af4
+John Mellor-Crummey <johnmc@rice.edu> John Mellor-Crummey <johnmc@knl.cs.rice.edu>
+# https://gitlab.com/hpctoolkit/hpctoolkit/-/commit/4791f109840c27e51a90c7b614353bd039eff0ef
+John Mellor-Crummey <johnmc@rice.edu> John Mellor-Crummey <johnmc@les.cs.rice.edu>
+# https://gitlab.com/hpctoolkit/hpctoolkit/-/commit/6c35e20595b47e1005636360f58e8c51d4ee50b3
+John Mellor-Crummey <johnmc@rice.edu> John Mellor-Crummey <johnmc@uan-0001.head.cm.americas.sgi.com>
+# https://gitlab.com/hpctoolkit/hpctoolkit/-/commit/23f16bdc256c57ba12eadeef2fb4fb0f81ff7229
+John Mellor-Crummey <johnmc@rice.edu> John Mellor-Crummey <johnmc@uan-0002.head.cm.americas.sgi.com>
+# https://gitlab.com/hpctoolkit/hpctoolkit/-/commit/296e765e81921a836597ce9698944ecfc84813d4
+John Mellor-Crummey <johnmc@rice.edu> John Mellor-Crummey <johnmc@vestalac1.ftd.alcf.anl.gov>
+# https://gitlab.com/hpctoolkit/hpctoolkit/-/commit/b8614c265983e43f2659648e1a146b5f19a7ac32
+John Mellor-Crummey <johnmc@rice.edu> John Mellor-Crummey <johnmc@vestalac2.ftd.alcf.anl.gov>
+# https://gitlab.com/hpctoolkit/hpctoolkit/-/commit/6a277c2c10e28fa7e28cac66ea3dcb06aedbc669
+John Mellor-Crummey <johnmc@rice.edu> jmellorcrummey <jmellorcrummey@comcast.net>
+# https://gitlab.com/hpctoolkit/hpctoolkit/-/commit/044d1b604235adf7f0295ebd490e84e6d1e41eb0
+John Mellor-Crummey <johnmc@rice.edu> johnmc <johnmc@b1b131fe-c5db-9c05-3d80-cf3d96147e2e>
+
+# https://gitlab.com/blue42u
+Jonathon Anderson <anderson.jonathonm@gmail.com>
+# https://gitlab.com/hpctoolkit/hpctoolkit/-/commit/f8d3826869b84ce16f30c53e84bbb91184497564
+Jonathon Anderson <anderson.jonathonm@gmail.com> Jonathon Anderson <17242663+blue42u@users.noreply.github.com>
+# https://gitlab.com/hpctoolkit/hpctoolkit/-/commit/0a0ecf8f77e42c04ea5384746fe3b5ee52bfdb6f
+Jonathon Anderson <anderson.jonathonm@gmail.com> Jonathon Anderson <janderson@rice.edu>
+# https://gitlab.com/hpctoolkit/hpctoolkit/-/commit/e5e09a6f20ff4aafa262efcaa300093777427a47
+Jonathon Anderson <anderson.jonathonm@gmail.com> blue42u <janderson@rice.edu>
+
+# https://gitlab.com/Jokeren
+Keren Zhou <robinho364@gmail.com>
+# https://gitlab.com/hpctoolkit/hpctoolkit/-/commit/b6203a82398b75109ce1c837c8f9012d9c681f58
+Keren Zhou <robinho364@gmail.com> Jokeren <robinho364@gmail.com>
+# https://gitlab.com/hpctoolkit/hpctoolkit/-/commit/25b5a8706c196e3b004d25fbb851007c7b280ff7
+Keren Zhou <robinho364@gmail.com> Keren Zhou <jokeren@jlselogin2.ftm.alcf.anl.gov>
+# https://gitlab.com/hpctoolkit/hpctoolkit/-/commit/0997e424ce441a636ecc15571f73724b32783e43
+Keren Zhou <robinho364@gmail.com> Keren Zhou <kz21@cori11.nersc.gov>
+# https://gitlab.com/hpctoolkit/hpctoolkit/-/commit/6fff48badd58b1f9562b160d71ec2070a550fa01
+Keren Zhou <robinho364@gmail.com> Keren Zhou <kz21@gpu.cs.rice.edu>
+
+Lai Wei <lai.wei@rice.edu>
+# https://gitlab.com/hpctoolkit/hpctoolkit/-/commit/fb6f75e1c5da2ebb3c3d250e3bb79616d34edf3a
+Lai Wei <lai.wei@rice.edu> laiwei-rice <lai.wei@rice.edu>
+
+# https://gitlab.com/adhianto
+Laksono Adhianto <laksono@gmail.com>
+# https://gitlab.com/hpctoolkit/hpctoolkit/-/commit/da9fb755545004a2ec6a48e8809eeb246247ae58
+Laksono Adhianto <laksono@gmail.com> Adhianto <la5@guadalupe.rcsg.rice.edu>
+# https://gitlab.com/hpctoolkit/hpctoolkit/-/commit/32339a2afea595aece8ff14d6632804ecf2edc8e
+Laksono Adhianto <laksono@gmail.com> Adhianto <la5@login2.biou.rice.edu>
+# https://gitlab.com/hpctoolkit/hpctoolkit/-/commit/125ee58cdea60f1ba51b293c8b037fda8bd810f1
+Laksono Adhianto <laksono@gmail.com> Laksono Adhianto <adhianto@vulcanlac7.llnl.gov>
+# https://gitlab.com/hpctoolkit/hpctoolkit/-/commit/32020b58450b85c34750bfdbb31c1e12e32dcb5b
+Laksono Adhianto <laksono@gmail.com> Laksono Adhianto <la5@Laksono.attlocal.net>
+# https://gitlab.com/hpctoolkit/hpctoolkit/-/commit/5d56ed90d3f036cf258f0a336a0f9994d11edd9a
+Laksono Adhianto <laksono@gmail.com> Laksono Adhianto <la5@Laksono.local>
+# https://gitlab.com/hpctoolkit/hpctoolkit/-/commit/e33960bded58206384ba46ee61f73c8d7fe2d746
+Laksono Adhianto <laksono@gmail.com> Laksono Adhianto <la5@arm1.cs.rice.edu>
+# https://gitlab.com/hpctoolkit/hpctoolkit/-/commit/23a5e3ac1ddeeda9ac695ad75f972753f282038b
+Laksono Adhianto <laksono@gmail.com> Laksono Adhianto <la5@guad.cs.rice.edu>
+# https://gitlab.com/hpctoolkit/hpctoolkit/-/commit/f5645d67551e54c2369c654b51041c1863000737
+Laksono Adhianto <laksono@gmail.com> Laksono Adhianto <la5@iris.cs.rice.edu>
+# https://gitlab.com/hpctoolkit/hpctoolkit/-/commit/72fbd94826f5674db3e2fe9e4a427d5a7aeec85c
+Laksono Adhianto <laksono@gmail.com> Laksono Adhianto <la5@joni.cs.rice.edu>
+# https://gitlab.com/hpctoolkit/hpctoolkit/-/commit/d4f619cce8b95944bb15b9298a25051dba9a354b
+Laksono Adhianto <laksono@gmail.com> Laksono Adhianto <la5@knl.cs.rice.edu>
+# https://gitlab.com/hpctoolkit/hpctoolkit/-/commit/11bc3ddb194628468b90fe7c0c37e891a2fa5af8
+Laksono Adhianto <laksono@gmail.com> Laksono Adhianto <la5@mic.cs.rice.edu>
+# https://gitlab.com/hpctoolkit/hpctoolkit/-/commit/1f48f485e0fcd4e8502857af72ef8fa92ba08e10
+Laksono Adhianto <laksono@gmail.com> Laksono Adhianto <la5@staff-65-dun20-126.rice.edu>
+# https://gitlab.com/hpctoolkit/hpctoolkit/-/commit/8cc8778dc831c4516e766d28675fa332504d74b5
+Laksono Adhianto <laksono@gmail.com> Laksono Adhianto <laksono@miralac1.fst.alcf.anl.gov>
+# https://gitlab.com/hpctoolkit/hpctoolkit/-/commit/6d938e4db7f3183734440aea3c1b03b826e9340b
+Laksono Adhianto <laksono@gmail.com> Laksono Adhianto <laksono@rgmail.com>
+# https://gitlab.com/hpctoolkit/hpctoolkit/-/commit/958337e8cf71e0fa8ba722e0280e971ef6861176
+Laksono Adhianto <laksono@gmail.com> Laksono Adhianto <laksono@titan-ext7.ccs.ornl.gov>
+# https://gitlab.com/hpctoolkit/hpctoolkit/-/commit/ecef1086cc6d69f365f0f65e43279b3d460e90ab
+Laksono Adhianto <laksono@gmail.com> laksono <laksono@b1b131fe-c5db-9c05-3d80-cf3d96147e2e>
+
+# https://gitlab.com/mwkrentel
+Mark W. Krentel <krentel@rice.edu>
+# https://gitlab.com/hpctoolkit/hpctoolkit/-/commit/65ea684dfdbaf11892466397808b7dde08aa4c66
+Mark W. Krentel <krentel@rice.edu> krentel <krentel@b1b131fe-c5db-9c05-3d80-cf3d96147e2e>
+# https://gitlab.com/hpctoolkit/hpctoolkit/-/commit/3b776762af6fe8d52f2f1bf56f27757587024d02
+Mark W. Krentel <krentel@rice.edu> mwkrentel <mwkrentel@b1b131fe-c5db-9c05-3d80-cf3d96147e2e>
+
+# https://gitlab.com/martyitz
+Marty Itzkowitz <itzkowitzmarty@gmail.com>
+# https://gitlab.com/hpctoolkit/hpctoolkit/-/commit/a614f4ca521b94eee07a660ee59ce8f0c74110d1
+Marty Itzkowitz <itzkowitzmarty@gmail.com> Marty Itzkowitz <43968655+martyitz@users.noreply.github.com>
+
+Mike Fagan <mfagan@b1b131fe-c5db-9c05-3d80-cf3d96147e2e>
+# https://gitlab.com/hpctoolkit/hpctoolkit/-/commit/c018c24b3765eb4f04b2400e89112029dafb638a
+Mike Fagan <mfagan@b1b131fe-c5db-9c05-3d80-cf3d96147e2e> mfagan <mfagan@b1b131fe-c5db-9c05-3d80-cf3d96147e2e>
+# https://gitlab.com/hpctoolkit/hpctoolkit/-/commit/b533e225ea76828134f9bd1f7dc5c490ba912f77
+Mike Fagan <mfagan@b1b131fe-c5db-9c05-3d80-cf3d96147e2e> mfagan451 <mfagan451@b1b131fe-c5db-9c05-3d80-cf3d96147e2e>
+
+Milind Chabbi <chabbi.milind@gmail.com>
+# https://gitlab.com/hpctoolkit/hpctoolkit/-/commit/dea93f76de991a7574a39e7ba9c30a3d2398c323
+Milind Chabbi <chabbi.milind@gmail.com> chabbi.milind <chabbi.milind@b1b131fe-c5db-9c05-3d80-cf3d96147e2e>
+# https://gitlab.com/hpctoolkit/hpctoolkit/-/commit/39cb379bce3997b9d8f28e72e5a84e1cb409055e
+Milind Chabbi <chabbi.milind@gmail.com> chabbi.milind <chabbi.milind@gmail.com>
+# https://gitlab.com/hpctoolkit/hpctoolkit/-/commit/e7ba3922e3bb96f40c8512fb1f4717f2939e7a2f
+Milind Chabbi <chabbi.milind@gmail.com> mc29 <mc29@b1b131fe-c5db-9c05-3d80-cf3d96147e2e>
+
+Nathan Froyd <froydnj@b1b131fe-c5db-9c05-3d80-cf3d96147e2e>
+# https://gitlab.com/hpctoolkit/hpctoolkit/-/commit/d9828efe3182c9794ee67fc1d4f6584e245a1076
+Nathan Froyd <froydnj@b1b131fe-c5db-9c05-3d80-cf3d96147e2e> froydnj <froydnj@b1b131fe-c5db-9c05-3d80-cf3d96147e2e>
+
+Nathan Tallent <nrtallent@b1b131fe-c5db-9c05-3d80-cf3d96147e2e>
+# https://gitlab.com/hpctoolkit/hpctoolkit/-/commit/4e0778265f2d1ec2785c881f1cf2e2b7e83d4bfd
+Nathan Tallent <nrtallent@b1b131fe-c5db-9c05-3d80-cf3d96147e2e> eraxxon <eraxxon@b1b131fe-c5db-9c05-3d80-cf3d96147e2e>
+# https://gitlab.com/hpctoolkit/hpctoolkit/-/commit/0898363ffcae6dc248265a9c0379b5e5189af9a7
+Nathan Tallent <nrtallent@b1b131fe-c5db-9c05-3d80-cf3d96147e2e> me <me@b1b131fe-c5db-9c05-3d80-cf3d96147e2e>
+# https://gitlab.com/hpctoolkit/hpctoolkit/-/commit/a780ca2cd53d6d26240e295882a5147c999f0db9
+Nathan Tallent <nrtallent@b1b131fe-c5db-9c05-3d80-cf3d96147e2e> nobody <nobody@b1b131fe-c5db-9c05-3d80-cf3d96147e2e>
+# https://gitlab.com/hpctoolkit/hpctoolkit/-/commit/8101fdaca045db81140916f2007502d6738631e1
+Nathan Tallent <nrtallent@b1b131fe-c5db-9c05-3d80-cf3d96147e2e> nrtallent <nrtallent@b1b131fe-c5db-9c05-3d80-cf3d96147e2e>
+# https://gitlab.com/hpctoolkit/hpctoolkit/-/commit/a219b9f6a8574cdbff32d2d3de44c9fddbb7ab6d
+Nathan Tallent <nrtallent@b1b131fe-c5db-9c05-3d80-cf3d96147e2e> tallent <tallent@b1b131fe-c5db-9c05-3d80-cf3d96147e2e>
+
+Robert Fowler <rjf@b1b131fe-c5db-9c05-3d80-cf3d96147e2e>
+# https://gitlab.com/hpctoolkit/hpctoolkit/-/commit/82df6dfbcc97d04de28604abe49c4c1655a18a6e
+Robert Fowler <rjf@b1b131fe-c5db-9c05-3d80-cf3d96147e2e> rjf <rjf@b1b131fe-c5db-9c05-3d80-cf3d96147e2e>
+
+Sarah Lindal <slindahl@b1b131fe-c5db-9c05-3d80-cf3d96147e2e>
+# https://gitlab.com/hpctoolkit/hpctoolkit/-/commit/4c530f56474b11663c5ca0a8c5cd2676d49ecc4b
+Sarah Lindal <slindahl@b1b131fe-c5db-9c05-3d80-cf3d96147e2e> slindahl <slindahl@b1b131fe-c5db-9c05-3d80-cf3d96147e2e>
+
+# https://gitlab.com/scottkwarren
+Scott K. Warren <scott@rice.edu>
+# https://gitlab.com/hpctoolkit/hpctoolkit/-/commit/e18d152d4a9bb2859f31bedde1e03f217714e0f6
+Scott K. Warren <scott@rice.edu> Scott K Warren <scott@rice.edu>
+
+# https://gitlab.com/vlada_indjic
+Vladimir Indjic <vladaindjic@icloud.com>
+# https://gitlab.com/hpctoolkit/hpctoolkit/-/commit/c06cac1ef7888adb2b07d4e69d53456dfc7ff9a9
+Vladimir Indjic <vladaindjic@icloud.com> Indic <vi3@poman.po.rice.edu>
+# https://gitlab.com/hpctoolkit/hpctoolkit/-/commit/a3be2a64cb56e7319704ea69861f2c64aa9c8c63
+Vladimir Indjic <vladaindjic@icloud.com> vladaindjic <vladaindjic@icloud.com>
+
+# https://gitlab.com/wyphan
+Wileam Y. Phan <wileam@phan.codes>
+# https://gitlab.com/hpctoolkit/hpctoolkit/-/commit/b2e233ee65ce419c36eb3786bc4b49bf1b9ca198
+Wileam Y. Phan <wileam@phan.codes> Wileam Phan <wphan@vols.utk.edu>
+# https://gitlab.com/hpctoolkit/hpctoolkit/-/commit/867607f0e9d3e8a79457668e77bc1d3f3101c909
+Wileam Y. Phan <wileam@phan.codes> Wileam Y. Phan <50928756+wyphan@users.noreply.github.com>
+# https://gitlab.com/hpctoolkit/hpctoolkit/-/commit/cb72cc2654e93295cb7570ed969f05234932639a
+Wileam Y. Phan <wileam@phan.codes> Wileam Y. Phan <wil.phan@rice.edu>
+# https://gitlab.com/hpctoolkit/hpctoolkit/-/commit/90f9956be5357778abf715ec44aad22dad824d46
+Wileam Y. Phan <wileam@phan.codes> Wileam Yonatan Phan <wil.phan@rice.edu>
+
+# https://gitlab.com/wspear
+Wyatt Joel Spear <wspear@cs.uoregon.edu>
+
+Xu Liu <xl10@b1b131fe-c5db-9c05-3d80-cf3d96147e2e>
+# https://gitlab.com/hpctoolkit/hpctoolkit/-/commit/7d60caaee75a45f9e234b5e286958d9db669a4f9
+Xu Liu <xl10@b1b131fe-c5db-9c05-3d80-cf3d96147e2e> xl10 <xl10@b1b131fe-c5db-9c05-3d80-cf3d96147e2e>
+
+# https://gitlab.com/yumengliu
+Yumeng Liu <yl188@rice.edu>
+# https://gitlab.com/hpctoolkit/hpctoolkit/-/commit/9f97709e9c590dc602dde0e87e62eb5b0801e02e
+Yumeng Liu <yl188@rice.edu> Yumeng Liu <ac.ynliu2@jlselogin5.ftm.alcf.anl.gov>
+# https://gitlab.com/hpctoolkit/hpctoolkit/-/commit/147368e205a1e9338dd72513cceda50711f0a068
+Yumeng Liu <yl188@rice.edu> Yumeng Liu <ac.ynliu2@skylake14.ftm.alcf.anl.gov>
+# https://gitlab.com/hpctoolkit/hpctoolkit/-/commit/878fbf5b176b28b94b9250df725bc7c654240fdc
+Yumeng Liu <yl188@rice.edu> Yumeng Liu <yl188@ufront.cs.rice.edu>
