@@ -43,14 +43,14 @@ createDeviceDescriptor
   desc->parent_device_id_    = -1;    // No parent device
   desc->parent_device_       = nullptr;
   desc->subdevice_id_        = -1;    // Not a subdevice
-  desc->num_sub_devices_     = zeroGetSubDeviceCount(device, dispatch);
+  desc->num_sub_devices_     = level0GetSubDeviceCount(device, dispatch);
   desc->driver_              = driver;
   desc->context_             = context;
   desc->correlation_id_      = 0;
   desc->last_correlation_id_ = 0;
   
   // Set the metric group based on the provided metric_group string
-  zeroGetMetricGroup(device, metric_group, desc->metric_group_, dispatch);
+  level0GetMetricGroup(device, metric_group, desc->metric_group_, dispatch);
   
   desc->profiling_thread_    = nullptr;
   desc->profiling_state_.store(PROFILER_DISABLED, std::memory_order_release);
@@ -105,7 +105,7 @@ SetupDevice
   desc.subdevice_id_   = subdevice_id;
   desc.driver_         = driver;
   // If not a subdevice, query the number of subdevices; otherwise, set to 0
-  desc.num_subdevices_ = (subdevice_id == -1) ? zeroGetSubDeviceCount(device, dispatch) : 0;
+  desc.num_subdevices_ = (subdevice_id == -1) ? level0GetSubDeviceCount(device, dispatch) : 0;
 
   devices_->insert({device, std::move(desc)});
 }
@@ -116,7 +116,7 @@ SetupDevice
 //******************************************************************************
 
 std::vector<ze_device_handle_t>
-zeroGetDevices
+level0GetDevices
 (
   ze_driver_handle_t driver,
   const struct hpcrun_foil_appdispatch_level0* dispatch
@@ -138,7 +138,7 @@ zeroGetDevices
 }
 
 std::vector<ze_device_handle_t>
-zeroGetSubDevices
+level0GetSubDevices
 (
   ze_device_handle_t device,
   uint32_t num_sub_devices,
@@ -152,7 +152,7 @@ zeroGetSubDevices
 }
 
 uint32_t
-zeroGetSubDeviceCount
+level0GetSubDeviceCount
 (
   ze_device_handle_t device,
   const struct hpcrun_foil_appdispatch_level0* dispatch
@@ -165,7 +165,7 @@ zeroGetSubDeviceCount
 }
 
 void
-zeroEnumerateDevices
+level0EnumerateDevices
 (
   std::map<ze_device_handle_t, ZeDeviceDescriptor*>& device_descriptors,
   std::vector<ze_context_handle_t>& metric_contexts,
@@ -175,16 +175,16 @@ zeroEnumerateDevices
   const std::string metric_group = "EuStallSampling";
   const bool stall_sampling = (metric_group == "EuStallSampling");
 
-  std::vector<ze_driver_handle_t> drivers = zeroGetDrivers(dispatch);
+  std::vector<ze_driver_handle_t> drivers = level0GetDrivers(dispatch);
 
   int32_t did = 0;
   for (const auto& driver : drivers) {
     // Create a context for the current driver
-    ze_context_handle_t context = zeroCreateContext(driver, dispatch);
+    ze_context_handle_t context = level0CreateContext(driver, dispatch);
     metric_contexts.push_back(context);
 
     // Retrieve devices associated with the driver
-    std::vector<ze_device_handle_t> devices = zeroGetDevices(driver, dispatch);
+    std::vector<ze_device_handle_t> devices = level0GetDevices(driver, dispatch);
 
     for (const auto& device : devices) {
       // Create the root device descriptor
@@ -195,7 +195,7 @@ zeroEnumerateDevices
         // If the device has sub-devices, enumerate and create their descriptors
         uint32_t num_sub_devices = root_desc->num_sub_devices_;
         if (num_sub_devices > 0) {
-          std::vector<ze_device_handle_t> sub_devices = zeroGetSubDevices(device, num_sub_devices, dispatch);
+          std::vector<ze_device_handle_t> sub_devices = level0GetSubDevices(device, num_sub_devices, dispatch);
           for (uint32_t j = 0; j < num_sub_devices; j++) {
             ZeDeviceDescriptor* sub_desc = createSubDeviceDescriptor(root_desc, sub_devices[j], j);
             device_descriptors.insert({sub_devices[j], sub_desc});
@@ -208,7 +208,7 @@ zeroEnumerateDevices
 }
 
 ze_device_properties_t
-zeroGetDeviceProperties
+level0GetDeviceProperties
 (
   ze_device_handle_t device,
   const struct hpcrun_foil_appdispatch_level0* dispatch
@@ -224,7 +224,7 @@ zeroGetDeviceProperties
 }
 
 ze_device_handle_t
-zeroDeviceGetRootDevice
+level0DeviceGetRootDevice
 (
   ze_device_handle_t device,
   const struct hpcrun_foil_appdispatch_level0* dispatch
@@ -237,7 +237,7 @@ zeroDeviceGetRootDevice
 }
 
 void
-zeroEnumerateAndSetupDevices
+level0EnumerateAndSetupDevices
 (
   const struct hpcrun_foil_appdispatch_level0* dispatch
 )
@@ -246,20 +246,20 @@ zeroEnumerateAndSetupDevices
     devices_ = new std::map<ze_device_handle_t, ZeDevice>;
   }
 
-  std::vector<ze_driver_handle_t> drivers = zeroGetDrivers(dispatch);
+  std::vector<ze_driver_handle_t> drivers = level0GetDrivers(dispatch);
 
   int32_t did = 0;
   for (auto driver : drivers) {
-    std::vector<ze_device_handle_t> devices = zeroGetDevices(driver, dispatch);
+    std::vector<ze_device_handle_t> devices = level0GetDevices(driver, dispatch);
     
     for (auto device : devices) {
       // Set up the root device.
       SetupDevice(device, driver, did, -1, nullptr, -1, dispatch);
       
       // Set up any sub-devices.
-      uint32_t num_sub_devices = zeroGetSubDeviceCount(device, dispatch);
+      uint32_t num_sub_devices = level0GetSubDeviceCount(device, dispatch);
       if (num_sub_devices > 0) {
-        std::vector<ze_device_handle_t> sub_devices = zeroGetSubDevices(device, num_sub_devices, dispatch);
+        std::vector<ze_device_handle_t> sub_devices = level0GetSubDevices(device, num_sub_devices, dispatch);
         for (uint32_t j = 0; j < num_sub_devices; j++) {
           SetupDevice(sub_devices[j], driver, did, did, device, j, dispatch);
         }

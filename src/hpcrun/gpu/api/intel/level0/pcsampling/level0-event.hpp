@@ -28,7 +28,7 @@
 //******************************************************************************
 
 ze_event_handle_t
-zeroCreateEvent
+level0CreateEvent
 (
   ze_event_pool_handle_t event_pool,                     // [in] handle to the event pool for creating the event
   uint32_t event_index,                                  // [in] index of the event within the pool

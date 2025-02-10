@@ -35,7 +35,7 @@ static ze_result_t (*zexKernelGetBaseAddress)(ze_kernel_handle_t hKernel, uint64
 //******************************************************************************
 
 static void
-zeroLogKernelProfiles
+level0LogKernelProfiles
 (
   const ZeKernelCommandProperties* kernel,
   size_t size
@@ -202,7 +202,7 @@ writeKernelProfilesToFile
     prev_base = it->second->base_addr_;
 
 #if 0
-    zeroLogKernelProfiles(it->second, size);
+    level0LogKernelProfiles(it->second, size);
 #endif
   }
   kpfs.close();
@@ -213,7 +213,7 @@ writeKernelProfilesToFile
 //******************************************************************************
 
 void
-zeroInitializeKernelCommandProperties
+level0InitializeKernelCommandProperties
 (
   void
 )
@@ -225,7 +225,7 @@ zeroInitializeKernelCommandProperties
 }
 
 void
-zeroReadKernelProperties
+level0ReadKernelProperties
 (
   const int32_t device_id,
   const std::string& data_dir_name,
@@ -255,7 +255,7 @@ zeroReadKernelProperties
 }
 
 void
-zeroInitializeKernelBaseAddressFunction
+level0InitializeKernelBaseAddressFunction
 (
   const struct hpcrun_foil_appdispatch_level0* dispatch
 )
@@ -270,7 +270,7 @@ zeroInitializeKernelBaseAddressFunction
 }
 
 uint64_t
-zeroGetKernelBaseAddress
+level0GetKernelBaseAddress
 (
   ze_kernel_handle_t kernel,
   const struct hpcrun_foil_appdispatch_level0* dispatch
@@ -280,12 +280,12 @@ zeroGetKernelBaseAddress
   if (zexKernelGetBaseAddress != nullptr && zexKernelGetBaseAddress(kernel, &base_addr) == ZE_RESULT_SUCCESS) {
     return base_addr;
   }
-  std::cout << "[WARNING] Unable to get base address for kernel: " << zeroGetKernelName(kernel, dispatch) << std::endl;
+  std::cout << "[WARNING] Unable to get base address for kernel: " << level0GetKernelName(kernel, dispatch) << std::endl;
   return 0;
 }
 
 void
-zeroDumpKernelProfiles
+level0DumpKernelProfiles
 (
   const std::string& data_dir_
 )

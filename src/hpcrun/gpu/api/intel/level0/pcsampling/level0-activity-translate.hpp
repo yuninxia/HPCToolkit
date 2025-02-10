@@ -34,7 +34,7 @@
 //******************************************************************************
 
 void
-zeroActivityTranslate
+level0ActivityTranslate
 (
   const std::map<uint64_t, EuStalls>::iterator& eustall_iter,               // [in] iterator to current EU stall entry (address -> stall info)
   const std::map<uint64_t, KernelProperties>::const_iterator& kernel_iter,  // [in] iterator to kernel properties entry (base address -> properties)

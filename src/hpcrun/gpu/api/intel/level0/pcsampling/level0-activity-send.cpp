@@ -17,7 +17,7 @@
 //******************************************************************************
 
 void
-zeroSendActivities
+level0SendActivities
 (
   const std::deque<gpu_activity_t*>& activities
 ) 

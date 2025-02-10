@@ -24,17 +24,17 @@ ZeCollector::Create
   const struct hpcrun_foil_appdispatch_level0* dispatch
 )
 {
-  zeroCheckDriverVersion(1, 2, /*printVersion=*/false, dispatch);
+  level0CheckDriverVersion(1, 2, /*printVersion=*/false, dispatch);
 
   std::unique_ptr<ZeCollector> collector(new ZeCollector(data_dir, dispatch));
 
   // Create the tracer associated with the collector
-  if (!zeroCreateTracer(collector.get(), dispatch)) {
+  if (!level0CreateTracer(collector.get(), dispatch)) {
     // If tracer creation fails, the collector is automatically deleted
     return nullptr;
   }
   
-  zeroInitializeKernelBaseAddressFunction(dispatch);
+  level0InitializeKernelBaseAddressFunction(dispatch);
 
   // Release ownership and return the raw pointer to the collector.
   return collector.release();
@@ -46,12 +46,12 @@ ZeCollector::ZeCollector
   const struct hpcrun_foil_appdispatch_level0* dispatch
 ) : data_dir_(data_dir), dispatch_(dispatch)
 {
-  zeroEnumerateAndSetupDevices(dispatch);
-  zeroInitializeKernelCommandProperties();
+  level0EnumerateAndSetupDevices(dispatch);
+  level0InitializeKernelCommandProperties();
 }
 
 ZeCollector::~ZeCollector()
 {
-  zeroDestroyTracer(dispatch_);
-  zeroDumpKernelProfiles(data_dir_);
+  level0DestroyTracer(dispatch_);
+  level0DumpKernelProfiles(data_dir_);
 }

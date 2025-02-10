@@ -39,7 +39,7 @@ struct KernelExecutionTime {
 //******************************************************************************
 
 KernelExecutionTime
-zeroGetKernelExecutionTime
+level0GetKernelExecutionTime
 (
   ze_event_handle_t hSignalEvent,
   ze_device_handle_t hDevice,

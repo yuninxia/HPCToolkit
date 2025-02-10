@@ -17,7 +17,7 @@
 //******************************************************************************
 
 void
-zeroUpdateCorrelationId
+level0UpdateCorrelationId
 (
   uint64_t cid,
   gpu_activity_channel_t *channel,

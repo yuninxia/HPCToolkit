@@ -36,20 +36,20 @@
 //******************************************************************************
 
 void
-zeroGetVersion
+level0GetVersion
 (
   ze_api_version_t& version,
   const struct hpcrun_foil_appdispatch_level0* dispatch
 );
 
 std::vector<ze_driver_handle_t>
-zeroGetDrivers
+level0GetDrivers
 (
   const struct hpcrun_foil_appdispatch_level0* dispatch
 );
 
 void
-zeroCheckDriverVersion
+level0CheckDriverVersion
 (
   uint32_t requiredMajor,
   uint32_t requiredMinor,

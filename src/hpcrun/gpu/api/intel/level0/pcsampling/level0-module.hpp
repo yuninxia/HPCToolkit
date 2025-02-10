@@ -52,14 +52,14 @@ struct ZeModule {
 //******************************************************************************
 
 std::string
-zeroGetKernelName
+level0GetKernelName
 (
   ze_kernel_handle_t kernel,
   const struct hpcrun_foil_appdispatch_level0* dispatch
 );
 
 uint64_t
-zeroGetFunctionPointer
+level0GetFunctionPointer
 (
   ze_module_handle_t module,
   const std::string& kernel_name,
@@ -67,14 +67,14 @@ zeroGetFunctionPointer
 );
 
 std::vector<uint8_t>
-zeroGetModuleDebugInfo
+level0GetModuleDebugInfo
 (
   ze_module_handle_t module,
   const struct hpcrun_foil_appdispatch_level0* dispatch
 );
 
 std::vector<std::string>
-zeroGetModuleKernelNames
+level0GetModuleKernelNames
 (
   ze_module_handle_t module,
   const struct hpcrun_foil_appdispatch_level0* dispatch

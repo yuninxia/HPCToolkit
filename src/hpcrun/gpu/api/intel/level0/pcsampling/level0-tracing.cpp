@@ -63,7 +63,7 @@ configureTracerCallbacks
 //******************************************************************************
 
 bool
-zeroCreateTracer
+level0CreateTracer
 (
   ZeCollector* collector,
   const struct hpcrun_foil_appdispatch_level0* dispatch
@@ -87,7 +87,7 @@ zeroCreateTracer
 }
 
 void
-zeroDestroyTracer
+level0DestroyTracer
 (
   const struct hpcrun_foil_appdispatch_level0* dispatch
 )

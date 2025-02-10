@@ -39,7 +39,7 @@ initializeEventDescriptor
 //*****************************************************************************
 
 ze_event_handle_t
-zeroCreateEvent
+level0CreateEvent
 (
   ze_event_pool_handle_t event_pool,
   uint32_t event_index,

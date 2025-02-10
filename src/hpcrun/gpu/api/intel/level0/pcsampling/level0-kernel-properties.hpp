@@ -91,13 +91,13 @@ extern std::map<std::string, ZeKernelCommandProperties> *kernel_command_properti
 //******************************************************************************
 
 void
-zeroInitializeKernelCommandProperties
+level0InitializeKernelCommandProperties
 (
   void
 );
 
 void
-zeroReadKernelProperties
+level0ReadKernelProperties
 (
   const int32_t device_id,                      // [in] id of the GPU device
   const std::string& data_dir_name,             // [in] directory containing kernel property files
@@ -105,20 +105,20 @@ zeroReadKernelProperties
 );
 
 void
-zeroInitializeKernelBaseAddressFunction
+level0InitializeKernelBaseAddressFunction
 (
   const struct hpcrun_foil_appdispatch_level0* dispatch
 );
 
 uint64_t
-zeroGetKernelBaseAddress
+level0GetKernelBaseAddress
 (
   ze_kernel_handle_t kernel,
   const struct hpcrun_foil_appdispatch_level0* dispatch
 );
 
 void
-zeroDumpKernelProfiles
+level0DumpKernelProfiles
 (
   const std::string& data_dir_
 );

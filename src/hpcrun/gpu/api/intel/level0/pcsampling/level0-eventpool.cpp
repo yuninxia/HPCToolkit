@@ -37,7 +37,7 @@ initializeEventPoolDescriptor
 //*****************************************************************************
 
 ze_event_pool_handle_t
-zeroCreateEventPool
+level0CreateEventPool
 (
   ze_context_handle_t context,
   ze_device_handle_t device,
