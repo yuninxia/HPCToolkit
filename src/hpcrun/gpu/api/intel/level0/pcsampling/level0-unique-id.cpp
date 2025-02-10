@@ -17,7 +17,7 @@
 //******************************************************************************
 
 std::string 
-zeroGenerateUniqueId
+level0GenerateUniqueId
 (
   const void *data,
   size_t binary_size

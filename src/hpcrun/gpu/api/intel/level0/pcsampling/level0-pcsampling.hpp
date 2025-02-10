@@ -17,19 +17,19 @@ extern "C" {
 #endif
 
 void 
-zeroPCSamplingInit
+level0PCSamplingInit
 (
   void
 );
 
 void
-zeroPCSamplingEnable
+level0PCSamplingEnable
 (
   const struct hpcrun_foil_appdispatch_level0* dispatch
 );
 
 void 
-zeroPCSamplingFini
+level0PCSamplingFini
 (
   void
 );

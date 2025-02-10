@@ -28,13 +28,13 @@
 //******************************************************************************
 
 void
-zeroFillKernelSizeMap
+level0FillKernelSizeMap
 (
   zebin_id_map_entry_t *entry
 );
 
 size_t
-zeroGetKernelSize
+level0GetKernelSize
 (
   std::string& kernel_name
 );

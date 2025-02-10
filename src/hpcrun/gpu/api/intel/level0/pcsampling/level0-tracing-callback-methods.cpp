@@ -45,11 +45,11 @@ getDeviceForCommandList
   level0_check_result(status, __LINE__);
 #else
   // Option 2: Manually maintain the mapping
-  hDevice = zeroGetDeviceForCmdList(hCommandList);
+  hDevice = level0GetDeviceForCmdList(hCommandList);
 #endif
 
   // Return the root device for proper notification and synchronization
-  return zeroDeviceGetRootDevice(hDevice, dispatch);
+  return level0DeviceGetRootDevice(hDevice, dispatch);
 }
 
 static ZeDeviceDescriptor*
@@ -59,7 +59,7 @@ getDeviceDescriptor
 )
 {
   std::map<ze_device_handle_t, ZeDeviceDescriptor*> device_descriptors;
-  zeroGetDeviceDesc(device_descriptors);
+  level0GetDeviceDesc(device_descriptors);
   auto it = device_descriptors.find(hDevice);
   if (it == device_descriptors.end()) {
     std::cerr << "[Warning] Device descriptor not found for device handle: " << hDevice << std::endl;
@@ -80,8 +80,8 @@ createZeModule
   ZeModule m;
   m.device_ = device;
   m.size_ = binary.size();
-  m.module_id_ = zeroGenerateUniqueId(&mod, sizeof(mod));
-  m.kernel_names_ = zeroGetModuleKernelNames(mod, dispatch);
+  m.module_id_ = level0GenerateUniqueId(&mod, sizeof(mod));
+  m.kernel_names_ = level0GetModuleKernelNames(mod, dispatch);
   return m;
 }
 
@@ -101,12 +101,12 @@ extractKernelProperties
 
   desc.device_id_ = device_id;
   desc.module_id_ = module_id;
-  desc.kernel_id_ = zeroGenerateUniqueId(&kernel, sizeof(kernel));
+  desc.kernel_id_ = level0GenerateUniqueId(&kernel, sizeof(kernel));
 
-  desc.name_ = zeroGetKernelName(kernel, dispatch);
-  desc.base_addr_ = zeroGetKernelBaseAddress(kernel, dispatch);
-  desc.size_ = zeroGetKernelSize(desc.name_);
-  desc.function_pointer_ = zeroGetFunctionPointer(mod, desc.name_, dispatch);
+  desc.name_ = level0GetKernelName(kernel, dispatch);
+  desc.base_addr_ = level0GetKernelBaseAddress(kernel, dispatch);
+  desc.size_ = level0GetKernelSize(desc.name_);
+  desc.function_pointer_ = level0GetFunctionPointer(mod, desc.name_, dispatch);
   desc.device_ = device;
 
   // Query kernel properties
@@ -161,7 +161,7 @@ OnExitModuleCreate
   ze_module_handle_t mod = **(params->pphModule);
   ze_device_handle_t device = *(params->phDevice);
 
-  std::vector<uint8_t> binary = zeroGetModuleDebugInfo(mod, dispatch);
+  std::vector<uint8_t> binary = level0GetModuleDebugInfo(mod, dispatch);
   if (binary.empty()) {
     return;
   }
@@ -214,7 +214,7 @@ OnExitKernelCreate
   sscanf(module_id.c_str(), "%8x", &zebin_id_uint32);
   zebin_id_map_entry_t* entry = zebin_id_map_lookup(zebin_id_uint32);
   if (entry != nullptr) {
-    zeroFillKernelSizeMap(entry);
+    level0FillKernelSizeMap(entry);
   }
 
   int device_id = -1;
@@ -268,7 +268,7 @@ OnExitCommandListAppendLaunchKernel
 #if 0
   ze_kernel_handle_t hKernel = *(params->phKernel);
   ze_event_handle_t hSignalEvent = *(params->phSignalEvent);
-  KernelExecutionTime executionTime = zeroGetKernelExecutionTime(hSignalEvent, hDevice, dispatch);
+  KernelExecutionTime executionTime = level0GetKernelExecutionTime(hSignalEvent, hDevice, dispatch);
   std::cout << "OnExitCommandListAppendLaunchKernel:  hKernel=" << hKernel << ", hDevice=" << hDevice
             << ", Start time: " << executionTime.startTimeNs << " ns"
             << ", End time: " << executionTime.endTimeNs << " ns"
@@ -294,5 +294,5 @@ OnExitCommandListCreateImmediate
   assert(global_user_data != nullptr);
   ze_command_list_handle_t hCommandList = **(params->pphCommandList);
   ze_device_handle_t hDevice = *(params->phDevice);
-  zeroInsertCmdListDeviceMap(hCommandList, hDevice);
+  level0InsertCmdListDeviceMap(hCommandList, hDevice);
 }

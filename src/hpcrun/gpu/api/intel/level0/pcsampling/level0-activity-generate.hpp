@@ -33,7 +33,7 @@
 //******************************************************************************
 
 void
-zeroGenerateActivities
+level0GenerateActivities
 (
   const std::map<uint64_t, KernelProperties>& kprops,    // [in] map from kernel base address to kernel properties
   std::map<uint64_t, EuStalls>& eustalls,                // [in] map from stall instruction address to EU stall information

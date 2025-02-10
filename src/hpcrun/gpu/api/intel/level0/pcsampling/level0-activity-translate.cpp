@@ -100,7 +100,7 @@ convertPCSampling
   fillPCSamplingActivityFields(activity, eustall_iter->first, correlation_id, stall_count, stall_reason);
 
 #if 0
-  zeroLogPCSample(correlation_id, kernel_props, activity->details.pc_sampling, eustall_iter->second, kernel_iter->first);
+  level0LogPCSample(correlation_id, kernel_props, activity->details.pc_sampling, eustall_iter->second, kernel_iter->first);
 #endif
 
   return true;
@@ -130,7 +130,7 @@ createAndFillActivity
 //******************************************************************************
 
 void
-zeroActivityTranslate
+level0ActivityTranslate
 (
   const std::map<uint64_t, EuStalls>::iterator& eustall_iter,
   const std::map<uint64_t, KernelProperties>::const_iterator& kernel_iter,

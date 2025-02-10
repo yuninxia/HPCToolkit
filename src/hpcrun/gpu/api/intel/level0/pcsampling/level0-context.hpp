@@ -28,7 +28,7 @@
 //******************************************************************************
 
 ze_context_handle_t
-zeroCreateContext
+level0CreateContext
 (
   ze_driver_handle_t driver,
   const struct hpcrun_foil_appdispatch_level0* dispatch

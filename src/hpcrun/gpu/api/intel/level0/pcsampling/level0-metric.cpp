@@ -216,7 +216,7 @@ processSampleBlock
 //******************************************************************************
 
 void
-zeroGetMetricGroup
+level0GetMetricGroup
 (
   ze_device_handle_t device,
   const std::string& metric_group_name,
@@ -241,7 +241,7 @@ zeroGetMetricGroup
 }
 
 uint64_t
-zeroMetricStreamerReadData
+level0MetricStreamerReadData
 (
   zet_metric_streamer_handle_t streamer,
   std::vector<uint8_t>& storage,
@@ -269,7 +269,7 @@ zeroMetricStreamerReadData
 }
 
 void
-zeroMetricGroupCalculateMultipleMetricValuesExp
+level0MetricGroupCalculateMultipleMetricValuesExp
 (
   zet_metric_group_handle_t metric_group,
   int raw_size,
@@ -289,7 +289,7 @@ zeroMetricGroupCalculateMultipleMetricValuesExp
 }
 
 void
-zeroProcessMetrics
+level0ProcessMetrics
 (
   const std::vector<std::string>& metric_list,
   const std::vector<uint32_t>& samples,

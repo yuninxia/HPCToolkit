@@ -25,7 +25,7 @@ static std::unordered_map<std::string, size_t> kernel_size_map_;
 //******************************************************************************
 
 void
-zeroFillKernelSizeMap
+level0FillKernelSizeMap
 (
   zebin_id_map_entry_t *entry
 )
@@ -44,7 +44,7 @@ zeroFillKernelSizeMap
 }
 
 size_t
-zeroGetKernelSize
+level0GetKernelSize
 (
   std::string &kernel_name
 )

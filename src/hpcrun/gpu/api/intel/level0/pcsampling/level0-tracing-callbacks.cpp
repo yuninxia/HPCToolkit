@@ -53,7 +53,7 @@ zeKernelCreateOnExit
 {
   ZeCollector* collector = static_cast<ZeCollector*>(global_user_data);
   OnExitKernelCreate(params, result, collector->getDispatch());
-  zeroDumpKernelProfiles(collector->GetDataDir());
+  level0DumpKernelProfiles(collector->GetDataDir());
 }
 
 void

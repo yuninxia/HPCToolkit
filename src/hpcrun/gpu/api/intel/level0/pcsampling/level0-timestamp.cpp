@@ -17,7 +17,7 @@
 //******************************************************************************
 
 KernelExecutionTime
-zeroGetKernelExecutionTime
+level0GetKernelExecutionTime
 (
   ze_event_handle_t hSignalEvent,
   ze_device_handle_t hDevice,
@@ -39,7 +39,7 @@ zeroGetKernelExecutionTime
   const uint64_t kernelDuration = endTimestamp - startTimestamp;
 
   // Retrieve device properties to obtain the timer resolution
-  ze_device_properties_t deviceProps = zeroGetDeviceProperties(hDevice, dispatch);
+  ze_device_properties_t deviceProps = level0GetDeviceProperties(hDevice, dispatch);
   const double timerResolution = deviceProps.timerResolution;
 
   // Convert timestamps to nanoseconds using the timer resolution

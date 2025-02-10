@@ -41,20 +41,20 @@ extern std::map<ze_device_handle_t, ZeDeviceDescriptor*> device_descriptors_;
 //******************************************************************************
 
 void
-zeroGetDeviceDesc
+level0GetDeviceDesc
 (
   std::map<ze_device_handle_t, ZeDeviceDescriptor*>& out_descriptors  // [out] map from device handle to device descriptor
 );
 
 void
-zeroInsertCmdListDeviceMap
+level0InsertCmdListDeviceMap
 (
   ze_command_list_handle_t cmdList,  // [in] command list handle to be mapped
   ze_device_handle_t device          // [in] device handle associated with the command list
 );
 
 ze_device_handle_t
-zeroGetDeviceForCmdList
+level0GetDeviceForCmdList
 (
   ze_command_list_handle_t cmdList  // [in] command list handle to look up the associated device
 );

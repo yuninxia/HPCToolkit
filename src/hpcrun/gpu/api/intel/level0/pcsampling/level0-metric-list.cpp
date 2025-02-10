@@ -118,7 +118,7 @@ getMetricId
 //******************************************************************************
 
 void
-zeroGetMetricList
+level0GetMetricList
 (
   zet_metric_group_handle_t group,
   std::vector<std::string>& name_list,
@@ -145,7 +145,7 @@ zeroGetMetricList
 }
 
 bool
-zeroIsValidMetricList
+level0IsValidMetricList
 (
   const std::vector<std::string>& metric_list
 )
