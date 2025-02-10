@@ -86,7 +86,7 @@ validateAndPrintDriverVersion
 //*****************************************************************************
 
 void
-zeroGetVersion
+level0GetVersion
 (
   ze_api_version_t& version,
   const struct hpcrun_foil_appdispatch_level0* dispatch
@@ -101,7 +101,7 @@ zeroGetVersion
 }
 
 std::vector<ze_driver_handle_t>
-zeroGetDrivers
+level0GetDrivers
 (
   const struct hpcrun_foil_appdispatch_level0* dispatch
 )
@@ -110,7 +110,7 @@ zeroGetDrivers
 }
 
 void
-zeroCheckDriverVersion
+level0CheckDriverVersion
 (
   uint32_t requiredMajor,
   uint32_t requiredMinor,
@@ -119,6 +119,6 @@ zeroCheckDriverVersion
 )
 {
   ze_api_version_t version;
-  zeroGetVersion(version, dispatch);
+  level0GetVersion(version, dispatch);
   validateAndPrintDriverVersion(version, requiredMajor, requiredMinor, printVersion);
 }

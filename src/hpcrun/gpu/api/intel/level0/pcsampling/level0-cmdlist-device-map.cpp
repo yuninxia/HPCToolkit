@@ -36,7 +36,7 @@ static std::map<ze_command_list_handle_t, ze_device_handle_t> cmdlist_device_map
 //******************************************************************************
 
 void
-zeroGetDeviceDesc
+level0GetDeviceDesc
 (
   std::map<ze_device_handle_t, ZeDeviceDescriptor*>& out_descriptors
 )
@@ -45,7 +45,7 @@ zeroGetDeviceDesc
 }
 
 void
-zeroInsertCmdListDeviceMap
+level0InsertCmdListDeviceMap
 (
   ze_command_list_handle_t cmdList,
   ze_device_handle_t device
@@ -56,7 +56,7 @@ zeroInsertCmdListDeviceMap
 }
 
 ze_device_handle_t
-zeroGetDeviceForCmdList
+level0GetDeviceForCmdList
 (
   ze_command_list_handle_t cmdList
 )

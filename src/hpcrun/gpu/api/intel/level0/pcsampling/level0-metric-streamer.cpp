@@ -87,7 +87,7 @@ closeMetricStreamer
 //******************************************************************************
 
 void
-zeroInitializeMetricStreamer
+level0InitializeMetricStreamer
 (
   ze_context_handle_t context,
   ze_device_handle_t device,
@@ -104,7 +104,7 @@ zeroInitializeMetricStreamer
 }
 
 void
-zeroCleanupMetricStreamer
+level0CleanupMetricStreamer
 (
   ze_context_handle_t context,
   ze_device_handle_t device,

@@ -94,7 +94,7 @@ pcSamplingEnableHelper
 //******************************************************************************
 
 void
-zeroPCSamplingInit
+level0PCSamplingInit
 (
   void
 )
@@ -117,7 +117,7 @@ zeroPCSamplingInit
 }
 
 void
-zeroPCSamplingEnable
+level0PCSamplingEnable
 (
   const struct hpcrun_foil_appdispatch_level0* dispatch
 )
@@ -132,7 +132,7 @@ zeroPCSamplingEnable
 }
 
 void
-zeroPCSamplingFini
+level0PCSamplingFini
 (
   void
 )

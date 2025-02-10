@@ -160,7 +160,7 @@ logMetricsForSample
 //******************************************************************************
 
 void
-zeroLogActivities
+level0LogActivities
 (
   const std::deque<gpu_activity_t*>& activities,
   const std::map<uint64_t, KernelProperties>& kprops
@@ -182,7 +182,7 @@ zeroLogActivities
 }
 
 void
-zeroLogPCSample
+level0LogPCSample
 (
   uint64_t correlation_id,
   const KernelProperties& kernel_props,
@@ -211,7 +211,7 @@ zeroLogPCSample
 }
 
 void
-zeroLogMetricList
+level0LogMetricList
 (
   const std::vector<std::string>& metric_list
 )
@@ -225,7 +225,7 @@ zeroLogMetricList
 }
 
 void
-zeroLogSamplesAndMetrics
+level0LogSamplesAndMetrics
 (
   const std::vector<uint32_t>& samples,
   const std::vector<zet_typed_value_t>& metrics

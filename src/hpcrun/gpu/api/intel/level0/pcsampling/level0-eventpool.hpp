@@ -28,7 +28,7 @@
 //******************************************************************************
 
 ze_event_pool_handle_t
-zeroCreateEventPool
+level0CreateEventPool
 (
   ze_context_handle_t context,                           // [in] handle of the context object
   ze_device_handle_t device,                             // [in] device handle which have visibility to the event pool

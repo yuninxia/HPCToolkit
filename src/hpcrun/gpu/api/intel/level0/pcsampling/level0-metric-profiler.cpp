@@ -67,27 +67,27 @@ ProcessMetricData
   uint64_t ssize = MAX_METRIC_BUFFER + 512;
   
   // Read raw metric data from the streamer
-  uint64_t raw_size = zeroMetricStreamerReadData(streamer, raw_metrics, ssize, dispatch);
+  uint64_t raw_size = level0MetricStreamerReadData(streamer, raw_metrics, ssize, dispatch);
   if (raw_size == 0) return false;
 
   // Calculate metric values from the raw data
   std::vector<uint32_t> samples;
   std::vector<zet_typed_value_t> metrics;
-  zeroMetricGroupCalculateMultipleMetricValuesExp(desc->metric_group_, raw_size, raw_metrics,
+  level0MetricGroupCalculateMultipleMetricValuesExp(desc->metric_group_, raw_size, raw_metrics,
                                                   samples, metrics, dispatch);
   if (samples.empty() || metrics.empty()) return false;
 
   // Process the metric values into stall counts
   std::map<uint64_t, EuStalls> eustalls;
-  zeroProcessMetrics(metric_list, samples, metrics, eustalls);
+  level0ProcessMetrics(metric_list, samples, metrics, eustalls);
   if (eustalls.empty()) return false;
 
   // Generate GPU activities based on the processed metrics and kernel properties,
   // then send these activities to the consumer
   std::deque<gpu_activity_t*> activities;
-  zeroGenerateActivities(kprops, eustalls, desc->correlation_id_, desc->running_kernel_,
+  level0GenerateActivities(kprops, eustalls, desc->correlation_id_, desc->running_kernel_,
                          activities, dispatch);
-  zeroSendActivities(activities);
+  level0SendActivities(activities);
 
   // Clean up the dynamically allocated activity objects
   for (auto activity : activities) {
@@ -109,16 +109,16 @@ ZeMetricProfiler::MetricProfilingThread
   zet_metric_group_handle_t group = desc->metric_group_;
   zet_metric_streamer_handle_t streamer = nullptr;
 
-  zeroInitializeMetricStreamer(context, device, group, streamer, dispatch);
+  level0InitializeMetricStreamer(context, device, group, streamer, dispatch);
 
   // Get the list of metrics
   std::vector<std::string> metric_list;
-  zeroGetMetricList(group, metric_list, dispatch);
-  if (!zeroIsValidMetricList(metric_list)) return;
+  level0GetMetricList(group, metric_list, dispatch);
+  if (!level0IsValidMetricList(metric_list)) return;
 
   RunProfilingLoop(desc, streamer, metric_list, dispatch);
 
-  zeroCleanupMetricStreamer(context, device, group, streamer, dispatch);
+  level0CleanupMetricStreamer(context, device, group, streamer, dispatch);
 }
 
 void 
@@ -141,7 +141,7 @@ ZeMetricProfiler::RunProfilingLoop
     if (!WaitForKernelStart(desc)) return;
 
     // Update correlation ID
-    gpu_correlation_channel_receive(1, zeroUpdateCorrelationId, desc);
+    gpu_correlation_channel_receive(1, level0UpdateCorrelationId, desc);
 
     // Wait for the next sampling interval; continuously collect metrics until the event is signaled
     if (!WaitForNextInterval(desc, dispatch, status)) return;
@@ -176,7 +176,7 @@ ZeMetricProfiler::CollectAndProcessMetrics
 {
   // Read kernel properties from file
   std::map<uint64_t, KernelProperties> kprops;
-  zeroReadKernelProperties(desc->device_id_, data_dir_name_, kprops);
+  level0ReadKernelProperties(desc->device_id_, data_dir_name_, kprops);
   if (kprops.empty()) return;
 
   // Continuously process metric data while profiling is enabled
@@ -209,7 +209,7 @@ ZeMetricProfiler::ZeMetricProfiler
   const struct hpcrun_foil_appdispatch_level0* dispatch
 )
 {
-  zeroEnumerateDevices(device_descriptors_, metric_contexts_, dispatch);
+  level0EnumerateDevices(device_descriptors_, metric_contexts_, dispatch);
 }
 
 ZeMetricProfiler::~ZeMetricProfiler() 

@@ -73,7 +73,7 @@ processEuStalls
         // Retrieve kernel properties using the start address.
         auto kernel_iter = kprops.find(it->first);
         if (kernel_iter != kprops.end()) {
-          zeroActivityTranslate(eustall_iter, kernel_iter, cid, activities);
+          level0ActivityTranslate(eustall_iter, kernel_iter, cid, activities);
         }
       }
     }
@@ -144,7 +144,7 @@ generateActivities
 //******************************************************************************
 
 void
-zeroGenerateActivities
+level0GenerateActivities
 (
   const std::map<uint64_t, KernelProperties>& kprops, 
   std::map<uint64_t, EuStalls>& eustalls,
@@ -162,7 +162,7 @@ zeroGenerateActivities
   activities.clear();
 
   // Extract the running kernel name
-  std::string running_kernel_name = zeroGetKernelName(running_kernel, dispatch);
+  std::string running_kernel_name = level0GetKernelName(running_kernel, dispatch);
 
   // Generate kernel correlation IDs using stripped kernel names
   auto kernel_cids = generateKernelCorrelationIds(kprops, correlation_id);
