@@ -1,5 +1,5 @@
 <!--
-SPDX-FileCopyrightText: 2024 Contributors to the HPCToolkit Project
+SPDX-FileCopyrightText: Contributors to the HPCToolkit Project
 
 SPDX-License-Identifier: CC-BY-4.0
 -->
@@ -102,7 +102,7 @@ Thanks for your efforts to improve HPCToolkit, and welcome to the community of C
 1. The copyright and license must be specified by headers compatible with the [REUSE Specification](https://reuse.software). In most cases this is in a comment at the top of the file, for example:
 
    ```c
-   // SPDX-FileCopyrightText: 2024 Contributors to the HPCToolkit Project
+   // SPDX-FileCopyrightText: Contributors to the HPCToolkit Project
    //
    // SPDX-License-Identifier: BSD-3-Clause
    ```

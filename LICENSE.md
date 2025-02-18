@@ -1,5 +1,4 @@
-Copyright (c) 2002-2024, Rice University
-Copyright (c) 2024 Contributors to the HPCToolkit Project
+Copyright Contributors to the HPCToolkit Project
 
 All rights reserved.
 
