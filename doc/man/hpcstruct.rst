@@ -17,7 +17,6 @@ recovers the static program structure of CPU or GPU binaries, as cited in a reco
   <`<https://hpctoolkit.org/>`_>
 :contact: <`<hpctoolkit-forum@rice.edu>`_>
 :copyright:
-  Copyright © 2002-2023 Rice University.
   HPCToolkit is distributed under @LICENSE_RST@.
 
 See |hpctoolkit(1)| for an overview of **HPCToolkit**.

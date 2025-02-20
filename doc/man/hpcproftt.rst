@@ -17,7 +17,6 @@ generates textual dumps of call path profiles recorded by hpcrun.
   <`<https://hpctoolkit.org/>`_>
 :contact: <`<hpctoolkit-forum@rice.edu>`_>
 :copyright:
-  Copyright © 2002-2023 Rice University.
   HPCToolkit is distributed under @LICENSE_RST@.
 
 SYNOPSIS

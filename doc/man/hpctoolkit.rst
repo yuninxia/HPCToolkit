@@ -17,7 +17,6 @@ a collection of performance analysis tools for node-based performance analysis.
   <`<https://hpctoolkit.org/>`_>
 :contact: <`<hpctoolkit-forum@rice.edu>`_>
 :copyright:
-  Copyright © 2002-2023 Rice University.
   HPCToolkit is distributed under @LICENSE_RST@.
 
 It has been designed around the following principles:
