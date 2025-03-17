@@ -23,6 +23,11 @@ level0UpdateCorrelationId
   void *arg
 )
 {
+  if (arg == nullptr) {
+    std::cerr << "[WARNING] Null device descriptor passed to level0UpdateCorrelationId" << std::endl;
+    return;
+  }
+
   ZeDeviceDescriptor* desc = static_cast<ZeDeviceDescriptor*>(arg);
   desc->correlation_id_ = cid;
 }

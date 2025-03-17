@@ -33,6 +33,7 @@
 // global variables
 //******************************************************************************
 
+// Maximum number of metric samples to collect in a single batch
 extern uint32_t max_metric_samples;
 
 

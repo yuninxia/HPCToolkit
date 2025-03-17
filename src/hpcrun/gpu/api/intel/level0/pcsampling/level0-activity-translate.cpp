@@ -81,6 +81,8 @@ convertPCSampling
 )
 {
   if (!activity) return false;
+  if (eustall_iter == std::map<uint64_t, EuStalls>().end()) return false;
+  if (kernel_iter == std::map<uint64_t, KernelProperties>().end()) return false;
 
   activity->kind = GPU_ACTIVITY_PC_SAMPLING;
   const KernelProperties& kernel_props = kernel_iter->second;

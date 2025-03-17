@@ -57,7 +57,10 @@ class ZeCollector {
   ZeCollector(const std::string& data_dir, const struct hpcrun_foil_appdispatch_level0* dispatch);
 
  private:
+  /** Directory where collected data will be stored */
   std::string data_dir_;
+  
+  /** Function dispatch table for Level Zero API calls */
   const struct hpcrun_foil_appdispatch_level0* dispatch_;
 };
 

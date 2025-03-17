@@ -98,26 +98,41 @@ level0GetModuleKernelNames
   const struct hpcrun_foil_appdispatch_level0* dispatch
 )
 {
-  uint32_t kernel_count = 0;
-  ze_result_t status = f_zeModuleGetKernelNames(module, &kernel_count, nullptr, dispatch);
-  
-  if (status != ZE_RESULT_SUCCESS || kernel_count == 0) {
-    std::cerr << "[WARNING] Unable to get kernel count, status: " << status << std::endl;
+  if (module == nullptr) {
+    std::cerr << "[WARNING] Null module handle passed to level0GetModuleKernelNames" << std::endl;
     return {};
   }
 
-  std::vector<const char*> kernel_names(kernel_count);
-  status = f_zeModuleGetKernelNames(module, &kernel_count, kernel_names.data(), dispatch);
-  
+  uint32_t kernel_count = 0;
+  // First call to get the count of kernels
+  ze_result_t status = f_zeModuleGetKernelNames(module, &kernel_count, nullptr, dispatch);
   if (status != ZE_RESULT_SUCCESS) {
-    std::cerr << "[WARNING] Unable to get kernel names, status: " << status << std::endl;
+    std::cerr << "[WARNING] Failed to get kernel count: " << ze_result_to_string(status) << std::endl;
+    return {};
+  }
+
+  if (kernel_count == 0) {
+    return {};  // No kernels in this module
+  }
+
+  // Allocate memory for kernel name pointers
+  std::vector<const char*> kernel_names(kernel_count);
+  
+  // Second call to get the actual kernel names
+  status = f_zeModuleGetKernelNames(module, &kernel_count, kernel_names.data(), dispatch);
+  if (status != ZE_RESULT_SUCCESS) {
+    std::cerr << "[WARNING] Failed to get kernel names: " << ze_result_to_string(status) << std::endl;
     return {};
   }
 
   std::vector<std::string> result;
   result.reserve(kernel_count);
   for (uint32_t i = 0; i < kernel_count; ++i) {
-    result.emplace_back(kernel_names[i]);
+    if (kernel_names[i] != nullptr) {
+      result.emplace_back(kernel_names[i]);
+    } else {
+      result.emplace_back("UnknownKernel");
+    }
   }
 
   return result;

@@ -197,10 +197,26 @@ ZeMetricProfiler::Create
   const struct hpcrun_foil_appdispatch_level0* dispatch
 )
 {
+  if (dir == nullptr) {
+    std::cerr << "[ERROR] Invalid directory path provided to ZeMetricProfiler::Create" << std::endl;
+    return nullptr;
+  }
+
   data_dir_name_ = std::string(dir);
-  ZeMetricProfiler* profiler = new ZeMetricProfiler(dispatch);
-  profiler->StartProfilingMetrics(dispatch);
-  return profiler;
+  
+  try {
+    ZeMetricProfiler* profiler = new ZeMetricProfiler(dispatch);
+    if (profiler == nullptr) {
+      std::cerr << "[ERROR] Failed to allocate memory for ZeMetricProfiler" << std::endl;
+      return nullptr;
+    }
+    
+    profiler->StartProfilingMetrics(dispatch);
+    return profiler;
+  } catch (const std::exception& e) {
+    std::cerr << "[ERROR] Exception in ZeMetricProfiler::Create: " << e.what() << std::endl;
+    return nullptr;
+  }
 }
 
 ZeMetricProfiler::ZeMetricProfiler
@@ -248,12 +264,22 @@ ZeMetricProfiler::StopProfilingMetrics
       // Skip subdevices
       continue;
     }
-    assert(it->second->profiling_thread_ != nullptr);
-    assert(it->second->profiling_state_ == PROFILER_ENABLED);
+    
+    // Signal the profiling thread to stop
     it->second->profiling_state_.store(PROFILER_DISABLED, std::memory_order_release);
-    it->second->profiling_thread_->join();
-    delete it->second->profiling_thread_;
-    it->second->profiling_thread_ = nullptr;
+    
+    // Join the profiling thread if it exists
+    if (it->second->profiling_thread_ != nullptr) {
+      try {
+        if (it->second->profiling_thread_->joinable()) {
+          it->second->profiling_thread_->join();
+        }
+        delete it->second->profiling_thread_;
+        it->second->profiling_thread_ = nullptr;
+      } catch (const std::exception& e) {
+        std::cerr << "[WARNING] Error joining profiling thread: " << e.what() << std::endl;
+      }
+    }
   }
   device_descriptors_.clear();
 }

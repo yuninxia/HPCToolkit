@@ -37,7 +37,12 @@ getDeviceForCommandList
   const struct hpcrun_foil_appdispatch_level0* dispatch
 )
 {
-  ze_device_handle_t hDevice;
+  if (hCommandList == nullptr) {
+    std::cerr << "[ERROR] Null command list in getDeviceForCommandList" << std::endl;
+    return nullptr;
+  }
+
+  ze_device_handle_t hDevice = nullptr;
 #if 0
   // Option 1: Use the compute runtime (requires level0 >= v1.9.0)
   ze_result_t status = f_zeCommandListGetDeviceHandle(hCommandList, &hDevice, dispatch);
@@ -45,10 +50,19 @@ getDeviceForCommandList
 #else
   // Option 2: Manually maintain the mapping
   hDevice = level0GetDeviceForCmdList(hCommandList);
+  if (hDevice == nullptr) {
+    std::cerr << "[WARNING] No device found for command list: " << hCommandList << std::endl;
+    return nullptr;
+  }
 #endif
 
   // Return the root device for proper notification and synchronization
-  return level0DeviceGetRootDevice(hDevice, dispatch);
+  ze_device_handle_t rootDevice = level0DeviceGetRootDevice(hDevice, dispatch);
+  if (rootDevice == nullptr) {
+    std::cerr << "[WARNING] Failed to get root device for device: " << hDevice << std::endl;
+    return hDevice; // Return the original device as fallback
+  }
+  return rootDevice;
 }
 
 static ZeDeviceDescriptor*

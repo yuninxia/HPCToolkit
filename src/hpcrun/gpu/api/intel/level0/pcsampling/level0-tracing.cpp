@@ -91,13 +91,24 @@ level0DestroyTracer
   const struct hpcrun_foil_appdispatch_level0* dispatch
 )
 {
-  if (tracer_ != nullptr) {
+  if (tracer_ == nullptr) {
+    return;  // Nothing to destroy
+  }
+
+  try {
     // Disable the tracer
     ze_result_t status = f_zelTracerSetEnabled(tracer_, false, dispatch);
     level0_check_result(status, __LINE__);
 
     // Destroy the tracer
     status = f_zelTracerDestroy(tracer_, dispatch);
-    level0_check_result(status, __LINE__);
+    if (status != ZE_RESULT_SUCCESS) {
+      std::cerr << "[WARNING] Failed to destroy Level Zero tracer: " 
+                << ze_result_to_string(status) << std::endl;
+    } else {
+      tracer_ = nullptr;
+    }
+  } catch (const std::exception& e) {
+    std::cerr << "[ERROR] Exception in level0DestroyTracer: " << e.what() << std::endl;
   }
 }
