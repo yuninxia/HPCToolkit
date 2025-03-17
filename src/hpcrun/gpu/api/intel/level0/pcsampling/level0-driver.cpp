@@ -37,7 +37,7 @@ fetchDriverHandles
   if (driver_count == 0) {
     return {};
   }
-  
+
   std::vector<ze_driver_handle_t> drivers(driver_count);
   ze_result_t status = f_zeDriverGet(&driver_count, drivers.data(), dispatch);
   level0_check_result(status, __LINE__);
@@ -53,12 +53,24 @@ fetchDriverVersion
   const struct hpcrun_foil_appdispatch_level0* dispatch
 )
 {
-  assert(driver != nullptr && "Invalid driver handle");
+  if (driver == nullptr) {
+    std::cerr << "[ERROR] Null driver handle passed to fetchDriverVersion" << std::endl;
+    // Set version to a known invalid value to indicate error condition
+    // ZE_API_VERSION_FORCE_UINT32 is defined by Level Zero API as a special constant
+    // that represents an invalid or uninitialized version
+    version = ZE_API_VERSION_FORCE_UINT32;
+    return;
+  }
+
   ze_result_t status = f_zeDriverGetApiVersion(driver, &version, dispatch);
-  level0_check_result(status, __LINE__);
+  if (status != ZE_RESULT_SUCCESS) {
+    std::cerr << "[ERROR] Failed to get driver API version: " << ze_result_to_string(status) << std::endl;
+    // Set version to a known invalid value to indicate error condition
+    version = ZE_API_VERSION_FORCE_UINT32;
+  }
 }
 
-static void
+static bool
 validateAndPrintDriverVersion
 (
   const ze_api_version_t version,
@@ -76,8 +88,11 @@ validateAndPrintDriverVersion
 
   // Verify that the driver version is acceptable.
   if ((major < requiredMajor) || (major == requiredMajor && minor < requiredMinor)) {
-    assert(false && "Level Zero API version is lower than required");
+    std::cerr << "[ERROR] Level Zero API version " << major << "." << minor << " is lower than required " << requiredMajor << "." << requiredMinor << std::endl;
+    return false;
   }
+  
+  return true;
 }
 
 //*****************************************************************************
@@ -91,12 +106,15 @@ level0GetVersion
   const struct hpcrun_foil_appdispatch_level0* dispatch
 )
 {
-  std::vector<ze_driver_handle_t> driver_list = fetchDriverHandles(dispatch);
-  if (driver_list.empty()) {
+  auto drivers = level0GetDrivers(dispatch);
+  if (drivers.empty()) {
+    std::cerr << "[ERROR] No Level Zero drivers available" << std::endl;
+    // Set version to a known invalid value to indicate error condition
     version = ZE_API_VERSION_FORCE_UINT32;
-  } else {
-    fetchDriverVersion(driver_list.front(), version, dispatch);
+    return;
   }
+  
+  fetchDriverVersion(drivers[0], version, dispatch);
 }
 
 std::vector<ze_driver_handle_t>
@@ -108,7 +126,7 @@ level0GetDrivers
   return fetchDriverHandles(dispatch);
 }
 
-void
+bool
 level0CheckDriverVersion
 (
   uint32_t requiredMajor,
@@ -119,5 +137,5 @@ level0CheckDriverVersion
 {
   ze_api_version_t version;
   level0GetVersion(version, dispatch);
-  validateAndPrintDriverVersion(version, requiredMajor, requiredMinor, printVersion);
+  return validateAndPrintDriverVersion(version, requiredMajor, requiredMinor, printVersion);
 }

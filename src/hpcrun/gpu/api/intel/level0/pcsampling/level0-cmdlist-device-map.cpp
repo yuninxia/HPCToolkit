@@ -50,6 +50,16 @@ level0InsertCmdListDeviceMap
   ze_device_handle_t device
 )
 {
+  if (cmdList == nullptr) {
+    std::cerr << "[WARNING] Null command list handle passed to level0InsertCmdListDeviceMap" << std::endl;
+    return;
+  }
+
+  if (device == nullptr) {
+    std::cerr << "[WARNING] Null device handle passed to level0InsertCmdListDeviceMap" << std::endl;
+    return;
+  }
+
   std::lock_guard<std::mutex> lock(cmdlist_device_map_mutex_);
   cmdlist_device_map_[cmdList] = device;
 }
@@ -60,7 +70,16 @@ level0GetDeviceForCmdList
   ze_command_list_handle_t cmdList
 )
 {
+  if (cmdList == nullptr) {
+    std::cerr << "[WARNING] Null command list handle passed to level0GetDeviceForCmdList" << std::endl;
+    return nullptr;
+  }
+
   std::lock_guard<std::mutex> lock(cmdlist_device_map_mutex_);
   auto it = cmdlist_device_map_.find(cmdList);
-  return (it != cmdlist_device_map_.end()) ? it->second : nullptr;
+  if (it == cmdlist_device_map_.end()) {
+    std::cerr << "[WARNING] No device found for command list: " << cmdList << std::endl;
+    return nullptr;
+  }
+  return it->second;
 }

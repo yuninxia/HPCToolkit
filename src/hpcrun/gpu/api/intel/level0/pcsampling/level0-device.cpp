@@ -34,29 +34,40 @@ createDeviceDescriptor
   const struct hpcrun_foil_appdispatch_level0* dispatch
 ) 
 {
-  ZeDeviceDescriptor* desc = new ZeDeviceDescriptor;
+  try {
+    ZeDeviceDescriptor* desc = new ZeDeviceDescriptor;
+    if (desc == nullptr) {
+      std::cerr << "[ERROR] Failed to allocate memory for device descriptor" << std::endl;
+      return nullptr;
+    }
 
-  desc->stall_sampling_      = stall_sampling;
-  desc->device_              = device;
-  desc->device_id_           = did;
-  desc->parent_device_id_    = -1;    // No parent device
-  desc->parent_device_       = nullptr;
-  desc->subdevice_id_        = -1;    // Not a subdevice
-  desc->num_sub_devices_     = level0GetSubDeviceCount(device, dispatch);
-  desc->driver_              = driver;
-  desc->context_             = context;
-  desc->correlation_id_      = 0;
-  desc->last_correlation_id_ = 0;
-  
-  // Set the metric group based on the provided metric_group string
-  level0GetMetricGroup(device, metric_group, desc->metric_group_, dispatch);
-  
-  desc->profiling_thread_    = nullptr;
-  desc->profiling_state_.store(PROFILER_DISABLED, std::memory_order_release);
-  desc->running_kernel_      = nullptr;
-  desc->running_kernel_end_  = nullptr;
+    desc->stall_sampling_      = stall_sampling;
+    desc->device_              = device;
+    desc->device_id_           = did;
+    desc->parent_device_id_    = -1;    // No parent device
+    desc->parent_device_       = nullptr;
+    desc->subdevice_id_        = -1;    // Not a subdevice
+    desc->num_sub_devices_     = level0GetSubDeviceCount(device, dispatch);
+    desc->driver_              = driver;
+    desc->context_             = context;
+    desc->correlation_id_      = 0;
+    desc->last_correlation_id_ = 0;
+    
+    // Set the metric group based on the provided metric_group string
+    level0GetMetricGroup(device, metric_group, desc->metric_group_, dispatch);
+    
+    desc->profiling_thread_    = nullptr;
+    desc->profiling_state_.store(PROFILER_DISABLED, std::memory_order_release);
+    desc->running_kernel_      = nullptr;
+    desc->running_kernel_end_  = nullptr;
+    desc->kernel_started_.store(false, std::memory_order_release);
+    desc->serial_data_ready_.store(false, std::memory_order_release);
 
-  return desc;
+    return desc;
+  } catch (const std::exception& e) {
+    std::cerr << "[ERROR] Exception in createDeviceDescriptor: " << e.what() << std::endl;
+    return nullptr;
+  }
 }
 
 static ZeDeviceDescriptor*
@@ -67,21 +78,38 @@ createSubDeviceDescriptor
   uint32_t sub_device_id
 )
 {
-  ZeDeviceDescriptor* sub_desc = new ZeDeviceDescriptor;
-  sub_desc->stall_sampling_   = parent_desc->stall_sampling_;
-  sub_desc->device_           = sub_device;
-  sub_desc->device_id_        = parent_desc->device_id_;
-  sub_desc->parent_device_id_ = parent_desc->device_id_;
-  sub_desc->parent_device_    = parent_desc->device_;
-  sub_desc->subdevice_id_     = sub_device_id;
-  sub_desc->num_sub_devices_  = 0;
-  sub_desc->driver_           = parent_desc->driver_;
-  sub_desc->context_          = parent_desc->context_;
-  sub_desc->metric_group_     = parent_desc->metric_group_;
-  sub_desc->profiling_thread_ = nullptr;
-  sub_desc->profiling_state_.store(PROFILER_DISABLED, std::memory_order_release);
-  
-  return sub_desc;
+  if (parent_desc == nullptr) {
+    std::cerr << "[ERROR] Parent device descriptor is null" << std::endl;
+    return nullptr;
+  }
+
+  try {
+    ZeDeviceDescriptor* sub_desc = new ZeDeviceDescriptor;
+    if (sub_desc == nullptr) {
+      std::cerr << "[ERROR] Failed to allocate memory for sub-device descriptor" << std::endl;
+      return nullptr;
+    }
+
+    sub_desc->stall_sampling_   = parent_desc->stall_sampling_;
+    sub_desc->device_           = sub_device;
+    sub_desc->device_id_        = parent_desc->device_id_;
+    sub_desc->parent_device_id_ = parent_desc->device_id_;
+    sub_desc->parent_device_    = parent_desc->device_;
+    sub_desc->subdevice_id_     = sub_device_id;
+    sub_desc->num_sub_devices_  = 0;
+    sub_desc->driver_           = parent_desc->driver_;
+    sub_desc->context_          = parent_desc->context_;
+    sub_desc->metric_group_     = parent_desc->metric_group_;
+    sub_desc->profiling_thread_ = nullptr;
+    sub_desc->profiling_state_.store(PROFILER_DISABLED, std::memory_order_release);
+    sub_desc->kernel_started_.store(false, std::memory_order_release);
+    sub_desc->serial_data_ready_.store(false, std::memory_order_release);
+    
+    return sub_desc;
+  } catch (const std::exception& e) {
+    std::cerr << "[ERROR] Exception in createSubDeviceDescriptor: " << e.what() << std::endl;
+    return nullptr;
+  }
 }
 
 static void

@@ -45,6 +45,21 @@ level0CreateEventPool
   const struct hpcrun_foil_appdispatch_level0* dispatch
 )
 {
+  if (context == nullptr) {
+    std::cerr << "[ERROR] Null context handle passed to level0CreateEventPool" << std::endl;
+    return nullptr;
+  }
+
+  if (device == nullptr) {
+    std::cerr << "[ERROR] Null device handle passed to level0CreateEventPool" << std::endl;
+    return nullptr;
+  }
+
+  if (event_count == 0) {
+    std::cerr << "[ERROR] Invalid event count (0) passed to level0CreateEventPool" << std::endl;
+    return nullptr;
+  }
+
   ze_event_pool_desc_t event_pool_desc = initializeEventPoolDescriptor(event_count, event_pool_flag);
   
   ze_event_pool_handle_t event_pool = nullptr;
