@@ -22,7 +22,10 @@ getMetricUnits
   std::string& result
 )
 {
-  assert(units != nullptr);
+  if (units == nullptr) {
+    result = "";
+    return;
+  }
 
   result = units;
   if (result.find("null") != std::string::npos) {
@@ -39,8 +42,14 @@ getMetricCount
   const struct hpcrun_foil_appdispatch_level0* dispatch
 )
 {
+  if (group == nullptr) {
+    std::cerr << "[ERROR] Null metric group handle passed to getMetricCount" << std::endl;
+    return 0;
+  }
+
   zet_metric_group_properties_t group_props{};
   group_props.stype = ZET_STRUCTURE_TYPE_METRIC_GROUP_PROPERTIES;
+  
   ze_result_t status = f_zetMetricGroupGetProperties(group, &group_props, dispatch);
   level0_check_result(status, __LINE__);
   return group_props.metricCount;
@@ -54,11 +63,27 @@ getMetricHandles
   const struct hpcrun_foil_appdispatch_level0* dispatch
 )
 {
+  if (group == nullptr) {
+    std::cerr << "[ERROR] Null metric group handle passed to getMetricHandles" << std::endl;
+    return {};
+  }
+
+  if (metric_count == 0) {
+    std::cerr << "[WARNING] Zero metric count passed to getMetricHandles" << std::endl;
+    return {};
+  }
+
   std::vector<zet_metric_handle_t> metric_list(metric_count);
   ze_result_t status = f_zetMetricGet(group, &metric_count, metric_list.data(), dispatch);
   level0_check_result(status, __LINE__);
   // Verify that the retrieved metric count matches the vector size
-  assert(metric_count == metric_list.size());
+  if (metric_count != metric_list.size()) {
+    std::cerr << "[WARNING] Metric count mismatch: expected " << metric_list.size() 
+              << ", got " << metric_count << std::endl;
+    // Resize the vector to match the actual count
+    metric_list.resize(metric_count);
+  }
+  
   return metric_list;
 }
 
@@ -70,6 +95,12 @@ getMetricProperties
 )
 {
   zet_metric_properties_t metric_props{ZET_STRUCTURE_TYPE_METRIC_PROPERTIES};
+  
+  if (metric == nullptr) {
+    std::cerr << "[ERROR] Null metric handle passed to getMetricProperties" << std::endl;
+    return metric_props;
+  }
+  
   ze_result_t status = f_zetMetricGetProperties(metric, &metric_props, dispatch);
   level0_check_result(status, __LINE__);
   return metric_props;
@@ -99,8 +130,18 @@ getMetricId
   uint32_t& metric_id
 )
 {
-  assert(!metric_list.empty());
-  assert(!metric_name.empty());
+  // Default to an invalid ID
+  metric_id = static_cast<uint32_t>(-1);
+  
+  if (metric_list.empty()) {
+    std::cerr << "[WARNING] Empty metric list passed to getMetricId" << std::endl;
+    return;
+  }
+
+  if (metric_name.empty()) {
+    std::cerr << "[WARNING] Empty metric name passed to getMetricId" << std::endl;
+    return;
+  }
 
   for (size_t i = 0; i < metric_list.size(); ++i) {
     if (metric_list[i].find(metric_name) == 0) {
@@ -108,6 +149,9 @@ getMetricId
       return;
     }
   }
+  
+  // If we get here, the metric was not found
+  std::cerr << "[WARNING] Metric '" << metric_name << "' not found in metric list" << std::endl;
   metric_id = static_cast<uint32_t>(metric_list.size());
 }
 
@@ -124,19 +168,35 @@ level0GetMetricList
   const struct hpcrun_foil_appdispatch_level0* dispatch
 )
 {
-  // Retrieve the list of metric names from the given metric group
-  assert(group != nullptr);
+  // Clear the output list before populating it
+  name_list.clear();
+  
+  if (group == nullptr) {
+    std::cerr << "[ERROR] Null metric group handle passed to level0GetMetricList" << std::endl;
+    return;
+  }
 
   // Get the number of metrics in the group
   uint32_t metric_count = getMetricCount(group, dispatch);
-  assert(metric_count > 0);
+  if (metric_count == 0) {
+    std::cerr << "[WARNING] No metrics found in the metric group" << std::endl;
+    return;
+  }
 
   // Retrieve metric handles
   std::vector<zet_metric_handle_t> metric_handles = getMetricHandles(group, metric_count, dispatch);
+  if (metric_handles.empty()) {
+    std::cerr << "[WARNING] Failed to retrieve metric handles" << std::endl;
+    return;
+  }
 
-  // Clear the output list and populate it with formatted metric names
-  name_list.clear();
+  // Populate the output list with formatted metric names
   for (auto metric : metric_handles) {
+    if (metric == nullptr) {
+      std::cerr << "[WARNING] Null metric handle encountered" << std::endl;
+      continue;
+    }
+    
     zet_metric_properties_t metric_props = getMetricProperties(metric, dispatch);
     std::string name = buildMetricName(metric_props);
     name_list.push_back(std::move(name));
@@ -149,9 +209,18 @@ level0IsValidMetricList
   const std::vector<std::string>& metric_list
 )
 {
-  // Validate the metric list by checking if a metric starting with "IP" exists
-  if (metric_list.empty()) return false;
+  if (metric_list.empty()) {
+    std::cerr << "[WARNING] Empty metric list passed to level0IsValidMetricList" << std::endl;
+    return false;
+  }
+  
   uint32_t ip_idx;
   getMetricId(metric_list, "IP", ip_idx);
-  return ip_idx < metric_list.size();
+  
+  bool is_valid = (ip_idx < metric_list.size());
+  if (!is_valid) {
+    std::cerr << "[WARNING] No 'IP' metric found in the metric list" << std::endl;
+  }
+  
+  return is_valid;
 }

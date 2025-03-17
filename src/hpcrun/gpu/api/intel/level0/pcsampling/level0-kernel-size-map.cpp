@@ -30,14 +30,27 @@ level0FillKernelSizeMap
 )
 {
   if (entry == nullptr) {
+    std::cerr << "[WARNING] Null entry passed to level0FillKernelSizeMap" << std::endl;
     return;
   }
   
   SymbolVector* symbols = entry->elf_vector;
-  if (symbols) {
-    // Loop through each symbol and record its size in the map
-    for (int i = 0; i < symbols->nsymbols; ++i) {
+  if (symbols == nullptr) {
+    std::cerr << "[WARNING] Null symbol vector in entry passed to level0FillKernelSizeMap" << std::endl;
+    return;
+  }
+
+  if (symbols->nsymbols <= 0) {
+    std::cerr << "[WARNING] No symbols found in entry passed to level0FillKernelSizeMap" << std::endl;
+    return;
+  }
+
+  // Loop through each symbol and record its size in the map
+  for (int i = 0; i < symbols->nsymbols; ++i) {
+    if (symbols->symbolName[i] != nullptr) {
       kernel_size_map_[symbols->symbolName[i]] = symbols->symbolSize[i];
+    } else {
+      std::cerr << "[WARNING] Null symbol name at index " << i << std::endl;
     }
   }
 }
@@ -48,8 +61,13 @@ level0GetKernelSize
   std::string &kernel_name
 )
 {
+  if (kernel_name.empty()) {
+    std::cerr << "[WARNING] Empty kernel name passed to level0GetKernelSize" << std::endl;
+    return static_cast<size_t>(-1);
+  }
+
   // Remove a trailing null character if present
-  if (!kernel_name.empty() && kernel_name.back() == '\0') {
+  if (kernel_name.back() == '\0') {
     kernel_name.pop_back();
   }
   
@@ -57,6 +75,9 @@ level0GetKernelSize
   if (it != kernel_size_map_.end()) {
     return it->second;
   }
+  
+  // Log a warning if the kernel name is not found
+  std::cerr << "[WARNING] Kernel size not found for kernel: " << kernel_name << std::endl;
   
   // Return size_t(-1) if kernel name is not found
   return static_cast<size_t>(-1);

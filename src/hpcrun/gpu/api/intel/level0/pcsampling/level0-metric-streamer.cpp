@@ -95,11 +95,24 @@ level0InitializeMetricStreamer
   const struct hpcrun_foil_appdispatch_level0* dispatch
 )
 {
-  // Activate the metric group
-  activateMetricGroup(context, device, group, 1, dispatch);
+  if (context == nullptr || device == nullptr || group == nullptr) {
+    std::cerr << "[ERROR] Invalid parameters for metric streamer initialization" << std::endl;
+    return;
+  }
 
-  // Open the metric streamer
-  openMetricStreamer(context, device, group, streamer, dispatch);
+  try {
+    // Activate the metric group
+    activateMetricGroup(context, device, group, 1, dispatch);
+    
+    // Open the metric streamer
+    openMetricStreamer(context, device, group, streamer, dispatch);
+    
+    if (streamer == nullptr) {
+      std::cerr << "[ERROR] Failed to initialize metric streamer" << std::endl;
+    }
+  } catch (const std::exception& e) {
+    std::cerr << "[ERROR] Exception in level0InitializeMetricStreamer: " << e.what() << std::endl;
+  }
 }
 
 void

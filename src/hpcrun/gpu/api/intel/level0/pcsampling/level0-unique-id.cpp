@@ -22,7 +22,21 @@ level0GenerateUniqueId
   size_t binary_size
 )
 {
+  if (data == nullptr) {
+    std::cerr << "[WARNING] Null data pointer passed to level0GenerateUniqueId" << std::endl;
+    return "invalid_hash_null_data";
+  }
+
+  if (binary_size == 0) {
+    std::cerr << "[WARNING] Zero binary size passed to level0GenerateUniqueId" << std::endl;
+    return "invalid_hash_zero_size";
+  }
+
   char hash_string[CRYPTO_HASH_STRING_LENGTH] = {0};
-  crypto_compute_hash_string(data, binary_size, hash_string, CRYPTO_HASH_STRING_LENGTH);
+  if (crypto_compute_hash_string(data, binary_size, hash_string, CRYPTO_HASH_STRING_LENGTH) != 0) {
+    std::cerr << "[WARNING] Failed to compute hash in level0GenerateUniqueId" << std::endl;
+    return "hash_computation_failed";
+  }
+  
   return std::string(hash_string);
 }

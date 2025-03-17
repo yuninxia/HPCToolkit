@@ -47,6 +47,11 @@ level0CreateEvent
   const struct hpcrun_foil_appdispatch_level0* dispatch
 )
 {
+  if (event_pool == nullptr) {
+    std::cerr << "[ERROR] Null event pool handle passed to level0CreateEvent" << std::endl;
+    return nullptr;
+  }
+
   ze_event_desc_t event_desc = initializeEventDescriptor(event_index, signal_scope, wait_scope);
   
   ze_event_handle_t event = nullptr;

@@ -47,7 +47,7 @@ level0GetDrivers
   const struct hpcrun_foil_appdispatch_level0* dispatch
 );
 
-void
+bool
 level0CheckDriverVersion
 (
   uint32_t requiredMajor,
