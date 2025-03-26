@@ -9,10 +9,7 @@ source_filename = oneTBB-2021.13.0.tar.gz
 source_hash = 3ad5dd08954b39d113dc5b3f8a8dc6dc1fd5250032b7c491eb07aed5c94133e1
 method = cmake
 
-# A bug in Meson prevents these dependencies from being used directly, they need to have their
-# custom link args stripped first. The tbb-wrap subproject acts as a proxy to do this.
-# This should be fixed in Meson 1.6.x.
-# [provide]
-# tbb = tbb_dep
-# tbbmalloc = tbbmalloc_dep
-# tbbmalloc_proxy = tbbmalloc_proxy_dep
+[provide]
+tbb = tbb_dep
+tbbmalloc = tbbmalloc_dep
+tbbmalloc_proxy = tbbmalloc_proxy_dep
