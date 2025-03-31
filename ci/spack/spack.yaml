@@ -16,7 +16,7 @@ spack:
     targets:
       granularity: generic
     duplicates:
-      strategy: full
+      strategy: minimal
 
   definitions:
   - hpct_cuda: [+cuda]
@@ -37,6 +37,19 @@ spack:
     all:
       require:
       - target=:x86_64_v3
+      - '%gcc'
+
+    # Pin variants to avoid excessively large builds and improve concretization speed
+    papi:
+      require:
+      - '+shared ~cuda ~infiniband ~lmsensors ~nvml ~powercap ~rapl ~rocm ~rocm_smi ~sde ~static_tools'
+      - target=:x86_64_v3
+      - '%gcc'
+    hwloc:
+      require:
+      - '~cairo ~cuda ~gl ~libudev ~netloc ~nvml ~level_zero ~opencl ~rocm'
+      - target=:x86_64_v3
+      - '%gcc'
 
   mirrors:
     spack-develop:
