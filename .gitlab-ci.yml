@@ -336,9 +336,9 @@ include:
   - &test_job_setup
     - mkdir -p logs
     # If we don't have sufficient perf events support, try to enable it.
-    - if [ "$(cat /proc/sys/kernel/perf_event_paranoid)" -gt 1 ]; then echo 1 > /proc/sys/kernel/perf_event_paranoid; fi
+    - if [ "$(cat /proc/sys/kernel/perf_event_paranoid)" -gt 1 ]; then echo 1 > /proc/sys/kernel/perf_event_paranoid; fi || true
     # We also want kernel symbols available (kallsyms), so enable that too.
-    - if [ "$(cat /proc/sys/kernel/kptr_restrict)" -gt 0 ]; then echo 0 > /proc/sys/kernel/kptr_restrict; fi
+    - if [ "$(cat /proc/sys/kernel/kptr_restrict)" -gt 0 ]; then echo 0 > /proc/sys/kernel/kptr_restrict; fi || true
     # Usual sequence from here: setup, build and test. In CI warnings are errors if they don't come
     # from subprojects.
     - >-
