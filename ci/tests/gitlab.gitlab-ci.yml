@@ -1,0 +1,360 @@
+# SPDX-FileCopyrightText: Contributors to the HPCToolkit Project
+#
+# SPDX-License-Identifier: BSD-3-Clause
+
+include:
+  - local: /ci/tests/common.gitlab-ci.yml
+
+  # Build the development "ubercontainer"
+  - component: &ci_predeps gitlab.com/blue42u/ci.predeps/buildah@1
+    inputs:
+      <<: &ci_predeps_shared
+        fallback_registry: registry.gitlab.com/hpctoolkit/hpctoolkit/ci.predeps
+      name: dev-amd64
+      context_dir: .devcontainer/
+      containerfile: Dockerfile
+
+  # These images are based on classic distributions and contain no vendor software
+  - component: *ci_predeps
+    inputs:
+      <<: *ci_predeps_shared
+      name: rhel8-amd64
+      containerfile: .ci.predeps/Containerfile.rhel8
+  - component: *ci_predeps
+    inputs:
+      <<: *ci_predeps_shared
+      name: rhel9-amd64
+      containerfile: .ci.predeps/Containerfile.rhel9
+  - component: *ci_predeps
+    inputs:
+      <<: *ci_predeps_shared
+      name: rhel9-arm64
+      containerfile: .ci.predeps/Containerfile.rhel9
+      platform: linux/arm64
+      job_tags: [saas-linux-medium-arm64]
+  - component: *ci_predeps
+    inputs:
+      <<: *ci_predeps_shared
+      name: ubuntu20.04-amd64
+      containerfile: .ci.predeps/Containerfile.ubuntu20.04
+  - component: *ci_predeps
+    inputs:
+      <<: *ci_predeps_shared
+      name: ubuntu22.04-amd64
+      containerfile: .ci.predeps/Containerfile.ubuntu22.04
+  - component: *ci_predeps
+    inputs:
+      <<: *ci_predeps_shared
+      name: ubuntu22.04-arm64
+      containerfile: .ci.predeps/Containerfile.ubuntu22.04
+      platform: linux/arm64
+      job_tags: [saas-linux-medium-arm64]
+  - component: *ci_predeps
+    inputs:
+      <<: *ci_predeps_shared
+      name: ubuntu24.04-amd64
+      containerfile: .ci.predeps/Containerfile.ubuntu24.04
+  - component: *ci_predeps
+    inputs:
+      <<: *ci_predeps_shared
+      name: ubuntu24.04-arm64
+      containerfile: .ci.predeps/Containerfile.ubuntu24.04
+      platform: linux/arm64
+      job_tags: [saas-linux-medium-arm64]
+  - component: *ci_predeps
+    inputs:
+      <<: *ci_predeps_shared
+      name: fedora39-amd64
+      containerfile: .ci.predeps/Containerfile.fedora39
+  - component: *ci_predeps
+    inputs:
+      <<: *ci_predeps_shared
+      name: fedora40-amd64
+      containerfile: .ci.predeps/Containerfile.fedora40
+  - component: *ci_predeps
+    inputs:
+      <<: *ci_predeps_shared
+      name: leap15-amd64
+      containerfile: .ci.predeps/Containerfile.leap15
+  - component: *ci_predeps
+    inputs:
+      <<: *ci_predeps_shared
+      name: bare-amd64
+      containerfile: .ci.predeps/Containerfile.bare
+  - component: *ci_predeps
+    inputs:
+      <<: *ci_predeps_shared
+      name: bare-arm64
+      containerfile: .ci.predeps/Containerfile.bare
+      platform: linux/arm64
+      job_tags: [saas-linux-medium-arm64]
+
+  # Images based on (containing) Nvidia's CUDA Toolkit
+  - component: *ci_predeps
+    inputs:
+      <<: *ci_predeps_shared
+      name: cuda12.5-amd64
+      containerfile: .ci.predeps/Containerfile.cuda
+      build_args: CUDA_VERSION=12.5.0
+
+  # Images based on (containing) AMD's ROCm
+  - component: *ci_predeps
+    inputs:
+      <<: *ci_predeps_shared
+      name: rocm6.1-amd64
+      containerfile: .ci.predeps/Containerfile.rocm
+      build_args: ROCM_VERSION=6.1
+
+  # Image(s) based on (containing) Intel's Level Zero, IGC, GTPin, etc.
+  - component: *ci_predeps
+    inputs:
+      <<: *ci_predeps_shared
+      name: intel-amd64
+      containerfile: .ci.predeps/Containerfile.intel
+
+  # Image(s) containing system software in uncommon arrangements
+  - component: *ci_predeps
+    inputs:
+      <<: *ci_predeps_shared
+      name: libintl-amd64
+      containerfile: .ci.predeps/Containerfile.libintl
+
+.individual test job std:
+  extends: .individual test job
+  tags: [saas-linux-medium-amd64]
+dev amd64:
+  extends: .individual test job std
+  needs: ['predeps: [dev-amd64]']
+  image: $PREDEPS_IMAGE_DEV_AMD64
+  variables:
+    # FIXME: The Level Zero-enabled tests FAIL instead of SKIP if the CUDA driver is unavailable on the
+    # system. For now, disable these tests to allow the CI job to pass.
+    TEST_ARGS: --no-suite level0
+ubuntu20.04 amd64:
+  extends: .individual test job std
+  needs: ['predeps: [ubuntu20.04-amd64]']
+  image: $PREDEPS_IMAGE_UBUNTU20_04_AMD64
+ubuntu22.04 amd64:
+  extends: .individual test job std
+  needs: ['predeps: [ubuntu22.04-amd64]']
+  image: $PREDEPS_IMAGE_UBUNTU22_04_AMD64
+ubuntu22.04 arm64:
+  extends: .individual test job std
+  needs: ['predeps: [ubuntu22.04-arm64]']
+  image: $PREDEPS_IMAGE_UBUNTU22_04_ARM64
+  tags: [saas-linux-medium-arm64]
+ubuntu24.04 amd64:
+  extends: .individual test job std
+  needs: ['predeps: [ubuntu24.04-amd64]']
+  image: $PREDEPS_IMAGE_UBUNTU24_04_AMD64
+ubuntu24.04 arm64:
+  extends: .individual test job std
+  needs: ['predeps: [ubuntu24.04-arm64]']
+  image: $PREDEPS_IMAGE_UBUNTU24_04_ARM64
+  tags: [saas-linux-medium-arm64]
+leap15 amd64:
+  extends: .individual test job std
+  needs: ['predeps: [leap15-amd64]']
+  image: $PREDEPS_IMAGE_LEAP15_AMD64
+rhel8 amd64:
+  extends: .individual test job std
+  needs: ['predeps: [rhel8-amd64]']
+  image: $PREDEPS_IMAGE_RHEL8_AMD64
+rhel9 amd64:
+  extends: .individual test job std
+  needs: ['predeps: [rhel9-amd64]']
+  image: $PREDEPS_IMAGE_RHEL9_AMD64
+  variables:
+    # FIXME: This particular combination of PAPI et al. seems to cause hpcrun to hang, always.
+    # Disable PAPI in the build until a proper investigation can be carried out.
+    SETUP_ARGS: --native-file hpctoolkit-ci.ini -Dpapi=disabled
+rhel9 arm64:
+  extends: .individual test job std
+  needs: ['predeps: [rhel9-arm64]']
+  image: $PREDEPS_IMAGE_RHEL9_ARM64
+  tags: [saas-linux-medium-arm64]
+  variables:
+    # FIXME: This particular combination of PAPI et al. seems to cause hpcrun to hang, always.
+    # Disable PAPI in the build until a proper investigation can be carried out.
+    SETUP_ARGS: --native-file hpctoolkit-ci.ini -Dpapi=disabled
+fedora39 amd64:
+  extends: .individual test job std
+  needs: ['predeps: [fedora39-amd64]']
+  image: $PREDEPS_IMAGE_FEDORA39_AMD64
+fedora40 amd64:
+  extends: .individual test job std
+  needs: ['predeps: [fedora40-amd64]']
+  image: $PREDEPS_IMAGE_FEDORA40_AMD64
+
+.individual test job bare:
+  extends: .individual test job
+  tags: [saas-linux-medium-amd64]
+bare amd64:
+  extends: .individual test job bare
+  needs: ['predeps: [bare-amd64]']
+  image: $PREDEPS_IMAGE_BARE_AMD64
+bare arm64:
+  extends: .individual test job bare
+  needs: ['predeps: [bare-arm64]']
+  image: $PREDEPS_IMAGE_BARE_ARM64
+  tags: [saas-linux-medium-arm64]
+
+
+intel amd64:
+  extends: .individual test job std
+  needs: ['predeps: [intel-amd64]']
+  image: $PREDEPS_IMAGE_INTEL_AMD64
+  variables:
+    # FIXME: Tests that use Level Zero fail on systems that don't have a suitable GPU attached.
+    # This should be fixed, but for now don't try to run any of the affected tests.
+    TEST_ARGS: --no-suite level0
+
+
+# Compiler compatibility checks. There are a lot of different breeds of compilers out there,
+# and we want to be widely compatible with a wide range of them. Test the ones that aren't
+# the defaults in the individual tests, and ensure the wraps are tested here as well.
+compiler gcc8:
+  extends: .compiler compat test job
+  needs: ['predeps: [rhel8-amd64]']
+  image: $PREDEPS_IMAGE_RHEL8_AMD64
+  variables:
+    JOB_CC: gcc
+compiler clang10:
+  extends: .compiler compat test job
+  needs: ['predeps: [ubuntu20.04-amd64]']
+  image: $PREDEPS_IMAGE_UBUNTU20_04_AMD64
+  variables:
+    JOB_CC: clang10
+compiler clang17:
+  extends: .compiler compat test job
+  needs: ['predeps: [fedora39-amd64]']
+  image: $PREDEPS_IMAGE_FEDORA39_AMD64
+  variables:
+    JOB_CC: clang
+compiler clang18:
+  extends: .compiler compat test job
+  needs: ['predeps: [fedora40-amd64]']
+  image: $PREDEPS_IMAGE_FEDORA40_AMD64
+  variables:
+    JOB_CC: clang
+compiler icx:
+  extends: .compiler compat test job
+  needs: ['predeps: [intel-amd64]']
+  image: $PREDEPS_IMAGE_INTEL_AMD64
+  variables:
+    JOB_CC: icx
+    # FIXME: Meson's OpenMP dependency uses -fopenmp, but the newer Intel compilers prefer -qopenmp
+    # and will produce a compiler warning because of it.
+    # See https://github.com/mesonbuild/meson/issues/13516.
+    # Until this is fixed, disable werror for this compiler specifically.
+    SETUP_ARGS: >-
+      -Dwerror=false
+      --native-file hpctoolkit-ci.ini
+      --native-file $JOB_CC.ini
+      --wrap-mode=forcefallback
+    # FIXME: Tests that use Level Zero fail on systems that don't have a suitable GPU attached.
+    # This should be fixed, but for now don't try to run any of the affected tests.
+    TEST_ARGS: --no-suite level0
+
+
+# Non-default option checks. There are a small number of options that users/packagers can
+# configure to their whims. These tests check that changing them from the defaults doesn't
+# break anything along the way.
+'option: [ubuntu22.04 amd64]':
+  extends: .option test job
+  needs: ['predeps: [ubuntu22.04-amd64]']
+  image: $PREDEPS_IMAGE_UBUNTU22_04_AMD64
+  parallel:
+    matrix:
+    - SETUP_ARGS:
+      - --buildtype=release
+      - -Dvalgrind_annotations=true
+    - SETUP_ARGS:
+      - -Dpapi=disabled
+      - -Dpython=disabled
+      - -Dopencl=disabled
+      TEST_ARGS: --suite hpcrun
+    - SETUP_ARGS:
+      - -Dtests=disabled
+      - -Dmanpages=disabled
+      - -Dhpcprof_mpi=disabled
+      TEST_ARGS: SKIP
+'option: [bare amd64]':
+  extends: .option test job
+  needs: ['predeps: [bare-amd64]']
+  image: $PREDEPS_IMAGE_BARE_AMD64
+  parallel:
+    matrix:
+    - SETUP_ARGS:
+      - --buildtype=release
+      - -Dvalgrind_annotations=true
+    - SETUP_ARGS:
+      - -Dopencl=disabled
+      TEST_ARGS: --suite hpcrun
+    - SETUP_ARGS:
+      - -Dtests=disabled
+      TEST_ARGS: SKIP
+'option: [cuda amd64]':
+  extends: .option test job
+  needs: ['predeps: [cuda12.5-amd64]']
+  image: $PREDEPS_IMAGE_CUDA12_5_AMD64
+  parallel:
+    matrix:
+    - SETUP_ARGS:
+      - -Dcuda=disabled
+      TEST_ARGS: --suite hpcrun
+    - SETUP_ARGS:
+      - -Dtests=disabled
+      TEST_ARGS: SKIP
+'option: [rocm amd64]':
+  extends: .option test job
+  needs: ['predeps: [rocm6.1-amd64]']
+  image: $PREDEPS_IMAGE_ROCM6_1_AMD64
+  parallel:
+    matrix:
+    - SETUP_ARGS:
+      - -Drocm=disabled
+      TEST_ARGS: --suite hpcrun
+    - SETUP_ARGS:
+      - -Dtests=disabled
+      TEST_ARGS: SKIP
+'option: [intel amd64]':
+  extends: .option test job
+  needs: ['predeps: [intel-amd64]']
+  image: $PREDEPS_IMAGE_INTEL_AMD64
+  parallel:
+    matrix:
+    - SETUP_ARGS:
+      - -Dlevel0=disabled
+      - -Dgtpin=disabled
+      - -Dtests=disabled
+      TEST_ARGS: SKIP
+
+
+# Check that (parts of) the build pass under specific off-configurations.
+'setup: [no libdw]':  # Libelf but not libdw
+  extends: .test job
+  stage: configuration tests
+  needs: ['predeps: [ubuntu24.04-amd64]']
+  image: $PREDEPS_IMAGE_UBUNTU24_04_AMD64
+  variables:
+    SETUP_ARGS: ''
+  script:
+  - apt-get purge -yqq libdw-dev libdw1
+  - meson setup "$BUILD_DIRECTORY"
+'setup: [libintl]':  # gettext from libintl instead of glibc
+  extends: .test job
+  stage: configuration tests
+  needs: ['predeps: [libintl-amd64]']
+  image: $PREDEPS_IMAGE_LIBINTL_AMD64
+  variables:
+    SETUP_ARGS: >-
+      --native-file hpctoolkit-ci.ini
+      --wrap-mode=forcefallback
+'setup: [long build dir]':  # https://gitlab.com/hpctoolkit/hpctoolkit/-/issues/825
+  extends: .test job
+  stage: configuration tests
+  needs: ['predeps: [ubuntu24.04-amd64]']
+  image: $PREDEPS_IMAGE_UBUNTU24_04_AMD64
+  variables:
+    BUILD_DIRECTORY: builddir/long_path_segment__/long_path_segment__/long_path_segment__/long_path_segment__/long_path_segment__/long_path_segment__/long_path_segment__/long_path_segment__/long_path_segment__/long_path_segment__/long_path_segment__/long_path_segment__/

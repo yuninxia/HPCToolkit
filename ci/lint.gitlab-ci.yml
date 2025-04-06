@@ -1,0 +1,96 @@
+# SPDX-FileCopyrightText: Contributors to the HPCToolkit Project
+#
+# SPDX-License-Identifier: BSD-3-Clause
+
+include:
+  - component: gitlab.com/blue42u/ci.pre-commit/lite@0.2.0
+    inputs:
+      job_stage: code quality
+
+  - component: &ci_predeps gitlab.com/blue42u/ci.predeps/buildah@1
+    inputs:
+      <<: &ci_predeps_shared
+        fallback_registry: registry.gitlab.com/hpctoolkit/hpctoolkit/ci.predeps
+      name: dev-amd64
+      context_dir: .devcontainer/
+      containerfile: Dockerfile
+  - component: *ci_predeps
+    inputs:
+      <<: *ci_predeps_shared
+      name: ubuntu24.04-amd64
+      containerfile: .ci.predeps/Containerfile.ubuntu24.04
+
+# The repository follows the REUSE specification v3.x for representing copyright and licencing
+# information on a per-file basis. This job checks for compliance using the REUSE helper tool.
+#
+# NB: This could be done via pre-commit, but unfortunately the `reuse` tool does not check the Git
+# index and thus often errors on uncommitted files. While temporary files should in general be
+# guarded against accidental inclusion, it's also a surprise to the casual developer.
+# So for now we opt to use a separate CI job instead.
+reuse:
+  stage: code quality
+  needs: []
+  image:
+    name: docker.io/fsfe/reuse:4
+    entrypoint: [""]
+  variables:
+    GIT_SUBMODULE_STRATEGY: recursive
+  script:
+    - reuse --include-submodules --include-meson-subprojects lint
+
+# Run clang-format 18.x across the repository, via the Meson convenience target.
+clang-format:
+  stage: code quality
+  tags: [saas-linux-small-amd64]
+  needs: ["predeps: [ubuntu24.04-amd64]"]
+  image: $PREDEPS_IMAGE_UBUNTU24_04_AMD64
+  script:
+    - meson setup --backend=ninja builddir
+    - if ninja -C builddir/ clang-format-check; then exit 0; fi
+    - ninja -C builddir/ clang-format
+    - git diff --full-index > clang-format.patch
+    - exit 1
+  artifacts:
+    paths:
+      - clang-format.patch
+    when: always
+    expire_in: 5 days
+
+# Lint the codebase with clang-tidy, to identify various common code issues that are more expensive
+# to produce and aren't suitable for compiler warnings. Fixing issues identified here isn't and
+# never will be enforced, but it does give rich insight into the quality of the code itself.
+.clang-tidy:
+  stage: code quality
+  needs: ["predeps: [dev-amd64]"]
+  image: $PREDEPS_IMAGE_DEV_AMD64
+  cache:
+    key: ccache-clang-tidy
+    when: always
+    paths:
+      - .ccache
+  variables:
+    CCACHE_DIR: "$CI_PROJECT_DIR/.ccache"
+clang-tidy:
+  extends: .clang-tidy
+  tags: [saas-linux-xlarge-amd64]
+  script:
+    - meson setup --native-file=hpctoolkit-ci.ini --backend=ninja builddir
+    - ninja -C builddir/
+    - ninja -C builddir/ clang-tidy > clang-tidy.raw.txt || true
+    - ./ci/cc-diagnostics.py clang-tidy clang-tidy.cq.json clang-tidy.raw.txt
+  artifacts:
+    reports:
+      codequality: clang-tidy.cq.json
+# Same as clang-tidy, but this time apply the fix-its and produce a patch for human review.
+clang-tidy-fix:
+  extends: .clang-tidy
+  tags: [saas-linux-xlarge-amd64]
+  script:
+    - meson setup --native-file=hpctoolkit-ci.ini --backend=ninja builddir
+    - ninja -C builddir/
+    - ninja -C builddir/ clang-tidy-fix > /dev/null || true
+    - git diff --full-index > clang-tidy-fixits.patch
+    - if ! test -s clang-tidy-fixits.patch; then rm clang-tidy-fixits.patch; fi
+  artifacts:
+    paths:
+      - clang-tidy-fixits.patch

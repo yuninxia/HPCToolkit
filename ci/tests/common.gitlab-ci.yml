@@ -1,0 +1,139 @@
+# SPDX-FileCopyrightText: Contributors to the HPCToolkit Project
+#
+# SPDX-License-Identifier: BSD-3-Clause
+
+# The vast majority of jobs in this sequence do a build and then run some tests. This is the base
+# job spec for such jobs, configurable via a small number of variables.
+# NB: We use --repeat in these jobs to detect bugs that cause sporadic test failures.
+# We chose --repeat 7, since this statistically provides:
+# - 99.2% confidence that this MR does not introduce a "blocking" bug that would prevent others'
+#   work. We are very confident that a run will succeed >1/2 the time, and so require minimal
+#   repeated commands to "push past" the issue. (`1 - pbinom(0, 7, 1 - 1/2) -> 0.992`)
+# - 79.0% confidence that this MR does not introduce a bug that would "annoy" others during their
+#   work. We are modestly confident that a run will succeed >4/5 of the time, in which case the
+#   bug may not be especially noticeable. (`1 - pbinom(0, 7, 1 - 4/5) -> 0.790`)
+# Also, --repeat 7 is low enough that it doesn't slow down the CI too much.
+#
+# For the curious, the key formula to solve for the --repeat value is:
+#     {# of repeats} > log(1 - {confidence}) / log({min prob of success})
+# So a 99% confidence of 90% success rate requires a --repeat of at least 44.
+.test job:
+  interruptible: true
+  cache:
+    - key: meson-packagecache
+      when: always
+      paths:
+        - subprojects/packagecache
+    - key: ccache-$CI_JOB_NAME
+      when: always
+      paths:
+        - .ccache/
+  variables:
+    CCACHE_DIR: "$CI_PROJECT_DIR/.ccache"
+    SETUP_ARGS: "--native-file hpctoolkit-ci.ini"
+    TEST_ARGS: ""
+    BUILD_DIRECTORY: builddir/
+  script:
+    - &test_job_setup
+      - mkdir -p logs
+      # If we don't have sufficient perf events support, try to enable it.
+      - if [ "$(cat /proc/sys/kernel/perf_event_paranoid)" -gt 1 ]; then echo 1 > /proc/sys/kernel/perf_event_paranoid; fi || true
+      # We also want kernel symbols available (kallsyms), so enable that too.
+      - if [ "$(cat /proc/sys/kernel/kptr_restrict)" -gt 0 ]; then echo 0 > /proc/sys/kernel/kptr_restrict; fi || true
+      # Usual sequence from here: setup, build and test. In CI warnings are errors if they don't come
+      # from subprojects.
+      - >-
+        meson setup
+        -Dwerror=true
+        -Dbzip2:werror=false
+        -Ddyninst:werror=false
+        -Delfutils:werror=false
+        -Dgtpin:werror=false
+        -Dlibiberty:werror=false
+        -Dliblzma:werror=false
+        -Dlibpfm:werror=false
+        -Dlibunwind:werror=false
+        -Dopencl-headers:werror=false
+        -Dtbb:werror=false
+        -Dxed:werror=false
+        -Dxerces-c:werror=false
+        -Dxxhash:werror=false
+        -Dyaml-cpp:werror=false
+        -Dzlib:werror=false
+        -Dzstd:werror=false
+        $SETUP_ARGS
+        "$BUILD_DIRECTORY"
+    - meson compile -C "$BUILD_DIRECTORY" 2>&1 | tee compile.log
+    - if [ "$TEST_ARGS" = "SKIP" ]; then echo "Skipping meson test"; exit 0; fi
+    - meson test -C "$BUILD_DIRECTORY" -j $(nproc) --maxfail 3 --repeat 7 --print-errorlogs $TEST_ARGS 'hpctoolkit:*'
+  after_script: &test_reproduce_msg
+    - |
+      echo "To reproduce this build, run:"
+      echo "    podman run --rm -it -v ./:/hpctoolkit:ro --workdir /hpctoolkit \\"
+      echo "      -e SETUP_ARGS='$SETUP_ARGS' -e TEST_ARGS='$TEST_ARGS'$EXTRA_ENVS \\"
+      echo "      $CI_JOB_IMAGE"
+      echo 'and repeat the commands listed in the job log above, with $BUILD_DIRECTORY replaced with /tmp/builddir.'
+    - if [ -f compile.log ]; then ./ci/cc-diagnostics.py cc cq.json compile.log; fi
+  artifacts:
+    reports:
+      codequality: cq.json
+      junit: $BUILD_DIRECTORY/meson-logs/testlog.junit.xml
+    when: always
+
+.individual test job:
+  extends: .test job
+  stage: individual tests
+
+# Selected semi-fresh test runs. These regenerate suitable parts of the test data
+# before running the tests, thus testing that "freshening" the test data doesn't
+# break any tests. For example, an uncaught change to the output format.
+.semifresh test job:
+  extends: .test job
+  stage: semi-fresh tests
+  variables:
+    SETUP_ARGS: ""
+    REGEN_SUITES: ""
+  script:
+    - *test_job_setup
+    - meson compile -C "$BUILD_DIRECTORY" $(printf 'regen-testdata-%s\n' $REGEN_SUITES)
+    - git add --intent-to-add tests/data/
+    - meson compile -C "$BUILD_DIRECTORY" $(printf 'patches-testdata-%s\n' $REGEN_SUITES)
+    - mkdir testdata-patches/
+    - cp -t testdata-patches/ "$BUILD_DIRECTORY"/tests/data/*.patch
+    - find testdata-patches/ -type f -size 0 -delete
+    # Make sure we run the tests once in the same build directory that generated them
+    - meson test -C "$BUILD_DIRECTORY" -j $(nproc) --maxfail 3 --print-errorlogs $TEST_ARGS 'hpctoolkit:*'
+    # Then wipe the build directory and re-test against a "sterilized" build
+    - meson setup --wipe "$BUILD_DIRECTORY"
+    - meson test -C "$BUILD_DIRECTORY" -j $(nproc) --maxfail 3 --repeat 6 --print-errorlogs $TEST_ARGS 'hpctoolkit:*'
+  after_script:
+    - EXTRA_ENVS=" -e REGEN_SUITES='$REGEN_SUITES'"
+    - *test_reproduce_msg
+  artifacts:
+    expire_in: 1 day
+    reports:
+      junit: $BUILD_DIRECTORY/meson-logs/testlog.junit.xml
+    paths:
+      - testdata-patches/
+    when: always
+
+# Compiler compatibility checks. There are a lot of different breeds of compilers out there,
+# and we want to be widely compatible with a wide range of them. Test the ones that aren't
+# the defaults in the individual tests, and ensure the wraps are tested here as well.
+.compiler compat test job:
+  extends: .test job
+  stage: configuration tests
+  tags: [saas-linux-medium-amd64]
+  variables:
+    SETUP_ARGS: >-
+      --native-file hpctoolkit-ci.ini
+      --native-file $JOB_CC.ini
+      --wrap-mode=forcefallback
+
+# Non-default option checks. There are a small number of options that users/packagers can
+# configure to their whims. These tests check that changing them from the defaults doesn't
+# break anything along the way.
+.option test job:
+  extends: .test job
+  stage: configuration tests
+  tags: [saas-linux-medium-amd64]
