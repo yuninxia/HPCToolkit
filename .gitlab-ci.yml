@@ -62,18 +62,16 @@ default:
 
 include:
   - local: ci/tests/gitlab.gitlab-ci.yml
+    rules: &gitlab_com
+      - if: $CI_SERVER_FQDN == "gitlab.com"
   - local: ci/tests/hpctoolkit.gitlab-ci.yml
-    rules: &only_non_fork
-      - if: >-
-          ($ENABLE_HPCTOOLKIT_CUSTOM_RUNNERS == "" || $ENABLE_HPCTOOLKIT_CUSTOM_RUNNERS == null)
-          && $CI_COMMIT_REF_PROTECTED == "false"
-          && $CI_MERGE_REQUEST_IID
-          && $CI_PROJECT_ID != $CI_MERGE_REQUEST_PROJECT_ID
-        when: never
-      - when: always
+    rules: &hpctoolkit_gitlab_com
+      - if: $CI_SERVER_FQDN == "gitlab.com" && $CI_PROJECT_ID == "38709409"
   - local: ci/tests/data.gitlab-ci.yml
-    rules: *only_non_fork
+    rules: *hpctoolkit_gitlab_com
   - local: ci/lint.gitlab-ci.yml
+    rules: *hpctoolkit_gitlab_com
   - local: ci/docs.gitlab-ci.yml
+    rules: *gitlab_com
   - local: ci/spack/.gitlab-ci.yml
-    rules: *only_non_fork
+    rules: *hpctoolkit_gitlab_com
