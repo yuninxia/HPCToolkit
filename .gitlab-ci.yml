@@ -67,6 +67,9 @@ include:
   - local: ci/tests/hpctoolkit.gitlab-ci.yml
     rules: &hpctoolkit_gitlab_com
       - if: $CI_SERVER_FQDN == "gitlab.com" && $CI_PROJECT_ID == "38709409"
+  - local: ci/tests/hpsf.gitlab-ci.yml
+    rules:
+      - if: $CI_SERVER_FQDN == "gitlab.spack.io"
   - local: ci/tests/data.gitlab-ci.yml
     rules: *hpctoolkit_gitlab_com
   - local: ci/lint.gitlab-ci.yml
