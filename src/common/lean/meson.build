@@ -28,7 +28,6 @@ common_lean_srcs = files(
   'hpcrun-fmt.c',
   'id-tuple.c',
   'mcs-lock.c',
-  'md5.c',
   'pfq-rwlock.c',
   'placeholders.c',
   'procmaps.c',
@@ -43,7 +42,13 @@ common_lean_srcs = files(
   'usec_time.c',
   'vdso.c',
 )
-common_lean_deps = [libelf_dep, libiberty_dep, lzma_dep, threads_dep]
+common_lean_deps = [
+  libelf_dep,
+  libiberty_dep,
+  lzma_dep,
+  threads_dep,
+  subproject('md5-g72cf2cd').get_variable('md5_dep'),
+]
 
 test_srcs = files(
   'compress_lzma_test.cpp',

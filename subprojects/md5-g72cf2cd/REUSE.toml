@@ -1,0 +1,7 @@
+version = 1
+
+# Unless otherwise specified, the files here come from https://github.com/galenguyer/md5
+[[annotations]]
+path = ["**"]
+SPDX-FileCopyrightText = "Galen Guyer"
+SPDX-License-Identifier = "Unlicense"

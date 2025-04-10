@@ -254,4 +254,5 @@ repos:
       (?x)^(
         .*\.hpcstruct |  # Structfiles have lots of high-entropy strings
         subprojects/[^/]+\.wrap |  # Wraps almost always contain SHA256 hashes
+        subprojects/md5-g72cf2cd/tests\.c | # Contains a number of precomputed MD5 hashes
       )$
