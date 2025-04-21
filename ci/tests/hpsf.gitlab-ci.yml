@@ -1,0 +1,124 @@
+# SPDX-FileCopyrightText: Contributors to the HPCToolkit Project
+#
+# SPDX-License-Identifier: BSD-3-Clause
+
+include:
+  - local: /ci/tests/common.gitlab-ci.yml
+
+.individual test job cuda:
+  extends: .individual test job
+  tags: [hpsf-gpu, x86_64-nvidiagpu, nvidia-a100]
+  variables:
+    NVIDIA_VISIBLE_DEVICES: all
+    NVIDIA_DRIVER_CAPABILITIES: compute,utility
+    TEST_ARGS: >-
+      --suite opencl
+      --suite cuda
+      --suite hpcstruct
+  before_script:
+    &cuda_before_script # These paths need to be set for compatibility with nvidia-docker v1
+    - export PATH="$PATH":/usr/local/nvidia/bin
+    - export LD_LIBRARY_PATH="${LD_LIBRARY_PATH:+$LD_LIBRARY_PATH:}"/usr/local/nvidia/lib:/usr/local/nvidia/lib64
+ubuntu22.04 cuda amd64:
+  extends: .individual test job cuda
+  image: docker.io/ubuntu:22.04
+  variables:
+    SETUP_ARGS: --native-file ci/envs/ubuntu22.04.ini
+  before_script:
+    - *cuda_before_script
+    - ./ci/envs/ubuntu22.04.sh
+ubuntu24.04 cuda amd64:
+  extends: .individual test job cuda
+  image: docker.io/ubuntu:24.04
+  variables:
+    SETUP_ARGS: --native-file ci/envs/ubuntu24.04.ini
+  before_script:
+    - *cuda_before_script
+    - ./ci/envs/ubuntu24.04.sh
+cuda12.0 amd64:
+  extends: .individual test job cuda
+  image: docker.io/nvidia/cuda:12.0.1-devel-ubuntu22.04
+  <<: &cuda_env
+    variables:
+      SETUP_ARGS: --native-file ci/envs/cuda.ini
+    before_script:
+      - ./ci/envs/cuda.sh
+cuda12.1 amd64:
+  extends: .individual test job cuda
+  image: docker.io/nvidia/cuda:12.1.1-devel-ubuntu22.04
+  <<: *cuda_env
+cuda12.2 amd64:
+  extends: .individual test job cuda
+  image: docker.io/nvidia/cuda:12.2.2-devel-ubuntu22.04
+  <<: *cuda_env
+cuda12.3 amd64:
+  extends: .individual test job cuda
+  image: docker.io/nvidia/cuda:12.3.2-devel-ubuntu22.04
+  <<: *cuda_env
+cuda12.4 amd64:
+  extends: .individual test job cuda
+  image: docker.io/nvidia/cuda:12.4.1-devel-ubuntu22.04
+  <<: *cuda_env
+cuda12.5 amd64:
+  extends: .individual test job cuda
+  image: docker.io/nvidia/cuda:12.5.0-devel-ubuntu22.04
+  <<: *cuda_env
+
+.individual test job rocm:
+  extends: .individual test job
+  tags: [hpsf-gpu, x86_64-amdgpu, amd-mi210]
+  variables:
+    TEST_ARGS: >-
+      --suite opencl
+      --suite rocm
+rocm5.3 amd64:
+  extends: .individual test job rocm
+  image: docker.io/rocm/dev-ubuntu-22.04:5.3.3
+  <<: &rocm_env
+    variables:
+      SETUP_ARGS: --native-file ci/envs/rocm.ini
+    before_script:
+      - ./ci/envs/rocm.sh
+rocm5.4 amd64:
+  extends: .individual test job rocm
+  image: docker.io/rocm/dev-ubuntu-22.04:5.4.2
+  <<: *rocm_env
+rocm5.5 amd64:
+  extends: .individual test job rocm
+  image: docker.io/rocm/dev-ubuntu-22.04:5.5.1
+  <<: *rocm_env
+rocm5.6 amd64:
+  extends: .individual test job rocm
+  image: docker.io/rocm/dev-ubuntu-22.04:5.6.1
+  <<: *rocm_env
+rocm5.7 amd64:
+  extends: .individual test job rocm
+  image: docker.io/rocm/dev-ubuntu-22.04:5.7.1
+  <<: *rocm_env
+rocm6.0 amd64:
+  extends: .individual test job rocm
+  image: docker.io/rocm/dev-ubuntu-22.04:6.0.2
+  <<: *rocm_env
+rocm6.1 amd64:
+  extends: .individual test job rocm
+  image: docker.io/rocm/dev-ubuntu-22.04:6.1
+  <<: *rocm_env
+
+rocm6.0 amd64 mi300:
+  extends: rocm6.0 amd64
+  tags: [hpsf-gpu, x86_64-amdgpu, amd-mi300]
+rocm6.1 amd64 mi300:
+  extends: rocm6.1 amd64
+  tags: [hpsf-gpu, x86_64-amdgpu, amd-mi300]
+
+intel amd64:
+  extends: .individual test job
+  image: docker.io/intel/oneapi-basekit:2024.2.1-0-devel-ubuntu22.04
+  tags: [hpsf-gpu, x86_64-intelgpu, intel-data-center-max-1100]
+  variables:
+    SETUP_ARGS: --native-file ci/envs/intel.ini
+    TEST_ARGS: >-
+      --suite opencl
+      --suite level0
+  before_script:
+    - ./ci/envs/intel.sh

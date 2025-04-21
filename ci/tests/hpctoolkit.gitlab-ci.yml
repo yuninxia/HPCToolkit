@@ -1,0 +1,248 @@
+# SPDX-FileCopyrightText: Contributors to the HPCToolkit Project
+#
+# SPDX-License-Identifier: BSD-3-Clause
+
+include:
+  - local: /ci/tests/common.gitlab-ci.yml
+
+  # These images are based on classic distributions and contain no vendor software
+  - component: &ci_predeps gitlab.com/blue42u/ci.predeps/buildah@1
+    inputs:
+      <<: &ci_predeps_shared
+        fallback_registry: registry.gitlab.com/hpctoolkit/hpctoolkit/ci.predeps
+      name: rhel9-ppc64le
+      containerfile: .ci.predeps/Containerfile.rhel9
+      platform: linux/ppc64le
+      job_tags: [rice-linux-medium-ppc64le]
+  - component: *ci_predeps
+    inputs:
+      <<: *ci_predeps_shared
+      name: ubuntu22.04-ppc64le
+      containerfile: .ci.predeps/Containerfile.ubuntu22.04
+      platform: linux/ppc64le
+      job_tags: [rice-linux-medium-ppc64le]
+  - component: *ci_predeps
+    inputs:
+      <<: *ci_predeps_shared
+      name: ubuntu24.04-ppc64le
+      containerfile: .ci.predeps/Containerfile.ubuntu24.04
+      platform: linux/ppc64le
+      job_tags: [rice-linux-medium-ppc64le]
+  - component: *ci_predeps
+    inputs:
+      <<: *ci_predeps_shared
+      name: bare-ppc64le
+      containerfile: .ci.predeps/Containerfile.bare
+      platform: linux/ppc64le
+      job_tags: [rice-linux-medium-ppc64le]
+
+  # Images based on (containing) Nvidia's CUDA Toolkit
+  - component: *ci_predeps
+    inputs:
+      <<: *ci_predeps_shared
+      name: cuda12.0-amd64
+      containerfile: .ci.predeps/Containerfile.cuda
+      build_args: CUDA_VERSION=12.0.1
+  - component: *ci_predeps
+    inputs:
+      <<: *ci_predeps_shared
+      name: cuda12.1-amd64
+      containerfile: .ci.predeps/Containerfile.cuda
+      build_args: CUDA_VERSION=12.1.1
+  - component: *ci_predeps
+    inputs:
+      <<: *ci_predeps_shared
+      name: cuda12.2-amd64
+      containerfile: .ci.predeps/Containerfile.cuda
+      build_args: CUDA_VERSION=12.2.2
+  - component: *ci_predeps
+    inputs:
+      <<: *ci_predeps_shared
+      name: cuda12.3-amd64
+      containerfile: .ci.predeps/Containerfile.cuda
+      build_args: CUDA_VERSION=12.3.2
+  - component: *ci_predeps
+    inputs:
+      <<: *ci_predeps_shared
+      name: cuda12.4-amd64
+      containerfile: .ci.predeps/Containerfile.cuda
+      build_args: CUDA_VERSION=12.4.1
+  - component: *ci_predeps
+    inputs:
+      <<: *ci_predeps_shared
+      name: cuda12.5-amd64
+      containerfile: .ci.predeps/Containerfile.cuda
+      build_args: CUDA_VERSION=12.5.0
+
+  # Images based on (containing) AMD's ROCm
+  - component: *ci_predeps
+    inputs:
+      <<: *ci_predeps_shared
+      name: rocm5.3-amd64
+      containerfile: .ci.predeps/Containerfile.rocm
+      build_args: ROCM_VERSION=5.3.3
+  - component: *ci_predeps
+    inputs:
+      <<: *ci_predeps_shared
+      name: rocm5.4-amd64
+      containerfile: .ci.predeps/Containerfile.rocm
+      build_args: ROCM_VERSION=5.4.2
+  - component: *ci_predeps
+    inputs:
+      <<: *ci_predeps_shared
+      name: rocm5.5-amd64
+      containerfile: .ci.predeps/Containerfile.rocm
+      build_args: ROCM_VERSION=5.5.1
+  - component: *ci_predeps
+    inputs:
+      <<: *ci_predeps_shared
+      name: rocm5.6-amd64
+      containerfile: .ci.predeps/Containerfile.rocm
+      build_args: ROCM_VERSION=5.6.1
+  - component: *ci_predeps
+    inputs:
+      <<: *ci_predeps_shared
+      name: rocm5.7-amd64
+      containerfile: .ci.predeps/Containerfile.rocm
+      build_args: ROCM_VERSION=5.7.1
+  - component: *ci_predeps
+    inputs:
+      <<: *ci_predeps_shared
+      name: rocm6.0-amd64
+      containerfile: .ci.predeps/Containerfile.rocm
+      build_args: ROCM_VERSION=6.0.2
+  - component: *ci_predeps
+    inputs:
+      <<: *ci_predeps_shared
+      name: rocm6.1-amd64
+      containerfile: .ci.predeps/Containerfile.rocm
+      build_args: ROCM_VERSION=6.1
+
+# Individual test runs, each on a single known software stack
+ubuntu22.04 ppc64le:
+  extends: .individual test job
+  needs: ["predeps: [ubuntu22.04-ppc64le]"]
+  image: $PREDEPS_IMAGE_UBUNTU22_04_PPC64LE
+  tags: [rice-linux-medium-ppc64le]
+ubuntu24.04 ppc64le:
+  extends: .individual test job
+  needs: ["predeps: [ubuntu24.04-ppc64le]"]
+  image: $PREDEPS_IMAGE_UBUNTU24_04_PPC64LE
+  tags: [rice-linux-medium-ppc64le]
+  # FIXME: For unknown reasons, the Python support doesn't work in this version of Python.
+  # Not sure why. Disable it for now. https://gitlab.com/hpctoolkit/hpctoolkit/-/issues/847
+  variables:
+    TEST_ARGS: --no-suite python
+rhel9 ppc64le:
+  extends: .individual test job
+  needs: ["predeps: [rhel9-ppc64le]"]
+  image: $PREDEPS_IMAGE_RHEL9_PPC64LE
+  tags: [rice-linux-medium-ppc64le]
+  variables:
+    # FIXME: This particular combination of PAPI et al. seems to cause hpcrun to hang, always.
+    # Disable PAPI in the build until a proper investigation can be carried out.
+    SETUP_ARGS: --native-file hpctoolkit-ci.ini -Dpapi=disabled
+
+bare ppc64le:
+  extends: .individual test job
+  needs: ["predeps: [bare-ppc64le]"]
+  image: $PREDEPS_IMAGE_BARE_PPC64LE
+  tags: [rice-linux-medium-ppc64le]
+
+.individual test job cuda:
+  extends: .individual test job
+  tags: [saas-linux-medium-amd64-gpu-standard]
+  variables:
+    TEST_ARGS: >-
+      --suite opencl
+      --suite cuda
+      --suite hpcstruct
+dev cuda amd64:
+  extends: .individual test job cuda
+  needs: ["predeps: [dev-amd64]"]
+  image: $PREDEPS_IMAGE_DEV_AMD64
+  variables:
+    &cuda_variables # These variables must be set for compatibility with legacy (non-CDI) nvidia-container-toolkit
+    NVIDIA_VISIBLE_DEVICES: all
+    NVIDIA_DRIVER_CAPABILITIES: compute,utility
+  before_script:
+    &cuda_before_script # These paths need to be set for compatibility with nvidia-docker v1
+    - export PATH="$PATH":/usr/local/nvidia/bin
+    - export LD_LIBRARY_PATH="${LD_LIBRARY_PATH:+$LD_LIBRARY_PATH:}"/usr/local/nvidia/lib:/usr/local/nvidia/lib64
+ubuntu22.04 cuda amd64:
+  extends: .individual test job cuda
+  needs: ["predeps: [ubuntu22.04-amd64]"]
+  image: $PREDEPS_IMAGE_UBUNTU22_04_AMD64
+  before_script: *cuda_before_script
+ubuntu24.04 cuda amd64:
+  extends: .individual test job cuda
+  needs: ["predeps: [ubuntu24.04-amd64]"]
+  image: $PREDEPS_IMAGE_UBUNTU24_04_AMD64
+  before_script: *cuda_before_script
+cuda12.0 amd64:
+  extends: .individual test job cuda
+  needs: ["predeps: [cuda12.0-amd64]"]
+  image: $PREDEPS_IMAGE_CUDA12_0_AMD64
+cuda12.1 amd64:
+  extends: .individual test job cuda
+  needs: ["predeps: [cuda12.1-amd64]"]
+  image: $PREDEPS_IMAGE_CUDA12_1_AMD64
+cuda12.2 amd64:
+  extends: .individual test job cuda
+  needs: ["predeps: [cuda12.2-amd64]"]
+  image: $PREDEPS_IMAGE_CUDA12_2_AMD64
+cuda12.3 amd64:
+  extends: .individual test job cuda
+  needs: ["predeps: [cuda12.3-amd64]"]
+  image: $PREDEPS_IMAGE_CUDA12_3_AMD64
+  # FIXME: For unknown reasons some tests fail when running in the GitLab VMs on this particular
+  # version of CUPTI with CUPTI_ERROR_INVALID_PARAMETER, but pass on the custom runners.
+  tags: [rice-linux-large-amd64-gpu-p100]
+cuda12.4 amd64:
+  extends: .individual test job cuda
+  needs: ["predeps: [cuda12.4-amd64]"]
+  image: $PREDEPS_IMAGE_CUDA12_4_AMD64
+cuda12.5 amd64:
+  extends: .individual test job cuda
+  needs: ["predeps: [cuda12.5-amd64]"]
+  image: $PREDEPS_IMAGE_CUDA12_5_AMD64
+
+.individual test job rocm:
+  extends: .individual test job
+  tags: [rice-linux-large-amd64-gpu-amd]
+  variables:
+    TEST_ARGS: >-
+      --suite opencl
+      --suite rocm
+dev rocm amd64:
+  extends: .individual test job rocm
+  needs: ["predeps: [dev-amd64]"]
+  image: $PREDEPS_IMAGE_DEV_AMD64
+rocm5.3 amd64:
+  extends: .individual test job rocm
+  needs: ["predeps: [rocm5.3-amd64]"]
+  image: $PREDEPS_IMAGE_ROCM5_3_AMD64
+rocm5.4 amd64:
+  extends: .individual test job rocm
+  needs: ["predeps: [rocm5.4-amd64]"]
+  image: $PREDEPS_IMAGE_ROCM5_4_AMD64
+rocm5.5 amd64:
+  extends: .individual test job rocm
+  needs: ["predeps: [rocm5.5-amd64]"]
+  image: $PREDEPS_IMAGE_ROCM5_5_AMD64
+rocm5.6 amd64:
+  extends: .individual test job rocm
+  needs: ["predeps: [rocm5.6-amd64]"]
+  image: $PREDEPS_IMAGE_ROCM5_6_AMD64
+rocm5.7 amd64:
+  extends: .individual test job rocm
+  needs: ["predeps: [rocm5.7-amd64]"]
+  image: $PREDEPS_IMAGE_ROCM5_7_AMD64
+rocm6.0 amd64:
+  extends: .individual test job rocm
+  needs: ["predeps: [rocm6.0-amd64]"]
+  image: $PREDEPS_IMAGE_ROCM6_0_AMD64
+rocm6.1 amd64:
+  extends: .individual test job rocm
+  needs: ["predeps: [rocm6.1-amd64]"]
+  image: $PREDEPS_IMAGE_ROCM6_1_AMD64

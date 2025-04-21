@@ -1,0 +1,56 @@
+# SPDX-FileCopyrightText: Contributors to the HPCToolkit Project
+#
+# SPDX-License-Identifier: BSD-3-Clause
+
+include:
+  - local: /ci/tests/common.gitlab-ci.yml
+
+# Selected semi-fresh test runs. These regenerate suitable parts of the test data
+# before running the tests, thus testing that "freshening" the test data doesn't
+# break any tests. For example, an uncaught change to the output format.
+semifresh none cpu:
+  extends: .semifresh test job
+  needs: ["predeps: [ubuntu20.04-amd64]"]
+  image: $PREDEPS_IMAGE_UBUNTU20_04_AMD64
+  tags: [saas-linux-medium-amd64]
+  variables:
+    REGEN_SUITES: none cpu
+
+semifresh nvidia sw-cuda:
+  extends: .semifresh test job
+  needs: ["predeps: [cuda12.5-amd64]"]
+  image: $PREDEPS_IMAGE_CUDA12_5_AMD64
+  tags: [saas-linux-medium-amd64-gpu-standard]
+  before_script:
+    &cuda_before_script # These paths need to be set for compatibility with nvidia-docker v1
+    - export PATH="$PATH":/usr/local/nvidia/bin
+    - export LD_LIBRARY_PATH="${LD_LIBRARY_PATH:+$LD_LIBRARY_PATH:}"/usr/local/nvidia/lib:/usr/local/nvidia/lib64
+  variables:
+    REGEN_SUITES: nvidia sw-cuda
+
+semifresh amd:
+  extends: .semifresh test job
+  needs: ["predeps: [rocm5.7-amd64]"]
+  image: $PREDEPS_IMAGE_ROCM5_7_AMD64
+  tags: [rice-linux-large-amd64-gpu-amd]
+  variables:
+    REGEN_SUITES: amd
+
+# For easy access, the regenerated test data is made available as a single job artifact archive
+fresh testdata:
+  stage: artifacts
+  image: docker.io/alpine
+  needs:
+    - semifresh none cpu
+    - semifresh nvidia sw-cuda
+    - semifresh amd
+  when: always
+  script:
+    - apk add git
+    - ls -l testdata-patches/
+    - git apply --index --check -- testdata-patches/*.patch
+  artifacts:
+    expose_as: "Test data refresh patches"
+    expire_in: 3 days
+    paths:
+      - testdata-patches/
