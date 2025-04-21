@@ -5,6 +5,39 @@
 include:
   - local: /ci/tests/common.gitlab-ci.yml
 
+# Individual test runs, each on a single known software stack
+.individual test job ppc64le:
+  extends: .individual test job
+  tags: [hpsf-ppc64le]
+ubuntu22.04 ppc64le:
+  extends: .individual test job ppc64le
+  image: docker.io/ubuntu:22.04
+  variables:
+    SETUP_ARGS: --native-file ci/envs/ubuntu22.04.ini -Dcuda=disabled
+  before_script:
+    - ./ci/envs/ubuntu22.04.sh
+ubuntu24.04 ppc64le:
+  extends: .individual test job ppc64le
+  image: docker.io/ubuntu:24.04
+  variables:
+    SETUP_ARGS: --native-file ci/envs/ubuntu24.04.ini -Dcuda=disabled
+  before_script:
+    - ./ci/envs/ubuntu24.04.sh
+rhel9 ppc64le:
+  extends: .individual test job ppc64le
+  image: quay.io/almalinuxorg/almalinux:9
+  variables:
+    # FIXME: This particular combination of PAPI et al. seems to cause hpcrun to hang, always.
+    # Disable PAPI in the build until a proper investigation can be carried out.
+    SETUP_ARGS: --native-file ci/envs/rhel9.ini -Dpapi=disabled
+    # FIXME: For unknown reasons, the Python support doesn't work in this version of Python.
+    # Not sure why. Disable it for now. https://gitlab.com/hpctoolkit/hpctoolkit/-/issues/847
+    TEST_ARGS: --no-suite python
+  before_script:
+    - ./ci/envs/rhel9.sh
+    - . /etc/profile.d/modules.sh
+    - module load mpi
+
 .individual test job cuda:
   extends: .individual test job
   tags: [hpsf-gpu, x86_64-nvidiagpu, nvidia-a100]
