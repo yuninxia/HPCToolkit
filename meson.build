@@ -873,6 +873,32 @@ level0_dep = dependency(
 )
 if level0_dep.found()
   add_project_arguments('-DUSE_LEVEL0', '-DHPCRUN_SS_LEVEL0', language: ['c', 'cpp'])
+  level0_api_prefix = '#include <ze_api.h>'
+  # NOTE: compiler.has_define needs Meson >=1.3.0
+  if not cc.has_define(
+    'ZE_API_VERSION_CURRENT_M',
+    prefix: level0_api_prefix,
+    dependencies: level0_dep,
+  )
+    major = cc.compute_int(
+      'ZE_MAJOR_VERSION(ZE_API_VERSION_CURRENT)',
+      prefix: level0_api_prefix,
+      dependencies: level0_dep,
+      low: 0,
+      high: 10,
+    )
+    minor = cc.compute_int(
+      'ZE_MINOR_VERSION(ZE_API_VERSION_CURRENT)',
+      prefix: level0_api_prefix,
+      dependencies: level0_dep,
+      low: 0,
+      high: 100,
+    )
+    add_project_arguments(
+      f'-DZE_API_VERSION_CURRENT_M=ZE_MAKE_VERSION(@major@, @minor@)',
+      language: ['c', 'cpp'],
+    )
+  endif
 endif
 
 # Find support for instruction level collection, which requires IGC and IGA
