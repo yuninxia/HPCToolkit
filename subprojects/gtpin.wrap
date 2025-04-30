@@ -3,11 +3,11 @@
 # SPDX-License-Identifier: CC0-1.0
 
 [wrap-file]
-directory = gtpin-4.3
+directory = gtpin-4.4
 patch_directory = gtpin
-source_url = https://downloadmirror.intel.com/830027/external-release-gtpin-4.3-linux.tar.xz
-source_hash = 4960daaa7a100b2ff7d591a07e42923bd599f4c1eb154dfa22c5e0b570066a96
-source_filename = external-release-gtpin-4.3-linux.tar.xz
+source_url = https://downloadmirror.intel.com/844580/external-release-gtpin-4.4-linux.tar.xz
+source_hash = 25C9FF0C621FF6D91635BE9C38523D6AA9182EA2312D98BAC1E549F61F3D1826
+source_filename = external-release-gtpin-4.4-linux.tar.xz
 lead_directory_missing = true
 
 [provide]

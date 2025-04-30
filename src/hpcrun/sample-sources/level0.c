@@ -47,7 +47,6 @@
 #include "../control-knob.h"
 #include "../device-finalizers.h"
 #include "../logical/common.h"
-#include "../gpu/api/amd/roctracer-api.h"
 #include "../gpu/activity/gpu-activity.h"
 #include "../gpu/api/common/gpu-kernel-table.h"
 #include "../gpu/gpu-metrics.h"
