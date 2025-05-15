@@ -30,8 +30,8 @@
 #include <stdlib.h>
 #include <string.h>
 
-#include "../vendor/valgrind/helgrind.h"
-#include "../vendor/valgrind/drd.h"
+#include "valgrind/helgrind.h"
+#include "valgrind/drd.h"
 
 #include <algorithm>
 #include <map>

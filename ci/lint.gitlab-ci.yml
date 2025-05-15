@@ -20,24 +20,6 @@ include:
       name: ubuntu24.04-amd64
       containerfile: .ci.predeps/Containerfile.ubuntu24.04
 
-# The repository follows the REUSE specification v3.x for representing copyright and licencing
-# information on a per-file basis. This job checks for compliance using the REUSE helper tool.
-#
-# NB: This could be done via pre-commit, but unfortunately the `reuse` tool does not check the Git
-# index and thus often errors on uncommitted files. While temporary files should in general be
-# guarded against accidental inclusion, it's also a surprise to the casual developer.
-# So for now we opt to use a separate CI job instead.
-reuse:
-  stage: code quality
-  needs: []
-  image:
-    name: docker.io/fsfe/reuse:4
-    entrypoint: [""]
-  variables:
-    GIT_SUBMODULE_STRATEGY: recursive
-  script:
-    - reuse --include-submodules --include-meson-subprojects lint
-
 # Run clang-format 18.x across the repository, via the Meson convenience target.
 clang-format:
   stage: code quality

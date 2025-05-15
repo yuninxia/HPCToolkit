@@ -103,7 +103,7 @@ repos:
     exclude: &vendored |
       (?x)^(
         .*/[^/]+\.patch |    # Patches
-        src/vendor/valgrind/[^/]+\.h |    # External Valgrind headers
+        subprojects/valgrind-headers/.*/[^/]+\.h |    # External Valgrind headers
         tests/data/dbase/[^/]+\.d/.* |    # Generated test data
         tests/data/meas/[^/]+\.m/.* |    # Generated test data
         tests/data/struct/[^/]+\.hpcstruct |    # Generated test data
@@ -241,7 +241,7 @@ repos:
     exclude: |
       (?x)^(
         doc/dtd/mathml/.*\.ent |    # MathML follows LaTeX's habit of funny names for math symbols
-        src/vendor/valgrind/[^/]+\.h |    # External Valgrind headers
+        subprojects/valgrind-headers/.*/[^/]+\.h |    # External Valgrind headers
         .*\.svg |  # Images
       )$
 
@@ -254,4 +254,5 @@ repos:
       (?x)^(
         .*\.hpcstruct |  # Structfiles have lots of high-entropy strings
         subprojects/[^/]+\.wrap |  # Wraps almost always contain SHA256 hashes
+        subprojects/md5-g72cf2cd/tests\.c | # Contains a number of precomputed MD5 hashes
       )$

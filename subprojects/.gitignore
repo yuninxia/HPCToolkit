@@ -4,4 +4,6 @@
 
 /*/
 !/packagefiles/
-!/tbb-wrap/
+!/valgrind-headers/
+!/hpctesttool-wheels/
+!/md5-g72cf2cd/

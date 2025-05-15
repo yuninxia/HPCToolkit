@@ -1,0 +1,14 @@
+version = 1
+
+# These files from the original Valgrind source contain inline BSD-style licenses.
+[[annotations]]
+path = [
+  "valgrind/cachegrind.h",
+  "valgrind/callgrind.h",
+  "valgrind/dhat.h",
+  "valgrind/drd.h",
+  "valgrind/helgrind.h",
+  "valgrind/valgrind.h",
+  "valgrind/memcheck.h",
+]
+SPDX-License-Identifier = "bzip2-1.0.6"

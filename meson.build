@@ -69,18 +69,6 @@ if python_inst.found()
   add_project_arguments('-DENABLE_LOGICAL_PYTHON', language: ['c', 'cpp'])
 endif
 
-# Find TBB. This is done first before any other subprojects using it to resolve overridden
-# dependencies in the subproject (which does not use the wrap fallback trigger).
-# NB: We have to find normal TBB first to enable the tbb-wrap subproject override for Dyninst.
-dependency('tbb', 'TBB', components: ['tbb'], fallback: ['tbb-wrap', 'tbb_dep'])
-tbb_malloc_dep = dependency(
-  'tbbmalloc',
-  'TBB',
-  components: ['tbb', 'tbbmalloc'],
-  fallback: ['tbb-wrap', 'tbbmalloc_dep'],
-  include_type: 'system',
-)
-
 # Find Elfutils. We search for libdw first because if libelf is installed but libdw isn't, the
 # dependency('libdw') call will invoke the Elfutils subproject and call meson.override_dependency()
 # for libelf, if we found libelf first this call causes a Meson setup failure.
@@ -132,6 +120,17 @@ else
 endif
 lzma_dep = dependency('liblzma', version: '>=5.2.0', include_type: 'system')
 xxhash_dep = dependency('libxxhash', version: '>=0.8.1', include_type: 'system')
+tbb_malloc_dep = dependency(
+  'tbbmalloc',
+  'TBB',
+  components: ['tbb', 'tbbmalloc'],
+  include_type: 'system',
+)
+if meson.version().version_compare('<1.6.0') and tbb_malloc_dep.type_name() == 'internal'
+  warning(
+    'The TBB wrap causes link failures on older Meson versions, please use Meson 1.6.x or newer',
+  )
+endif
 _yaml_cpp_ver = '>=0.6.2'
 if meson.version().version_compare('>=1.4.0')
   yaml_cpp_dep = dependency('yaml-cpp', version: _yaml_cpp_ver, include_type: 'system')
@@ -1087,7 +1086,12 @@ if not cpp.links(_fs_code)
 endif
 
 
-# If Valgrind annotations aren't requested, inject an option to disable them.
+# Add Valgrind headers for Valgrind annotations. If they aren't requested, inject a
+# compiler flag to globally disable them.
+add_project_dependencies(
+  subproject('valgrind-headers').get_variable('valgrind_headers_dep'),
+  language: ['c', 'cpp'],
+)
 if not get_option('valgrind_annotations')
   add_project_arguments('-DNVALGRIND', language: ['c', 'cpp'])
 endif
