@@ -47,6 +47,9 @@
 
 #include "../../../common/gpu-print.h"
 
+#include <sched.h>
+#include <time.h>
+
 //*****************************************************************************
 // local variables
 //*****************************************************************************
@@ -312,5 +315,16 @@ level0_wait_for_self_pending_operations
   void
 )
 {
-  while (atomic_load(&level0_self_pending_operations) != 0);
+  struct timespec timeout;
+  clock_gettime(CLOCK_MONOTONIC, &timeout);
+  timeout.tv_sec += 10;
+  while (atomic_load(&level0_self_pending_operations) != 0) {
+    sched_yield();
+    struct timespec current;
+    clock_gettime(CLOCK_MONOTONIC, &current);
+    if (current.tv_sec > timeout.tv_sec ||
+        (current.tv_sec == timeout.tv_sec && current.tv_nsec >= timeout.tv_nsec)) {
+      break;
+    }
+  }
 }
