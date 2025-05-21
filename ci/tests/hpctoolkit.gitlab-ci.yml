@@ -58,12 +58,6 @@ include:
   - component: *ci_predeps
     inputs:
       <<: *ci_predeps_shared
-      name: cuda12.3-amd64
-      containerfile: .ci.predeps/Containerfile.cuda
-      build_args: CUDA_VERSION=12.3.2
-  - component: *ci_predeps
-    inputs:
-      <<: *ci_predeps_shared
       name: cuda12.4-amd64
       containerfile: .ci.predeps/Containerfile.cuda
       build_args: CUDA_VERSION=12.4.1
@@ -191,13 +185,6 @@ cuda12.2 amd64:
   extends: .individual test job cuda
   needs: ["predeps: [cuda12.2-amd64]"]
   image: $PREDEPS_IMAGE_CUDA12_2_AMD64
-cuda12.3 amd64:
-  extends: .individual test job cuda
-  needs: ["predeps: [cuda12.3-amd64]"]
-  image: $PREDEPS_IMAGE_CUDA12_3_AMD64
-  # FIXME: For unknown reasons some tests fail when running in the GitLab VMs on this particular
-  # version of CUPTI with CUPTI_ERROR_INVALID_PARAMETER, but pass on the custom runners.
-  tags: [rice-linux-large-amd64-gpu-p100]
 cuda12.4 amd64:
   extends: .individual test job cuda
   needs: ["predeps: [cuda12.4-amd64]"]
