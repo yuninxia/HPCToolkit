@@ -19,6 +19,7 @@
 
 #include "../../../common/lean/mcs-lock.h"
 #include "../../../common/lean/binarytree.h"
+#include "../../tls_specific.h"
 #include "binarytree_uwi.h"
 
 #define NUM_NODES 10
@@ -29,7 +30,7 @@ static struct {
   mem_alloc alloc;
 } GF[NUM_UNWINDERS];
 
-static __thread  bitree_uwi_t *_lf_uwi_tree[NUM_UNWINDERS]; // thread local free unwind interval tree
+// static __thread  bitree_uwi_t *_lf_uwi_tree[NUM_UNWINDERS]; // thread local free unwind interval tree
 
 /*
  * initialize the MCS lock for the hidden global free unwind interval tree.
@@ -50,6 +51,9 @@ bitree_uwi_t*
 bitree_uwi_malloc(unwinder_t uw,
                   size_t recipe_size)
 {
+  bitree_uwi_t ** _lf_uwi_tree =
+    (bitree_uwi_t **) TLS_GETSPECIFIC(_lf_uwi_tree[0]);
+
   if (!_lf_uwi_tree[uw]) {
     mcs_node_t me;
     if (mcs_trylock(&GF[uw].lock, &me)) {

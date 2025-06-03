@@ -85,6 +85,7 @@
 #include "threadmgr.h"
 #include "thread_finalize.h"
 #include "thread_use.h"
+#include "tls_specific.h"
 #include "trace.h"
 #include "write_data.h"
 #include "sample-sources/itimer.h"
@@ -163,7 +164,7 @@ bool hpcrun_local_rank_disabled = false;
 /******************************************************************************
  * (public declaration) thread-local variables
  *****************************************************************************/
-static __thread bool hpcrun_thread_suppress_sample = true;
+// static __thread bool hpcrun_thread_suppress_sample = true;
 
 //***************************************************************************
 // local variables
@@ -199,7 +200,8 @@ static const auditor_hooks_t auditor_hooks;
 
 bool hpcrun_suppress_sample()
 {
-  return hpcrun_thread_suppress_sample;
+  bool *suppress_sample = TLS_GETSPECIFIC(suppress_sample);
+  return *suppress_sample;
 }
 
 bool hpcrun_local_rank_enabled()
@@ -741,7 +743,7 @@ hpcrun_fini_internal()
 //------------------------------------
 
 #ifdef USE_GCC_THREAD
-extern __thread monitor_tid;
+// extern __thread monitor_tid;
 #endif // USE_GCC_THREAD
 
 static void
@@ -785,8 +787,9 @@ hpcrun_thread_init(int id, local_thread_data_t* local_thread_data, bool has_trac
   }
 
   epoch_t* epoch = TD_GET(core_profile_trace_data.epoch);
+  bool * suppress_sample = TLS_GETSPECIFIC(suppress_sample);
 
-  if (! hpcrun_thread_suppress_sample ) {
+  if (! *suppress_sample ) {
     // sample sources take thread specific action prior to start (often is a 'registration' action);
     SAMPLE_SOURCES(thread_init_action);
 
@@ -814,9 +817,11 @@ hpcrun_thread_fini(epoch_t *epoch)
 {
   TMSG(FINI,"thread fini");
 
+  bool *suppress_sample = TLS_GETSPECIFIC(suppress_sample);
+
   // take no action if this thread is suppressed
-  if (!hpcrun_thread_suppress_sample) {
-    TMSG(FINI,"thread finit stops sampling");
+  if (! *suppress_sample) {
+    TMSG(FINI,"thread fini stops sampling");
     SAMPLE_SOURCES(stop);
     SAMPLE_SOURCES(thread_fini_action);
 
@@ -895,7 +900,10 @@ monitor_init_process(int *argc, char **argv, void* data)
   const char* process_name;
   bool is_child = data && ((fork_data_t *) data)->is_child;
 
-  hpcrun_thread_suppress_sample = false;
+  hpcrun_tls_specific_init_process();
+
+  bool *suppress_sample = TLS_GETSPECIFIC(suppress_sample);
+  *suppress_sample = false;
 
   hpcrun_wait();
 
@@ -1258,31 +1266,36 @@ monitor_thread_post_create(void* data)
 void*
 monitor_init_thread(int tid, void* data)
 {
+  hpcrun_tls_specific_init_thread();
+
 #ifdef USE_GCC_THREAD
-  monitor_tid = tid;
+  int * monitor_tid = TLS_GETSPECIFIC(monitor_tid);
+  *monitor_tid = tid;
 #endif
 
-  hpcrun_thread_suppress_sample = false;
+  bool *suppress_sample = TLS_GETSPECIFIC(suppress_sample);
+  *suppress_sample = false;
+
   //
   // Do nothing if ignoring thread
   //
   Token_iterate(tok, getenv("HPCRUN_IGNORE_THREAD"), " ,",
     {
       if (atoi(tok) == tid) {
-        hpcrun_thread_suppress_sample = true;
+        *suppress_sample = true;
       }
     });
 
   void *thread_begin_address = monitor_get_addr_thread_start();
 
   if (module_ignore_map_inrange_lookup(thread_begin_address)) {
-    hpcrun_thread_suppress_sample = true;
+    *suppress_sample = true;
   }
 
   hpcrun_safe_enter();
 
   TMSG(THREAD,"init thread %d",tid);
-  void* thread_data = hpcrun_thread_init(tid, (local_thread_data_t*) data, ! hpcrun_thread_suppress_sample);
+  void* thread_data = hpcrun_thread_init(tid, (local_thread_data_t*) data, ! *suppress_sample);
   TMSG(THREAD,"back from init thread %d",tid);
 
   hpcrun_threadmgr_thread_new();
@@ -1311,6 +1324,8 @@ monitor_fini_thread(void* init_thread_data)
   epoch_t *epoch = (epoch_t *)init_thread_data;
   hpcrun_thread_fini(epoch);
   hpcrun_safe_exit();
+
+  hpcrun_tls_specific_fini_thread();
 
   hpcrun_restore_sigmask(&oldset);
 }

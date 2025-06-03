@@ -46,6 +46,7 @@
 #include "../../common/lean/hpcrun-fmt.h"
 #include "../../common/lean/spinlock.h"
 #include "../hpcrun_return_codes.h"
+#include "../tls_specific.h"
 
 #include "cct.h"
 #include "cct_addr.h"
@@ -1213,27 +1214,31 @@ cct_remove_my_subtree(cct_node_t* cct){
 // FIXME: is this proper place for handling memory leaks caused by cct_node_t
 // frelist manipulation
 
-__thread cct_node_t* cct_node_freelist_head = NULL;
+// __thread cct_node_t* cct_node_freelist_head = NULL;
 
 // vi3: functions used for manipulation of freelist of trees
 void
 add_node_to_freelist(cct_node_t* cct){
   // parent is used as a next pointer
   if(cct){
-    cct->parent = cct_node_freelist_head;
-    cct_node_freelist_head = cct;
+    cct_node_t** cct_node_freelist_head =
+      (cct_node_t**) TLS_GETSPECIFIC(cct_node_freelist_head);
+    cct->parent = *cct_node_freelist_head;
+    *cct_node_freelist_head = cct;
   }
 }
 
 // vi3: remove root of first tree in the freelist
 cct_node_t*
 remove_node_from_freelist(){
-  cct_node_t* first_root = cct_node_freelist_head;
+  cct_node_t** cct_node_freelist_head =
+    (cct_node_t**) TLS_GETSPECIFIC(cct_node_freelist_head);
+  cct_node_t* first_root = *cct_node_freelist_head;
   if(!first_root){
     return NULL;
   }
   // new head is free_root's next (parent pointer is used for now)
-  cct_node_freelist_head = first_root->parent;
+  *cct_node_freelist_head = first_root->parent;
 
   cct_node_t* children = first_root->children;
   cct_node_t* left = first_root->left;

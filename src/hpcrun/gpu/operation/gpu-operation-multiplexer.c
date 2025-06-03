@@ -23,6 +23,7 @@
 #include "../../control-knob.h"
 #include "../trace/gpu-trace-api.h"
 #include "../../libmonitor/monitor.h"
+#include "../../tls_specific.h"
 
 #include "../activity/gpu-activity.h"
 #include "../activity/gpu-activity-channel.h"
@@ -81,6 +82,8 @@ gpu_operation_record_thread_fn
  void *arg
 )
 {
+  hpcrun_tls_specific_init_thread();
+
   hpcrun_thread_init_mem_pool_once(TOOL_THREAD_ID, NULL, HPCRUN_NO_TRACE, true);
 
   while (!atomic_load(&stop_operation_flag)) {
@@ -93,6 +96,8 @@ gpu_operation_record_thread_fn
   // even if this is not normal exit, gpu-trace-fini will behave as if it is a normal exit
   gpu_trace_fini(NULL, MONITOR_EXIT_NORMAL);
   atomic_store(&gpu_trace_finished, true);
+
+  hpcrun_tls_specific_fini_thread();
 
   return NULL;
 }

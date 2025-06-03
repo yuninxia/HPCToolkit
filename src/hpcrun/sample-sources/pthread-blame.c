@@ -40,6 +40,7 @@
 #include "../safe-sampling.h"
 #include "../sample_event.h"
 #include "../thread_data.h"
+#include "../tls_specific.h"
 #include "../cct/cct.h"
 #include "../messages/messages.h"
 
@@ -55,18 +56,6 @@
 // *****************************************************************************
 // type definitions
 // *****************************************************************************
-
-typedef enum {
-  Running,
-  Spinning,
-  Blocked,
-} state_t;
-
-
-typedef struct {
-  uint64_t target;
-  state_t state;
-} blame_t;
 
 
 
@@ -103,7 +92,7 @@ typedef struct dbg_tr_t {
 // *****************************************************************************
 // thread local variables
 // *****************************************************************************
-static __thread blame_t pthread_blame = {0, Running};
+// static __thread blame_t pthread_blame = {0, Running};
 
 
 
@@ -115,7 +104,9 @@ static inline
 uint64_t
 get_blame_target(void)
 {
-  return pthread_blame.target;
+  blame_t * pthread_blame = TLS_GETSPECIFIC(pthread_blame);
+  
+  return pthread_blame->target;
 }
 
 
@@ -181,12 +172,14 @@ process_directed_blame_for_sample(void* arg, int metric_id, cct_node_t* node, in
 
   uint64_t obj_to_blame = get_blame_target();
   if(obj_to_blame) {
+    blame_t * pthread_blame = TLS_GETSPECIFIC(pthread_blame);
+
     TMSG(LOCKWAIT, "about to add %d to blame object %d", metric_incr, obj_to_blame);
     add_blame(obj_to_blame, metric_value);
     // update appropriate wait metric as well
-    int wait_metric = (pthread_blame.state == Blocked) ? blockwait_metric_id : spinwait_metric_id;
+    int wait_metric = (pthread_blame->state == Blocked) ? blockwait_metric_id : spinwait_metric_id;
     TMSG(LOCKWAIT, "about to add %d to %s-waiting in node %d",
-         metric_incr, state2str(pthread_blame.state),
+         metric_incr, state2str(pthread_blame->state),
          hpcrun_cct_persistent_id(node));
     metric_data_list_t* metrics = hpcrun_reify_metric_set(node, metric_id);
     hpcrun_metric_std_inc(wait_metric,
@@ -213,27 +206,33 @@ pthread_blame_lockwait_enabled(void)
 void
 pthread_directed_blame_shift_blocked_start(void* obj)
 {
+  blame_t * pthread_blame = TLS_GETSPECIFIC(pthread_blame);
+
   TMSG(LOCKWAIT, "Start directed blaming using blame structure %x, for obj %d",
-       &pthread_blame, (uintptr_t) obj);
-  pthread_blame = (blame_t) {.target = (uint64_t)(uintptr_t)obj,
-                             .state   = Blocked};
+       pthread_blame, (uintptr_t) obj);
+  *pthread_blame = (blame_t) {.target = (uint64_t)(uintptr_t)obj,
+                              .state  = Blocked};
 }
 
 void
 pthread_directed_blame_shift_spin_start(void* obj)
 {
+  blame_t * pthread_blame = TLS_GETSPECIFIC(pthread_blame);
+
   TMSG(LOCKWAIT, "Start directed blaming using blame structure %x, for obj %d",
-       &pthread_blame, (uintptr_t) obj);
-  pthread_blame = (blame_t) {.target = (uint64_t)(uintptr_t)obj,
-                             .state   = Spinning};
+       pthread_blame, (uintptr_t) obj);
+  *pthread_blame = (blame_t) {.target = (uint64_t)(uintptr_t)obj,
+                              .state  = Spinning};
 }
 
 void
 pthread_directed_blame_shift_end(void)
 {
-  pthread_blame = (blame_t) {.target = 0, .state = Running};
+  blame_t * pthread_blame = TLS_GETSPECIFIC(pthread_blame);
+
+  *pthread_blame = (blame_t) {.target = 0, .state = Running};
   TMSG(LOCKWAIT, "End directed blaming for blame structure %x",
-       &pthread_blame);
+       pthread_blame);
 }
 
 void

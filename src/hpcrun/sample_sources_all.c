@@ -31,6 +31,7 @@
 #include "sample-sources/simple_oo.h"
 #include "sample-sources/sample_source_obj.h"
 #include "sample-sources/common.h"
+#include "tls_specific.h"
 #include "utilities/tokenize.h"
 #include "messages/messages.h"
 
@@ -40,6 +41,7 @@
 // Macros
 //*******************************************************************
 
+// fixme: copied to tls_specific.c
 #define THREAD_DOINIT           0
 #define THREAD_NOSAMPLING       1
 #define THREAD_SAMPLING         2
@@ -98,7 +100,7 @@ static sample_source_t* sample_sources = NULL;
 static sample_source_t** ss_insert     = &sample_sources;
 static size_t n_sources = 0;
 
-static __thread int ignore_thread = THREAD_DOINIT;
+// static __thread int ignore_thread = THREAD_DOINIT;
 
 
 
@@ -109,8 +111,10 @@ static __thread int ignore_thread = THREAD_DOINIT;
 static int
 ignore_this_thread()
 {
-  if (ignore_thread == THREAD_DOINIT) {
-    ignore_thread = THREAD_SAMPLING;
+  int * ignore_thread = TLS_GETSPECIFIC(ignore_thread);
+  
+  if (*ignore_thread == THREAD_DOINIT) {
+    *ignore_thread = THREAD_SAMPLING;
 
     char *string = getenv("HPCRUN_IGNORE_THREAD");
     if (string) {
@@ -124,12 +128,12 @@ ignore_this_thread()
       sprintf(myid_str, ",%d,", myid);
 
       if (strstr(all_str, myid_str)) {
-        ignore_thread = THREAD_NOSAMPLING;
+        *ignore_thread = THREAD_NOSAMPLING;
         TMSG(IGNORE, "Thread %d ignore sampling", myid);
       }
     }
   }
-  return ignore_thread == THREAD_NOSAMPLING;
+  return *ignore_thread == THREAD_NOSAMPLING;
 }
 
 //*******************************************************************

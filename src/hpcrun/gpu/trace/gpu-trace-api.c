@@ -36,6 +36,7 @@
 #include "../../rank.h"
 #include "../../thread_data.h"
 #include "../../threadmgr.h"
+#include "../../tls_specific.h"
 #include "../../trace.h"
 #include "../../write_data.h"
 #include "../../memory/hpcrun-malloc.h"
@@ -392,6 +393,8 @@ gpu_trace_record_thread_fn
 {
   gpu_trace_channel_set_t *channel_set = (gpu_trace_channel_set_t *) args;
 
+  hpcrun_tls_specific_init_thread();
+
   hpcrun_thread_init_mem_pool_once(TOOL_THREAD_ID, NULL, HPCRUN_NO_TRACE, true);
 
   while (!atomic_load(&stop_trace_flag)) {
@@ -401,6 +404,8 @@ gpu_trace_record_thread_fn
 
   gpu_trace_channel_set_apply(channel_set, consume_trace_channel, NULL);
   gpu_trace_channel_set_apply(channel_set, gpu_trace_channel_release, NULL);
+
+  hpcrun_tls_specific_fini_thread();
 
   return NULL;
 }

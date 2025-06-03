@@ -26,6 +26,7 @@
 //******************************************************************************
 
 #include "../thread_data.h"
+#include "../tls_specific.h"
 #include "../messages/messages.h"
 #include "../sample_event.h"
 #include "../safe-sampling.h"
@@ -43,9 +44,9 @@
 // local data
 //******************************************************************************
 
-static __thread bool event_set_created = false;
-static __thread bool event_set_finalized = false;
-static __thread int my_event_set = PAPI_NULL;
+// static __thread bool event_set_created = false;
+// static __thread bool event_set_finalized = false;
+// static __thread int my_event_set = PAPI_NULL;
 
 
 
@@ -71,14 +72,18 @@ void
 papi_c_intel_get_event_set(int* event_set)
 {
   ETMSG(INTEL, "Started: create intel PAPI event set");
-  if (! event_set_created) {
-    int ret=PAPI_create_eventset(&my_event_set);
+
+  bool * event_set_created = TLS_GETSPECIFIC(event_set_created);
+  int * my_event_set = TLS_GETSPECIFIC(my_event_set);
+  
+  if (! *event_set_created) {
+    int ret=PAPI_create_eventset(my_event_set);
     if (ret!=PAPI_OK) {
       hpcrun_abort("Failure: PAPI_create_eventset.Return code = %d ==> %s",
                    ret, PAPI_strerror(ret));
     }
-    *event_set = my_event_set;
-    event_set_created = true;
+    *event_set = *my_event_set;
+    *event_set_created = true;
   }
   ETMSG(INTEL, "Completed: create intel PAPI event set");
 }
@@ -87,18 +92,20 @@ papi_c_intel_get_event_set(int* event_set)
 int
 papi_c_intel_add_event(int event_set, int evcode)
 {
+  bool * event_set_finalized = TLS_GETSPECIFIC(event_set_finalized);
+  int * my_event_set = TLS_GETSPECIFIC(my_event_set);
   int rv = PAPI_EMISC;
 
-  if (event_set != my_event_set) return rv;
+  if (event_set != *my_event_set) return rv;
 
-  if (!event_set_finalized) {
+  if (! *event_set_finalized) {
     TMSG(INTEL, "Adding event %x to intel event set", evcode);
-    rv = PAPI_add_event(my_event_set, evcode);
+    rv = PAPI_add_event(*my_event_set, evcode);
     if (rv != PAPI_OK) {
       hpcrun_abort("failure in PAPI gen_event_set(): PAPI_add_event() returned: %s (%d)",
                    PAPI_strerror(rv), rv);
     }
-    TMSG(INTEL, "Added event %d, to intel event set %d", evcode, my_event_set);
+    TMSG(INTEL, "Added event %d, to intel event set %d", evcode, *my_event_set);
   }
 
   return rv;
@@ -109,7 +116,9 @@ papi_c_intel_add_event(int event_set, int evcode)
 void
 papi_c_intel_finalize_event_set(void)
 {
-  event_set_finalized = true;
+  bool * event_set_finalized = TLS_GETSPECIFIC(event_set_finalized);
+
+  *event_set_finalized = true;
 }
 
 
@@ -117,10 +126,13 @@ void
 papi_c_intel_start(void)
 {
   ETMSG(INTEL, "Started: start PAPI collection");
-  int ret=PAPI_start(my_event_set);
+
+  int * my_event_set = TLS_GETSPECIFIC(my_event_set);
+
+  int ret=PAPI_start(*my_event_set);
   if (ret!=PAPI_OK) {
     hpcrun_abort("PAPI_start of intel event set %d failed with %s (%d)",
-         my_event_set, PAPI_strerror(ret), ret);
+         *my_event_set, PAPI_strerror(ret), ret);
   }
   ETMSG(INTEL, "Completed: start PAPI collection");
 }
@@ -130,10 +142,13 @@ void
 papi_c_intel_stop(void)
 {
   ETMSG(INTEL, "Started: stop PAPI collection");
-  int ret=PAPI_stop(my_event_set, NULL);
+
+  int * my_event_set = TLS_GETSPECIFIC(my_event_set);
+
+  int ret=PAPI_stop(*my_event_set, NULL);
   if (ret!=PAPI_OK) {
     hpcrun_abort("PAPI_start of event set %d failed with %s (%d)",
-         my_event_set, PAPI_strerror(ret), ret);
+         *my_event_set, PAPI_strerror(ret), ret);
   }
   ETMSG(INTEL, "Completed: stop PAPI collection");
 }
@@ -142,10 +157,12 @@ papi_c_intel_stop(void)
 void
 papi_c_intel_read(long long *values)
 {
-  int ret = PAPI_read(my_event_set, values);
+  int * my_event_set = TLS_GETSPECIFIC(my_event_set);
+
+  int ret = PAPI_read(*my_event_set, values);
   if (ret != PAPI_OK) {
     hpcrun_abort("PAPI_read of event set %d failed with %s (%d)",
-         my_event_set, PAPI_strerror(ret), ret);
+         *my_event_set, PAPI_strerror(ret), ret);
   }
 }
 

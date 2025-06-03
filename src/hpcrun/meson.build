@@ -214,6 +214,7 @@ srcs = files(
   'thread_finalize.c',
   'thread_use.c',
   'threadmgr.c',
+  'tls_specific.c',
   'trace.c',
   'unwind/common/backtrace.c',
   'unwind/common/binarytree_uwi.c',

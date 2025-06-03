@@ -268,7 +268,7 @@ extern void hpcrun_cct_merge(cct_node_t* cct_a, cct_node_t* cct_b,
 
 
 // FIXME: This should not be here vi3: allocation and free cct_node_t
-extern __thread cct_node_t* cct_node_freelist_head;
+// extern __thread cct_node_t* cct_node_freelist_head;
 
 cct_node_t* hpcrun_cct_node_alloc();
 void hpcrun_cct_node_free(cct_node_t *cct);
