@@ -398,6 +398,7 @@ hpcrun_thread_data_init
 
   td->timer_init = false;
   td->last_time_us = 0;
+  td->prev_nanotime = 0;
 
 
   // ----------------------------------------
