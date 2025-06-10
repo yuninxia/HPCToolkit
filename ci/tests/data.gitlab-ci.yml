@@ -10,16 +10,16 @@ include:
 # break any tests. For example, an uncaught change to the output format.
 semifresh none cpu:
   extends: .semifresh test job
-  needs: ["predeps: [ubuntu20.04-amd64]"]
-  image: $PREDEPS_IMAGE_UBUNTU20_04_AMD64
+  needs: []
+  image: registry.gitlab.com/hpctoolkit/rtt-images:1.0.0-ubuntu20.04
   tags: [saas-linux-medium-amd64]
   variables:
     REGEN_SUITES: none cpu
 
 semifresh nvidia sw-cuda:
   extends: .semifresh test job
-  needs: ["predeps: [cuda12.5-amd64]"]
-  image: $PREDEPS_IMAGE_CUDA12_5_AMD64
+  needs: []
+  image: registry.gitlab.com/hpctoolkit/rtt-images:1.0.0-cuda12.5
   tags: [saas-linux-medium-amd64-gpu-standard]
   before_script:
     &cuda_before_script # These paths need to be set for compatibility with nvidia-docker v1
@@ -30,8 +30,8 @@ semifresh nvidia sw-cuda:
 
 semifresh amd:
   extends: .semifresh test job
-  needs: ["predeps: [rocm5.7-amd64]"]
-  image: $PREDEPS_IMAGE_ROCM5_7_AMD64
+  needs: []
+  image: registry.gitlab.com/hpctoolkit/rtt-images:1.0.0-rocm5.7
   tags: [rice-linux-large-amd64-gpu-amd]
   variables:
     REGEN_SUITES: amd
