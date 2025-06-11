@@ -5,16 +5,6 @@
 include:
   - local: /ci/tests/common.gitlab-ci.yml
 
-  # These images are based on classic distributions and contain no vendor software
-  - component: &ci_predeps gitlab.com/blue42u/ci.predeps/buildah@1
-    inputs:
-      <<: &ci_predeps_shared
-        fallback_registry: registry.gitlab.com/hpctoolkit/hpctoolkit/ci.predeps
-      name: bare-ppc64le
-      containerfile: .ci.predeps/Containerfile.bare
-      platform: linux/ppc64le
-      job_tags: [rice-linux-medium-ppc64le]
-
 # Individual test runs, each on a single known software stack
 ubuntu22.04 ppc64le:
   extends: .individual test job
@@ -42,12 +32,6 @@ rhel9 ppc64le:
     # FIXME: This particular combination of PAPI et al. seems to cause hpcrun to hang, always.
     # Disable PAPI in the build until a proper investigation can be carried out.
     SETUP_ARGS: --native-file ci/envs/rhel9.ini -Dpapi=disabled
-
-bare ppc64le:
-  extends: .individual test job
-  needs: ["predeps: [bare-ppc64le]"]
-  image: $PREDEPS_IMAGE_BARE_PPC64LE
-  tags: [rice-linux-medium-ppc64le]
 
 .individual test job cuda:
   extends: .individual test job
