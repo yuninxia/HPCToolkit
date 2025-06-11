@@ -126,10 +126,7 @@
   stage: configuration tests
   tags: [saas-linux-medium-amd64]
   variables:
-    SETUP_ARGS: >-
-      --native-file hpctoolkit-ci.ini
-      --native-file $JOB_CC.ini
-      --wrap-mode=forcefallback
+    SETUP_ARGS: --wrap-mode=forcefallback
 
 # Non-default option checks. There are a small number of options that users/packagers can
 # configure to their whims. These tests check that changing them from the defaults doesn't

@@ -88,49 +88,40 @@ compiler gcc8:
   extends: .compiler compat test job
   needs: []
   image: registry.gitlab.com/hpctoolkit/rtt-images:1.0.0-rhel8
-  variables:
-    SETUP_ARGS: >-
-      --native-file ci/native/src/gcc.ini
-      --wrap-mode=forcefallback
 compiler clang10:
   extends: .compiler compat test job
   needs: []
   image: registry.gitlab.com/hpctoolkit/rtt-images:1.0.0-ubuntu20.04
   variables:
-    SETUP_ARGS: >-
-      --native-file ci/native/src/clang10.ini
-      --wrap-mode=forcefallback
+    CC: ccache clang-10
+    CXX: ccache clang++-10
 
 compiler clang17:
   extends: .compiler compat test job
   needs: []
   image: registry.gitlab.com/hpctoolkit/rtt-images:1.0.0-fedora39
   variables:
-    SETUP_ARGS: >-
-      --native-file ci/native/src/clang.ini
-      --wrap-mode=forcefallback
+    CC: ccache clang
+    CXX: ccache clang++
 compiler clang18:
   extends: .compiler compat test job
   needs: []
   image: registry.gitlab.com/hpctoolkit/rtt-images:1.0.0-fedora40
   variables:
-    SETUP_ARGS: >-
-      --native-file ci/native/src/clang.ini
-      --wrap-mode=forcefallback
+    CC: ccache clang
+    CXX: ccache clang++
 compiler icx:
   extends: .compiler compat test job
   needs: []
   image: registry.gitlab.com/hpctoolkit/rtt-images:1.0.0-intel
   variables:
-    JOB_CC: icx
+    CC: ccache icx
+    CXX: ccache icpx
     # FIXME: Meson's OpenMP dependency uses -fopenmp, but the newer Intel compilers prefer -qopenmp
     # and will produce a compiler warning because of it.
     # See https://github.com/mesonbuild/meson/issues/13516.
     # Until this is fixed, disable werror for this compiler specifically.
-    SETUP_ARGS: >-
-      -Dwerror=false
-      --native-file ci/native/src/icx.ini
-      --wrap-mode=forcefallback
+    SETUP_ARGS: -Dwerror=false --wrap-mode=forcefallback
     # FIXME: Tests that use Level Zero fail on systems that don't have a suitable GPU attached.
     # This should be fixed, but for now don't try to run any of the affected tests.
     TEST_ARGS: --no-suite level0
