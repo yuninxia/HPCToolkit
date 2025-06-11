@@ -30,7 +30,7 @@
         - .ccache/
   variables:
     CCACHE_DIR: "$CI_PROJECT_DIR/.ccache"
-    SETUP_ARGS: "--native-file hpctoolkit-ci.ini"
+    SETUP_ARGS: ""
     TEST_ARGS: ""
     BUILD_DIRECTORY: builddir/
   script:
@@ -44,6 +44,7 @@
       # from subprojects.
       - >-
         meson setup
+        --force-fallback-for=gtpin
         -Dwerror=true
         -Dbzip2:werror=false
         -Ddyninst:werror=false

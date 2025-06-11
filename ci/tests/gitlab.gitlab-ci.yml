@@ -13,7 +13,6 @@ aio amd64:
   needs: []
   image: registry.gitlab.com/hpctoolkit/rtt-images:1.0.0-aio
   variables:
-    SETUP_ARGS: --native-file ci/envs/aio.ini
     # FIXME: The Level Zero-enabled tests FAIL instead of SKIP if the CUDA driver is unavailable on the
     # system. For now, disable these tests to allow the CI job to pass.
     TEST_ARGS: --no-suite level0
@@ -21,46 +20,32 @@ ubuntu20.04 amd64:
   extends: .individual test job std
   needs: []
   image: registry.gitlab.com/hpctoolkit/rtt-images:1.0.0-ubuntu20.04
-  variables:
-    SETUP_ARGS: --native-file ci/envs/ubuntu20.04.ini
 ubuntu22.04 amd64:
   extends: .individual test job std
   needs: []
   image: registry.gitlab.com/hpctoolkit/rtt-images:1.0.0-ubuntu22.04
-  variables:
-    SETUP_ARGS: --native-file ci/envs/ubuntu22.04.ini
 ubuntu22.04 arm64:
   extends: .individual test job std
   needs: []
   image: registry.gitlab.com/hpctoolkit/rtt-images:1.0.0-ubuntu22.04
   tags: [saas-linux-small-arm64]
-  variables:
-    SETUP_ARGS: --native-file ci/envs/ubuntu22.04.ini
 ubuntu24.04 amd64:
   extends: .individual test job std
   needs: []
   image: registry.gitlab.com/hpctoolkit/rtt-images:1.0.0-ubuntu24.04
-  variables:
-    SETUP_ARGS: --native-file ci/envs/ubuntu24.04.ini
 ubuntu24.04 arm64:
   extends: .individual test job std
   needs: []
   image: registry.gitlab.com/hpctoolkit/rtt-images:1.0.0-ubuntu24.04
   tags: [saas-linux-small-arm64]
-  variables:
-    SETUP_ARGS: --native-file ci/envs/ubuntu24.04.ini
 leap15 amd64:
   extends: .individual test job std
   needs: []
   image: registry.gitlab.com/hpctoolkit/rtt-images:1.0.0-leap15
-  variables:
-    SETUP_ARGS: --native-file ci/envs/leap15.ini
 rhel8 amd64:
   extends: .individual test job std
   needs: []
   image: registry.gitlab.com/hpctoolkit/rtt-images:1.0.0-rhel8
-  variables:
-    SETUP_ARGS: --native-file ci/envs/rhel8.ini
 rhel9 amd64:
   extends: .individual test job std
   needs: []
@@ -68,7 +53,7 @@ rhel9 amd64:
   variables:
     # FIXME: This particular combination of PAPI et al. seems to cause hpcrun to hang, always.
     # Disable PAPI in the build until a proper investigation can be carried out.
-    SETUP_ARGS: --native-file ci/envs/rhel9.ini -Dpapi=disabled
+    SETUP_ARGS: -Dpapi=disabled
 rhel9 arm64:
   extends: .individual test job std
   needs: []
@@ -77,26 +62,21 @@ rhel9 arm64:
   variables:
     # FIXME: This particular combination of PAPI et al. seems to cause hpcrun to hang, always.
     # Disable PAPI in the build until a proper investigation can be carried out.
-    SETUP_ARGS: --native-file ci/envs/rhel9.ini -Dpapi=disabled
+    SETUP_ARGS: -Dpapi=disabled
 fedora39 amd64:
   extends: .individual test job std
   needs: []
   image: registry.gitlab.com/hpctoolkit/rtt-images:1.0.0-fedora39
-  variables:
-    SETUP_ARGS: --native-file ci/envs/fedora39.ini
 fedora40 amd64:
   extends: .individual test job std
   needs: []
   image: registry.gitlab.com/hpctoolkit/rtt-images:1.0.0-fedora40
-  variables:
-    SETUP_ARGS: --native-file ci/envs/fedora40.ini
 
 intel amd64:
   extends: .individual test job std
   needs: []
   image: registry.gitlab.com/hpctoolkit/rtt-images:1.0.0-intel
   variables:
-    SETUP_ARGS: --native-file ci/envs/intel.ini
     # FIXME: Tests that use Level Zero fail on systems that don't have a suitable GPU attached.
     # This should be fixed, but for now don't try to run any of the affected tests.
     TEST_ARGS: --no-suite level0
@@ -110,7 +90,6 @@ compiler gcc8:
   image: registry.gitlab.com/hpctoolkit/rtt-images:1.0.0-rhel8
   variables:
     SETUP_ARGS: >-
-      --native-file ci/envs/rhel8.ini
       --native-file ci/native/src/gcc.ini
       --wrap-mode=forcefallback
 compiler clang10:
@@ -119,7 +98,6 @@ compiler clang10:
   image: registry.gitlab.com/hpctoolkit/rtt-images:1.0.0-ubuntu20.04
   variables:
     SETUP_ARGS: >-
-      --native-file ci/envs/ubuntu20.04.ini
       --native-file ci/native/src/clang10.ini
       --wrap-mode=forcefallback
 
@@ -129,7 +107,6 @@ compiler clang17:
   image: registry.gitlab.com/hpctoolkit/rtt-images:1.0.0-fedora39
   variables:
     SETUP_ARGS: >-
-      --native-file ci/envs/fedora39.ini
       --native-file ci/native/src/clang.ini
       --wrap-mode=forcefallback
 compiler clang18:
@@ -138,7 +115,6 @@ compiler clang18:
   image: registry.gitlab.com/hpctoolkit/rtt-images:1.0.0-fedora40
   variables:
     SETUP_ARGS: >-
-      --native-file ci/envs/fedora40.ini
       --native-file ci/native/src/clang.ini
       --wrap-mode=forcefallback
 compiler icx:
@@ -153,7 +129,6 @@ compiler icx:
     # Until this is fixed, disable werror for this compiler specifically.
     SETUP_ARGS: >-
       -Dwerror=false
-      --native-file ci/envs/intel.ini
       --native-file ci/native/src/icx.ini
       --wrap-mode=forcefallback
     # FIXME: Tests that use Level Zero fail on systems that don't have a suitable GPU attached.
@@ -235,5 +210,4 @@ compiler icx:
   needs: []
   image: registry.gitlab.com/hpctoolkit/rtt-images:1.0.0-ubuntu24.04
   variables:
-    SETUP_ARGS: --native-file ci/envs/ubuntu24.04.ini
     BUILD_DIRECTORY: builddir/long_path_segment__/long_path_segment__/long_path_segment__/long_path_segment__/long_path_segment__/long_path_segment__/long_path_segment__/long_path_segment__/long_path_segment__/long_path_segment__/long_path_segment__/long_path_segment__/
