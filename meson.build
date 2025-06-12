@@ -6,7 +6,7 @@ project(
   'hpctoolkit',
   'c',
   'cpp',
-  version: '2024.01.99-next',
+  version: '2025.0.0-alpha',
   meson_version: '>=1.1.0',
   license: 'BSD-3-Clause',
   default_options: [
