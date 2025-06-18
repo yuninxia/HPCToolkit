@@ -25,6 +25,8 @@ hpcrun_sonames = configuration_data()
 private_ns_lib = shared_library(
   'hpcrun_private_ns',
   'audit/private-ns.c',
+  'foil/workarounds/dl-iterate-phdr.c',
+  'foil/workarounds/pthread-key.c',
   'audit/exports.c',
   gnu_symbol_visibility: 'hidden',
   implicit_include_directories: false,
@@ -531,6 +533,8 @@ audit_lib = shared_library(
   'hpcrun_audit',
   'audit/auditor.c',
   'audit/private-ns.c',
+  'foil/workarounds/dl-iterate-phdr.c',
+  'foil/workarounds/pthread-key.c',
   gnu_symbol_visibility: 'hidden',
   implicit_include_directories: false,
   dependencies: [dl_dep, threads_dep],
