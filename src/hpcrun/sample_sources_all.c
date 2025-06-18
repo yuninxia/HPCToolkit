@@ -112,7 +112,7 @@ static int
 ignore_this_thread()
 {
   int * ignore_thread = TLS_GETSPECIFIC(ignore_thread);
-  
+
   if (*ignore_thread == THREAD_DOINIT) {
     *ignore_thread = THREAD_SAMPLING;
 

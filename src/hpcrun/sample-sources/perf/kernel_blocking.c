@@ -79,7 +79,7 @@ blame_kernel_time(event_thread_t *current_event, cct_node_t *cct_kernel,
   u32 * cpu = TLS_GETSPECIFIC(perf_cpu);
   u32 * pid = TLS_GETSPECIFIC(perf_pid);
   u32 * tid = TLS_GETSPECIFIC(perf_tid);
-  
+
   // make sure the time is is zero or positive
   if (mmap_data->time < *time_cs_out) {
     TMSG(LINUX_PERF, "old t: %l, c: %d, p: %d, td: %d -- vs -- t: %l, c: %d, p: %d, td: %d",
@@ -138,7 +138,7 @@ kernel_block_handler( event_thread_t *current_event, sample_val_t sv,
   u32 * cpu = TLS_GETSPECIFIC(perf_cpu);
   u32 * pid = TLS_GETSPECIFIC(perf_pid);
   u32 * tid = TLS_GETSPECIFIC(perf_tid);
-  
+
   if (metric_blocking_index < 0)
     return; // not initialized or something wrong happens in the initialization
 

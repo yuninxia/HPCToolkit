@@ -75,7 +75,7 @@ papi_c_intel_get_event_set(int* event_set)
 
   bool * event_set_created = TLS_GETSPECIFIC(event_set_created);
   int * my_event_set = TLS_GETSPECIFIC(my_event_set);
-  
+
   if (! *event_set_created) {
     int ret=PAPI_create_eventset(my_event_set);
     if (ret!=PAPI_OK) {

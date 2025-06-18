@@ -35,7 +35,7 @@
 //
 // Note:
 // (1) The storage size of the entry in 'struct tls_data' must match
-// the original __thread storange size.  For simple types (int, long,
+// the original __thread storage size.  For simple types (int, long,
 // void*), this is not a problem.  For a struct (but not pointer to
 // struct), the full struct must appear in tls_data, and the header
 // files to define the struct must be in tls_specific.h

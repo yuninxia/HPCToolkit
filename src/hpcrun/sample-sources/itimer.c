@@ -158,7 +158,7 @@ static sigset_t timer_mask;
 void hpcrun_itimer_wallclock_ok(bool flag)
 {
   bool * wallclock_ok = TLS_GETSPECIFIC(wallclock_ok);
-  
+
   *wallclock_ok = flag;
 }
 

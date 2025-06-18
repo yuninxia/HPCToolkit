@@ -105,7 +105,7 @@ uint64_t
 get_blame_target(void)
 {
   blame_t * pthread_blame = TLS_GETSPECIFIC(pthread_blame);
-  
+
   return pthread_blame->target;
 }
 
