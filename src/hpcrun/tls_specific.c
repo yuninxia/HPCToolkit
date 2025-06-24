@@ -102,10 +102,19 @@ static void hpcrun_init_tls_data(hpcrun_tls_data_t *);
 
 // Internal Functions (except init data)
 
+// cleanup tls_data struct.  called at thread exit with the
+// set-specific value.
+//
+static void
+tls_fini_thread(void * data)
+{
+  free(data);
+}
+
 static void
 tls_once_fcn(void)
 {
-  if (pthread_key_create(&tls_key, NULL) != 0) {
+  if (pthread_key_create(&tls_key, tls_fini_thread) != 0) {
     hpcrun_abort("hpcrun: pthread_key_create(tls_key) failed");
   }
   hpcrun_tls_specific_init_thread();
@@ -149,17 +158,6 @@ hpcrun_tls_specific_init_thread(void)
   if (pthread_setspecific(tls_key, data) != 0) {
     hpcrun_abort("hpcrun: pthread_setspecific() failed");
   }
-}
-
-// cleanup thread data.  there is no unset specific, but we do need to
-// free() for the case of many short-lived threads
-//
-void
-hpcrun_tls_specific_fini_thread(void)
-{
-  void * data = pthread_getspecific(tls_key);
-
-  free(data);
 }
 
 //----------------------------------------------------------------------

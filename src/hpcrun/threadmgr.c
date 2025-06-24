@@ -179,8 +179,6 @@ finalize_all_thread_data(void *arg)
     data = grab_thread_data();
   }
 
-  hpcrun_tls_specific_fini_thread();
-
   return NULL;
 }
 

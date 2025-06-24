@@ -24,10 +24,22 @@ typedef struct tls_data hpcrun_tls_data_t;
 pthread_key_t hpcrun_get_tls_key(void);
 void hpcrun_tls_specific_init_process(void);
 void hpcrun_tls_specific_init_thread(void);
-void hpcrun_tls_specific_fini_thread(void);
+
+static inline void *
+lazy_getspecific(void)
+{
+  void * spec = pthread_getspecific(hpcrun_get_tls_key());
+
+  if (spec != NULL) {
+    return spec;
+  }
+  hpcrun_tls_specific_init_thread();
+
+  return pthread_getspecific(hpcrun_get_tls_key());
+}
 
 #define TLS_GETSPECIFIC(field)  \
-  (& (((struct tls_data *) pthread_getspecific(hpcrun_get_tls_key()))->field))
+  (& (((struct tls_data *) lazy_getspecific())->field))
 
 //----------------------------------------------------------------------
 

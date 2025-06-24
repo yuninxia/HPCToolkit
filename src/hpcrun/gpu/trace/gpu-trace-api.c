@@ -405,8 +405,6 @@ gpu_trace_record_thread_fn
   gpu_trace_channel_set_apply(channel_set, consume_trace_channel, NULL);
   gpu_trace_channel_set_apply(channel_set, gpu_trace_channel_release, NULL);
 
-  hpcrun_tls_specific_fini_thread();
-
   return NULL;
 }
 

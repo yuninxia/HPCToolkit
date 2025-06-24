@@ -97,8 +97,6 @@ gpu_operation_record_thread_fn
   gpu_trace_fini(NULL, MONITOR_EXIT_NORMAL);
   atomic_store(&gpu_trace_finished, true);
 
-  hpcrun_tls_specific_fini_thread();
-
   return NULL;
 }
 

@@ -1325,8 +1325,6 @@ monitor_fini_thread(void* init_thread_data)
   hpcrun_thread_fini(epoch);
   hpcrun_safe_exit();
 
-  hpcrun_tls_specific_fini_thread();
-
   hpcrun_restore_sigmask(&oldset);
 }
 
