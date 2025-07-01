@@ -86,6 +86,13 @@ struct tls_data {
   uint32_t perf_pid;
   uint32_t perf_tid;
 
+  // skiplist/cskiplist.c
+  void * lf_cskl_nodes;
+
+  // skiplist/urand.c
+  int urand_initialized;
+  unsigned int urand_data;
+
   // unwind/common/binarytree_uwi.c -- really 'bitree_uwi_t * [NUM_UNWINDERS]'
   void * _lf_uwi_tree[NUM_UNWINDERS];
 

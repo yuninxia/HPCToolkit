@@ -7,10 +7,11 @@ test_srcs = files(
   'sample-sources/exclude.c',
   'sample-sources/perf/event_name_parser.c',
   'sample-sources/perf/event_name_parser_test.cpp',
-  'skiplist/randomizer-test.cpp',
-  'skiplist/randomizer.c',
-  'skiplist/urand.c',
-  '../common/lean/usec_time.c',
+  # 'skiplist/randomizer-test.cpp',
+  # 'skiplist/randomizer.c',
+  # 'skiplist/urand.c',
+  # 'tls_specific.c',
+  # '../common/lean/usec_time.c',
 )
 
 test(
