@@ -56,7 +56,6 @@ def arg_parser() -> argparse.ArgumentParser:
     parser.add_argument("venv", type=Path)
     parser.add_argument("wheels", type=Path)
     parser.add_argument("src", type=Path)
-    parser.add_argument("hpctesttool", type=Path)
     parser.add_argument("python", type=Path)
     return parser
 
@@ -73,7 +72,6 @@ def main() -> None:
         venv=args.venv,
         wheels=args.wheels,
     )
-    create_redirect(args.venv, "hpctesttool", args.hpctesttool)
     create_redirect(args.venv, "python", args.python)
 
 
