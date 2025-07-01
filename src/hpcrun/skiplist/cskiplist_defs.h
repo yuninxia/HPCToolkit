@@ -16,8 +16,8 @@
 #ifndef __CSKIPLIST_DEFS_H__
 #define __CSKIPLIST_DEFS_H__
 
-#include "mcs-lock.h"
-#include "pfq-rwlock.h"
+#include "../../common/lean/mcs-lock.h"
+#include "../../common/lean/pfq-rwlock.h"
 
 typedef struct csklnode_s {
   void *val;

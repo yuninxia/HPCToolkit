@@ -11,7 +11,6 @@ common_lean_srcs = files(
   'compress_lzma.c',
   'cpuset_hwthreads.c',
   'crypto-hash.c',
-  'cskiplist.c',
   'demangle.c',
   'elf-extract.c',
   'elf-hash.c',
@@ -33,12 +32,10 @@ common_lean_srcs = files(
   'procmaps.c',
   'producer_wfq.c',
   'queues.c',
-  'randomizer.c',
   'spinlock.c',
   'splay-uint64.c',
   'stacks.c',
   'timer.c',
-  'urand.c',
   'usec_time.c',
   'vdso.c',
 )
@@ -54,7 +51,6 @@ test_srcs = files(
   'compress_lzma_test.cpp',
   'crypto-hash-test.cpp',
   'elf-hash-test.cpp',
-  'randomizer-test.cpp',
 )
 
 test(

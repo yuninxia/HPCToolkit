@@ -26,8 +26,8 @@
 // local include files
 //******************************************************************************
 
-#include "generic_val.h"
-#include "mem_manager.h"
+#include "../../common/lean/generic_val.h"
+#include "../../common/lean/mem_manager.h"
 
 //******************************************************************************
 // macro

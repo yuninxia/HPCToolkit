@@ -7,6 +7,10 @@ test_srcs = files(
   'sample-sources/exclude.c',
   'sample-sources/perf/event_name_parser.c',
   'sample-sources/perf/event_name_parser_test.cpp',
+  'skiplist/randomizer-test.cpp',
+  'skiplist/randomizer.c',
+  'skiplist/urand.c',
+  '../common/lean/usec_time.c',
 )
 
 test(
@@ -201,6 +205,9 @@ srcs = files(
   'sample_sources_all.c',
   'sample_sources_registered.c',
   'segv_handler.c',
+  'skiplist/cskiplist.c',
+  'skiplist/randomizer.c',
+  'skiplist/urand.c',
   'start-stop.c',
   'term_handler.c',
   'thread_data.c',
