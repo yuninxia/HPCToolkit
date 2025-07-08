@@ -47,6 +47,9 @@ lazy_getspecific(void)
 // outside of thread_data_t
 
 struct tls_data {
+  // ompt tls variables
+  void * ompt_specific;
+
   // main.c
   bool suppress_sample;
 

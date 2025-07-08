@@ -98,6 +98,8 @@ static pthread_key_t tls_key;
 
 static void hpcrun_init_tls_data(hpcrun_tls_data_t *);
 
+void * hpcrun_ompt_alloc_specific(void);
+
 //----------------------------------------------------------------------
 
 // Internal Functions (except init data)
@@ -108,6 +110,7 @@ static void hpcrun_init_tls_data(hpcrun_tls_data_t *);
 static void
 tls_fini_thread(void * data)
 {
+  free(((struct tls_data *) data)->ompt_specific);
   free(data);
 }
 
@@ -170,6 +173,9 @@ static void
 hpcrun_init_tls_data(hpcrun_tls_data_t *data)
 {
   memset(data, 0, sizeof(hpcrun_tls_data_t));
+
+  // ompt tls variables
+  data->ompt_specific = hpcrun_ompt_alloc_specific();
 
   // main.c
   data->suppress_sample = true;

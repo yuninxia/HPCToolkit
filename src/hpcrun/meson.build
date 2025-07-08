@@ -174,6 +174,7 @@ srcs = files(
   'ompt/ompt-queues.c',
   'ompt/ompt-region-debug.c',
   'ompt/ompt-region.c',
+  'ompt/ompt-specific.c',
   'ompt/ompt-task.c',
   'ompt/ompt-thread.c',
   'rank.c',

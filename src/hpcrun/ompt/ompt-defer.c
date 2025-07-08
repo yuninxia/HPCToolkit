@@ -26,6 +26,7 @@
 #include "ompt-queues.h"
 #include "ompt-region.h"
 #include "ompt-region-debug.h"
+#include "ompt-specific.h"
 #include "ompt-thread.h"
 
 
@@ -370,8 +371,11 @@ get_stack_index
  ompt_region_data_t *region_data
 )
 {
+  region_stack_el_t * region_stack = OMPT_GETSPECIFIC(region_stack[0]);
+  int * top_index = OMPT_GETSPECIFIC(top_index);
+
   int i;
-  for (i = top_index; i>=0; i--) {
+  for (i = *top_index; i>=0; i--) {
     if (region_stack[i].notification->region_data->region_id == region_data->region_id) {
       return i;
     }
@@ -394,10 +398,12 @@ help_notification_alloc
  ompt_region_data_t *region_data
 )
 {
+  ompt_wfq_t * threads_queue = OMPT_GETSPECIFIC(threads_queue);
+
   ompt_notification_t *notification = hpcrun_ompt_notification_alloc();
   notification->region_data = region_data;
   notification->region_id = region_data->region_id;
-  notification->threads_queue = &threads_queue;
+  notification->threads_queue = threads_queue;
 
   return notification;
 }
@@ -409,6 +415,7 @@ swap_and_free
  ompt_region_data_t* region_data
 )
 {
+  region_stack_el_t * region_stack = OMPT_GETSPECIFIC(region_stack[0]);
 
   int depth = region_data->depth;
   ompt_notification_t *notification;
@@ -450,6 +457,8 @@ add_region_and_ancestors_to_stack
  bool team_master
 )
 {
+  region_stack_el_t * region_stack = OMPT_GETSPECIFIC(region_stack[0]);
+  int * top_index = OMPT_GETSPECIFIC(top_index);
 
   if (!region_data) {
     // printf("*******************This is also possible. ompt-defer.c:394");
@@ -465,7 +474,7 @@ add_region_and_ancestors_to_stack
   while (current) {
     depth = current->depth;
     // found region which is on the stack
-    if (depth <= top_index &&
+    if (depth <= *top_index &&
         region_stack[depth].notification->region_data->region_id == current->region_id) {
       break;
     }
@@ -475,12 +484,12 @@ add_region_and_ancestors_to_stack
   }
 
   // region_data is the new top of the stack
-  top_index = region_data->depth;
+  *top_index = region_data->depth;
   // FIXME vi3: should check if this is right
   // If the stack content does not corresponds to ancestors of the region_data,
   // then thread could only be master of the region_data, but not to its ancestors.
   // Values of argument team_master says if the thread is the master of region_data
-  region_stack[top_index].team_master = team_master;
+  region_stack[*top_index].team_master = team_master;
 
 }
 
@@ -491,16 +500,19 @@ add_pseudo_cct
  ompt_region_data_t* region_data
 )
 {
+  region_stack_el_t * region_stack = OMPT_GETSPECIFIC(region_stack[0]);
+  int * top_index = OMPT_GETSPECIFIC(top_index);
+
   // should add cct inside the tree
   cct_node_t* new;
-  if (top_index == 0) {
+  if (*top_index == 0) {
     // this is the first parallel region add pseudo cct
     // which corresponds to the region as a child of thread root
     new = hpcrun_cct_insert_addr((hpcrun_get_thread_epoch()->csdata).thread_root,
                                  &(ADDR2(UNRESOLVED, region_data->region_id)), true);
   } else {
     // add cct as a child of a previous pseudo cct
-    new = hpcrun_cct_insert_addr(region_stack[top_index - 1].notification->unresolved_cct,
+    new = hpcrun_cct_insert_addr(region_stack[*top_index - 1].notification->unresolved_cct,
                                  &(ADDR2(UNRESOLVED, region_data->region_id)), true);
   }
 
@@ -514,6 +526,7 @@ register_to_region
  ompt_notification_t* notification
 )
 {
+  int * unresolved_cnt = OMPT_GETSPECIFIC(unresolved_cnt);
   ompt_region_data_t* region_data = notification->region_data;
 
   ompt_region_debug_notify_needed(notification);
@@ -525,7 +538,7 @@ register_to_region
   wfq_enqueue(OMPT_BASE_T_STAR(notification), &region_data->queue);
 
   // increment the number of unresolved regions
-  unresolved_cnt++;
+  (*unresolved_cnt)++;
 }
 
 ompt_notification_t*
@@ -534,9 +547,11 @@ add_notification_to_stack
  ompt_region_data_t* region_data
 )
 {
+    ompt_wfq_t * threads_queue = OMPT_GETSPECIFIC(threads_queue);
+
     ompt_notification_t* notification = help_notification_alloc(region_data);
     notification->region_data = region_data;
-    notification->threads_queue = &threads_queue;
+    notification->threads_queue = threads_queue;
     // push to stack
     push_region_stack(notification, 0, 0);
     return notification;
@@ -549,10 +564,13 @@ register_if_not_master
  ompt_notification_t *notification
 )
 {
-  if (notification && not_master_region == notification->region_data) {
+  ompt_region_data_t ** not_master_region = OMPT_GETSPECIFIC(not_master_region);
+  cct_node_t ** cct_not_master_region = OMPT_GETSPECIFIC(cct_not_master_region);
+
+  if (notification && *not_master_region == notification->region_data) {
     register_to_region(notification);
     // should memoize the cct for not_master_region
-    cct_not_master_region = notification->unresolved_cct;
+    *cct_not_master_region = notification->unresolved_cct;
   }
 }
 
@@ -563,8 +581,11 @@ get_took_sample_parent_index
  void
 )
 {
+  region_stack_el_t * region_stack = OMPT_GETSPECIFIC(region_stack[0]);
+  int * top_index = OMPT_GETSPECIFIC(top_index);
+
   int i;
-  for (i = top_index; i >= 0; i--) {
+  for (i = *top_index; i >= 0; i--) {
     if (region_stack[i].took_sample) {
       return i;
     }
@@ -579,6 +600,10 @@ register_to_all_regions
  void
 )
 {
+  region_stack_el_t * region_stack = OMPT_GETSPECIFIC(region_stack[0]);
+  int * top_index = OMPT_GETSPECIFIC(top_index);
+  cct_node_t ** cct_not_master_region = OMPT_GETSPECIFIC(cct_not_master_region);
+
   // find ancestor on the stack in which we took a sample
   // a go until the top of the stack
   int start_register_index = get_took_sample_parent_index() + 1;
@@ -589,7 +614,7 @@ register_to_all_regions
   region_stack_el_t *current_el;
   cct_node_t *parent_cct;
   cct_node_t *new_cct;
-  for (i = start_register_index; i <=top_index; i++) {
+  for (i = start_register_index; i <= *top_index; i++) {
     current_el = &region_stack[i];
     // mark that we took sample
     current_el->took_sample = true;
@@ -611,7 +636,7 @@ register_to_all_regions
       // remebmer cct
       current_el->notification->unresolved_cct = new_cct;
 
-      cct_not_master_region = current_el->notification->unresolved_cct;
+      *cct_not_master_region = current_el->notification->unresolved_cct;
 
     }
   }
@@ -643,14 +668,17 @@ try_resolve_one_region_context
  void
 )
 {
+  ompt_wfq_t * threads_queue = OMPT_GETSPECIFIC(threads_queue);
+  ompt_data_t ** private_threads_queue = OMPT_GETSPECIFIC(private_threads_queue);
+  int * unresolved_cnt = OMPT_GETSPECIFIC(unresolved_cnt);
   ompt_notification_t *old_head = NULL;
 
   old_head = (ompt_notification_t*)
-    wfq_dequeue_private(&threads_queue, OMPT_BASE_T_STAR_STAR(private_threads_queue));
+    wfq_dequeue_private(threads_queue, OMPT_BASE_T_STAR_STAR(*private_threads_queue));
 
   if (!old_head) return 0;
 
-  unresolved_cnt--;
+  (*unresolved_cnt)--;
 
   // region to resolve
   ompt_region_data_t *region_data = old_head->region_data;
@@ -759,6 +787,7 @@ ompt_resolve_region_contexts
  int is_process
 )
 {
+  int * unresolved_cnt = OMPT_GETSPECIFIC(unresolved_cnt);
   struct timespec start_time;
 
   size_t i = 0;
@@ -768,7 +797,7 @@ ompt_resolve_region_contexts
   for(;;i++) {
 
     // if all regions resolved, we are done
-    if (unresolved_cnt == 0) break;
+    if (*unresolved_cnt == 0) break;
 
     // poll for a notification to resolve a region context
     try_resolve_one_region_context();
@@ -785,7 +814,7 @@ ompt_resolve_region_contexts
     }
   }
 
-  if (unresolved_cnt != 0 && hpcrun_ompt_region_check()) {
+  if (*unresolved_cnt != 0 && hpcrun_ompt_region_check()) {
     // hang to let debugger attach
     volatile int x;
     for(;;) {
@@ -803,8 +832,10 @@ ompt_resolve_region_contexts_poll
  void
 )
 {
+  int * unresolved_cnt = OMPT_GETSPECIFIC(unresolved_cnt);
+
   // if there are any unresolved contexts
-  if (unresolved_cnt) {
+  if (*unresolved_cnt) {
     // attempt to resolve contexts by consuming any notifications that
     // are currently pending.
     while (try_resolve_one_region_context());
@@ -981,6 +1012,9 @@ is_outermost_region_thread_is_master
  int stack_index
 )
 {
+  region_stack_el_t * region_stack = OMPT_GETSPECIFIC(region_stack[0]);
+  ompt_region_data_t ** not_master_region = OMPT_GETSPECIFIC(not_master_region);
+
   // no regions
   if (is_empty_region_stack())
     return -1;
@@ -989,7 +1023,8 @@ is_outermost_region_thread_is_master
     return 1;
 
   // thread is not the master, and region that is upper on the stack is not_master_region
-  if (!TD_GET(master) && stack_index && region_stack[stack_index - 1].notification->region_data == not_master_region){
+  if (!TD_GET(master) && stack_index
+      && region_stack[stack_index - 1].notification->region_data == *not_master_region) {
     return 1;
   }
 
@@ -1052,10 +1087,12 @@ dont_resolve_region
  ompt_notification_t *current_notification
 )
 {
+  ompt_region_data_t ** not_master_region = OMPT_GETSPECIFIC(not_master_region);
+
   // if current notification is null, or the thread is not the master
   // or the path is already resolved
   return !current_notification
-         || current_notification->region_data == not_master_region
+         || current_notification->region_data == *not_master_region
          || current_notification->region_data->call_path != NULL;
 }
 
@@ -1166,10 +1203,10 @@ provide_callpath_for_regions_if_needed
     return;
   }
 
-
+  region_stack_el_t * region_stack = OMPT_GETSPECIFIC(region_stack[0]);
+  int * top_index = OMPT_GETSPECIFIC(top_index);
   int frame_level = 0;
-  int stack_index = top_index;
-
+  int stack_index = *top_index;
 
   // at the beginning of the loop we should be one frame above the end_frame
   // which means that we are inside user code of the parent region or the initial implicit task
@@ -1277,7 +1314,7 @@ provide_callpath_for_end_of_the_region
     // frame iterator
     frame_t *it = bt_inner;
 
-
+    ompt_region_data_t ** ending_region = OMPT_GETSPECIFIC(ending_region);
     cct_node_t *bottom_prefix = NULL;
     cct_node_t *top_prefix = NULL;
     cct_node_t *prefix = NULL;
@@ -1307,7 +1344,7 @@ provide_callpath_for_end_of_the_region
           deferred_resolution_breakpoint();
           return;
         }
-        ending_region->call_path = prefix;
+        (*ending_region)->call_path = prefix;
 
 
     } else if (UINT64_T(bt_inner->cursor.sp) < UINT64_T(current_frame->enter_frame.ptr)) {
@@ -1332,7 +1369,7 @@ provide_callpath_for_end_of_the_region
           return;
         }
 
-        ending_region->call_path = prefix;
+        (*ending_region)->call_path = prefix;
 
         return;
 

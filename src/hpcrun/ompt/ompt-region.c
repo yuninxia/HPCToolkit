@@ -37,16 +37,9 @@
 #include "ompt-queues.h"
 #include "ompt-region.h"
 #include "ompt-region-debug.h"
+#include "ompt-specific.h"
 #include "ompt-thread.h"
 
-
-
-//*****************************************************************************
-// variables
-//****************************************************************************/
-
-// private freelist from which only thread owner can reused regions
-static __thread ompt_data_t* private_region_freelist_head = NULL;
 
 
 //*****************************************************************************
@@ -77,6 +70,7 @@ ompt_region_data_new
  cct_node_t *call_path
 )
 {
+  ompt_wfq_t * public_region_freelist = OMPT_GETSPECIFIC(public_region_freelist);
   ompt_region_data_t* e = ompt_region_acquire();
 
   e->region_id = region_id;
@@ -86,7 +80,7 @@ ompt_region_data_new
 
   // parts for freelist
   OMPT_BASE_T_GET_NEXT(e) = NULL;
-  e->thread_freelist = &public_region_freelist;
+  e->thread_freelist = public_region_freelist;
   e->depth = 0;
 
   return e;
@@ -145,23 +139,26 @@ ompt_parallel_end_internal
  int flags
 )
 {
+  region_stack_el_t * region_stack = OMPT_GETSPECIFIC(region_stack[0]);
+  int * top_index = OMPT_GETSPECIFIC(top_index);
+  ompt_region_data_t ** ending_region = OMPT_GETSPECIFIC(ending_region);
   ompt_region_data_t* region_data = (ompt_region_data_t*)parallel_data->ptr;
 
   if (!ompt_eager_context_p()){
     // check if there is any thread registered that should be notified that region call path is available
     ompt_notification_t* to_notify = (ompt_notification_t*) wfq_dequeue_public(&region_data->queue);
 
-    region_stack_el_t *stack_el = &region_stack[top_index + 1];
+    region_stack_el_t *stack_el = &region_stack[*top_index + 1];
     ompt_notification_t *notification = stack_el->notification;
     if (notification->unresolved_cct) {
-      ending_region = region_data;
+      *ending_region = region_data;
       ompt_region_context_lazy(region_data->region_id, ompt_scope_end,
                                flags & ompt_parallel_invoker_program);
       cct_node_t *prefix = region_data->call_path;
       // if combined this if branch with branch of next if
       // we will remove this line
       tmp_end_region_resolve(notification, prefix);
-      ending_region = NULL;
+      *ending_region = NULL;
     }
 
     if (to_notify){
@@ -173,11 +170,11 @@ ompt_parallel_end_internal
         // these ccts should not be added underneath thread root
         // we must create them and send them as a region path,
         // but do not insert them in any tree
-        ending_region = region_data;
+        *ending_region = region_data;
         // need to provide call path, because master did not take a sample inside region
         ompt_region_context_lazy(region_data->region_id, ompt_scope_end,
                                  flags & ompt_parallel_invoker_program);
-        ending_region = NULL;
+        *ending_region = NULL;
       }
 
       // notify next thread
@@ -188,7 +185,7 @@ ompt_parallel_end_internal
       // FIXME vi3: check if you are right
       ompt_region_release(region_data);
       // or should use this
-      // wfq_enqueue((ompt_base_t*)region_data, &public_region_freelist);
+      // wfq_enqueue((ompt_base_t*)region_data, public_region_freelist);
     }
   }
 
@@ -277,7 +274,8 @@ ompt_implicit_task_internal_begin
     // FIXME vi3: move this to add_region_and_ancestors_to_stack
     // Memoization process vi3:
     if (index != 0){
-      not_master_region = region_data;
+      ompt_region_data_t ** not_master_region = OMPT_GETSPECIFIC(not_master_region);
+      *not_master_region = region_data;
     }
   }
 }
@@ -348,12 +346,15 @@ ompt_region_freelist_get
  void
 )
 {
+  ompt_wfq_t * public_region_freelist = OMPT_GETSPECIFIC(public_region_freelist);
+  ompt_data_t ** private_region_freelist_head = OMPT_GETSPECIFIC(private_region_freelist_head);
+
   // FIXME vi3: should in this situation call OMPT_REGION_DATA_T_STAR / Notification / TRL_EL
   // FIXME vi3: I think that call to wfq_dequeue_private in this case should be thread safe
   // but check this one more time
   ompt_region_data_t* r =
-    (ompt_region_data_t*) wfq_dequeue_private(&public_region_freelist,
-                                              OMPT_BASE_T_STAR_STAR(private_region_freelist_head));
+    (ompt_region_data_t*) wfq_dequeue_private(public_region_freelist,
+                                              OMPT_BASE_T_STAR_STAR(*private_region_freelist_head));
   return r;
 }
 
@@ -364,8 +365,10 @@ ompt_region_freelist_put
  ompt_region_data_t *r
 )
 {
+  ompt_data_t ** private_region_freelist_head = OMPT_GETSPECIFIC(private_region_freelist_head);
+
   r->region_id = 0xdeadbeef;
-  freelist_add_first(OMPT_BASE_T_STAR(r), OMPT_BASE_T_STAR_STAR(private_region_freelist_head));
+  freelist_add_first(OMPT_BASE_T_STAR(r), OMPT_BASE_T_STAR_STAR(*private_region_freelist_head));
 }
 
 
@@ -416,7 +419,9 @@ ompt_regions_init
  void
 )
 {
-  wfq_init(&public_region_freelist);
+  ompt_wfq_t * public_region_freelist = OMPT_GETSPECIFIC(public_region_freelist);
+
+  wfq_init(public_region_freelist);
   ompt_region_debug_init();
 }
 

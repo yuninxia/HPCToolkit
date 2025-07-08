@@ -40,6 +40,7 @@
 #include "ompt-interface.h"
 #include "ompt-queues.h"
 #include "ompt-region.h"
+#include "ompt-specific.h"
 #include "ompt-task.h"
 #include "ompt-thread.h"
 #include "ompt-device.h"
@@ -99,21 +100,6 @@ FOREACH_OMPT_INQUIRY_FN(ompt_interface_fn)
 
 #undef ompt_interface_fn
 
-
-
-/******************************************************************************
- * thread-local variables
- *****************************************************************************/
-
-//-----------------------------------------
-// variable ompt_idle_count:
-//    this variable holds a count of how
-//    many times the current thread has
-//    been marked as idle. a count is used
-//    rather than a flag to support
-//    nested marking.
-//-----------------------------------------
-static __thread int ompt_idle_count;
 
 
 /******************************************************************************
@@ -178,7 +164,8 @@ ompt_get_idle_count_ptr
  void
 )
 {
-  return &ompt_idle_count;
+  int * ompt_idle_count = OMPT_GETSPECIFIC(ompt_idle_count);
+  return ompt_idle_count;
 }
 
 
@@ -329,14 +316,16 @@ ompt_thread_begin
  ompt_data_t *thread_data
 )
 {
+  ompt_wfq_t * threads_queue = OMPT_GETSPECIFIC(threads_queue);
+  int * unresolved_cnt = OMPT_GETSPECIFIC(unresolved_cnt);
+
   //printf("Thread begin... %d\n", thread_data->value);
   ompt_thread_type_set(thread_type);
   undirected_blame_thread_start(&omp_idle_blame_info);
 
-  wfq_init(&threads_queue);
+  wfq_init(threads_queue);
 
-  registered_regions = NULL;
-  unresolved_cnt = 0;
+  *unresolved_cnt = 0;
 //  printf("Tree root begin: %p\n", td->core_profile_trace_data.epoch->csdata.tree_root);
 }
 
@@ -926,9 +915,11 @@ hpcrun_ompt_notification_alloc
  void
 )
 {
+  ompt_notification_t ** notification_freelist_head = OMPT_GETSPECIFIC(notification_freelist_head);
+
   // only the current thread uses notification_freelist_head
   ompt_notification_t* first = (ompt_notification_t*) freelist_remove_first(
-          OMPT_BASE_T_STAR_STAR(notification_freelist_head));
+          OMPT_BASE_T_STAR_STAR(*notification_freelist_head));
   return first ? first : (ompt_notification_t*)hpcrun_malloc(sizeof(ompt_notification_t));
 }
 
@@ -939,7 +930,9 @@ hpcrun_ompt_notification_free
  ompt_notification_t *notification
 )
 {
-  freelist_add_first(OMPT_BASE_T_STAR(notification), OMPT_BASE_T_STAR_STAR(notification_freelist_head));
+  ompt_notification_t ** notification_freelist_head = OMPT_GETSPECIFIC(notification_freelist_head);
+
+  freelist_add_first(OMPT_BASE_T_STAR(notification), OMPT_BASE_T_STAR_STAR(*notification_freelist_head));
 }
 
 
@@ -950,8 +943,10 @@ hpcrun_ompt_trl_el_alloc
  void
 )
 {
+  ompt_trl_el_t ** thread_region_freelist_head = OMPT_GETSPECIFIC(thread_region_freelist_head);
+
   // only the thread that owns thread_region_freelist_head access to it
-  ompt_trl_el_t* first = (ompt_trl_el_t*) freelist_remove_first(OMPT_BASE_T_STAR_STAR(thread_region_freelist_head));
+  ompt_trl_el_t* first = (ompt_trl_el_t*) freelist_remove_first(OMPT_BASE_T_STAR_STAR(*thread_region_freelist_head));
   return first ? first : (ompt_trl_el_t*)hpcrun_malloc(sizeof(ompt_trl_el_t));
 }
 
@@ -962,7 +957,9 @@ hpcrun_ompt_trl_el_free
  ompt_trl_el_t *thread_region
 )
 {
-  freelist_add_first(OMPT_BASE_T_STAR(thread_region), OMPT_BASE_T_STAR_STAR(thread_region_freelist_head));
+  ompt_trl_el_t ** thread_region_freelist_head = OMPT_GETSPECIFIC(thread_region_freelist_head);
+
+  freelist_add_first(OMPT_BASE_T_STAR(thread_region), OMPT_BASE_T_STAR_STAR(*thread_region_freelist_head));
 }
 
 
