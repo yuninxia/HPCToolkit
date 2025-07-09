@@ -17,8 +17,9 @@
 #include "sample-sources/pthread-blame.h"
 #include "unwind/common/binarytree_uwi.h"
 
-struct tls_data;
+struct cskl_node_s;
 
+struct tls_data;
 typedef struct tls_data hpcrun_tls_data_t;
 
 pthread_key_t hpcrun_get_tls_key(void);
@@ -90,7 +91,7 @@ struct tls_data {
   uint32_t perf_tid;
 
   // skiplist/cskiplist.c
-  void * lf_cskl_nodes;
+  struct csklnode_s * lf_cskl_nodes;
 
   // skiplist/urand.c
   int urand_initialized;
