@@ -47,11 +47,7 @@ common_lean_deps = [
   subproject('md5-g72cf2cd').get_variable('md5_dep'),
 ]
 
-test_srcs = files(
-  'compress_lzma_test.cpp',
-  'crypto-hash-test.cpp',
-  'elf-hash-test.cpp',
-)
+test_srcs = files('compress_lzma_test.cpp', 'crypto-hash-test.cpp', 'elf-hash-test.cpp')
 
 test(
   'common-lean',
