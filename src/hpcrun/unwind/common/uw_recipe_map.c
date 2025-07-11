@@ -116,7 +116,6 @@ ilmstat_btuwi_pair_inrange(void *itp, void *address)
 static ilmstat_btuwi_pair_t *GF_ilmstat_btuwi = NULL; // global free list of ilmstat_btuwi_pair_t*
 static mcs_lock_t GFL_lock;  // lock for GF_ilmstat_btuwi
 
-// static __thread  ilmstat_btuwi_pair_t *_lf_ilmstat_btuwi = NULL;  // thread local free list of ilmstat_btuwi_pair_t*
 
 
 //******************************************************************************
@@ -169,8 +168,7 @@ ilmstat_btuwi_pair_malloc(
         tree_stat_t treestat,
         mem_alloc m_alloc)
 {
-  ilmstat_btuwi_pair_t ** _lf_ilmstat_btuwi =
-    (ilmstat_btuwi_pair_t **) TLS_GETSPECIFIC(_lf_ilmstat_btuwi);
+  ilmstat_btuwi_pair_t ** _lf_ilmstat_btuwi = TLS_GETSPECIFIC(_lf_ilmstat_btuwi);
 
   if (! *_lf_ilmstat_btuwi) {
     /*

@@ -17,14 +17,17 @@
 #include "sample-sources/pthread-blame.h"
 #include "unwind/common/binarytree_uwi.h"
 
+struct cct_node_t;
 struct cskl_node_s;
+struct bitree_uwi_s;
+struct ilmstat_btuwi_pair_s;
 
 struct tls_data;
 typedef struct tls_data hpcrun_tls_data_t;
 
 pthread_key_t hpcrun_get_tls_key(void);
 void hpcrun_tls_specific_init_process(void);
-void hpcrun_tls_specific_init_thread(void);
+void * hpcrun_tls_specific_init_thread(void);
 
 static inline void *
 lazy_getspecific(void)
@@ -34,9 +37,8 @@ lazy_getspecific(void)
   if (spec != NULL) {
     return spec;
   }
-  hpcrun_tls_specific_init_thread();
 
-  return pthread_getspecific(hpcrun_get_tls_key());
+  return hpcrun_tls_specific_init_thread();
 }
 
 #define TLS_GETSPECIFIC(field)  \
@@ -64,9 +66,8 @@ struct tls_data {
   // trace.c
   uint64_t prev_nanotime;
 
-  // cct/cct.c -- really, 'cct_node_t *', but that pulls in too much
-  // and generates an error
-  void * cct_node_freelist_head;
+  // cct/cct.c
+  struct cct_node_t * cct_node_freelist_head;
 
   // memory/mem.c
   hpcrun_meminfo_t memstore;
@@ -84,24 +85,31 @@ struct tls_data {
   blame_t pthread_blame;
 
   // sample-sources/perf/kernel_blocking.c
+  // time when leaving the application process
   uint64_t perf_time_cs_out;
-  void *   perf_cct_kernel;
+  // cct of the last access to kernel
+  void * perf_cct_kernel;
+  // cpu of the last sample
   uint32_t perf_cpu;
+  // last pid/tid
   uint32_t perf_pid;
   uint32_t perf_tid;
 
   // skiplist/cskiplist.c
+  // thread local free csklnode list
   struct csklnode_s * lf_cskl_nodes;
 
   // skiplist/urand.c
   int urand_initialized;
   unsigned int urand_data;
 
-  // unwind/common/binarytree_uwi.c -- really 'bitree_uwi_t * [NUM_UNWINDERS]'
-  void * _lf_uwi_tree[NUM_UNWINDERS];
+  // unwind/common/binarytree_uwi.c
+  // thread local free unwind interval tree
+  bitree_uwi_t * _lf_uwi_tree[NUM_UNWINDERS];
 
-  // unwind/common/uw_recipe_map.c -- really 'ilmstat_btuwi_pair_t *'
-  void * _lf_ilmstat_btuwi;
+  // unwind/common/uw_recipe_map.c
+  // thread local free list of ilmstat_btuwi_pair_t *
+  struct ilmstat_btuwi_pair_s * _lf_ilmstat_btuwi;
 };
 
 #endif  // _tls_specific_h_

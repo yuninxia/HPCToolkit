@@ -62,10 +62,6 @@ static kind_info_t *blocktime_kind;
 static event_custom_t event_kernel_blocking;
 
 
-// static __thread u64          time_cs_out = 0;    // time when leaving the application process
-// static __thread cct_node_t  *cct_kernel  = NULL; // cct of the last access to kernel
-// static __thread u32          cpu = 0;           // cpu of the last sample
-// static __thread u32          pid = 0, tid = 0;  // last pid/tid
 
 /******************************************************************************
  * private operations

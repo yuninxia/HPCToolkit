@@ -78,14 +78,9 @@ hpcrun_thread_core_bindings
 // data
 //***************************************************************************
 
-#ifdef USE_GCC_THREAD
-// __thread int monitor_tid = -1;
-#endif // USE_GCC_THREAD
-
 static thread_data_t _local_td;
 static pthread_key_t _hpcrun_key;
 static int use_getspecific = 0;
-// static __thread bool mem_pool_initialized = false;
 
 void
 hpcrun_init_pthread_key

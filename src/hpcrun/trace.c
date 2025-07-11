@@ -160,7 +160,6 @@ hpcrun_trace_append_with_time(core_profile_trace_data_t *st, unsigned int call_p
         }
 }
 
-// __thread uint64_t prev_nanotime = 0;
 
 void
 hpcrun_trace_append(core_profile_trace_data_t *cptd, cct_node_t* node, unsigned int metric_id, uint32_t dLCA, uint64_t sampling_period)

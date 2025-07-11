@@ -161,10 +161,6 @@ struct hpcrun_aux_cleanup_t {
 bool hpcrun_no_unwind = false;
 bool hpcrun_local_rank_disabled = false;
 
-/******************************************************************************
- * (public declaration) thread-local variables
- *****************************************************************************/
-// static __thread bool hpcrun_thread_suppress_sample = true;
 
 //***************************************************************************
 // local variables
@@ -741,10 +737,6 @@ hpcrun_fini_internal()
 //------------------------------------
 // thread level
 //------------------------------------
-
-#ifdef USE_GCC_THREAD
-// extern __thread monitor_tid;
-#endif // USE_GCC_THREAD
 
 static void
 hpcrun_init_thread_support()

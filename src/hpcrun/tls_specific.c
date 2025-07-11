@@ -40,23 +40,9 @@
 // struct), the full struct must appear in tls_data, and the header
 // files to define the struct must be in tls_specific.h
 //
-// (2) For a pointer to a complex type, you can use 'void *' in
-// tls_data and then cast to the correct type when extracting the
-// variable.  For example, in cct/cct.c, we replaced:
-//
-//   __thread cct_node_t* cct_node_freelist_head = NULL;
-//
-// with an void* entry in tls_data:
-//
-//   void * cct_node_freelist_head;
-//
-// and then cast the thread-specific pointer as:
-//
-//   cct_node_t** cct_node_freelist_head =
-//     (cct_node_t**) TLS_GETSPECIFIC(cct_node_freelist_head);
-//
-// This saves having to pull in several header files to define
-// cct_node_t in tls_specific.[ch].
+// (2) For a pointer to a complex type, one option is to use 'void *'
+// in tls_data and then cast to the correct type when extracting the
+// variable.
 //
 // (3) Initialization is done in hpcrun_init_tls_data() at the bottom
 // of this file.  But you really only need to initialize the non-zero
@@ -147,7 +133,7 @@ hpcrun_tls_specific_init_process(void)
 // pthread_setspecific() for each thread.
 // called once per thread from pthread start routine
 //
-void
+void *
 hpcrun_tls_specific_init_thread(void)
 {
   hpcrun_tls_data_t * data = malloc(sizeof(hpcrun_tls_data_t));
@@ -161,6 +147,8 @@ hpcrun_tls_specific_init_thread(void)
   if (pthread_setspecific(tls_key, data) != 0) {
     hpcrun_abort("hpcrun: pthread_setspecific() failed");
   }
+
+  return data;
 }
 
 //----------------------------------------------------------------------
@@ -174,25 +162,27 @@ hpcrun_init_tls_data(hpcrun_tls_data_t *data)
 {
   memset(data, 0, sizeof(hpcrun_tls_data_t));
 
-  // ompt tls variables
   data->ompt_specific = hpcrun_ompt_alloc_specific();
-
-  // main.c
   data->suppress_sample = true;
-
-  // sample_sources_all.c
   data->ignore_thread = THREAD_DOINIT;
-
-  // thread_data.c
   data->monitor_tid = -1;
   data->mem_pool_initialized = false;
-
-  // cct/cct.c
+  data->prev_nanotime = 0;
   data->cct_node_freelist_head = NULL;
-
-  // sample-sources/papi-c-intel.c
+  data->memstore = (hpcrun_meminfo_t) { NULL, NULL, NULL, 0 };
+  data->mem_low = 0;
+  data->wallclock_ok = false;
+  data->event_set_created = false;
+  data->event_set_finalized = false;
   data->my_event_set = PAPI_NULL;
-
-  // sample-sources/pthread-blame.c
-  data->pthread_blame = (blame_t) {0, Running};
+  data->pthread_blame = (blame_t) { 0, Running };
+  data->perf_time_cs_out = 0;
+  data->perf_cct_kernel = NULL;
+  data->perf_cpu = 0;
+  data->perf_pid = 0;
+  data->perf_tid = 0;
+  data->lf_cskl_nodes = NULL;
+  data->urand_initialized = 0;
+  data->urand_data = 0;
+  data->_lf_ilmstat_btuwi = NULL;
 }

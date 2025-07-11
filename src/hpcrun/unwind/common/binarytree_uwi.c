@@ -30,7 +30,6 @@ static struct {
   mem_alloc alloc;
 } GF[NUM_UNWINDERS];
 
-// static __thread  bitree_uwi_t *_lf_uwi_tree[NUM_UNWINDERS]; // thread local free unwind interval tree
 
 /*
  * initialize the MCS lock for the hidden global free unwind interval tree.

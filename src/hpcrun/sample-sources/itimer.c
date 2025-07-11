@@ -149,7 +149,6 @@ static struct itimerspec itspec_stop;
 
 static sigset_t timer_mask;
 
-// static __thread bool wallclock_ok = false;
 
 // ****************************************************************************
 // * public helper function

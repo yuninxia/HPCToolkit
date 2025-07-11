@@ -58,13 +58,6 @@ static long total_non_freeable = 0;
 static int out_of_mem_mesg = 0;
 
 
-// ---------------------------------------------------
-// hpcrun_malloc() memory thread local data structures
-// ---------------------------------------------------
-// __thread hpcrun_meminfo_t memstore;
-// __thread int              mem_low;
-
-
 
 //------------------------------------------------------------------
 // Internal functions

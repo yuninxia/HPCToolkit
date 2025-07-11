@@ -64,7 +64,6 @@ typedef enum {
 static csklnode_t *GF_cskl_nodes = NULL; // global free csklnode list
 static mcs_lock_t GFCN_lock;  // lock for GF_cskl_nodes
 
-// static __thread  csklnode_t *_lf_cskl_nodes = NULL;  // thread local free csklnode list
 
 
 //******************************************************************************

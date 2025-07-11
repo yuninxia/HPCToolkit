@@ -100,8 +100,6 @@ static sample_source_t* sample_sources = NULL;
 static sample_source_t** ss_insert     = &sample_sources;
 static size_t n_sources = 0;
 
-// static __thread int ignore_thread = THREAD_DOINIT;
-
 
 
 //*******************************************************************
