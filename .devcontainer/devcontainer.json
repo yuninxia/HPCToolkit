@@ -3,6 +3,9 @@
     "SYS_ADMIN",
     "PERFMON"
   ],
+  "containerEnv": {
+    "LANG": "${localEnv:LANG:C.UTF-8}"
+  },
   "customizations": {
     "vscode": {
       "extensions": [
