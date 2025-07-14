@@ -1,7 +1,4 @@
 {
-  "build": {
-    "dockerfile": "Dockerfile"
-  },
   "capAdd": [
     "SYS_ADMIN",
     "PERFMON"
@@ -20,13 +17,11 @@
           "--compile-commands-dir=${config:mesonbuild.buildFolder}"
         ],
         "mesonbuild.buildFolder": ".devcontainer/builddir-${devcontainerId}",
-        "mesonbuild.configureOnOpen": true,
-        "mesonbuild.configureOptions": [
-          "--native-file=hpctoolkit-all-features.ini"
-        ]
+        "mesonbuild.configureOnOpen": true
       }
     }
   },
+  "image": "registry.gitlab.com/hpctoolkit/rtt-images:1.0.0-aio",
   "mounts": [
     {
       "source": "ccache-${devcontainerId}",
