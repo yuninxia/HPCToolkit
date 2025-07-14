@@ -15,6 +15,7 @@
 
 #include "memory/newmem.h"
 #include "sample-sources/pthread-blame.h"
+#include "sample-sources/perf/perf_constants.h"
 #include "unwind/common/binarytree_uwi.h"
 
 struct cct_node_t;
@@ -86,14 +87,14 @@ struct tls_data {
 
   // sample-sources/perf/kernel_blocking.c
   // time when leaving the application process
-  uint64_t perf_time_cs_out;
+  u64 perf_time_cs_out;
   // cct of the last access to kernel
-  void * perf_cct_kernel;
+  struct cct_node_t * perf_cct_kernel;
   // cpu of the last sample
-  uint32_t perf_cpu;
+  u32 perf_cpu;
   // last pid/tid
-  uint32_t perf_pid;
-  uint32_t perf_tid;
+  u32 perf_pid;
+  u32 perf_tid;
 
   // skiplist/cskiplist.c
   // thread local free csklnode list

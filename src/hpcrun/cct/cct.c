@@ -1211,18 +1211,12 @@ cct_remove_my_subtree(cct_node_t* cct){
 }
 
 
-// FIXME: is this proper place for handling memory leaks caused by cct_node_t
-// frelist manipulation
-
-// __thread cct_node_t* cct_node_freelist_head = NULL;
-
 // vi3: functions used for manipulation of freelist of trees
 void
 add_node_to_freelist(cct_node_t* cct){
   // parent is used as a next pointer
   if(cct){
-    cct_node_t** cct_node_freelist_head =
-      (cct_node_t**) TLS_GETSPECIFIC(cct_node_freelist_head);
+    cct_node_t** cct_node_freelist_head = TLS_GETSPECIFIC(cct_node_freelist_head);
     cct->parent = *cct_node_freelist_head;
     *cct_node_freelist_head = cct;
   }
@@ -1231,8 +1225,7 @@ add_node_to_freelist(cct_node_t* cct){
 // vi3: remove root of first tree in the freelist
 cct_node_t*
 remove_node_from_freelist(){
-  cct_node_t** cct_node_freelist_head =
-    (cct_node_t**) TLS_GETSPECIFIC(cct_node_freelist_head);
+  cct_node_t** cct_node_freelist_head = TLS_GETSPECIFIC(cct_node_freelist_head);
   cct_node_t* first_root = *cct_node_freelist_head;
   if(!first_root){
     return NULL;

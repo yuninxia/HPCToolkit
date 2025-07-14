@@ -71,7 +71,7 @@ static void
 blame_kernel_time(event_thread_t *current_event, cct_node_t *cct_kernel,
     perf_mmap_data_t *mmap_data)
 {
-  u64 * time_cs_out = (u64 *) TLS_GETSPECIFIC(perf_time_cs_out);
+  u64 * time_cs_out = TLS_GETSPECIFIC(perf_time_cs_out);
   u32 * cpu = TLS_GETSPECIFIC(perf_cpu);
   u32 * pid = TLS_GETSPECIFIC(perf_pid);
   u32 * tid = TLS_GETSPECIFIC(perf_tid);
@@ -129,8 +129,8 @@ void
 kernel_block_handler( event_thread_t *current_event, sample_val_t sv,
     perf_mmap_data_t *mmap_data)
 {
-  u64 * time_cs_out = (u64 *) TLS_GETSPECIFIC(perf_time_cs_out);
-  cct_node_t ** cct_kernel = (cct_node_t **) TLS_GETSPECIFIC(perf_cct_kernel);
+  u64 * time_cs_out = TLS_GETSPECIFIC(perf_time_cs_out);
+  cct_node_t ** cct_kernel = TLS_GETSPECIFIC(perf_cct_kernel);
   u32 * cpu = TLS_GETSPECIFIC(perf_cpu);
   u32 * pid = TLS_GETSPECIFIC(perf_pid);
   u32 * tid = TLS_GETSPECIFIC(perf_tid);
