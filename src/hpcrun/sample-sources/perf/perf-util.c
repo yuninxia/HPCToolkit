@@ -19,6 +19,7 @@
  *****************************************************************************/
 
 #include "../../cct_insert_backtrace.h"
+#include "../../libc-functions.h"
 #include "../../../common/lean/spinlock.h"     // hostid
 #include "../../../common/lean/OSUtil.h"     // hostid
 
@@ -155,7 +156,7 @@ perf_get_kernel_lm_id()
       if (perf_util_get_kptr_restrict() == 0) {
 
         char buffer[MAX_BUFFER_LINUX_KERNEL];
-        OSUtil_setCustomKernelNameWrap(buffer, MAX_BUFFER_LINUX_KERNEL);
+        OSUtil_setCustomKernelNameWrap(buffer, MAX_BUFFER_LINUX_KERNEL, libc_getenv);
         perf_kernel_lm_id = hpcrun_loadModule_add(buffer);
 
       } else {

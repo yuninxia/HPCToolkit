@@ -33,6 +33,7 @@
 #include "../hpcrun-sonames.h"
 #include "../../../../audit/audit-api.h"
 #include "../../../../cct/cct.h"
+#include "../../../../libc-functions.h"
 #include "../../common/gpu-binary.h"
 #include "../../../activity/gpu-activity-channel.h"
 #include "../../common/gpu-instrumentation.h"
@@ -96,7 +97,7 @@ static uintptr_t (*gtpin_lookup_kernel_ip_fn)(const char *kernel_name);
 
 static void init()
 {
-  Lmid_t scope = getenv("HPCRUN_GTPIN_VISIBLE") ? LM_ID_BASE : LM_ID_NEWLM;
+  Lmid_t scope = libc_getenv("HPCRUN_GTPIN_VISIBLE") ? LM_ID_BASE : LM_ID_NEWLM;
   void *hpcrun_gtpinlib = dlmopen(scope, HPCRUN_GTPIN_CXX_SO,
                                   RTLD_LOCAL | RTLD_LAZY);
   if (hpcrun_gtpinlib == NULL) {

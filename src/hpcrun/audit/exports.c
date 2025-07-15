@@ -15,6 +15,10 @@
 #include <signal.h>
 #include <pthread.h>
 
+// no-op for --disable-auditor
+static void initialization_dummy(void) {};
+
+
 __attribute__((visibility("default")))
 void export_symbols(auditor_exports_t* exports) {
   exports->exit = exit;
@@ -24,4 +28,7 @@ void export_symbols(auditor_exports_t* exports) {
   exports->pthread_self = pthread_self;
   exports->pthread_kill = pthread_kill;
   exports->pthread_setcancelstate = pthread_setcancelstate;
+  exports->getenv = getenv;
+  exports->begin_initialization = initialization_dummy;
+  exports->end_initialization = initialization_dummy;
 }

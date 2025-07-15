@@ -44,6 +44,7 @@
 
 #include "../control-knob.h"
 #include "../device-finalizers.h"
+#include "../libc-functions.h"
 #include "../gpu/api/amd/roctracer-api.h"
 #include "../gpu/api/amd/rocprofiler-api.h"
 #include "../gpu/activity/gpu-activity.h"
@@ -183,8 +184,8 @@ METHOD_FN(gen_event_set)
 static void
 METHOD_FN(display_events)
 {
-  const char* rocp_metrics = getenv("ROCP_METRICS");
-  const char* hsa_tools_lib = getenv("HSA_TOOLS_LIB");
+  const char* rocp_metrics = libc_getenv("ROCP_METRICS");
+  const char* hsa_tools_lib = libc_getenv("HSA_TOOLS_LIB");
   if (rocp_metrics == NULL || rocp_metrics[0] == '\0'
       || hsa_tools_lib == NULL || hsa_tools_lib[0] == '\0') {
     display_header(stdout, "AMD GPU hardware counter events");

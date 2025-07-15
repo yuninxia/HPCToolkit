@@ -31,7 +31,7 @@
 #include <stdio.h>     // fopen, fclose, etc
 #include <dlfcn.h>     // for dlopen/dlclose
 #include <string.h>    // for strcmp, strerror
-#include <stdlib.h>    // for getenv
+#include <stdlib.h>
 #include <errno.h>     // for errno
 #include <stdint.h>
 #include <stdbool.h>

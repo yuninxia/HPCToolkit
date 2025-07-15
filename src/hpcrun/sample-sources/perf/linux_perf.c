@@ -54,6 +54,7 @@
 #include "../common.h"
 #include "../ss-errno.h"
 
+#include "../../libc-functions.h"
 #include "../../memory/hpcrun-malloc.h"
 #include "../../main.h"
 #include "../../cct_insert_backtrace.h"
@@ -279,7 +280,7 @@ copy_kallsyms()
   snprintf(dest_directory, PATH_MAX, "%s/%s", output_directory,
            KERNEL_SYMBOLS_DIRECTORY);
 
-  OSUtil_setCustomKernelName(kernel_name, PATH_MAX);
+  OSUtil_setCustomKernelName(kernel_name, PATH_MAX, libc_getenv);
 
   // we need to keep the host-id to be exactly the same template
   // as the hpcrun file. If the filename format changes in hpcun
@@ -591,7 +592,7 @@ set_default_threshold()
     if (default_threshold.threshold_val > max_rate_m1) {
       default_threshold.threshold_val = max_rate_m1;
     }
-    const char *val_str = getenv("HPCRUN_PERF_COUNT");
+    const char *val_str = libc_getenv("HPCRUN_PERF_COUNT");
     if (val_str != NULL) {
       TMSG(LINUX_PERF, "HPCRUN_PERF_COUNT = %s", val_str);
       int res = hpcrun_extract_threshold(val_str, &default_threshold.threshold_val, max_rate_m1);

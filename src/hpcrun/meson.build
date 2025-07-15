@@ -514,7 +514,7 @@ main_hpcrun_lib = shared_library(
   common_lean_srcs,
   gnu_symbol_visibility: 'hidden',
   link_language: 'c',
-  implicit_include_directories: false,
+  implicit_include_directories: true,
   dependencies: [
     common_lean_deps,
     cupti_dep.partial_dependency(compile_args: true, includes: true),
@@ -555,6 +555,7 @@ audit_lib = shared_library(
   'audit/private-ns.c',
   'foil/workarounds/dl-iterate-phdr.c',
   'foil/workarounds/pthread-key.c',
+  'audit/symbol-bindings.c',
   gnu_symbol_visibility: 'hidden',
   implicit_include_directories: false,
   dependencies: [dl_dep, threads_dep],
@@ -663,7 +664,7 @@ preload_libdl_rawlib = shared_library(
   'hpcrun_preload_libdl_UNSANITIZED',
   'foil/libdl-preload.c',
   gnu_symbol_visibility: 'hidden',
-  implicit_include_directories: false,
+  implicit_include_directories: true,
   dependencies: [dl_dep, threads_dep],
   link_language: 'c',
 )

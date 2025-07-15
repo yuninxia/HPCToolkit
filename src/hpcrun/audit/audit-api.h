@@ -53,6 +53,7 @@ typedef struct auditor_hooks_t {
                          void *data);
 } auditor_hooks_t;
 
+
 typedef struct auditor_exports_t {
   // Called by the mainlib once it is prepared to receive notifications.
   void (*mainlib_connected)(const char* vdso_path, const auditor_hooks_t*);
@@ -71,6 +72,11 @@ typedef struct auditor_exports_t {
   pthread_t (*pthread_self)();
   int (*pthread_kill)(pthread_t, int);
   int (*pthread_setcancelstate)(int, int*);
+  char *(*getenv)(const char *);
+
+  // control temporary wrapping of libc exports
+  void (*begin_initialization)(void);
+  void (*end_initialization)(void);
 } auditor_exports_t;
 
 // Get a pointer to the current set of auditor exports

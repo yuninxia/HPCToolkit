@@ -49,6 +49,7 @@
 #include "disabled.h"
 #include "env.h"
 #include "control-knob.h"
+#include "libc-functions.h"
 #include "loadmap.h"
 #include "files.h"
 #include "fnbounds/fnbounds_interface.h"
@@ -201,12 +202,12 @@ bool hpcrun_suppress_sample()
 
 bool hpcrun_local_rank_enabled()
 {
-  const char *local_ranks = getenv("HPCRUN_LOCAL_RANKS");
-  const char *my_rank = OSUtil_local_rank();
+  const char *local_ranks = libc_getenv("HPCRUN_LOCAL_RANKS");
+  const char *my_rank = OSUtil_local_rank(libc_getenv);
 
   // a testing harness
   if (my_rank == 0) {
-    my_rank = getenv("HPCRUN_LOCAL_RANK");
+    my_rank = libc_getenv("HPCRUN_LOCAL_RANK");
   }
 
 #ifdef DEBUG_LOCAL_RANKS
@@ -239,7 +240,7 @@ bool hpcrun_local_rank_enabled()
 static const char *
 hpcrun_event_list()
 {
-  const char *event_list = getenv("HPCRUN_EVENT_LIST");
+  const char *event_list = libc_getenv("HPCRUN_EVENT_LIST");
   return event_list;
 }
 
@@ -420,9 +421,9 @@ hpcrun_set_abort_timeout()
 {
   static int process_index = 0;
 
-  char *abort_timeout = getenv("HPCRUN_ABORT_TIMEOUT");
+  char *abort_timeout = libc_getenv("HPCRUN_ABORT_TIMEOUT");
 
-  char *abort_process_str = getenv("HPCRUN_ABORT_PROCESS_INDEX");
+  char *abort_process_str = libc_getenv("HPCRUN_ABORT_PROCESS_INDEX");
   int abort_process_index = abort_process_str ? atoi(abort_process_str) : 0;
 
   if (abort_timeout && process_index++ >= abort_process_index) {
@@ -480,7 +481,7 @@ hpcrun_init_internal(bool is_child)
 
 
 #if defined(HOST_CPU_x86) || defined(HOST_CPU_x86_64) || defined(HOST_CPU_PPC)
-  if (getenv("HPCRUN_ONLY_DUMP_INTERVALS")) {
+  if (libc_getenv("HPCRUN_ONLY_DUMP_INTERVALS")) {
     fnbounds_table_t table = fnbounds_fetch_executable_table();
     TMSG(INTERVALS_PRINT, "table data = %p", table.table);
     TMSG(INTERVALS_PRINT, "table length = %d", table.len);
@@ -548,8 +549,8 @@ hpcrun_init_internal(bool is_child)
       // temporary debugging code for x86 / ppc64
 
       extern void hpcrun_dump_intervals(void* addr2);
-      char* addr1 = getenv("ADDR1");
-      char* addr2 = getenv("ADDR2");
+      char* addr1 = libc_getenv("ADDR1");
+      char* addr2 = libc_getenv("ADDR2");
 
       if (addr1 != NULL) {
         addr1 = (void*) (uintptr_t) strtol(addr1, NULL, 0);
@@ -591,7 +592,7 @@ hpcrun_init_internal(bool is_child)
   hpcrun_itimer_wallclock_ok(true);
 
   // NOTE: hack to ensure that sample source start can be delayed until mpi_init
-  if (hpcrun_sampling_is_active() && ! getenv("HPCRUN_MPI_ONLY")) {
+  if (hpcrun_sampling_is_active() && ! libc_getenv("HPCRUN_MPI_ONLY")) {
     SAMPLE_SOURCES(start);
   }
 
@@ -980,6 +981,8 @@ monitor_at_main()
   }
 
   hpcrun_prepare_measurement_subsystem(is_child);
+
+  auditor_exports()->end_initialization();
 }
 
 
@@ -1001,7 +1004,7 @@ void hpcrun_prepare_measurement_subsystem(bool is_child)
     hpcrun_registered_sources_init();
 
     // for debugging, limit the life of the execution with an alarm.
-    char* life  = getenv("HPCRUN_LIFETIME");
+    char* life  = libc_getenv("HPCRUN_LIFETIME");
     if (life != NULL){
       int seconds = atoi(life);
       if (seconds > 0) alarm((unsigned int) seconds);
@@ -1268,7 +1271,7 @@ monitor_init_thread(int tid, void* data)
   //
   // Do nothing if ignoring thread
   //
-  Token_iterate(tok, getenv("HPCRUN_IGNORE_THREAD"), " ,",
+  Token_iterate(tok, libc_getenv("HPCRUN_IGNORE_THREAD"), " ,",
     {
       if (atoi(tok) == tid) {
         *suppress_sample = true;
@@ -1367,7 +1370,43 @@ static const auditor_hooks_t auditor_hooks = {
 static const auditor_exports_t* auditor_exports_cache = NULL;
 
 static void load_exports() {
-  pfn_connect_to_auditor connect = dlsym(RTLD_DEFAULT, "hpcrun_connect_to_auditor");
+  // vvvvvvvvvvvvvvvvv WARNING: THIS IS EXTREMELY SUBTLE CODE vvvvvvvvvvvvvvvvv
+  // When not auditing, we don't want to find the symbol hpcrun_connect_to_auditor
+  // in libhpcrun.so. Since we load libhpcrun.so with DEEPBIND in
+  // common-preload.c, by default, it will be the first thing searched. Here, we
+  // dlopen the main program with dlopen(NULL,...) and then dlsym causes a search
+  // for a symbol in the main program, followed by all shared objects loaded at
+  // program startup, and then all shared objects loaded by dlopen() with the
+  // flag RTLD_GLOBAL. This will cause us to see the definition in
+  // libdl-preload.c, which supports the fake auditor.
+  //
+      void *handle = dlopen(NULL, RTLD_LAZY | RTLD_NOLOAD); // handle for main pgm
+      pfn_connect_to_auditor connect =
+        dlsym(handle, "hpcrun_connect_to_auditor");
+  //
+  // Signed: Jonathon Anderson and John Mellor-Crummey
+  // ^^^^^^^^^^^^^^^^^ WARNING: THIS IS EXTREMELY SUBTLE CODE ^^^^^^^^^^^^^^^^^
+
+  if (connect == NULL) {
+    // vvvvvvvvvvvvvvvv WARNING: THIS IS EXTREMELY SUBTLE CODE vvvvvvvvvvvvvvvv
+    // The code and comment above was not the end of the tale. When hpcrun's auditor
+    // is enabled, we won't find the symbol hpcrun_connect_to_auditor when searching
+    // from the position of the main program in the link map. If connect == NULL
+    // here, we assume that this is why. To address this case, we search the
+    // default namespace with using dlsym(RTLD_DEFAULT, ...), which will cause us
+    // to see the definition of hpcrun_connect_to_auditor in libhpcrun.so.
+    //
+    // You might ask why we look for hpcrun_connect_to_auditor in two different ways
+    // rather than consulting an environment variable to determine whether we are
+    // auditing or not. At the point this code executes, it may not even be safe
+    // to call getenv. That's another thing that makes this code subtle :-).
+    //
+        connect = dlsym(RTLD_DEFAULT, "hpcrun_connect_to_auditor");
+    //
+    // Signed: Jonathon Anderson and John Mellor-Crummey
+    // ^^^^^^^^^^^^^^^^^ WARNING: THIS IS EXTREMELY SUBTLE CODE ^^^^^^^^^^^^^^^^^
+  }
+
   if (connect == NULL) {
     fprintf(stderr, "hpcrun: unable to connect to auditor: %s\n", dlerror());
     abort();

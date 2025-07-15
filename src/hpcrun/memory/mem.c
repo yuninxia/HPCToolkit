@@ -31,6 +31,7 @@
 #undef _IN_MEM_C
 
 #include "../env.h"
+#include "../libc-functions.h"
 #include "newmem.h"
 #include "../sample_event.h"
 #include "../thread_data.h"
@@ -92,12 +93,12 @@ hpcrun_mem_init(void)
   }
 #endif
 
-  str = getenv(HPCRUN_MEMSIZE);
+  str = libc_getenv(HPCRUN_MEMSIZE);
   if (str != NULL && sscanf(str, "%ld", &result) == 1) {
     memsize = hpcrun_align_pagesize(result);
   }
 
-  str = getenv(HPCRUN_LOW_MEMSIZE);
+  str = libc_getenv(HPCRUN_LOW_MEMSIZE);
   if (str != NULL && sscanf(str, "%ld", &result) == 1) {
     low_memsize = result;
   } else {
