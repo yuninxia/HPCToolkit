@@ -3,21 +3,25 @@
 # SPDX-License-Identifier: Apache-2.0
 
 test_srcs = files(
+  '../common/lean/usec_time.c',
   'sample-sources/exclude-test.cpp',
   'sample-sources/exclude.c',
   'sample-sources/perf/event_name_parser.c',
   'sample-sources/perf/event_name_parser_test.cpp',
-  'skiplist/randomizer-test.cpp',
   'skiplist/randomizer-support.c',
+  'skiplist/randomizer-test.cpp',
   'skiplist/randomizer.c',
   'skiplist/urand.c',
   'tls_specific.c',
-  '../common/lean/usec_time.c',
 )
 
 test(
   'hpcrun-unit',
-  executable('hpcrun-unit-test', test_srcs, dependencies: [gtest_main_dep, gmock_dep, papi_dep]),
+  executable(
+    'hpcrun-unit-test',
+    test_srcs,
+    dependencies: [gtest_main_dep, gmock_dep, papi_dep],
+  ),
   protocol: 'gtest',
 )
 
