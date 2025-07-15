@@ -10,10 +10,19 @@
 #include <iterator>
 #include <numeric>
 
+extern "C" void hpcrun_tls_specific_init_process();
+
+class RandomizerTest : public testing::Test {
+protected:
+  RandomizerTest() {
+    hpcrun_tls_specific_init_process();
+  }
+};
+
 // test that the random levels for skip list node heights have the proper
 // distribution between 1 .. max_height, where the probability of 2^h is
 // half that of 2^(h-1), for h in [2 .. max_height]
-TEST(RandomizerTest, Distribution) {
+TEST_F(RandomizerTest, Distribution) {
   constexpr size_t samples = 1024ULL * 1024;
   constexpr size_t degrees = 10;
   constexpr double critical_chi = 25.19; // p = 1/2000
