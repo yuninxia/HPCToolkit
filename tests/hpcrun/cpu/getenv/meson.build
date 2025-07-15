@@ -4,7 +4,7 @@
 
 test(
   'ensure hpcrun does not see getenv in application'.format(simple_tstexe.name()),
-  args: [hpctesttool, hpcrun, test-getenv],
+  args: [hpctesttool, hpcrun, test - getenv],
   suite: 'hpcrun',
   depends: hpcrun_test_depends,
 )
