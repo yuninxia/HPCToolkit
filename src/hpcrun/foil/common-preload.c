@@ -129,7 +129,7 @@ static void load_core_foil() {
 
   // Signed: Jonathon Anderson and John Mellor-Crummey
   // ^^^^^^^^^^^^^^^^^ WARNING: THIS IS EXTREMELY SUBTLE CODE ^^^^^^^^^^^^^^^^^
-  
+
   if (h == NULL) {
     fprintf(stderr, "hpcrun: Error loading libhpcrun.so: %s\n", dlerror());
     abort();

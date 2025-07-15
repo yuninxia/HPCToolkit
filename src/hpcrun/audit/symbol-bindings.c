@@ -9,7 +9,7 @@
 //***************************************************************************
 
 #define _GNU_SOURCE
-#include <dlfcn.h>  // for dlopen, dlsym, and RTLD_LAZY 
+#include <dlfcn.h>  // for dlopen, dlsym, and RTLD_LAZY
 
 #include <stdatomic.h> // for atomic_compare_exchange_strong
 #include <stdlib.h> // for exit and getenv
