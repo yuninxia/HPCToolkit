@@ -14,9 +14,7 @@ extern "C" void hpcrun_tls_specific_init_process();
 
 class RandomizerTest : public testing::Test {
 protected:
-  RandomizerTest() {
-    hpcrun_tls_specific_init_process();
-  }
+  RandomizerTest() { hpcrun_tls_specific_init_process(); }
 };
 
 // test that the random levels for skip list node heights have the proper
