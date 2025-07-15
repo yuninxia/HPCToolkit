@@ -625,7 +625,7 @@ uintptr_t la_symbind32(Elf32_Sym *sym, unsigned int ndx,
   if(*refcook != 0 && dl_runtime_resolver_ptr != 0)
     optimize_object_plt((object_t*)*refcook);
 
-  uintptr_t binding;
+  uintptr_t binding = sym->st_value;
   if (audit_symbol_binding(symname, &binding)) return binding;
 
   return sym->st_value;
@@ -639,7 +639,7 @@ uintptr_t la_symbind64(Elf64_Sym *sym, unsigned int ndx,
   if(*refcook != 0 && dl_runtime_resolver_ptr != 0)
     optimize_object_plt((object_t*)*refcook);
 
-  uintptr_t binding = 0;
+  uintptr_t binding = sym->st_value;
   if (audit_symbol_binding(symname, &binding)) return binding;
 
   return sym->st_value;
