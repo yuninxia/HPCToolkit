@@ -7,25 +7,12 @@ include:
     inputs:
       job_stage: code quality
 
-  - component: &ci_predeps gitlab.com/blue42u/ci.predeps/buildah@1
-    inputs:
-      <<: &ci_predeps_shared
-        fallback_registry: registry.gitlab.com/hpctoolkit/hpctoolkit/ci.predeps
-      name: dev-amd64
-      context_dir: .devcontainer/
-      containerfile: Dockerfile
-  - component: *ci_predeps
-    inputs:
-      <<: *ci_predeps_shared
-      name: ubuntu24.04-amd64
-      containerfile: .ci.predeps/Containerfile.ubuntu24.04
-
 # Run clang-format 18.x across the repository, via the Meson convenience target.
 clang-format:
   stage: code quality
   tags: [saas-linux-small-amd64]
-  needs: ["predeps: [ubuntu24.04-amd64]"]
-  image: $PREDEPS_IMAGE_UBUNTU24_04_AMD64
+  needs: []
+  image: registry.gitlab.com/hpctoolkit/rtt-images:1.0.0-ubuntu24.04
   script:
     - meson setup --backend=ninja builddir
     - if ninja -C builddir/ clang-format-check; then exit 0; fi
@@ -43,8 +30,8 @@ clang-format:
 # never will be enforced, but it does give rich insight into the quality of the code itself.
 .clang-tidy:
   stage: code quality
-  needs: ["predeps: [dev-amd64]"]
-  image: $PREDEPS_IMAGE_DEV_AMD64
+  needs: []
+  image: registry.gitlab.com/hpctoolkit/rtt-images:1.0.0-aio
   cache:
     key: ccache-clang-tidy
     when: always
@@ -56,7 +43,7 @@ clang-tidy:
   extends: .clang-tidy
   tags: [saas-linux-xlarge-amd64]
   script:
-    - meson setup --native-file=hpctoolkit-ci.ini --backend=ninja builddir
+    - meson setup --backend=ninja builddir
     - ninja -C builddir/
     - ninja -C builddir/ clang-tidy > clang-tidy.raw.txt || true
     - ./ci/cc-diagnostics.py clang-tidy clang-tidy.cq.json clang-tidy.raw.txt
@@ -68,7 +55,7 @@ clang-tidy-fix:
   extends: .clang-tidy
   tags: [saas-linux-xlarge-amd64]
   script:
-    - meson setup --native-file=hpctoolkit-ci.ini --backend=ninja builddir
+    - meson setup --backend=ninja builddir
     - ninja -C builddir/
     - ninja -C builddir/ clang-tidy-fix > /dev/null || true
     - git diff --full-index > clang-tidy-fixits.patch
