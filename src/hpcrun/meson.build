@@ -561,6 +561,7 @@ audit_lib = shared_library(
   'audit/symbol-bindings.c',
   'foil/workarounds/dl-iterate-phdr.c',
   'foil/workarounds/pthread-key.c',
+  'audit/symbol-bindings.c',
   gnu_symbol_visibility: 'hidden',
   implicit_include_directories: false,
   dependencies: [dl_dep, threads_dep],
