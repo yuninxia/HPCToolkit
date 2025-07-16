@@ -1216,7 +1216,7 @@ void
 add_node_to_freelist(cct_node_t* cct){
   // parent is used as a next pointer
   if(cct){
-    cct_node_t** cct_node_freelist_head = TLS_GETSPECIFIC(cct_node_freelist_head);
+    cct_node_t** cct_node_freelist_head = &TLS_GET(cct_node_freelist_head);
     cct->parent = *cct_node_freelist_head;
     *cct_node_freelist_head = cct;
   }
@@ -1225,7 +1225,7 @@ add_node_to_freelist(cct_node_t* cct){
 // vi3: remove root of first tree in the freelist
 cct_node_t*
 remove_node_from_freelist(){
-  cct_node_t** cct_node_freelist_head = TLS_GETSPECIFIC(cct_node_freelist_head);
+  cct_node_t** cct_node_freelist_head = &TLS_GET(cct_node_freelist_head);
   cct_node_t* first_root = *cct_node_freelist_head;
   if(!first_root){
     return NULL;

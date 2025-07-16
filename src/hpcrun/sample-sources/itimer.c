@@ -156,9 +156,7 @@ static sigset_t timer_mask;
 
 void hpcrun_itimer_wallclock_ok(bool flag)
 {
-  bool * wallclock_ok = TLS_GETSPECIFIC(wallclock_ok);
-
-  *wallclock_ok = flag;
+  TLS_GET(wallclock_ok) = flag;
 }
 
 /******************************************************************************
@@ -605,10 +603,8 @@ itimer_signal_handler(int sig, siginfo_t* siginfo, void* context)
     return 0; // tell monitor that the signal has been handled
   }
 
-  bool * wallclock_ok = TLS_GETSPECIFIC(wallclock_ok);
-
   // If we got a wallclock signal not meant for our thread, then drop the sample
-  if (! *wallclock_ok) {
+  if (! TLS_GET(wallclock_ok)) {
     EMSG("Received Linux timer signal, but thread not initialized");
   }
   // If the interrupt came from inside our code, then drop the sample

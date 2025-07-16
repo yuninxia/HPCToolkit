@@ -215,11 +215,10 @@ hpcrun_make_memstore(hpcrun_meminfo_t *mi)
 void
 hpcrun_reclaim_freeable_mem(void)
 {
-  hpcrun_meminfo_t *mi = TLS_GETSPECIFIC(memstore);
-  int *mem_low = TLS_GETSPECIFIC(mem_low);
+  hpcrun_meminfo_t *mi = &TLS_GET(memstore);
 
   mi->mi_low = mi->mi_start;
-  *mem_low = 0;
+  TLS_GET(mem_low) = 0;
   num_reclaims++;
   TMSG(MALLOC, "%s: %d", __func__, num_reclaims);
 }
@@ -231,15 +230,13 @@ hpcrun_reclaim_freeable_mem(void)
 void *
 hpcrun_malloc(size_t size)
 {
-  hpcrun_meminfo_t *mi;
-  void *addr;
-
   // Lush wants to ask for 0 bytes and get back NULL.
   if (size == 0) {
     return NULL;
   }
 
-  mi = TLS_GETSPECIFIC(memstore);
+  hpcrun_meminfo_t *mi = &TLS_GET(memstore);
+  void *addr;
   size = round_up(size);
 
   // For a large request that doesn't fit within the existing
@@ -344,6 +341,5 @@ get_mem_low(
   void
 )
 {
-  int *mem_low = TLS_GETSPECIFIC(mem_low);
-  return *mem_low;
+  return TLS_GET(mem_low);
 }

@@ -17,7 +17,7 @@
 struct ompt_tls_data;
 
 #define OMPT_GETSPECIFIC(field)  \
-  (& ((* ((struct ompt_tls_data **) TLS_GETSPECIFIC(ompt_specific)))->field))
+  (& ((* ((struct ompt_tls_data **) &TLS_GET(ompt_specific)))->field))
 
 //----------------------------------------------------------------------
 

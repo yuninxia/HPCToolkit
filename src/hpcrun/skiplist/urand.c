@@ -61,8 +61,8 @@
 int
 urand()
 {
-  int * urand_initialized = TLS_GETSPECIFIC(urand_initialized);
-  unsigned int * urand_data = TLS_GETSPECIFIC(urand_data);
+  int * urand_initialized = &TLS_GET(urand_initialized);
+  unsigned int * urand_data = &TLS_GET(urand_data);
 
   if (! *urand_initialized) {
     *urand_data = usec_time() & LOW_32BITS;

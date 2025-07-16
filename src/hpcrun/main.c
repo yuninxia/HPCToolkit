@@ -196,8 +196,7 @@ static const auditor_hooks_t auditor_hooks;
 
 bool hpcrun_suppress_sample()
 {
-  bool *suppress_sample = TLS_GETSPECIFIC(suppress_sample);
-  return *suppress_sample;
+  return TLS_GET(suppress_sample);
 }
 
 bool hpcrun_local_rank_enabled()
@@ -779,9 +778,8 @@ hpcrun_thread_init(int id, local_thread_data_t* local_thread_data, bool has_trac
   }
 
   epoch_t* epoch = TD_GET(core_profile_trace_data.epoch);
-  bool * suppress_sample = TLS_GETSPECIFIC(suppress_sample);
 
-  if (! *suppress_sample ) {
+  if (! TLS_GET(suppress_sample)) {
     // sample sources take thread specific action prior to start (often is a 'registration' action);
     SAMPLE_SOURCES(thread_init_action);
 
@@ -809,10 +807,8 @@ hpcrun_thread_fini(epoch_t *epoch)
 {
   TMSG(FINI,"thread fini");
 
-  bool *suppress_sample = TLS_GETSPECIFIC(suppress_sample);
-
   // take no action if this thread is suppressed
-  if (! *suppress_sample) {
+  if (! TLS_GET(suppress_sample)) {
     TMSG(FINI,"thread fini stops sampling");
     SAMPLE_SOURCES(stop);
     SAMPLE_SOURCES(thread_fini_action);
@@ -894,8 +890,7 @@ monitor_init_process(int *argc, char **argv, void* data)
 
   hpcrun_tls_specific_init_process();
 
-  bool *suppress_sample = TLS_GETSPECIFIC(suppress_sample);
-  *suppress_sample = false;
+  TLS_GET(suppress_sample) = false;
 
   hpcrun_wait();
 
@@ -1261,11 +1256,10 @@ monitor_init_thread(int tid, void* data)
   hpcrun_tls_specific_init_thread();
 
 #ifdef USE_GCC_THREAD
-  int * monitor_tid = TLS_GETSPECIFIC(monitor_tid);
-  *monitor_tid = tid;
+  TLS_GET(monitor_tid) = tid;
 #endif
 
-  bool *suppress_sample = TLS_GETSPECIFIC(suppress_sample);
+  bool *suppress_sample = &TLS_GET(suppress_sample);
   *suppress_sample = false;
 
   //

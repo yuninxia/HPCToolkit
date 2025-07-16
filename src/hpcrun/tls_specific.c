@@ -184,5 +184,5 @@ hpcrun_init_tls_data(hpcrun_tls_data_t *data)
   data->lf_cskl_nodes = NULL;
   data->urand_initialized = 0;
   data->urand_data = 0;
-  data->_lf_ilmstat_btuwi = NULL;
+  data->lf_ilmstat_btuwi = NULL;
 }

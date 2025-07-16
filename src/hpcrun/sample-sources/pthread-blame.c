@@ -97,9 +97,7 @@ static inline
 uint64_t
 get_blame_target(void)
 {
-  blame_t * pthread_blame = TLS_GETSPECIFIC(pthread_blame);
-
-  return pthread_blame->target;
+  return TLS_GET(pthread_blame).target;
 }
 
 
@@ -165,7 +163,7 @@ process_directed_blame_for_sample(void* arg, int metric_id, cct_node_t* node, in
 
   uint64_t obj_to_blame = get_blame_target();
   if(obj_to_blame) {
-    blame_t * pthread_blame = TLS_GETSPECIFIC(pthread_blame);
+    blame_t * pthread_blame = &TLS_GET(pthread_blame);
 
     TMSG(LOCKWAIT, "about to add %d to blame object %d", metric_incr, obj_to_blame);
     add_blame(obj_to_blame, metric_value);
@@ -199,7 +197,7 @@ pthread_blame_lockwait_enabled(void)
 void
 pthread_directed_blame_shift_blocked_start(void* obj)
 {
-  blame_t * pthread_blame = TLS_GETSPECIFIC(pthread_blame);
+  blame_t * pthread_blame = &TLS_GET(pthread_blame);
 
   TMSG(LOCKWAIT, "Start directed blaming using blame structure %x, for obj %d",
        pthread_blame, (uintptr_t) obj);
@@ -210,7 +208,7 @@ pthread_directed_blame_shift_blocked_start(void* obj)
 void
 pthread_directed_blame_shift_spin_start(void* obj)
 {
-  blame_t * pthread_blame = TLS_GETSPECIFIC(pthread_blame);
+  blame_t * pthread_blame = &TLS_GET(pthread_blame);
 
   TMSG(LOCKWAIT, "Start directed blaming using blame structure %x, for obj %d",
        pthread_blame, (uintptr_t) obj);
@@ -221,7 +219,7 @@ pthread_directed_blame_shift_spin_start(void* obj)
 void
 pthread_directed_blame_shift_end(void)
 {
-  blame_t * pthread_blame = TLS_GETSPECIFIC(pthread_blame);
+  blame_t * pthread_blame = &TLS_GET(pthread_blame);
 
   *pthread_blame = (blame_t) {.target = 0, .state = Running};
   TMSG(LOCKWAIT, "End directed blaming for blame structure %x",

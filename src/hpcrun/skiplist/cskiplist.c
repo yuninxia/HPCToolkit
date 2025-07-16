@@ -92,7 +92,7 @@ csklnode_add_nodes_to_lfl(
         int maxheight,
         mem_alloc m_alloc)
 {
-  csklnode_t ** lf_cskl_nodes = TLS_GETSPECIFIC(lf_cskl_nodes);
+  csklnode_t ** lf_cskl_nodes = &TLS_GET(lf_cskl_nodes);
 
   for (int i = 0; i < NUM_NODES; i++) {
         int my_height  = random_level(maxheight);
@@ -111,7 +111,7 @@ static csklnode_t*
 csklnode_alloc_from_lfl(
         void* val)
 {
-  csklnode_t ** lf_cskl_nodes = TLS_GETSPECIFIC(lf_cskl_nodes);
+  csklnode_t ** lf_cskl_nodes = &TLS_GET(lf_cskl_nodes);
 
   csklnode_t *result = *lf_cskl_nodes;
   *lf_cskl_nodes = (*lf_cskl_nodes)->nexts[0];
@@ -126,7 +126,7 @@ csklnode_alloc_from_lfl(
 static void
 csklnode_free_to_lfl(csklnode_t *node)
 {
-  csklnode_t ** lf_cskl_nodes = TLS_GETSPECIFIC(lf_cskl_nodes);
+  csklnode_t ** lf_cskl_nodes = &TLS_GET(lf_cskl_nodes);
 
   node->nexts[0] = *lf_cskl_nodes;
   *lf_cskl_nodes = node;
@@ -143,7 +143,7 @@ csklnode_populate_lfl(
         int maxheight,
         mem_alloc m_alloc)
 {
-  csklnode_t ** lf_cskl_nodes = TLS_GETSPECIFIC(lf_cskl_nodes);
+  csklnode_t ** lf_cskl_nodes = &TLS_GET(lf_cskl_nodes);
 
   mcs_node_t me;
   bool acquired = mcs_trylock(&GFCN_lock, &me);
@@ -172,7 +172,7 @@ csklnode_malloc(
         int maxheight,
         mem_alloc m_alloc)
 {
-  csklnode_t ** lf_cskl_nodes = TLS_GETSPECIFIC(lf_cskl_nodes);
+  csklnode_t ** lf_cskl_nodes = &TLS_GET(lf_cskl_nodes);
 
   if (! *lf_cskl_nodes) {
         csklnode_populate_lfl(maxheight, m_alloc);

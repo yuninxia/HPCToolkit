@@ -63,8 +63,8 @@ papi_c_intel_get_event_set(int* event_set)
 {
   ETMSG(INTEL, "Started: create intel PAPI event set");
 
-  bool * event_set_created = TLS_GETSPECIFIC(event_set_created);
-  int * my_event_set = TLS_GETSPECIFIC(my_event_set);
+  bool * event_set_created = &TLS_GET(event_set_created);
+  int * my_event_set = &TLS_GET(my_event_set);
 
   if (! *event_set_created) {
     int ret=PAPI_create_eventset(my_event_set);
@@ -82,13 +82,12 @@ papi_c_intel_get_event_set(int* event_set)
 int
 papi_c_intel_add_event(int event_set, int evcode)
 {
-  bool * event_set_finalized = TLS_GETSPECIFIC(event_set_finalized);
-  int * my_event_set = TLS_GETSPECIFIC(my_event_set);
+  int * my_event_set = &TLS_GET(my_event_set);
   int rv = PAPI_EMISC;
 
   if (event_set != *my_event_set) return rv;
 
-  if (! *event_set_finalized) {
+  if (! TLS_GET(event_set_finalized)) {
     TMSG(INTEL, "Adding event %x to intel event set", evcode);
     rv = PAPI_add_event(*my_event_set, evcode);
     if (rv != PAPI_OK) {
@@ -106,9 +105,7 @@ papi_c_intel_add_event(int event_set, int evcode)
 void
 papi_c_intel_finalize_event_set(void)
 {
-  bool * event_set_finalized = TLS_GETSPECIFIC(event_set_finalized);
-
-  *event_set_finalized = true;
+  TLS_GET(event_set_finalized) = true;
 }
 
 
@@ -117,7 +114,7 @@ papi_c_intel_start(void)
 {
   ETMSG(INTEL, "Started: start PAPI collection");
 
-  int * my_event_set = TLS_GETSPECIFIC(my_event_set);
+  int * my_event_set = &TLS_GET(my_event_set);
 
   int ret=PAPI_start(*my_event_set);
   if (ret!=PAPI_OK) {
@@ -133,7 +130,7 @@ papi_c_intel_stop(void)
 {
   ETMSG(INTEL, "Started: stop PAPI collection");
 
-  int * my_event_set = TLS_GETSPECIFIC(my_event_set);
+  int * my_event_set = &TLS_GET(my_event_set);
 
   int ret=PAPI_stop(*my_event_set, NULL);
   if (ret!=PAPI_OK) {
@@ -147,7 +144,7 @@ papi_c_intel_stop(void)
 void
 papi_c_intel_read(long long *values)
 {
-  int * my_event_set = TLS_GETSPECIFIC(my_event_set);
+  int * my_event_set = &TLS_GET(my_event_set);
 
   int ret = PAPI_read(*my_event_set, values);
   if (ret != PAPI_OK) {

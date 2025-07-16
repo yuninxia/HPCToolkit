@@ -19,7 +19,7 @@
 #include "unwind/common/binarytree_uwi.h"
 
 struct cct_node_t;
-struct cskl_node_s;
+struct csklnode_s;
 struct bitree_uwi_s;
 struct ilmstat_btuwi_pair_s;
 
@@ -42,8 +42,13 @@ lazy_getspecific(void)
   return hpcrun_tls_specific_init_thread();
 }
 
-#define TLS_GETSPECIFIC(field)  \
-  (& (((struct tls_data *) lazy_getspecific())->field))
+// new macros ...
+
+#define TLS_GET(field)  (((struct tls_data *) lazy_getspecific())->field)
+
+#define TLS_GET_BASE_PTR()  ((void *) lazy_getspecific())
+
+#define TLS_GET_BASE(base, field)  (((struct tls_data *) (base))->field)
 
 //----------------------------------------------------------------------
 
@@ -106,11 +111,11 @@ struct tls_data {
 
   // unwind/common/binarytree_uwi.c
   // thread local free unwind interval tree
-  bitree_uwi_t * _lf_uwi_tree[NUM_UNWINDERS];
+  bitree_uwi_t * lf_uwi_tree[NUM_UNWINDERS];
 
   // unwind/common/uw_recipe_map.c
   // thread local free list of ilmstat_btuwi_pair_t *
-  struct ilmstat_btuwi_pair_s * _lf_ilmstat_btuwi;
+  struct ilmstat_btuwi_pair_s * lf_ilmstat_btuwi;
 };
 
 #endif  // _tls_specific_h_

@@ -218,9 +218,8 @@ hpcrun_thread_init_mem_pool_once
 )
 {
   thread_data_t* td = NULL;
-  bool* mem_pool_initialized = TLS_GETSPECIFIC(mem_pool_initialized);
 
-  if (*mem_pool_initialized == false){
+  if (TLS_GET(mem_pool_initialized) == false){
     hpcrun_mmap_init();
     hpcrun_threadMgr_data_get(id, thr_ctxt, &td, trace, demand_new_thread);
     hpcrun_set_thread_data(td);
@@ -332,8 +331,7 @@ hpcrun_thread_data_init
   hpcrun_make_memstore(&td->memstore);
   td->mem_low = 0;
 
-  bool* mem_pool_initialized = TLS_GETSPECIFIC(mem_pool_initialized);
-  *mem_pool_initialized = true;
+  TLS_GET(mem_pool_initialized) = true;
 
 
   // ----------------------------------------

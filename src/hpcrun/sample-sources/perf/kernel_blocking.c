@@ -71,10 +71,10 @@ static void
 blame_kernel_time(event_thread_t *current_event, cct_node_t *cct_kernel,
     perf_mmap_data_t *mmap_data)
 {
-  u64 * time_cs_out = TLS_GETSPECIFIC(perf_time_cs_out);
-  u32 * cpu = TLS_GETSPECIFIC(perf_cpu);
-  u32 * pid = TLS_GETSPECIFIC(perf_pid);
-  u32 * tid = TLS_GETSPECIFIC(perf_tid);
+  u64 * time_cs_out = &TLS_GET(perf_time_cs_out);
+  u32 * cpu = &TLS_GET(perf_cpu);
+  u32 * pid = &TLS_GET(perf_pid);
+  u32 * tid = &TLS_GET(perf_tid);
 
   // make sure the time is is zero or positive
   if (mmap_data->time < *time_cs_out) {
@@ -129,11 +129,11 @@ void
 kernel_block_handler( event_thread_t *current_event, sample_val_t sv,
     perf_mmap_data_t *mmap_data)
 {
-  u64 * time_cs_out = TLS_GETSPECIFIC(perf_time_cs_out);
-  cct_node_t ** cct_kernel = TLS_GETSPECIFIC(perf_cct_kernel);
-  u32 * cpu = TLS_GETSPECIFIC(perf_cpu);
-  u32 * pid = TLS_GETSPECIFIC(perf_pid);
-  u32 * tid = TLS_GETSPECIFIC(perf_tid);
+  u64 * time_cs_out = &TLS_GET(perf_time_cs_out);
+  cct_node_t ** cct_kernel = &TLS_GET(perf_cct_kernel);
+  u32 * cpu = &TLS_GET(perf_cpu);
+  u32 * pid = &TLS_GET(perf_pid);
+  u32 * tid = &TLS_GET(perf_tid);
 
   if (metric_blocking_index < 0)
     return; // not initialized or something wrong happens in the initialization
