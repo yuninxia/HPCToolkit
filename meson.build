@@ -922,20 +922,23 @@ iga_dep = dependency(
 # *has* to provide it through `cpp_args` and `cpp_link_args`.
 # But since that's way too much trouble in most cases, we also support pulling it from a wrap,
 # when the feature is explicitly requested.
-gtpin_dep = cpp.find_library(
-  'gtpin',
-  has_headers: ['api/gtpin_api.h', 'ged.h'],
-  required: false,
-)
-if gtpin_dep.found()
-  gtpin_dep = declare_dependency(dependencies: gtpin_dep, version: 'unknown')
-else
-  gtpin_dep = dependency(
+gtpin_dep = dependency('', required: false)
+if _gtpin_f.allowed()
+  gtpin_dep = cpp.find_library(
     'gtpin',
-    method: 'system',
-    required: get_option('gtpin'),
-    include_type: 'system',
+    has_headers: ['api/gtpin_api.h', 'ged.h'],
+    required: false,
   )
+  if gtpin_dep.found()
+    gtpin_dep = declare_dependency(dependencies: gtpin_dep, version: 'unknown')
+  else
+    gtpin_dep = dependency(
+      'gtpin',
+      method: 'system',
+      required: _gtpin_f,
+      include_type: 'system',
+    )
+  endif
 endif
 if gtpin_dep.found()
   add_project_arguments('-DENABLE_GTPIN', '-DUSE_GTPIN', language: ['c', 'cpp'])

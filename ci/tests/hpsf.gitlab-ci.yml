@@ -11,32 +11,24 @@ include:
   tags: [hpsf-ppc64le]
 ubuntu22.04 ppc64le:
   extends: .individual test job ppc64le
-  image: docker.io/ubuntu:22.04
+  image: registry.gitlab.com/hpctoolkit/rtt-images:1.0.0-ubuntu22.04
   variables:
-    SETUP_ARGS: --native-file ci/envs/ubuntu22.04.ini -Dcuda=disabled
-  before_script:
-    - ./ci/envs/ubuntu22.04.sh
+    SETUP_ARGS: -Dcuda=disabled
 ubuntu24.04 ppc64le:
   extends: .individual test job ppc64le
-  image: docker.io/ubuntu:24.04
+  image: registry.gitlab.com/hpctoolkit/rtt-images:1.0.0-ubuntu24.04
   variables:
-    SETUP_ARGS: --native-file ci/envs/ubuntu24.04.ini -Dcuda=disabled
-  before_script:
-    - ./ci/envs/ubuntu24.04.sh
+    SETUP_ARGS: -Dcuda=disabled
 rhel9 ppc64le:
   extends: .individual test job ppc64le
-  image: quay.io/almalinuxorg/almalinux:9
+  image: registry.gitlab.com/hpctoolkit/rtt-images:1.0.0-rhel9
   variables:
     # FIXME: This particular combination of PAPI et al. seems to cause hpcrun to hang, always.
     # Disable PAPI in the build until a proper investigation can be carried out.
-    SETUP_ARGS: --native-file ci/envs/rhel9.ini -Dpapi=disabled
+    SETUP_ARGS: -Dpapi=disabled
     # FIXME: For unknown reasons, the Python support doesn't work in this version of Python.
     # Not sure why. Disable it for now. https://gitlab.com/hpctoolkit/hpctoolkit/-/issues/847
     TEST_ARGS: --no-suite python
-  before_script:
-    - ./ci/envs/rhel9.sh
-    - . /etc/profile.d/modules.sh
-    - module load mpi
 
 .individual test job cuda:
   extends: .individual test job
@@ -48,54 +40,24 @@ rhel9 ppc64le:
       --suite opencl
       --suite cuda
       --suite hpcstruct
-  before_script:
-    &cuda_before_script # These paths need to be set for compatibility with nvidia-docker v1
-    - export PATH="$PATH":/usr/local/nvidia/bin
-    - export LD_LIBRARY_PATH="${LD_LIBRARY_PATH:+$LD_LIBRARY_PATH:}"/usr/local/nvidia/lib:/usr/local/nvidia/lib64
-ubuntu22.04 cuda amd64:
-  extends: .individual test job cuda
-  image: docker.io/ubuntu:22.04
-  variables:
-    SETUP_ARGS: --native-file ci/envs/ubuntu22.04.ini
-  before_script:
-    - *cuda_before_script
-    - ./ci/envs/ubuntu22.04.sh
-ubuntu24.04 cuda amd64:
-  extends: .individual test job cuda
-  image: docker.io/ubuntu:24.04
-  variables:
-    SETUP_ARGS: --native-file ci/envs/ubuntu24.04.ini
-  before_script:
-    - *cuda_before_script
-    - ./ci/envs/ubuntu24.04.sh
 cuda12.0 amd64:
   extends: .individual test job cuda
-  image: docker.io/nvidia/cuda:12.0.1-devel-ubuntu22.04
-  <<: &cuda_env
-    variables:
-      SETUP_ARGS: --native-file ci/envs/cuda.ini
-    before_script:
-      - ./ci/envs/cuda.sh
+  image: registry.gitlab.com/hpctoolkit/rtt-images:1.0.0-cuda12.0
 cuda12.1 amd64:
   extends: .individual test job cuda
-  image: docker.io/nvidia/cuda:12.1.1-devel-ubuntu22.04
-  <<: *cuda_env
+  image: registry.gitlab.com/hpctoolkit/rtt-images:1.0.0-cuda12.1
 cuda12.2 amd64:
   extends: .individual test job cuda
-  image: docker.io/nvidia/cuda:12.2.2-devel-ubuntu22.04
-  <<: *cuda_env
+  image: registry.gitlab.com/hpctoolkit/rtt-images:1.0.0-cuda12.2
 cuda12.3 amd64:
   extends: .individual test job cuda
-  image: docker.io/nvidia/cuda:12.3.2-devel-ubuntu22.04
-  <<: *cuda_env
+  image: registry.gitlab.com/hpctoolkit/rtt-images:1.0.0-cuda12.3
 cuda12.4 amd64:
   extends: .individual test job cuda
-  image: docker.io/nvidia/cuda:12.4.1-devel-ubuntu22.04
-  <<: *cuda_env
+  image: registry.gitlab.com/hpctoolkit/rtt-images:1.0.0-cuda12.4
 cuda12.5 amd64:
   extends: .individual test job cuda
-  image: docker.io/nvidia/cuda:12.5.0-devel-ubuntu22.04
-  <<: *cuda_env
+  image: registry.gitlab.com/hpctoolkit/rtt-images:1.0.0-cuda12.5
 
 .individual test job rocm:
   extends: .individual test job
@@ -106,36 +68,25 @@ cuda12.5 amd64:
       --suite rocm
 rocm5.3 amd64:
   extends: .individual test job rocm
-  image: docker.io/rocm/dev-ubuntu-22.04:5.3.3
-  <<: &rocm_env
-    variables:
-      SETUP_ARGS: --native-file ci/envs/rocm.ini
-    before_script:
-      - ./ci/envs/rocm.sh
+  image: registry.gitlab.com/hpctoolkit/rtt-images:1.0.0-rocm5.3
 rocm5.4 amd64:
   extends: .individual test job rocm
-  image: docker.io/rocm/dev-ubuntu-22.04:5.4.2
-  <<: *rocm_env
+  image: registry.gitlab.com/hpctoolkit/rtt-images:1.0.0-rocm5.4
 rocm5.5 amd64:
   extends: .individual test job rocm
-  image: docker.io/rocm/dev-ubuntu-22.04:5.5.1
-  <<: *rocm_env
+  image: registry.gitlab.com/hpctoolkit/rtt-images:1.0.0-rocm5.5
 rocm5.6 amd64:
   extends: .individual test job rocm
-  image: docker.io/rocm/dev-ubuntu-22.04:5.6.1
-  <<: *rocm_env
+  image: registry.gitlab.com/hpctoolkit/rtt-images:1.0.0-rocm5.6
 rocm5.7 amd64:
   extends: .individual test job rocm
-  image: docker.io/rocm/dev-ubuntu-22.04:5.7.1
-  <<: *rocm_env
+  image: registry.gitlab.com/hpctoolkit/rtt-images:1.0.0-rocm5.7
 rocm6.0 amd64:
   extends: .individual test job rocm
-  image: docker.io/rocm/dev-ubuntu-22.04:6.0.2
-  <<: *rocm_env
+  image: registry.gitlab.com/hpctoolkit/rtt-images:1.0.0-rocm6.0
 rocm6.1 amd64:
   extends: .individual test job rocm
-  image: docker.io/rocm/dev-ubuntu-22.04:6.1
-  <<: *rocm_env
+  image: registry.gitlab.com/hpctoolkit/rtt-images:1.0.0-rocm6.1
 
 rocm6.0 amd64 mi300:
   extends: rocm6.0 amd64
@@ -146,12 +97,9 @@ rocm6.1 amd64 mi300:
 
 intel amd64:
   extends: .individual test job
-  image: docker.io/intel/oneapi-basekit:2024.2.1-0-devel-ubuntu22.04
+  image: registry.gitlab.com/hpctoolkit/rtt-images:1.0.0-intel
   tags: [hpsf-gpu, x86_64-intelgpu, intel-data-center-max-1100]
   variables:
-    SETUP_ARGS: --native-file ci/envs/intel.ini
     TEST_ARGS: >-
       --suite opencl
       --suite level0
-  before_script:
-    - ./ci/envs/intel.sh
