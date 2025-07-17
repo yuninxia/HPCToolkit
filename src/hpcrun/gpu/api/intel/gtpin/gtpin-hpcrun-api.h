@@ -66,12 +66,7 @@ typedef struct gtpin_hpcrun_api_t {
   void (*cstack_ptr_set)(s_element_ptr_t *, s_element_t *);
   gpu_activity_channel_t *(*gpu_activity_channel_get_local)(void);
 
-  void (*gpu_operation_multiplexer_push)
-  (gpu_activity_channel_t *,
-#ifdef __cplusplus
-  std::
-#endif
-  atomic_int *, gpu_activity_t *);
+  void (*gpu_activity_send)(uint64_t correlation_id, gpu_activity_t *);
 
   void (*hpcrun_thread_init_mem_pool_once)
   (int, cct_ctxt_t *, hpcrun_trace_type_t, bool);

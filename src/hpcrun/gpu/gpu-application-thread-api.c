@@ -14,6 +14,7 @@
 #include "../module-ignore-map.h"
 #include "../safe-sampling.h"
 #include "../sample_event.h"
+#include "../hpcrun_signals.h"
 
 #include "activity/gpu-activity-channel.h"
 #include "activity/gpu-activity-process.h"
@@ -24,6 +25,8 @@
 //******************************************************************************
 // macros
 //******************************************************************************
+
+#define BLOCK_INTERRUPTS
 
 #define DEBUG 0
 
@@ -126,7 +129,16 @@ gpu_application_thread_process_activities
  void
 )
 {
+#ifdef BLOCK_INTERRUPTS
+  sigset_t oldset;
+  hpcrun_block_profile_signal(&oldset);
+#endif
+
   gpu_activity_channel_receive_all(receive_activity);
+
+#ifdef BLOCK_INTERRUPTS
+  hpcrun_restore_sigmask(&oldset);
+#endif
 }
 
 

@@ -84,8 +84,10 @@ typedef struct opencl_object_details_t {
   uint32_t context_id;
   uint32_t stream_id;
   uint32_t module_id;
+  ip_normalized_t kernel_ip;
   cct_node_t *cct_node;
   uint64_t submit_time;
+  uint64_t correlation_id;
 } opencl_object_details_t;
 
 

@@ -37,8 +37,6 @@
 // local includes
 //******************************************************************************
 
-#include "level0.h"
-
 #include "simple_oo.h"
 #include "sample_source_obj.h"
 #include "common.h"
@@ -49,6 +47,7 @@
 #include "../logical/common.h"
 #include "../gpu/activity/gpu-activity.h"
 #include "../gpu/api/common/gpu-kernel-table.h"
+#include "../gpu/api/intel/level0/level0-api.h"
 #include "../gpu/gpu-metrics.h"
 #include "../gpu/trace/gpu-trace-api.h"
 #include "../gpu/api/common/gpu-instrumentation.h"

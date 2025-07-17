@@ -55,7 +55,7 @@ gtpin_instrumentation_options
 void
 gtpin_produce_runtime_callstack
 (
-  gpu_op_ccts_t *
+  uint64_t callpath_correlation_id
 );
 
 

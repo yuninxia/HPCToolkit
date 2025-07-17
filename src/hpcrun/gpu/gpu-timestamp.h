@@ -4,23 +4,25 @@
 
 // -*-Mode: C++;-*- // technically C99
 
-#ifndef HPCTOOLKIT_LEVEL0_H
-#define HPCTOOLKIT_LEVEL0_H
+#ifndef gpu_timestamp_h
+#define gpu_timestamp_h
 
 //******************************************************************************
-// forward type declarations
+// system includes
 //******************************************************************************
 
-typedef struct gpu_activity_t gpu_activity_t;
-typedef struct cct_node_t cct_node_t;
-typedef struct gpu_instrumentation_t gpu_instrumentation_t;
+#include <stdint.h>
+
+
 
 //******************************************************************************
 // interface operations
 //******************************************************************************
 
-void level0_init(gpu_instrumentation_t *inst_options);
-void level0_fini();
-void level0_flush();
+uint64_t
+gpu_timestamp_boottime_to_realtime
+(
+  uint64_t t
+);
 
-#endif //HPCTOOLKIT_LEVEL0_H
+#endif

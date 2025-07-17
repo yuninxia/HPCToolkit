@@ -36,7 +36,7 @@
 // macros
 //******************************************************************************
 
-#define DEBUG 0
+#define DEBUG 1
 
 #include "../common/gpu-print.h"
 

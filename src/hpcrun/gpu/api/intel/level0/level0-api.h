@@ -229,4 +229,12 @@ level0_gtpin_enabled
   void
 );
 
+
+uint64_t
+level0_timestamp_to_realtime
+(
+  uint64_t host_submit_time,
+  uint64_t device_time
+);
+
 #endif

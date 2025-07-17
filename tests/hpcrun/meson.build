@@ -4,7 +4,6 @@
 
 _args = []
 if rocm_dep.found()
-  assert(not is_disabler(rocprofiler_path))
   _args += ['--rocprofiler-path', rocprofiler_path]
 endif
 test(

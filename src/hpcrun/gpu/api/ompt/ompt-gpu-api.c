@@ -11,6 +11,7 @@
 #define _GNU_SOURCE
 
 #include "../../../messages/messages.h"
+#include "../../../ompt/ompt-device-map.h"
 
 #include "../../gpu-monitoring-thread-api.h"
 
@@ -41,12 +42,13 @@ ompt_buffer_completion_notify
 void
 ompt_activity_process
 (
+ ompt_device_map_entry_t *device_entry,
  ompt_record_ompt_t *record
 )
 {
   gpu_activity_t gpu_activity;
   uint64_t correlation_id;
-  ompt_activity_translate(&gpu_activity, record, &correlation_id);
+  ompt_activity_translate(device_entry, &gpu_activity, record, &correlation_id);
 
   if (correlation_id == 0) {
     return;

@@ -1,0 +1,122 @@
+# SPDX-FileCopyrightText: 2023-2024 Rice University
+# SPDX-FileCopyrightText: 2024 Contributors to the HPCToolkit Project
+#
+# SPDX-License-Identifier: BSD-3-Clause
+
+# OS installation stage: Install build tools from the OS
+ARG ROCM_VERSION=6.1.1
+FROM docker.io/rocm/dev-ubuntu-22.04:${ROCM_VERSION} as os-install
+
+# Install the required OS packages
+RUN --mount=type=cache,target=/var/cache/apt,sharing=locked \
+  rm -f /etc/apt/apt.conf.d/docker-clean \
+  && apt-get update -yqq \
+  && DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends \
+    ccache \
+    clang \
+    clang-11 \
+    clang-12 \
+    clang-13 \
+    clang-14 \
+    clang-15 \
+    cmake \
+    g++ \
+    g++-10 \
+    g++-11 \
+    g++-12 \
+    gcc \
+    gcc-10 \
+    gcc-11 \
+    gcc-12 \
+    git \
+    libboost-atomic-dev \
+    libboost-chrono-dev \
+    libboost-date-time-dev \
+    libboost-filesystem-dev \
+    libboost-graph-dev \
+    libboost-system-dev \
+    libboost-thread-dev \
+    libboost-timer-dev \
+    libbz2-dev \
+    libdw-dev \
+    libelf-dev \
+    libiberty-dev \
+    liblzma-dev \
+    libomp-dev \
+    libopenmpi-dev \
+    libpapi-dev \
+    libpfm4-dev \
+    libtbb-dev \
+    libxerces-c-dev \
+    libxxhash-dev \
+    libyaml-cpp-dev \
+    libzstd-dev \
+    make  `# FIXME: See https://gitlab.com/hpctoolkit/hpctoolkit/-/issues/704` \
+    mawk  `# FIXME: See https://gitlab.com/hpctoolkit/hpctoolkit/-/issues/704` \
+    ninja-build \
+    pkg-config \
+    python3 \
+    python3-dev \
+    python3-docutils \
+    python3-myst-parser \
+    python3-pip \
+    python3-sphinx \
+    python3-venv \
+    sed  `# FIXME: See https://gitlab.com/hpctoolkit/hpctoolkit/-/issues/704` \
+    zlib1g-dev \
+  && : # END
+
+# Install an up-to-date version of Meson, using a suitable Python
+RUN \
+  python3 -m pip install \
+    'meson>=1.3.2,<2' \
+  && : # END
+
+
+# From-source installation side-stage: Install (some) software from source
+FROM os-install as src-install
+
+# Install rocprofiler-sdk from source.
+# NB: We can't use DESTDIR here because the COPY command later doesn't combine directories, it
+# overwrites them. Installing to /opt/rocm directly ensures the directories are merged properly.
+RUN --mount=type=bind,target=/tmp,from=scratch,rw \
+  git clone --depth=1 --recursive https://github.com/ROCm/rocprofiler-sdk.git /tmp/rocprofiler-sdk \
+  && cmake -DCMAKE_INSTALL_PREFIX=/opt/rocm -DCMAKE_PREFIX_PATH=/opt/rocm \
+           -B /tmp/rocprofiler-sdk-build -S /tmp/rocprofiler-sdk -G Ninja \
+  && ninja -C /tmp/rocprofiler-sdk-build \
+  && ninja -C /tmp/rocprofiler-sdk-build install
+
+
+# Composition stage: Produce what will become the final image
+FROM os-install
+COPY --from=src-install /opt/rocm /opt/rocm
+COPY \
+  ci/native/src/clang.ini \
+  ci/native/src/clang11.ini \
+  ci/native/src/clang12.ini \
+  ci/native/src/clang13.ini \
+  ci/native/src/clang14.ini \
+  ci/native/src/clang15.ini \
+  ci/native/src/gcc.ini \
+  ci/native/src/gcc10.ini \
+  ci/native/src/gcc11.ini \
+  ci/native/src/gcc12.ini \
+  /usr/share/meson/native/
+
+RUN t=/usr/share/meson/native/hpctoolkit-ci.ini && rm -f "$t" \
+  && echo "[built-in options]" >> "$t" \
+  && echo "wrap_mode = 'nofallback'" >> "$t" \
+  && echo "force_fallback_for = ['dyninst', 'libunwind', 'xed']" >> "$t" \
+  && echo "" >> "$t" \
+  && echo "[project options]" >> "$t" \
+  && echo "auto_features = 'enabled'" >> "$t" \
+  && echo "cuda = 'disabled'" >> "$t" \
+  && echo "level0 = 'disabled'" >> "$t" \
+  && echo "gtpin = 'disabled'" >> "$t" \
+  && echo "" >> "$t" \
+  && echo "[zstd:project options]" >> "$t" \
+  && echo "lz4 = 'disabled'" >> "$t" \
+  && : # EOF
+
+# Set CMAKE_PREFIX_PATH to the paths for all the bits
+ENV CMAKE_PREFIX_PATH=/opt/rocm${CMAKE_PREFIX_PATH:+:$CMAKE_PREFIX_PATH}

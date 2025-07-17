@@ -50,6 +50,7 @@
 #include "env.h"
 #include "control-knob.h"
 #include "libc-functions.h"
+#include "libc-functions.h"
 #include "loadmap.h"
 #include "files.h"
 #include "fnbounds/fnbounds_interface.h"
@@ -960,11 +961,9 @@ monitor_init_process(int *argc, char **argv, void* data)
          (int) getpid(), (int) getppid(), (int) is_child);
     TMSG(PROCESS, "name: %s", process_name);
 
-    if (is_child){
-      hpcrun_prepare_measurement_subsystem(is_child);
-    }
-
+    hpcrun_prepare_measurement_subsystem(is_child);
   }
+
   return data;
 }
 

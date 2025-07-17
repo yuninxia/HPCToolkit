@@ -286,21 +286,21 @@ consume_trace_item(gpu_trace_item_t *trace_item, thread_data_t *thread_data, voi
 
   start = gpu_trace_start_adjust(thread_data, start, end);
 
-  uint32_t frequency = gpu_monitoring_trace_sample_frequency_get();
+  uint32_t period = gpu_monitoring_trace_sample_period_get();
 
   bool append = false;
 
-  if (frequency != -1) {
+  if (period != -1) {
     uint64_t cur_start = start_time;
     uint64_t cur_end = end_time;
-    uint64_t intervals = (cur_start - stream_start_get() - 1) / frequency + 1;
-    uint64_t pivot = intervals * frequency + stream_start;
+    uint64_t intervals = (cur_start - stream_start_get() - 1) / period + 1;
+    uint64_t pivot = intervals * period + stream_start;
 
     if (pivot <= cur_end && pivot >= cur_start) {
       // only trace when the pivot is within the range
       PRINT("pivot %" PRIu64 " not in <%" PRIu64 ", %" PRIu64
-            "> with intervals %" PRIu64 ", frequency %" PRIu32 "\n",
-            pivot, cur_start, cur_end, intervals, frequency);
+            "> with intervals %" PRIu64 ", period %" PRIu32 "\n",
+            pivot, cur_start, cur_end, intervals, period);
       append = true;
     }
   } else {

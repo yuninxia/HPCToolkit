@@ -45,6 +45,7 @@
 
 #include "sample_source_obj.h"
 #include "common.h"
+#include "display.h"
 #include "sample-filters.h"
 #include "itimer.h"
 #include "ss-errno.h"
@@ -87,17 +88,17 @@
 // SIGEV_THREAD_ID is also thread-specific and it seems that THREAD is
 // limited by the kernel Hz rate.
 
-#define IDLE_METRIC_NAME     "idleness (sec)"
+#define IDLE_METRIC_NAME     "idleness (s)"
 
 #define REALTIME_EVENT_NAME   "REALTIME"
-#define REALTIME_METRIC_NAME  "REALTIME (sec)"
+#define REALTIME_METRIC_NAME  "REALTIME (s)"
 #define REALTIME_SIGNAL       (SIGRTMIN + 3)
 
 #define REALTIME_CLOCK_TYPE     CLOCK_REALTIME
 #define REALTIME_NOTIFY_METHOD  SIGEV_THREAD_ID
 
 #define CPUTIME_EVENT_NAME    "CPUTIME"
-#define CPUTIME_METRIC_NAME   "CPUTIME (sec)"
+#define CPUTIME_METRIC_NAME   "CPUTIME (s)"
 #define CPUTIME_CLOCK_TYPE     CLOCK_THREAD_CPUTIME_ID
 
 // the man pages cite sigev_notify_thread_id in struct sigevent,
@@ -137,6 +138,7 @@ static bool use_cputime = false;
 
 static char *the_event_name = "unknown";
 static char *the_metric_name = "unknown";
+static char *the_metric_description = "unknown";
 static int   the_signal_num = 0;
 
 static long period = DEFAULT_PERIOD;
@@ -442,6 +444,7 @@ METHOD_FN(process_event_list)
     use_realtime = true;
     the_event_name = REALTIME_EVENT_NAME;
     the_metric_name = REALTIME_METRIC_NAME;
+    the_metric_description = "Time threads exist and are interruptble (seconds)";
     the_signal_num = REALTIME_SIGNAL;
 #else
     EEMSG("Event %s is not available on this system.", REALTIME_EVENT_NAME);
@@ -454,6 +457,7 @@ METHOD_FN(process_event_list)
     use_cputime = true;
     the_event_name = CPUTIME_EVENT_NAME;
     the_metric_name = CPUTIME_METRIC_NAME;
+    the_metric_description = "Time threads are active (seconds)";
     the_signal_num = REALTIME_SIGNAL;
 #else
     EEMSG("Event %s is not available on this system.", CPUTIME_EVENT_NAME);
@@ -508,7 +512,7 @@ METHOD_FN(process_event_list)
   TMSG(ITIMER_CTL, "setting metric timer period = %ld", sample_period);
   kind_info_t *timer_kind = hpcrun_metrics_new_kind();
   int metric_id =
-    hpcrun_set_new_metric_info_and_period(timer_kind, the_metric_name, MetricFlags_ValFmt_Real,
+    hpcrun_set_new_metric_desc_and_period(timer_kind, the_metric_name, the_metric_description, MetricFlags_ValFmt_Real,
                                           sample_period, metric_property_time);
   METHOD_CALL(self, store_metric_id, ITIMER_EVENT, metric_id);
   hpcrun_close_kind(timer_kind);
@@ -538,30 +542,31 @@ METHOD_FN(gen_event_set)
 static void
 METHOD_FN(display_events)
 {
-  printf("===========================================================================\n");
-  printf("Available Timer events\n");
-  printf("===========================================================================\n");
-  printf("Name\t\tDescription\n");
-  printf("---------------------------------------------------------------------------\n");
-  printf("%s\tReal clock time used by the thread in microseconds.\n"
-         "\t\tBased on the CLOCK_REALTIME timer with the SIGEV_THREAD_ID\n"
-         "\t\textension.  Includes time blocked in the kernel, and may\n"
-         "\t\tbreak the invocation of some syscalls that are sensitive to EINTR.\n",
-         REALTIME_EVENT_NAME);
-#ifndef ENABLE_CLOCK_REALTIME
-  printf("\t\tNot available on this system.\n");
+#if defined(ENABLE_CLOCK_REALTIME) || defined(ENABLE_CLOCK_CPUTIME)
+  display_header(stdout, "Available Timer events");
+
+  display_header_event(stdout);
+
+#ifdef ENABLE_CLOCK_REALTIME
+  display_event_info(stdout, REALTIME_EVENT_NAME,
+    "Real clock time used by the thread in microseconds. "
+    "Based on the CLOCK_REALTIME timer with the SIGEV_THREAD_ID "
+    "extension.  Includes time blocked in the kernel, and may "
+    "break the invocation of some syscalls that are sensitive to EINTR."
+  );
 #endif
-  printf("\n");
-  printf("%s  \tCPU clock time used by the thread in microseconds.  Based\n"
-         "\t\ton the CLOCK_THREAD_CPUTIME_ID timer with the SIGEV_THREAD_ID\n"
-         "\t\textension.\n",
-         CPUTIME_EVENT_NAME);
-#ifndef ENABLE_CLOCK_CPUTIME
-  printf("\t\tNot available on this system.\n");
+
+#ifdef ENABLE_CLOCK_CPUTIME
+  display_event_info(stdout, CPUTIME_EVENT_NAME,
+    "CPU clock time used by the thread in microseconds.  Based "
+    "on the CLOCK_THREAD_CPUTIME_ID timer with the SIGEV_THREAD_ID "
+    "extension."
+  );
 #endif
-  printf("\n");
+
   printf("Note: only one of the above timer events may be used in a run.\n");
   printf("\n");
+#endif
 }
 
 

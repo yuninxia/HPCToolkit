@@ -160,8 +160,7 @@ public:
 struct CorrelationData {
   std::string correlation_id;
   uint64_t cpu_submit_time;
-  gpu_op_ccts_t op_ccts;
-  gpu_activity_channel_t *activity_channel;
+  uint64_t callpath_correlation_id;
   CorrelationData *next;
 };
 
@@ -295,7 +294,7 @@ static void enqueue();
 // local data
 //*****************************************************************************
 
-static thread_local gpu_op_ccts_t my_op_ccts;
+static thread_local uint64_t op_callpath_correlation_id;
 
 static thread_local CorrelationData correlation_head;
 static thread_local CorrelationData *correlation_tail = NULL;
@@ -682,12 +681,7 @@ process_block_activity
  CorrelationData &correlation_data,
  BasicBlock &basicBlock)
 {
-  gpu_activity_channel_t *activity_channel = correlation_data.activity_channel;
-  gpu_op_ccts_t *op_ccts = &correlation_data.op_ccts;
-
-  gtpin_hpcrun_api->safe_enter();
-
-  cct_node_t *host_op_node = gtpin_hpcrun_api->gpu_op_ccts_get(op_ccts, gpu_placeholder_type_kernel);
+  uint64_t callpath_correlation_id = correlation_data.callpath_correlation_id;
 
   gpu_activity_t ga;
   memset(&ga.details.kernel_block, 0, sizeof(gpu_kernel_block_t));
@@ -697,19 +691,13 @@ process_block_activity
   ga.details.kernel_block.execution_count = basicBlock.executionCount;
   ga.details.kernel_block.latency = basicBlock.latency;
   ga.details.kernel_block.active_simd_lanes = basicBlock.activeSimdLanes;
+  ga.details.kernel_block.correlation_id = callpath_correlation_id;
   ga.kind = GPU_ACTIVITY_KERNEL_BLOCK;
   gtpin_hpcrun_api->cstack_ptr_set(&(ga.next), 0);
 
-  cct_node_t *cct_node = gtpin_hpcrun_api->hpcrun_cct_insert_ip_norm(host_op_node, ga.details.kernel_block.pc, false);
+  PRINT("  process block activity ip=(%d, ip=%lx)\n", kernel_ip.lm_id, ga.details.kernel_block.pc.lm_ip);
 
-  PRINT("  process block activity 0x%lx (host_op_node=%p, cct=%p)\n", ga.details.kernel_block.pc.lm_ip, host_op_node, cct_node);
-
-  if (cct_node) {
-    ga.cct_node = cct_node;
-    gtpin_hpcrun_api->gpu_operation_multiplexer_push(activity_channel, NULL, &ga);
-  }
-
-  gtpin_hpcrun_api->safe_exit();
+  gtpin_hpcrun_api->gpu_activity_send(callpath_correlation_id, &ga);
 }
 
 
@@ -780,6 +768,10 @@ Instruction::Instruction
   latency = 0;
 }
 
+long int GetId(gtpin::GtKernelId id)
+{
+  return (long int) id;
+}
 
 void
 KernelProfile::instrument
@@ -793,7 +785,7 @@ KernelProfile::instrument
   bool is64BitCounter = insF.CanAccessAtomically(GED_DATA_TYPE_uq);
   IGtRegAllocator &ra = coder.RegAllocator();
 
-  PRINT("hpcrun gtpin: OnKernelBuild instrumenting kernel %ld\n", kernel.Id());
+  PRINT("hpcrun gtpin: OnKernelBuild instrumenting kernel %ld\n", GetId(kernel.Id()));
 
   _timeReg = vregs.Make(VREG_TYPE_DWORD);
   _addrReg = vregs.MakeMsgAddrScratch();
@@ -935,6 +927,10 @@ KernelProfile::gatherMetrics
   PRINT("  gatherMetrics\n");
 
   for (BasicBlock &bbl : basicBlocks) {
+
+    PRINT("    bbl %d (%d, 0x%lx): offset=%lx \n", index, kernel_ip.lm_id, kernel_ip.lm_ip,
+          kernel_ip.lm_ip + bbl.instructions[0].offset);
+
     uint64_t bbl_count = 0;
     uint64_t bbl_latency = 0;
     for (uint32_t threadBucket = 0; threadBucket < dispatch.Kernel().GenModel().MaxThreadBuckets(); ++threadBucket) {
@@ -943,6 +939,10 @@ KernelProfile::gatherMetrics
         if (opcodeProfile.Read(*buffer, &record, index, 1, threadBucket)) {
           bbl_count += record.freq;
         }
+#if GTPIN_THREAD_BUCKET_DEBUG
+        PRINT("      threadBucket %d: count=%ld\n", threadBucket, record.freq);
+#endif
+
       }
 
       if (latency_knob) {
@@ -952,13 +952,13 @@ KernelProfile::gatherMetrics
           if (collect_latency) {
             bbl_latency += record.cycles;
           }
+#if GTPIN_THREAD_BUCKET_DEBUG
+        PRINT("      threadBucket %d: latency=%ld\n", threadBucket, record.cycles);
+#endif
         }
       }
 
-#if GTPIN_THREAD_BUCKET_DEBUG
-        PRINT("    bbl (%d, 0x%lx): %lx: count=%ld latency=%ld threadBucket=%d\n", kernel_ip.lm_id, kernel_ip.lm_ip,
-              kernel_ip.lm_ip + bbl.instructions[0].offset, record.freq, record.cycles, threadBucket);
-#endif
+
 
       if (simd_knob) {
         uint32_t simd_index = 0;
@@ -1001,7 +1001,7 @@ GTPinInstrumentation::OnKernelBuild
 void
 GTPinInstrumentation::OnKernelRun
 (IGtKernelDispatch &dispatch) {
-  PRINT("hpcrun gtpin: OnKernelRun kernel %ld\n", dispatch.Kernel().Id());
+  PRINT("hpcrun gtpin: OnKernelRun kernel %ld\n", GetId(dispatch.Kernel().Id()));
 
   GtKernelExecDesc execDesc;
   dispatch.GetExecDescriptor(execDesc);
@@ -1051,15 +1051,16 @@ GTPinInstrumentation::OnKernelComplete
 
   auto it = _kernels.find(dispatch.Kernel().Id());
 
-  PRINT("hpcrun gtpin: OnKernelComplete\n");
+  PRINT("hpcrun gtpin: OnKernelComplete kernel %ld\n",  GetId(dispatch.Kernel().Id()));
   gtpin_hpcrun_api->hpcrun_thread_init_mem_pool_once(TOOL_THREAD_ID, NULL, HPCRUN_NO_TRACE, true);
 
   GtKernelExecDesc exec_desc;
   dispatch.GetExecDescriptor(exec_desc);
   CorrelationData correlation_data = correlation_map[exec_desc.ToString(dispatch.Kernel().GpuPlatform())];
 
-  PRINT("  cid=%s kernel=%p\n", exec_desc.ToString(dispatch.Kernel().GpuPlatform()).c_str(),
-        gtpin_hpcrun_api->gpu_op_ccts_get(&(correlation_data.op_ccts), gpu_placeholder_type_kernel));
+  PRINT("  cid=%s kernel correlation id = %ld\n",
+        exec_desc.ToString(dispatch.Kernel().GpuPlatform()).c_str(),
+        correlation_data.callpath_correlation_id);
 
   it->gatherMetrics(dispatch, correlation_data);
 }
@@ -1120,8 +1121,8 @@ gtpin_instrumentation_options
 HPCRUN_EXPOSED
 void
 gtpin_produce_runtime_callstack
-(gpu_op_ccts_t *op_ccts) {
-  my_op_ccts = *op_ccts;
+(uint64_t callpath_correlation_id) {
+  op_callpath_correlation_id = callpath_correlation_id;
 }
 
 
@@ -1131,7 +1132,6 @@ enqueue
   void
 )
 {
-  gpu_op_ccts_t *op_ccts = &my_op_ccts;
   if (correlation_head.next == NULL)
     std::abort();
   CorrelationData *correlation_data = correlation_head.next;
@@ -1139,13 +1139,11 @@ enqueue
   correlation_map[correlation_data->correlation_id] = {
     .correlation_id = correlation_data->correlation_id,
     .cpu_submit_time = correlation_data->cpu_submit_time,
-    .op_ccts = *op_ccts,
-    .activity_channel = gtpin_hpcrun_api->gpu_activity_channel_get_local(),
+    .callpath_correlation_id = op_callpath_correlation_id,
     .next = NULL};
 
-  PRINT("in produce runtime callstack: id=%s, kernel_cct = %p\n",
-          correlation_data->correlation_id.c_str(),
-          gtpin_hpcrun_api->gpu_op_ccts_get(op_ccts, gpu_placeholder_type_kernel));
+  PRINT("in produce runtime callstack: id=%s, kernel callpath_correlation_id = %lx\n",
+          correlation_data->correlation_id.c_str(), op_callpath_correlation_id);
 
   if (correlation_data->next == NULL) {
     correlation_tail = &correlation_head;
@@ -1167,7 +1165,7 @@ gtpin_process_block_instructions
   std::vector<std::pair<cct_node_t *, BasicBlock>> data_vector;
   gtpin_hpcrun_api->hpcrun_cct_walk_node_1st(root, visit_block, &data_vector);
 
-  PRINT("  iterating data vectors\n");
+  PRINT("  iterating data vector: size = %ld\n", data_vector.size());
   for (const auto &data : data_vector) {
     cct_node_t *block = data.first;
     PRINT("    block %p\n", block);

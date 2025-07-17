@@ -28,7 +28,7 @@ typedef struct cct_node_t cct_node_t;
 
 void cupti_activity_attribute(gpu_activity_t *activity);
 
-int cupti_pc_sampling_frequency_get();
+int cupti_pc_sampling_period_log_get();
 
 int cupti_trace_frequency_get();
 

@@ -65,7 +65,7 @@
 #include "../messages/messages.h"
 #include "../../common/lean/hpcrun-fmt.h"
 
-#include <roctracer/roctracer_hip.h>
+// #include <roctracer/roctracer_hip.h>
 
 
 
@@ -155,6 +155,7 @@ METHOD_FN(process_event_list)
 static void
 METHOD_FN(finalize_event_list)
 {
+#if 0
   // After going through all command line arguments,
   // we call this function to generate a list of counters
   // in rocprofiler's format and initialize corresponding
@@ -171,6 +172,7 @@ METHOD_FN(finalize_event_list)
   // Inform roctracer component that we will collect hardware counters,
   // which will serialize kernel launches
   roctracer_enable_counter_collection();
+#endif
 }
 
 

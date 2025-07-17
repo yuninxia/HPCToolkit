@@ -87,6 +87,12 @@ gpu_op_placeholder_ip
   CASE(memset)
   CASE(sync)
   CASE(trace)
+  CASE(scratch_alloc)
+  CASE(scratch_free)
+  CASE(scratch_async_reclaim)
+  CASE(runtime)
+  CASE(kernel_anon)
+  CASE(paging)
   #undef CASE
   case gpu_placeholder_type_count:
     break;

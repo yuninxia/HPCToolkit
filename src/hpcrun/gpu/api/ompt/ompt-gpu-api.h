@@ -31,6 +31,7 @@ ompt_buffer_completion_notify
 void
 ompt_activity_process
 (
+ ompt_device_map_entry_t *device_entry,
  ompt_record_ompt_t *record
 );
 

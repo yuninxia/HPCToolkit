@@ -94,6 +94,10 @@ ze_result_t f_zetModuleGetDebugInfo(zet_module_handle_t, zet_module_debug_info_f
                                     size_t*, uint8_t*,
                                     const struct hpcrun_foil_appdispatch_level0*);
 
+ze_result_t f_zeDeviceGetGlobalTimestamps(ze_device_handle_t hDevice,
+                                          uint64_t *hostTimestamp, uint64_t *deviceTimestamp,
+                                          const struct hpcrun_foil_appdispatch_level0*);
+
 #ifdef __cplusplus
 } // extern "C"
 #endif

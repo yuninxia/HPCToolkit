@@ -102,8 +102,8 @@ hpcrun_event2metric(sample_source_t* ss, int event_idx)
 // Sample Source Failure Messages (ssfail)
 // **********************************************************
 
-static char *prefix = "HPCToolkit fatal error";
-static char *warning = "HPCToolkit warning";
+static char *prefix = "ERROR: hpcrun";
+static char *warning = "WARNING: hpcrun";
 static char *hpcrun_L =
    "Use 'hpcrun -L <program>' for a list of available events.\n\n"
    "Note: The above command will exit after listing available events. Arguments to your program will be ignored.\n"

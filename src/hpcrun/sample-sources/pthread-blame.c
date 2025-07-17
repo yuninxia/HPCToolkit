@@ -29,6 +29,7 @@
 #include "simple_oo.h"
 #include "sample_source_obj.h"
 #include "common.h"
+#include "display.h"
 #include "pthread-blame.h"
 #include "blame-shift/blame-shift.h"
 #include "blame-shift/blame-map.h"
@@ -333,15 +334,15 @@ METHOD_FN(gen_event_set)
 static void
 METHOD_FN(display_events)
 {
-  printf("===========================================================================\n");
-  printf("Available directed blame shifting preset events\n");
-  printf("===========================================================================\n");
-  printf("Name\t\tDescription\n");
-  printf("---------------------------------------------------------------------------\n");
-  printf("%s\tShift the blame for waiting for a lock to the lock holder.\n"
-         "\t\tOnly suitable for threaded programs.\n",
-         PTHREAD_EVENT_NAME);
-  printf("\n");
+
+  display_header(stdout, "Available directed blame shifting preset events");
+
+  display_header_event(stdout);
+
+  display_event_info(stdout, PTHREAD_EVENT_NAME,
+    "Shift the blame for waiting for a lock to the lock holder.\n\n"
+    "Note: Only suitable for threaded programs"
+  );
 }
 
 

@@ -50,6 +50,6 @@ gpu_operation_item_dump
          item->activity.kind == GPU_ACTIVITY_MEMCPY
            ? item->activity.details.memcpy.correlation_id
            : item->activity.details.kernel.correlation_id,
-         gpu_kind_to_string(item->activity.kind),
-         gpu_type_to_string(item->activity.details.memcpy.copyKind));
+         gpu_activity_kind_to_string(item->activity.kind),
+         gpu_mem_type_to_string(item->activity.details.memcpy.copyKind));
 }

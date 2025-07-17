@@ -777,6 +777,7 @@ makeStructure(string absfilepath,
 #endif
 
     bool intel_file = elfFile->isIntelGPUFile();
+    bool amd_gpu = elfFile->isAMDGPUFile();
     bool has_calls;
 
     intel_gpu_arch = 0;
@@ -815,9 +816,9 @@ makeStructure(string absfilepath,
           has_calls = false;
         }
       } else {
+        has_calls = amd_gpu && structOpts.compute_gpu_cfg;
         code_src = new SymtabCodeSource(symtab);
         parsable = true;
-        has_calls = false;
       }
       code_obj = new CodeObject(code_src, code_factory, NULL, false, true);
     }

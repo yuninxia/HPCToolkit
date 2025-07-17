@@ -25,6 +25,18 @@
 #include "../../cct/cct.h"
 
 
+//******************************************************************************
+// macros
+//******************************************************************************
+
+#define GPU_RUNTIME_PH_CID \
+  ((0x1UL << 32) | (0x7f7f7f7f)) // thread 1 with correlation id 0x7f7f7f7f
+
+#define PARTIAL_UNWIND_PH_CID \
+  ((0x1UL << 32) | (0xf7f7f7f7)) // thread 1 with correlation id 0xf7f7f7f7
+
+
+
 
 //******************************************************************************
 // type declarations
@@ -40,7 +52,13 @@ typedef enum gpu_placeholder_type_t {
   gpu_placeholder_type_memset  = 6,
   gpu_placeholder_type_sync    = 7,
   gpu_placeholder_type_trace   = 8,
-  gpu_placeholder_type_count   = 9
+  gpu_placeholder_type_paging = 9,
+  gpu_placeholder_type_runtime = 10,
+  gpu_placeholder_type_kernel_anon = 11,
+  gpu_placeholder_type_scratch_alloc = 12,
+  gpu_placeholder_type_scratch_free = 13,
+  gpu_placeholder_type_scratch_async_reclaim = 14,
+  gpu_placeholder_type_count   = 15
 } gpu_placeholder_type_t;
 
 

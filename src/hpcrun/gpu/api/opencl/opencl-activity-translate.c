@@ -16,7 +16,7 @@
 
 
 //******************************************************************************
-// local includes
+// hpctoolkit includes
 //******************************************************************************
 
 #include "../../activity/gpu-activity.h"
@@ -24,6 +24,16 @@
 
 #include "opencl-activity-translate.h"
 #include "opencl-api.h"
+
+
+
+//******************************************************************************
+// debugging support
+//******************************************************************************
+
+#define DEBUG 0
+
+#include "../../common/gpu-print.h"
 
 
 
@@ -48,7 +58,7 @@ convert_kernel_launch
   ga->kind     = cb_data->kind;
   ga->cct_node = cb_data->details.cct_node;
 
-  ga->details.kernel.correlation_id = cb_data->details.ker_cb.correlation_id;
+  ga->details.kernel.correlation_id = cb_data->details.correlation_id;
   ga->details.kernel.submit_time    = cb_data->details.submit_time;
   ga->details.kernel.context_id    = cb_data->details.context_id;
   ga->details.kernel.stream_id    = cb_data->details.stream_id;
@@ -72,7 +82,7 @@ convert_memcpy
   ga->kind     = cb_data->kind;
   ga->cct_node = cb_data->details.cct_node;
 
-  ga->details.memcpy.correlation_id  = cb_data->details.cpy_cb.correlation_id;
+  ga->details.memcpy.correlation_id  = cb_data->details.correlation_id;
   ga->details.memcpy.submit_time     = cb_data->details.submit_time;
   ga->details.memcpy.context_id      = cb_data->details.context_id;
   ga->details.memcpy.stream_id       = cb_data->details.stream_id;
@@ -98,7 +108,7 @@ convert_memory
   ga->kind     = cb_data->kind;
   ga->cct_node = cb_data->details.cct_node;
 
-  ga->details.memory.correlation_id  = cb_data->details.mem_cb.correlation_id;
+  ga->details.memory.correlation_id  = cb_data->details.correlation_id;
   ga->details.memory.bytes           = cb_data->details.mem_cb.size;
   ga->details.memory.memKind         = cb_data->details.mem_cb.type;
 }

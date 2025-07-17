@@ -42,6 +42,7 @@ static void init_dispatch() {
       .zeCommandQueueSynchronize = foil_dlsym("zeCommandQueueSynchronize"),
       .zeKernelGetName = foil_dlsym("zeKernelGetName"),
       .zetModuleGetDebugInfo = foil_dlsym("zetModuleGetDebugInfo"),
+      .zeDeviceGetGlobalTimestamps = foil_dlsym("zeDeviceGetGlobalTimestamps"),
   };
 }
 
@@ -158,4 +159,10 @@ HPCRUN_EXPOSED_API ze_result_t
 zeCommandQueueSynchronize(ze_command_queue_handle_t hCommandQueue, uint64_t timeout) {
   return hpcrun_foil_fetch_hooks_level0_dl()->zeCommandQueueSynchronize(
       hCommandQueue, timeout, dispatch());
+}
+
+HPCRUN_EXPOSED_API ze_result_t zeDeviceGetGlobalTimestamps(ze_device_handle_t hDevice,
+  uint64_t *hostTimestamp, uint64_t *deviceTimestamp) {
+  return hpcrun_foil_fetch_hooks_level0_dl()->zeDeviceGetGlobalTimestamps(
+    hDevice, hostTimestamp, deviceTimestamp, dispatch());
 }

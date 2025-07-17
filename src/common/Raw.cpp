@@ -957,6 +957,7 @@ Analysis::Raw::writeAsText_metadb(const char* filenm)
         case FMT_METADB_ENTRYPOINT_UNKNOWN_ENTRY: std::cout << "unknown entry"; break;
         case FMT_METADB_ENTRYPOINT_MAIN_THREAD: std::cout << "main thread"; break;
         case FMT_METADB_ENTRYPOINT_APPLICATION_THREAD: std::cout << "application thread"; break;
+        case FMT_METADB_ENTRYPOINT_GPU_RUNTIME: std::cout << "gpu runtime"; break;
         default: std::cout << "???"; break;
         }
         std::cout << ") (pPrettyName: 0x" << (unsigned int)ep.pPrettyName << " = &\""
