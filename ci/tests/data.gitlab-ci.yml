@@ -31,13 +31,14 @@ semifresh nvidia sw-cuda:
     SETUP_ARGS: -Dcuda_args=-arch=native
     REGEN_SUITES: nvidia sw-cuda
 
-semifresh amd:
-  extends: .semifresh test job
-  needs: []
-  image: registry.gitlab.com/hpctoolkit/rtt-images:1.0.0-rocm5.7@sha256:73c4ff5959d5acdb3bb6bdde8b07177ded3ed949983a9d05d844856874ac3c8d
-  tags: [rice-linux-large-amd64-gpu-amd]
-  variables:
-    REGEN_SUITES: amd
+# FIXME: ROCm 5.7 is too old for Rocprofiler-sdk
+# semifresh amd:
+#   extends: .semifresh test job
+#   needs: []
+#   image: registry.gitlab.com/hpctoolkit/rtt-images:1.0.0-rocm5.7
+#   tags: [rice-linux-large-amd64-gpu-amd]
+#   variables:
+#     REGEN_SUITES: amd
 
 # For easy access, the regenerated test data is made available as a single job artifact archive
 fresh testdata:
@@ -46,7 +47,7 @@ fresh testdata:
   needs:
     - semifresh none cpu
     - semifresh nvidia sw-cuda
-    - semifresh amd
+#    - semifresh amd
   when: always
   script:
     - apk add git
