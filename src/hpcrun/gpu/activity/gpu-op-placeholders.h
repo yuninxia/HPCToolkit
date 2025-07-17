@@ -58,8 +58,10 @@ typedef enum gpu_placeholder_type_t {
   gpu_placeholder_type_scratch_alloc = 12,
   gpu_placeholder_type_scratch_free = 13,
   gpu_placeholder_type_scratch_async_reclaim = 14,
-  gpu_placeholder_type_count   = 15
+  gpu_placeholder_type_scratch_illegal = 15
 } gpu_placeholder_type_t;
+
+#define gpu_placeholder_type_count 16
 
 
 typedef uint32_t gpu_op_placeholder_flags_t;
