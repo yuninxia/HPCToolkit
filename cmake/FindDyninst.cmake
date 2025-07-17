@@ -1,6 +1,6 @@
 # SPDX-FileCopyrightText: Contributors to the HPCToolkit Project
 #
-# SPDX-License-Identifier: BSD-3-Clause
+# SPDX-License-Identifier: Apache-2.0
 
 find_package(Dyninst CONFIG QUIET
   OPTIONAL_COMPONENTS ${Dyninst_FIND_COMPONENTS}

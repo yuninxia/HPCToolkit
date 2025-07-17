@@ -1,6 +1,6 @@
 // SPDX-FileCopyrightText: Contributors to the HPCToolkit Project
 //
-// SPDX-License-Identifier: BSD-3-Clause
+// SPDX-License-Identifier: Apache-2.0
 
 #ifndef CORE_PROFILE_TRACE_DATA_H
 #define CORE_PROFILE_TRACE_DATA_H

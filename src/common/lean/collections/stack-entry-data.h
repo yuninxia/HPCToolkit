@@ -1,6 +1,6 @@
 // SPDX-FileCopyrightText: Contributors to the HPCToolkit Project
 //
-// SPDX-License-Identifier: BSD-3-Clause
+// SPDX-License-Identifier: Apache-2.0
 
 #ifndef GENERIC_STACK_ENTRY_DATA
 #define GENERIC_STACK_ENTRY_DATA 1

@@ -1,6 +1,6 @@
 # SPDX-FileCopyrightText: Contributors to the HPCToolkit Project
 #
-# SPDX-License-Identifier: BSD-3-Clause
+# SPDX-License-Identifier: Apache-2.0
 
 # FIXME: We shouldn't actually support the xed-interface.h case, but Spack only installs
 # without the xed/ prefix at the moment, and from-source only supports with the xed/ prefix.

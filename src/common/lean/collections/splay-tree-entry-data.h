@@ -1,6 +1,6 @@
 // SPDX-FileCopyrightText: Contributors to the HPCToolkit Project
 //
-// SPDX-License-Identifier: BSD-3-Clause
+// SPDX-License-Identifier: Apache-2.0
 
 #ifndef GENERIC_SPLAY_TREE_ENTRY_DATA_H
 #define GENERIC_SPLAY_TREE_ENTRY_DATA_H 1
