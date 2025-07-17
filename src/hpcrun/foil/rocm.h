@@ -50,6 +50,7 @@ typedef uint64_t rocprofiler_pc_t;
   const rocprofiler_external_correlation_id_request_kind_t
 
 #define rocm_tracing_operation_t const rocprofiler_tracing_operation_t
+
 #endif
 
 #define rocprofiler_async_correlation_id_t rocprofiler_correlation_id_t
@@ -59,6 +60,7 @@ typedef uint64_t rocprofiler_pc_t;
 #undef rocprofiler_async_correlation_id_t
 
 #undef rocm_configure_counting_service
+<<<<<<< HEAD
 #define rocm_configure_counting_service                                                \
   rocprofiler_configure_buffer_dispatch_counting_service
 
@@ -97,11 +99,49 @@ typedef uint64_t rocprofiler_pc_t;
 
 #if ((ROCPROFILER_VERSION_MAJOR == 0 && ROCPROFILER_VERSION_MINOR > 5) ||              \
      (ROCPROFILER_VERSION_MAJOR == 1))
+=======
+#define rocm_configure_counting_service \
+  rocprofiler_configure_buffer_dispatch_counting_service
+
+#undef rocm_counting_service_callback_t
+#define rocm_counting_service_callback_t \
+  rocprofiler_dispatch_counting_service_cb_t
+
+#define rocprofiler_profile_config_id_t \
+  rocprofiler_counter_config_id_t
+
+#define rocprofiler_destroy_profile_config \
+  rocprofiler_destroy_counter_config
+
+#define rocprofiler_create_profile_config \
+  rocprofiler_create_counter_config
+
+#endif
+
+
+// PC sampling record kinds
+#if (ROCPROFILER_VERSION_MAJOR == 0 && ROCPROFILER_VERSION_MINOR < 6)
+#define ROCPROFILER_PC_SAMPLING_RECORD_HOST ROCPROFILER_PC_SAMPLING_RECORD_SAMPLE
+#define wave_in_group wave_id // rocm 6.4 changed the field name
+#define CONFIGURE_PC_SAMPLING_SERVICE_FLAG_PARAM // none
+#define CONFIGURE_PC_SAMPLING_SERVICE_FLAG_ARG // none
+#define CONFIGURE_PC_SAMPLING_SERVICE_FLAG_DECL // none
+#define CONFIGURE_PC_SAMPLING_SERVICE_FLAG_VALUE // none
+#else
+#define ROCPROFILER_PC_SAMPLING_RECORD_HOST ROCPROFILER_PC_SAMPLING_RECORD_HOST_TRAP_V0_SAMPLE
+#define ROCPROFILER_PC_SAMPLING_RECORD_STOCHASTIC ROCPROFILER_PC_SAMPLING_RECORD_STOCHASTIC_V0_SAMPLE
+#define rocprofiler_pc_sampling_record_t rocprofiler_pc_sampling_record_host_trap_v0_t
+#define CONFIGURE_PC_SAMPLING_SERVICE_FLAG_PARAM flags
+#define CONFIGURE_PC_SAMPLING_SERVICE_FLAG_ARG , CONFIGURE_PC_SAMPLING_SERVICE_FLAG_PARAM
+#define CONFIGURE_PC_SAMPLING_SERVICE_FLAG_DECL , int CONFIGURE_PC_SAMPLING_SERVICE_FLAG_PARAM
+#define CONFIGURE_PC_SAMPLING_SERVICE_FLAG_VALUE , 0
+#endif
+
+#if ((ROCPROFILER_VERSION_MAJOR == 0 && ROCPROFILER_VERSION_MINOR > 5) || (ROCPROFILER_VERSION_MAJOR == 1))
 #define loaded_code_object_id code_object_id
 #define loaded_code_object_offset code_object_offset
 #define ROCPROFILER_OMPT_AVAILABLE
 #undef ROCPROFILER_PAGE_MIGRATION_AVAILABLE
-#endif
 
 #if (ROCPROFILER_VERSION_MAJOR == 0 && ROCPROFILER_VERSION_MINOR > 5)
 #define ROCM_AGENT_VISIBLE(agent) (agent)->runtime_visibility.hsa
