@@ -107,7 +107,7 @@ GPUBIN_USED_DIR  = $(MEAS_DIR)/gpubins-used
 #-------------------------------------------------------------------------------
 $(GPUBIN_USED_DIR): $(MEAS_DIR)/all.lm
 	-@mkdir $(GPUBIN_USED_DIR) >&- 2>&-
-	-@cd $(GPUBIN_USED_DIR) >&- 2>&-; for i in `cat $(MEAS_DIR)/all.lm | grep gpubin`; do ln -s $(MEAS_DIR)/$$i; done >&- 2>&-
+	-@cd $(GPUBIN_USED_DIR) >&- 2>&-; for i in `cat $(MEAS_DIR)/all.lm | grep gpubin`; do if [ -e $(MEAS_DIR)/$$i ];  then ln -s $(MEAS_DIR)/$$i; fi; done >&- 2>&-
 
 #-------------------------------------------------------------------------------
 # $(GB): gpubin files

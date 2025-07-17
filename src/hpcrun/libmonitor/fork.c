@@ -33,6 +33,7 @@
 #include "monitor.h"
 
 #include "../audit/audit-api.h"
+#include "../libc-functions.h"
 
 extern char **environ;
 
@@ -68,7 +69,7 @@ monitor_fork_init(void)
 
     monitor_early_init();
 
-    override_system = (getenv(NO_SYSTEM_OVERRIDE) == NULL);
+    override_system = (libc_getenv(NO_SYSTEM_OVERRIDE) == NULL);
 
     init_done = 1;
 }
@@ -158,7 +159,7 @@ monitor_is_executable(const char *file)
         return (access(file, X_OK) == 0);
 
     file_len = strlen(file);
-    path = getenv("PATH");
+    path = libc_getenv("PATH");
     path += strspn(path, COLON);
     while (*path != 0) {
         path_len = strcspn(path, COLON);

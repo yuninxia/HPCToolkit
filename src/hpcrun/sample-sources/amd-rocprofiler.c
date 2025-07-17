@@ -44,6 +44,7 @@
 
 #include "../control-knob.h"
 #include "../device-finalizers.h"
+#include "../libc-functions.h"
 #include "../gpu/api/amd/roctracer-api.h"
 #include "../gpu/api/amd/rocprofiler-api.h"
 #include "../gpu/activity/gpu-activity.h"
@@ -64,7 +65,7 @@
 #include "../messages/messages.h"
 #include "../../common/lean/hpcrun-fmt.h"
 
-#include <roctracer/roctracer_hip.h>
+// #include <roctracer/roctracer_hip.h>
 
 
 
@@ -154,6 +155,7 @@ METHOD_FN(process_event_list)
 static void
 METHOD_FN(finalize_event_list)
 {
+#if 0
   // After going through all command line arguments,
   // we call this function to generate a list of counters
   // in rocprofiler's format and initialize corresponding
@@ -170,6 +172,7 @@ METHOD_FN(finalize_event_list)
   // Inform roctracer component that we will collect hardware counters,
   // which will serialize kernel launches
   roctracer_enable_counter_collection();
+#endif
 }
 
 
@@ -183,8 +186,8 @@ METHOD_FN(gen_event_set)
 static void
 METHOD_FN(display_events)
 {
-  const char* rocp_metrics = getenv("ROCP_METRICS");
-  const char* hsa_tools_lib = getenv("HSA_TOOLS_LIB");
+  const char* rocp_metrics = libc_getenv("ROCP_METRICS");
+  const char* hsa_tools_lib = libc_getenv("HSA_TOOLS_LIB");
   if (rocp_metrics == NULL || rocp_metrics[0] == '\0'
       || hsa_tools_lib == NULL || hsa_tools_lib[0] == '\0') {
     display_header(stdout, "AMD GPU hardware counter events");

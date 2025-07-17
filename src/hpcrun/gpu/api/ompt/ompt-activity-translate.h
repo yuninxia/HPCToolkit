@@ -12,6 +12,7 @@
 // OpenMP includes
 //******************************************************************************
 
+#include "../../../ompt/ompt-device-map.h"
 #include "../../../ompt/omp-tools.h"
 
 
@@ -32,6 +33,7 @@ typedef struct cct_node_t cct_node_t;
 void
 ompt_activity_translate
 (
+ ompt_device_map_entry_t *device_entry,
  gpu_activity_t *entry,
  ompt_record_ompt_t *record,
  uint64_t *cid_ptr

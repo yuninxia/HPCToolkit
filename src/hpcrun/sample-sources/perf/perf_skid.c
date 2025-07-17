@@ -25,6 +25,8 @@
 #include "perf_skid.h"
 #include "perf_event_open.h"
 
+#include "../../libc-functions.h"
+
 // -----------------------------------------------------
 // precise ip / skid options
 // -----------------------------------------------------
@@ -69,7 +71,7 @@ const int perf_skid_flavors = sizeof(perf_skid_precision)/sizeof(int);
 static long
 getEnvLong(const char *env_var, long default_value)
 {
-  const char *str_val= getenv(env_var);
+  const char *str_val= libc_getenv(env_var);
 
   if (str_val) {
     char *end_ptr;

@@ -29,6 +29,7 @@
 #include "memory/hpcrun-malloc.h"
 #include "epoch.h"
 #include "handling_sample.h"
+#include "libc-functions.h"
 
 #include "rank.h"
 #include "thread_data.h"
@@ -555,7 +556,7 @@ hpcrun_id_tuple_cputhread
 
   id_tuple_constructor(&id_tuple, ids, IDTUPLE_MAXTYPES);
 
-  id_tuple_push_back(&id_tuple, IDTUPLE_COMPOSE(IDTUPLE_NODE, IDTUPLE_IDS_LOGIC_LOCAL), OSUtil_hostid(), 0);
+  id_tuple_push_back(&id_tuple, IDTUPLE_COMPOSE(IDTUPLE_NODE, IDTUPLE_IDS_LOGIC_LOCAL), OSUtil_hostid(libc_getenv), 0);
 
   int core = hpcrun_thread_core_bindings();
   if (core >= 0) {

@@ -284,6 +284,7 @@ enum {
   FMT_METADB_ENTRYPOINT_UNKNOWN_ENTRY = 0,
   FMT_METADB_ENTRYPOINT_MAIN_THREAD = 1,
   FMT_METADB_ENTRYPOINT_APPLICATION_THREAD = 2,
+  FMT_METADB_ENTRYPOINT_GPU_RUNTIME = 3,
 };
 
 void fmt_metadb_entryPoint_read(fmt_metadb_entryPoint_t*, const char[FMT_METADB_SZ_EntryPoint]);

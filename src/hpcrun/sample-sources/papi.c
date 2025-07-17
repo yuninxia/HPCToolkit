@@ -469,11 +469,9 @@ METHOD_FN(display_events)
   char name[200], *prof;
   int ev, ret, num_total, num_prof;
 
-  printf("===========================================================================\n");
-  printf("Available PAPI preset events\n");
-  printf("===========================================================================\n");
-  printf("Name\t    Profilable\tDescription\n");
-  printf("---------------------------------------------------------------------------\n");
+  display_header(stdout, "Available PAPI preset events");
+
+  display_header_event(stdout);
 
   if (papi_unavail) {
     printf("PAPI is not available.  Probably, the kernel doesn't support PAPI,\n"
@@ -495,13 +493,16 @@ METHOD_FN(display_events)
     {
       PAPI_event_code_to_name(ev, name);
       if (event_is_derived(ev)) {
-        prof = "No";
+        prof = "no";
       } else {
-        prof = "Yes";
+        prof = "yes";
         num_prof++;
       }
       num_total++;
-      printf("%-10s\t%s\t%s\n", name, prof, info.long_descr);
+
+      char name_prof[1024];
+      snprintf(name_prof, 1024, "%s (profilable=%s)", name, prof);
+      display_event_info(stdout, name_prof, info.long_descr);
     }
     ret = PAPI_enum_event(&ev, PAPI_ENUM_EVENTS);
   }
@@ -509,11 +510,9 @@ METHOD_FN(display_events)
          num_total, num_prof);
   printf("\n");
 
-  printf("===========================================================================\n");
-  printf("Available native events\n");
-  printf("===========================================================================\n");
-  printf("Name\t\t\t\tDescription\n");
-  printf("---------------------------------------------------------------------------\n");
+  display_header(stdout, "Available native events");
+
+  display_header_event(stdout);
 
   num_total = 0;
   ev = PAPI_NATIVE_MASK;
@@ -526,7 +525,7 @@ METHOD_FN(display_events)
       PAPI_event_code_to_name(ev, name);
       PAPI_get_event_info(ev, &info);
       num_total++;
-      printf("%-30s\t%s\n", name, info.long_descr);
+      display_event_info(stdout, name, info.long_descr);
     }
     ret = PAPI_enum_event(&ev, PAPI_ENUM_EVENTS);
   }

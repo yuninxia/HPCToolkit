@@ -35,6 +35,7 @@
 #include "../sample_event.h"
 #include "sample_source_obj.h"
 #include "common.h"
+#include "display.h"
 #include "../main.h"
 #include "../sample_sources_registered.h"
 #include "simple_oo.h"
@@ -156,13 +157,13 @@ METHOD_FN(gen_event_set)
 static void
 METHOD_FN(display_events)
 {
-  printf("===========================================================================\n");
-  printf("Available memory leak detection events\n");
-  printf("===========================================================================\n");
-  printf("Name\t\tDescription\n");
-  printf("---------------------------------------------------------------------------\n");
-  printf("MEMLEAK\t\t" "The number of bytes allocated and freed per dynamic context\n");
-  printf("\n");
+  display_header(stdout, "Available memory leak detection events");
+
+  display_header_event(stdout);
+
+  display_event_info(stdout, "MEMLEAK",
+    "The number of bytes allocated and freed per dynamic context"
+  );
 }
 
 

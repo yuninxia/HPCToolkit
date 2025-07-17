@@ -5,6 +5,7 @@
 #define _GNU_SOURCE
 
 #include "control-knob.h"
+#include "libc-functions.h"
 #include "utilities/tokenize.h"
 #include <stdio.h>
 #include <stdlib.h>
@@ -72,7 +73,7 @@ control_knob_init()
 {
   control_knob_default_register();
 
-  char *in = getenv("HPCRUN_CONTROL_KNOBS");
+  char *in = libc_getenv("HPCRUN_CONTROL_KNOBS");
   if (in == NULL) return;
 
   char *save = NULL;

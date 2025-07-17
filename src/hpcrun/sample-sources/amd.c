@@ -65,8 +65,6 @@
 #include "../messages/messages.h"
 #include "../../common/lean/hpcrun-fmt.h"
 
-#include <roctracer/roctracer_hip.h>
-
 
 
 //******************************************************************************
@@ -156,6 +154,7 @@ METHOD_FN(process_event_list)
 static void
 METHOD_FN(finalize_event_list)
 {
+#if 0
   roctracer_init();
 
   device_finalizer_flush.fn = roctracer_flush;
@@ -173,6 +172,8 @@ METHOD_FN(finalize_event_list)
   device_trace_finalizer_shutdown.fn = gpu_trace_fini;
   device_finalizer_register(device_finalizer_type_shutdown,
                             &device_trace_finalizer_shutdown);
+
+#endif
 }
 
 

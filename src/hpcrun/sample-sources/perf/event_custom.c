@@ -58,8 +58,7 @@ event_custom_display(FILE *std)
   events_list_t *item = NULL;
 
   display_header(stdout, "Customized perf-event based events");
-  fprintf(std, "Name\t\tDescription\n");
-  display_line_single(stdout);
+  display_header_event(stdout);
 
   // check if we already have the event
   SLIST_FOREACH(item, &list_events_head, entries) {
@@ -67,7 +66,6 @@ event_custom_display(FILE *std)
        display_event_info(stdout, item->event->name, item->event->desc);
     }
   }
-  fprintf(std, "\n");
 }
 
 int

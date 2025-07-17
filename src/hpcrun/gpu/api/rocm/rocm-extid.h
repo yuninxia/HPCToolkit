@@ -1,40 +1,40 @@
 // SPDX-FileCopyrightText: Contributors to the HPCToolkit Project
 //
-// SPDX-License-Identifier: Apache-2.0
-
-// -*-Mode: C++;-*- // technically C99
-
-#ifndef roctracer_activity_translate_h
-#define roctracer_activity_translate_h
-
-//******************************************************************************
-// ROCm includes
-//******************************************************************************
-
-#include <roctracer/roctracer_hip.h>
+// SPDX-License-Identifier: BSD-3-Clause
 
 
+/// @file rocm-extid.h
+/// @brief A simple API for managing external correlation IDs for ROCm GPU operations.
+
+#ifndef rocm_extid_h
+#define rocm_extid_h
 
 //******************************************************************************
-// local includes
+// system includes
 //******************************************************************************
 
-#include "../../activity/gpu-activity.h"
+#include <stdint.h>
 
 
 
 //******************************************************************************
-// interface functions
+// hpctoolkit includes
 //******************************************************************************
 
+#include "rocm.h"
+
+
+
+//******************************************************************************
+// public interfaces
+//******************************************************************************
+
+/// @brief Initializes the ROCm external ID management.
+/// @param context_id The ROCm context ID.
 void
-roctracer_activity_translate
+rocm_extid_init
 (
- gpu_activity_t *entry,
- roctracer_record_t *record,
- uint64_t *correlation_id
+  rocprofiler_context_id_t context_id
 );
 
-
-
-#endif
+#endif  // rocm_extid_h

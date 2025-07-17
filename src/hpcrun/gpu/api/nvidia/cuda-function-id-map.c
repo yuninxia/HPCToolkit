@@ -21,7 +21,7 @@
 
 #include "../../gpu-splay-allocator.h"
 
-#include "gpu-function-id-map.h"
+#include "cuda-function-id-map.h"
 
 //******************************************************************************
 // macros
@@ -60,7 +60,7 @@
 //******************************************************************************
 
 #undef typed_splay_node
-#define typed_splay_node(function_id) gpu_function_id_map_entry_t
+#define typed_splay_node(function_id) cuda_function_id_map_entry_t
 
 typedef struct typed_splay_node(function_id) {
   struct typed_splay_node(function_id) *left;
@@ -75,9 +75,9 @@ typedef struct typed_splay_node(function_id) {
 // local data
 //******************************************************************************
 
-static gpu_function_id_map_entry_t *map_root = NULL;
+static cuda_function_id_map_entry_t *map_root = NULL;
 
-static gpu_function_id_map_entry_t *free_list = NULL;
+static cuda_function_id_map_entry_t *free_list = NULL;
 
 
 //******************************************************************************
@@ -87,8 +87,8 @@ static gpu_function_id_map_entry_t *free_list = NULL;
 typed_splay_impl(function_id)
 
 
-static gpu_function_id_map_entry_t *
-gpu_function_id_map_entry_alloc
+static cuda_function_id_map_entry_t *
+cuda_function_id_map_entry_alloc
 (
  void
 )
@@ -97,16 +97,16 @@ gpu_function_id_map_entry_alloc
 }
 
 
-static gpu_function_id_map_entry_t *
-gpu_function_id_map_entry_new
+static cuda_function_id_map_entry_t *
+cuda_function_id_map_entry_new
 (
  uint64_t function_id,
  ip_normalized_t pc
 )
 {
-  gpu_function_id_map_entry_t *e = gpu_function_id_map_entry_alloc();
+  cuda_function_id_map_entry_t *e = cuda_function_id_map_entry_alloc();
 
-  memset(e, 0, sizeof(gpu_function_id_map_entry_t));
+  memset(e, 0, sizeof(cuda_function_id_map_entry_t));
 
   e->function_id = function_id;
   e->pc = pc;
@@ -119,13 +119,13 @@ gpu_function_id_map_entry_new
 // interface operations
 //******************************************************************************
 
-gpu_function_id_map_entry_t *
-gpu_function_id_map_lookup
+cuda_function_id_map_entry_t *
+cuda_function_id_map_lookup
 (
  uint64_t function_id
 )
 {
-  gpu_function_id_map_entry_t *result = st_lookup(&map_root, function_id);
+  cuda_function_id_map_entry_t *result = st_lookup(&map_root, function_id);
 
   PRINT("function_id_map lookup: id=0x%lx (entry %p)", function_id, result);
 
@@ -134,7 +134,7 @@ gpu_function_id_map_lookup
 
 
 void
-gpu_function_id_map_insert
+cuda_function_id_map_insert
 (
  uint64_t function_id,
  ip_normalized_t pc
@@ -145,29 +145,30 @@ gpu_function_id_map_insert
     // correlation should be inserted only once.
     hpcrun_terminate();
   } else {
-    gpu_function_id_map_entry_t *entry =
-      gpu_function_id_map_entry_new(function_id, pc);
+    cuda_function_id_map_entry_t *entry =
+      cuda_function_id_map_entry_new(function_id, pc);
 
     st_insert(&map_root, entry);
   }
+  PRINT("cuda_function_id_map_insert: 0x%lx -> "IP_NORMALIZED_PRINT_FORMAT"\n", function_id, IP_NORMALIZED_PRINT_ARGS(pc));
 }
 
 
 void
-gpu_function_id_map_delete
+cuda_function_id_map_delete
 (
  uint64_t function_id
 )
 {
-  gpu_function_id_map_entry_t *node = st_delete(&map_root, function_id);
+  cuda_function_id_map_entry_t *node = st_delete(&map_root, function_id);
   st_free(&free_list, node);
 }
 
 
 ip_normalized_t
-gpu_function_id_map_entry_pc_get
+cuda_function_id_map_entry_pc_get
 (
- gpu_function_id_map_entry_t *entry
+ cuda_function_id_map_entry_t *entry
 )
 {
   return entry->pc;
@@ -178,7 +179,7 @@ gpu_function_id_map_entry_pc_get
 //*****************************************************************************
 
 uint64_t
-gpu_function_id_map_count
+cuda_function_id_map_count
 (
  void
 )

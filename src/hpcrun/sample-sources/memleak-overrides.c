@@ -51,6 +51,7 @@
 
 #include "memleak-overrides.h"
 #include "memleak.h"
+#include "../libc-functions.h"
 #include "../messages/messages.h"
 #include "../safe-sampling.h"
 #include "../sample_event.h"
@@ -252,7 +253,7 @@ memleak_initialize(void)
 
   // If we are sampling the mallocs, then read the probability and
   // seed the random number generator.
-  prob_str = getenv(HPCRUN_MEMLEAK_PROB);
+  prob_str = libc_getenv(HPCRUN_MEMLEAK_PROB);
   if (prob_str != NULL) {
     use_memleak_prob = 1;
     memleak_prob = string_to_prob(prob_str);

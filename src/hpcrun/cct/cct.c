@@ -603,6 +603,13 @@ hpcrun_cct_insert_addr(cct_node_t* node, cct_addr_t* frm, bool unwound)
   node->children = found;
 
   if (found && cct_addr_eq(frm, &(found->addr))){
+    if (unwound) {
+      // hpcprof refuses to accept certain metrics on nodes that are not unwound
+      // for that reason, we prefer nodes that are unwound. don't even bother checking
+      // whether the node is marked as unwound or not. if this creation request is for
+      // an unwound node, mutate what is there to unwound in case it is not.
+      found->unwound = unwound;
+    }
     return found;
   }
   //  cct_node_t* new = cct_node_create(frm->as_info, frm->ip_norm, frm->lip, node);

@@ -24,6 +24,7 @@
 #include "../cct2metrics.h"
 #include "../device-finalizers.h"
 #include "../hpcrun-initializers.h"
+#include "../libc-functions.h"
 #include "../main.h"
 #include "../memory/hpcrun-malloc.h"
 #include "../safe-sampling.h"
@@ -554,10 +555,10 @@ ompt_initialize
   init_threads();
   init_parallel_regions();
 
-  char* ompt_task_full_ctxt_str = getenv("OMPT_TASK_FULL_CTXT");
+  char* ompt_task_full_ctxt_str = libc_getenv("OMPT_TASK_FULL_CTXT");
   if (ompt_task_full_ctxt_str) {
     ompt_task_full_context =
-      strcmp("ENABLED", getenv("OMPT_TASK_FULL_CTXT")) == 0;
+      strcmp("ENABLED", libc_getenv("OMPT_TASK_FULL_CTXT")) == 0;
   } else{
     ompt_task_full_context = 0;
   }
@@ -573,7 +574,7 @@ ompt_initialize
     ompt_elide = 1;
     ompt_callstack_init();
   }
-  if (getenv("HPCRUN_OMP_SERIAL_ONLY")) {
+  if (libc_getenv("HPCRUN_OMP_SERIAL_ONLY")) {
     serial_only_sf_entry.fn = ompt_serial_only;
     serial_only_sf_entry.arg = 0;
     sample_filters_register(&serial_only_sf_entry);
@@ -612,7 +613,7 @@ hpcrun_ompt_start_tool
   monitor_initialize();
   // post-condition: hpctoolkit is initialized
 
-  if (getenv("OMPT_DEBUG_WAIT")) {
+  if (libc_getenv("OMPT_DEBUG_WAIT")) {
     while (ompt_debug_wait);
   }
 

@@ -448,6 +448,7 @@ bool Hpcrun4::realread(const DataClass& needed) try {
           // (global)). Check for these first, and then warn if we see anything else.
           case hpcrun_placeholder_fence_main:
           case hpcrun_placeholder_fence_thread:
+          case hpcrun_placeholder_gpu_runtime:
             scope = Scope(Scope::placeholder, n.lm_ip);
             break;
           default:

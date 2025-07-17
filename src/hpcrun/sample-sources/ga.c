@@ -22,6 +22,7 @@
 #include "simple_oo.h"
 #include "sample_source_obj.h"
 #include "common.h"
+#include "display.h"
 #include "ga.h"
 
 #include "../metrics.h"
@@ -188,14 +189,15 @@ METHOD_FN(gen_event_set)
 static void
 METHOD_FN(display_events)
 {
-  printf("===========================================================================\n");
-  printf("Available Global Arrays events\n");
-  printf("===========================================================================\n");
-  printf("Name\t\tDescription\n");
-  printf("---------------------------------------------------------------------------\n");
-  printf("GA\t\tCollect Global Arrays metrics by sampling GA operations;\n");
-  printf("\t\tconfigurable sample period (default %ld ops/sample)\n", periodDefault);
-  printf("\n");
+  display_header(stdout, "Available Global Arrays events");
+
+  display_header_event(stdout);
+
+  char desc[1024];
+  snprintf(desc, 1024, "Collect Global Arrays metrics by sampling GA operations. "
+    "Configurable sample period (default %ld ops/sample)\n", periodDefault);
+
+  display_event_info(stdout, "GA", desc);
 }
 
 

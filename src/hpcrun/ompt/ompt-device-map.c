@@ -33,8 +33,24 @@
 #include "../../common/lean/splay-macros.h"
 #include "../messages/messages.h"
 #include "../memory/hpcrun-malloc.h"
+#include "../utilities/hpcrun-nanotime.h"
 
 #include "ompt-device-map.h"
+
+
+
+//*****************************************************************************
+// macros
+//*****************************************************************************
+
+#define DEBUG 0
+
+#if DEBUG
+#define PRINT(...) fprintf(stderr, __VA_ARGS__)
+#else
+#define PRINT(...)
+#endif
+
 
 
 /******************************************************************************
@@ -46,6 +62,7 @@ struct ompt_device_map_entry_s {
   uint64_t refcnt;
   ompt_device_t *device;
   const char *type;
+  uint64_t clock_offset_ns;
   struct ompt_device_map_entry_s *left;
   struct ompt_device_map_entry_s *right;
 };
@@ -78,6 +95,14 @@ ompt_device_map_entry_new
   e->device_id = device_id;
   e->device = device;
   e->type = type;
+
+  // AMD GPUs use timestamps relative to CLOCK_BOOTTIME, so
+  // they need to be adjusted since hpctoolkit uses
+  // timestamps relative to CLOCK_REALTIME
+  e->clock_offset_ns =
+    (strncmp(type, "gfx", 3) == 0) ?
+    hpcrun_nanotime_real_boot_offset() : 0;
+
   e->left = NULL;
   e->right = NULL;
   e->refcnt = 0;
@@ -257,4 +282,15 @@ ompt_device_map_count
 )
 {
   return ompt_device_map_count_helper(ompt_device_map_root);
+}
+
+
+uint64_t
+ompt_activity_time
+(
+  ompt_device_map_entry_t *e,
+  uint64_t t
+)
+{
+  return t + e->clock_offset_ns;
 }

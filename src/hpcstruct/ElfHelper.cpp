@@ -111,8 +111,14 @@ ElfFile::open
     intelGPU = true;
     break;
 #endif
+#ifdef EM_AMDGPU
+  case EM_AMDGPU:
+    amdGPU = true;
+    break;
+#endif
   default:
     intelGPU = false;
+    amdGPU = false;
     break;
   }
 

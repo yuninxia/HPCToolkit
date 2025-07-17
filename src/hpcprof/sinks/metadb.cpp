@@ -232,6 +232,10 @@ void MetaDB::notifyContext(const Context& c) {
         udc.entryPoint = FMT_METADB_ENTRYPOINT_APPLICATION_THREAD;
         udc.prettyNameSIdx = stringsTableLookup("application thread");
         break;
+      case hpcrun_placeholder_gpu_runtime:
+        udc.entryPoint = FMT_METADB_ENTRYPOINT_GPU_RUNTIME;
+        udc.prettyNameSIdx = stringsTableLookup("<gpu runtime>");
+        break;
       default:
         util::log::fatal{} << "Invalid top-level Scope: " << s;
       }

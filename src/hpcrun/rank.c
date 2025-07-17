@@ -25,6 +25,7 @@
 #define _GNU_SOURCE
 
 #include <stdint.h>
+#include "libc-functions.h"
 #include "libmonitor/monitor.h"
 #include "../common/lean/OSUtil.h"
 #include "rank.h"
@@ -53,7 +54,7 @@ hpcrun_get_rank(void)
 {
   int rank;
 
-  rank = OSUtil_rank();
+  rank = OSUtil_rank(libc_getenv);
   if (rank >= 0) {
     return rank;
   }

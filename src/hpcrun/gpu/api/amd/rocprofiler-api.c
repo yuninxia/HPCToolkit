@@ -20,8 +20,10 @@
 // local includes
 //******************************************************************************
 
+#include "../../../env.h"
 #include "../../../foil/rocprofiler.h"
 #include "../../../foil/rocm-hsa.h"
+#include "../../../libc-functions.h"
 
 #include "rocprofiler-api.h"
 
@@ -458,7 +460,7 @@ collect_useful_counters
     action = "skip";
   }
 
-  if (getenv("HPCRUN_PRINT_ROCPROFILER_COUNTER_DETAILS")) {
+  if (libc_getenv("HPCRUN_PRINT_ROCPROFILER_COUNTER_DETAILS")) {
     printf("%4s ", action);
     printf("block=%-4s ", info.metric.block_name);
     printf("ctrs=%-2d ", info.metric.block_counters);

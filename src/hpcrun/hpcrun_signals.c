@@ -34,6 +34,7 @@
 #include <pthread.h>
 #include <signal.h>
 #include <stdlib.h>
+#include "libc-functions.h"
 #include "libmonitor/monitor.h"
 #include "hpcrun_signals.h"
 #include "audit/audit-api.h"
@@ -71,7 +72,7 @@ hpcrun_signals_init_internal(void)
   sigaddset(&the_profile_mask, SIGRTMIN + 4);  // perf
 
   int shootdown_signal = SIGRTMIN + 8;  // libmonitor
-  char * str = getenv(SHOOTDOWN_VAR);
+  char * str = libc_getenv(SHOOTDOWN_VAR);
 
   if (str != NULL) {
     int val = atoi(str);

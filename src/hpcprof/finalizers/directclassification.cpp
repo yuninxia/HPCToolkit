@@ -168,6 +168,17 @@ void DirectClassification::load(const Module& m, udModule& ud) noexcept {
     return; // We only work with ELF files.
   }
 
+  // check for degenerate ELF files
+  // Note: these are sometimes recorded for ROCm OpenMP
+  GElf_Ehdr ehdr;
+  GElf_Ehdr *e = gelf_getehdr(elf, &ehdr);
+  if (e && e->e_machine == 0) {
+    elf_end(elf);
+    close(fd);
+    util::log::warning{} << "ELF binary is degenerate " << mpath.string();
+    return;
+  }
+
   // Process the DWARF, but only if its small enough
   auto baseweight = stdshim::filesystem::file_size(mpath);
   Dwarf* dbg = dwarf_begin_elf(elf, DWARF_C_READ, nullptr);

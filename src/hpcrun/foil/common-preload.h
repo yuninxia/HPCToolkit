@@ -61,6 +61,10 @@ const struct hpcrun_foil_hookdispatch_opencl* hpcrun_foil_fetch_hooks_opencl_dl(
 /// See ::hpcrun_foil_fetch_hooks_level0.
 const struct hpcrun_foil_hookdispatch_level0* hpcrun_foil_fetch_hooks_level0_dl();
 
+/// Fetch the dispatch-table of hooks for the rocm foil without symbol exposure.
+/// See ::hpcrun_foil_fetch_hooks_level0.
+const struct hpcrun_foil_hookdispatch_rocm* hpcrun_foil_fetch_hooks_rocm_dl();
+
 /// @}
 
 #ifdef __cplusplus

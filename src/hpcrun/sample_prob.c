@@ -16,6 +16,7 @@
 #include <string.h>
 #include <unistd.h>
 
+#include "libc-functions.h"
 #include "messages/messages.h"
 #include "../common/lean/OSUtil.h"
 #include "sample_prob.h"
@@ -105,7 +106,7 @@ random_hash_prob(void)
   }
 
   gettimeofday(&tv, NULL);
-  x = (((uint64_t) OSUtil_hostid()) << 24) + (tv.tv_usec << 4) + rand;
+  x = (((uint64_t) OSUtil_hostid(getenv)) << 24) + (tv.tv_usec << 4) + rand;
   x = (x & ~(((uint64_t) 15) << 60)) % HASH_PRIME;
 
   // Compute gen^x (mod prime).
@@ -140,7 +141,7 @@ hpcrun_sample_prob_init(void)
 
   // If HPCRUN_SAMPLE_PROB is not set in the environment, then the
   // answer is always on.
-  sample_prob_str = getenv(HPCRUN_SAMPLE_PROB);
+  sample_prob_str = libc_getenv(HPCRUN_SAMPLE_PROB);
   if (sample_prob_str != NULL) {
     sample_prob_ans = (random_hash_prob() < string_to_prob(sample_prob_str));
   }

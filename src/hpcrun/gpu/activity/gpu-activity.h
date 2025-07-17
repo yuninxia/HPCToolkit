@@ -56,11 +56,14 @@ typedef enum {
   GPU_ACTIVITY_PC_SAMPLING_INFO = 13,
   GPU_ACTIVITY_EVENT = 14,
   GPU_ACTIVITY_FLUSH = 15,
-  GPU_ACTIVITY_COUNTER = 16,
+  GPU_ACTIVITY_COUNTERS = 16,
   GPU_ACTIVITY_INTEL_OPTIMIZATION = 17,
   GPU_ACTIVITY_BLAME_SHIFT = 18,
   GPU_ACTIVITY_INTEL_GPU_UTILIZATION = 19,
   GPU_ACTIVITY_KERNEL_SIMD_GROUP = 20,
+  GPU_ACTIVITY_ONE_COUNTER = 21,
+  GPU_ACTIVITY_SCRATCH = 22,
+  GPU_ACTIVITY_PAGE_MIGRATION = 23,
 } gpu_activity_kind_t;
 
 typedef enum {
@@ -152,6 +155,49 @@ typedef enum {
   GPU_MEM_OP_UNKNOWN = 2
 } gpu_mem_op_t;
 
+typedef enum {
+  GPU_PAGE_NONE,
+  GPU_PAGE_MIGRATE_START,
+  GPU_PAGE_MIGRATE_END,
+  GPU_PAGE_FAULT_START,
+  GPU_PAGE_FAULT_END,
+  GPU_PAGE_QUEUE_EVICTION,
+  GPU_PAGE_QUEUE_RESTORE,
+  GPU_PAGE_UNMAP,
+  GPU_PAGE_DROPPED_EVENT,
+} gpu_page_op_type_t;
+
+// Note: TTM = Linux Translation Table Manager
+typedef enum {
+  GPU_PAGE_TRIGGER_NONE,
+  GPU_PAGE_TRIGGER_NOTFOUND,
+
+  GPU_PAGE_MIGRATE_TRIGGER_UNKNOWN,
+  GPU_PAGE_MIGRATE_PREFETCH,
+  GPU_PAGE_MIGRATE_FAULT_GPU,
+  GPU_PAGE_MIGRATE_FAULT_CPU,
+  GPU_PAGE_MIGRATE_TTM_EVICTION,
+
+  GPU_PAGE_QUEUE_SUSPEND_TRIGGER_UNKNOWN,
+  GPU_PAGE_QUEUE_SUSPEND_SVM,
+  GPU_PAGE_QUEUE_SUSPEND_USERPTR,
+  GPU_PAGE_QUEUE_SUSPEND_TTM,
+  GPU_PAGE_QUEUE_SUSPEND_SUSPEND,
+
+  GPU_PAGE_UNMAP_TRIGGER_UNKNOWN,
+  GPU_PAGE_UNMAP_FROM_GPU_MMU_NOTIFY,
+  GPU_PAGE_UNMAP_FROM_GPU_MMU_NOTIFY_MIGRATE,
+  GPU_PAGE_UNMAP_FROM_CPU,
+
+} gpu_page_op_trigger_t;
+
+typedef enum {
+  GPU_SCRATCH_MEMORY_ALLOC,
+  GPU_SCRATCH_MEMORY_FREE,
+  GPU_SCRATCH_MEMORY_ASYNC_RECLAIM,
+  GPU_SCRATCH_ILLEGAL
+} gpu_scratch_op_t;
+
 // pc sampling
 typedef struct gpu_pc_sampling_t {
   uint64_t correlation_id;
@@ -239,14 +285,15 @@ typedef struct gpu_kernel_t {
   int32_t localMemoryTotal;
   uint32_t activeWarpsPerSM;
   uint32_t maxActiveWarpsPerSM;
-  uint32_t threadRegisters;
+  uint32_t scalarRegisters;
+  uint32_t vectorRegisters;
   uint32_t blocks;
   uint32_t blockThreads;
   uint32_t blockSharedMemory;
 } gpu_kernel_t;
 
 typedef struct gpu_kernel_block_t {
-  uint64_t external_id;
+  uint64_t correlation_id;
   ip_normalized_t pc;
   uint64_t execution_count;
   uint64_t latency;
@@ -315,6 +362,17 @@ typedef struct gpu_synchronization_t {
   gpu_sync_type_t syncKind;
 } gpu_synchronization_t;
 
+typedef struct gpu_page_migration_t {
+  uint64_t timestamp;
+  gpu_page_op_type_t op_type;
+  gpu_page_op_trigger_t trigger;
+  uint64_t start_addr;
+  uint64_t end_addr;
+  uint64_t bytes;
+  uint32_t dropped_events_count;
+  uint64_t correlation_id;
+} gpu_page_migration_t;
+
 typedef struct gpu_host_correlation_t {
   uint64_t correlation_id;
   uint64_t host_correlation_id;
@@ -323,7 +381,8 @@ typedef struct gpu_host_correlation_t {
 typedef double gpu_counter_value_t;
 
 typedef struct gpu_counter_t {
-  uint32_t correlation_id;
+  uint64_t correlation_id;
+  ip_normalized_t kernel_first_pc;
   int total_counters;
   // The function that creates the structure should
   // be responsible for allocating memory.
@@ -331,6 +390,13 @@ typedef struct gpu_counter_t {
   // be responsible for deallocating the memory.
   gpu_counter_value_t *values;
 } gpu_counter_t;
+
+typedef struct gpu_one_counter_t {
+  uint64_t correlation_id;
+  ip_normalized_t kernel_first_pc;
+  unsigned int metric_id;
+  gpu_counter_value_t value;
+} gpu_one_counter_t;
 
 // a type that can be used to access start and end times
 // for a subset of activity kinds including kernel execution,
@@ -356,11 +422,21 @@ typedef struct gpu_utilization_t {
   uint8_t idle;
 } gpu_utilization_t;
 
+// gpu_mem_t is a prefix
+typedef struct gpu_scratch_t {
+  uint64_t start;
+  uint64_t end;
+  gpu_scratch_op_t op_type;
+  uint64_t correlation_id;
+  uint32_t device_id;
+  uint32_t context_id;
+  uint32_t stream_id;
+} gpu_scratch_t;
+
 typedef struct gpu_activity_details_t {
   union {
-    /* Each field stores the complete information needed
-       for processing each activity kind.
-     */
+    // Each field stores the complete information needed
+    // for processing each activity kind.
     gpu_pc_sampling_t pc_sampling;
     gpu_pc_sampling_info_t pc_sampling_info;
     gpu_memcpy_t memcpy;
@@ -378,18 +454,19 @@ typedef struct gpu_activity_details_t {
     gpu_host_correlation_t correlation;
     gpu_flush_t flush;
     gpu_counter_t counters;
+    gpu_one_counter_t counter;
     intel_optimization_t intel_optimization;
     gpu_blame_shift_t blame_shift;
     gpu_utilization_t gpu_utilization_info;
+    gpu_scratch_t scratch;
+    gpu_page_migration_t migration;
 
-    /* Access short cut for activity fields shared by multiple kinds */
+    // Access short cuts for activity fields shared by multiple kinds
 
-    /* Activity interval is used to access start time and end time of
-       an coarse grained activity.
-     */
+    // Used to access start time and end time of a coarse grained activity.
     gpu_interval_t interval;
 
-    /* Fine grained measurement contains information about specific instructions */
+    // Information about specific instructions in fine-grained measurements
     gpu_instruction_t instruction;
   };
 } gpu_activity_details_t;
@@ -433,15 +510,27 @@ void gpu_context_activity_dump
 );
 
 const char *
-gpu_kind_to_string
+gpu_activity_kind_to_string
 (
  gpu_activity_kind_t kind
 );
 
 const char *
-gpu_type_to_string
+gpu_mem_type_to_string
 (
  gpu_mem_type_t type
+);
+
+const char *
+gpu_page_op_type_to_string
+(
+  gpu_page_op_type_t type
+);
+
+const char *
+gpu_page_trigger_to_string
+(
+  gpu_page_op_trigger_t type
 );
 
 #endif

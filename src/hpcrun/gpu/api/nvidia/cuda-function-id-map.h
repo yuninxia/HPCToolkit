@@ -4,8 +4,8 @@
 
 // -*-Mode: C++;-*- // technically C99
 
-#ifndef gpu_function_id_map_h
-#define gpu_function_id_map_h
+#ifndef cuda_function_id_map_h
+#define cuda_function_id_map_h
 
 /******************************************************************************
  * system includes
@@ -24,21 +24,21 @@
  * type definitions
  *****************************************************************************/
 
-typedef struct gpu_function_id_map_entry_t gpu_function_id_map_entry_t;
+typedef struct cuda_function_id_map_entry_t cuda_function_id_map_entry_t;
 
 /******************************************************************************
  * interface operations
  *****************************************************************************/
 
-gpu_function_id_map_entry_t *
-gpu_function_id_map_lookup
+cuda_function_id_map_entry_t *
+cuda_function_id_map_lookup
 (
  uint64_t function_id
 );
 
 
 void
-gpu_function_id_map_insert
+cuda_function_id_map_insert
 (
  uint64_t function_id,
  ip_normalized_t pc
@@ -46,14 +46,14 @@ gpu_function_id_map_insert
 
 
 ip_normalized_t
-gpu_function_id_map_entry_pc_get
+cuda_function_id_map_entry_pc_get
 (
- gpu_function_id_map_entry_t *entry
+ cuda_function_id_map_entry_t *entry
 );
 
 
 void
-gpu_function_id_map_delete
+cuda_function_id_map_delete
 (
  uint64_t function_id
 );
