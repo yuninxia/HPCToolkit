@@ -50,14 +50,9 @@
 
 
 #if OMPT_DEBUG
-static int get_callstack_debug(void)
-{
-  int * ompt_callstack_debug = OMPT_GETSPECIFIC(ompt_callstack_debug);
-  return *ompt_callstack_debug;
-}
 #define elide_debug_dump(t, i, o, r) \
-  if (get_callstack_debug()) stack_dump(t, i, o, r)
-#define elide_frame_dump() if (get_callstack_debug()) frame_dump()
+  if (OMPT_GET(ompt_callstack_debug)) stack_dump(t, i, o, r)
+#define elide_frame_dump() if (OMPT_GET(ompt_callstack_debug)) frame_dump()
 
 #else
 #define elide_debug_dump(t, i, o, r)
@@ -770,12 +765,13 @@ ompt_cct_cursor_finalize
  cct_node_t *cct_cursor
 )
 {
-  ompt_region_data_t ** not_master_region = OMPT_GETSPECIFIC(not_master_region);
-  cct_node_t ** cct_not_master_region = OMPT_GETSPECIFIC(cct_not_master_region);
-  ompt_region_data_t ** ending_region = OMPT_GETSPECIFIC(ending_region);
+  void * base = OMPT_GET_BASE_PTR();
+  cct_node_t ** cct_not_master_region = &OMPT_BASE_GET(base, cct_not_master_region);
+  region_stack_el_t * region_stack = OMPT_BASE_GET(base, region_stack);
+  int * top_index = &OMPT_BASE_GET(base, top_index);
 
   // when providing a path for the region in which we had a task
-  if (!ompt_eager_context && *ending_region) {
+  if (!ompt_eager_context && OMPT_BASE_GET(base, ending_region)) {
     return TD_GET(master) ? cct_cursor : *cct_not_master_region;
   }
 
@@ -799,11 +795,8 @@ ompt_cct_cursor_finalize
     if (ompt_eager_context || TD_GET(master))
       return hpcrun_cct_insert_path_return_leaf(root, omp_task_context);
   } else if (omp_task_context && omp_task_context == task_data_invalid) {
-    region_stack_el_t * region_stack = OMPT_GETSPECIFIC(region_stack[0]);
-    int * top_index = OMPT_GETSPECIFIC(top_index);
     region_stack_el_t *stack_el = &region_stack[*top_index];
     ompt_notification_t *notification = stack_el->notification;
-
     // if no unresolved cct placeholder for the region, create it
     if (!notification->unresolved_cct) {
       cct_node_t *new_cct =
@@ -825,7 +818,7 @@ ompt_cct_cursor_finalize
     // FIXME: check whether bottom frame elided will be right for IBM runtime
     //        without help of get_idle_frame
 
-    if (*not_master_region && bt->bottom_frame_elided){
+    if (OMPT_BASE_GET(base, not_master_region) && bt->bottom_frame_elided){
       // it should be enough just to set cursor to unresolved node
       // which corresponds to not_master_region
 

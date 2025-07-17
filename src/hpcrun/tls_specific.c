@@ -7,7 +7,7 @@
 //----------------------------------------------------------------------
 
 // This file reimplements the TLS __thread local storage in hpcrun
-// with pthread_get/setspecific().
+// with pthread_get/setspecific(), similar to TD_GET.
 //
 // __thread is not signal handler safe.  In particular, GNU glibc can
 // cause __thread to call realloc() in the signal handler.
@@ -17,10 +17,8 @@
 // get-specific inside a handler.  Experimentally, this seems to work,
 // at least The Machine has failed to push it over.
 //
-// We move all of the __thread variables into a single tls_data struct
-// (per thread) and then TLS_GETSPECIFIC(field) returns a pointer to
-// 'field' in the struct.  Much like TD_GET, except here we return
-// pointer to field.
+// We put the thread local variables in one of two structs and then
+// provide macros to access them.
 //
 //----------------------------------------------------------------------
 //
@@ -28,10 +26,32 @@
 //
 //   __thread int foo;
 //
-// with an entry in 'struct tls_data' in tls_specific.h (without
-// __thread).  Then, replace using 'foo' with a pointer to foo.
+// with an entry in 'struct tls_data' in tls_specific.h or in 'struct
+// ompt_tls_data' in ompt-specific.h.  Then, replace 'foo' with
+// 'TLS_GET(foo)', just like TD_GET.
 //
-//   int *foo = TLS_GETSPECIFIC(foo);
+//   ... TLS_GET(foo) ...
+//
+// For variables that are used multiple times in the same function,
+// you can add a variable in one of two ways:
+//
+//   int foo = TLS_GET(foo);       # read only
+//   int * foo = &TLS_GET(foo);    # read/write
+//
+// Then, use 'foo' or '*foo' in the code.  This reduces the underlying
+// calls to pthread_getspecific() from once per occurrence to once per
+// variable.
+//
+// If many TLS variables are used in a single function, you can use:
+//
+//   void * base = TLS_GET_BASE_PTR();
+//   int foo = TLS_BASE_GET(base, foo);       # read only
+//   int * foo = &TLS_BASE_GET(base, foo);    # read/write
+//
+// This reduces the calls to getspecific to just one per function.
+//
+// The ompt variables are in a separate struct to avoid polluting the
+// rest of the code with the ompt (and cct) headers.
 //
 // Note:
 // (1) The storage size of the entry in 'struct tls_data' must match
@@ -40,18 +60,10 @@
 // struct), the full struct must appear in tls_data, and the header
 // files to define the struct must be in tls_specific.h
 //
-// (2) For a pointer to a complex type, one option is to use 'void *'
-// in tls_data and then cast to the correct type when extracting the
-// variable.
-//
-// (3) Initialization is done in hpcrun_init_tls_data() at the bottom
-// of this file.  But you really only need to initialize the non-zero
-// values.
-//
-// (4) Remember to include "tls_specific.h" in the files that use
+// (2) Remember to include "tls_specific.h" in the files that use
 // TLS_GETSPECIFIC().
 //
-// (5) The gpu files are not used in a signal handler, so they don't
+// (3) The gpu files are not used in a signal handler, so they don't
 // need to be converted (johnmc assures me).  But they do use TMSG
 // which uses monitor_tid, so their threads need a tls_data struct.
 

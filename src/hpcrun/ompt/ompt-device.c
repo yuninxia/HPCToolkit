@@ -208,8 +208,7 @@ get_callpath
 #endif
 
   // Must be under a safe region to prevent self interrupt
-  cct_node_t ** target_node = OMPT_GETSPECIFIC(target_node);
-  hpcrun_trace_node(*target_node);
+  hpcrun_trace_node(OMPT_GET(target_node));
 
   hpcrun_safe_exit();
 
@@ -223,15 +222,14 @@ hpcrun_ompt_op_id_notify(ompt_scope_endpoint_t endpoint,
                          ompt_id_t host_op_id,
                          ip_normalized_t ip_norm)
 {
-  cct_node_t ** target_node = OMPT_GETSPECIFIC(target_node);
-  cct_node_t ** trace_node = OMPT_GETSPECIFIC(trace_node);
-  bool * ompt_runtime_api_flag = OMPT_GETSPECIFIC(ompt_runtime_api_flag);
+  void * base = OMPT_GET_BASE_PTR();
+  cct_node_t * target_node = OMPT_GET(target_node);
 
   // A runtime API must be implemented by driver APIs.
   if (endpoint == ompt_scope_begin) {
     // Enter a ompt runtime api
     PRINT("enter ompt runtime op %lu\n", host_op_id);
-    *ompt_runtime_api_flag = true;
+    OMPT_BASE_GET(base, ompt_runtime_api_flag) = true;
 
     gpu_application_thread_process_activities();
 
@@ -249,7 +247,7 @@ hpcrun_ompt_op_id_notify(ompt_scope_endpoint_t endpoint,
     // this operation. if target_node is NULL, the operation is outside a
     // target region. in this case, use stack unwinding to determine
     // the call path where the operation was invoked.
-    cct_node_t *callpath = *target_node ? *target_node : get_callpath();
+    cct_node_t *callpath = target_node ? target_node : get_callpath();
 
     cct_node_t *api_node = hpcrun_cct_insert_addr(callpath, &frm, true);
 
@@ -257,7 +255,7 @@ hpcrun_ompt_op_id_notify(ompt_scope_endpoint_t endpoint,
 
     hpcrun_safe_exit();
 
-    *trace_node = gpu_op_ccts.ccts[gpu_placeholder_type_trace];
+    OMPT_BASE_GET(base, trace_node) = gpu_op_ccts.ccts[gpu_placeholder_type_trace];
 
     // Inform the worker about the placeholders
     uint64_t cpu_submit_time = hpcrun_nanotime();
@@ -270,9 +268,9 @@ hpcrun_ompt_op_id_notify(ompt_scope_endpoint_t endpoint,
   } else {
     PRINT("exit ompt runtime op %lu\n", host_op_id);
     // Enter a runtime api
-    *ompt_runtime_api_flag = false;
+    OMPT_BASE_GET(base, ompt_runtime_api_flag) = false;
     // Clear kernel status
-    *trace_node = NULL;
+    OMPT_BASE_GET(base, trace_node) = NULL;
   }
 
   return;
@@ -407,12 +405,11 @@ ompt_finalize_flush
 
   // only try to flush devices if we have a flush function
   if (ompt_flush_trace) {
-    bool * ompt_need_flush = OMPT_GETSPECIFIC(ompt_need_flush);
     ompt_device_entry_t *e = device_list;
     while (e) {
       PRINT("ompt_finalize_flush flush id=%d device=%p\n",
             e->device_id, e->device);
-      if (*ompt_need_flush) ompt_flush_trace(e->device);
+      if (OMPT_GET(ompt_need_flush)) ompt_flush_trace(e->device);
       e = e->next;
     }
   }
@@ -594,8 +591,7 @@ get_load_module
   cct_node_t *node
 )
 {
-  cct_node_t ** target_node = OMPT_GETSPECIFIC(target_node);
-  cct_addr_t *addr = hpcrun_cct_addr(*target_node);
+  cct_addr_t *addr = hpcrun_cct_addr(OMPT_GET(target_node));
   ip_normalized_t ip = addr->ip_norm;
   return ip.lm_id;
 }
@@ -614,15 +610,14 @@ ompt_target_callback_emi
   const void *codeptr_ra
 )
 {
-  cct_node_t ** target_node = OMPT_GETSPECIFIC(target_node);
-  bool * ompt_need_flush = OMPT_GETSPECIFIC(ompt_need_flush);
+  cct_node_t ** target_node = &OMPT_GET(target_node);
 
   if (endpoint == ompt_scope_end) {
     *target_node = NULL;
     return;
   }
 
-  *ompt_need_flush = true;
+  OMPT_GET(ompt_need_flush) = true;
 
   target_data->value = gpu_activity_channel_generate_correlation_id();
   PRINT("ompt_target_callback->target_id 0x%lx\n", target_data->value);
@@ -698,8 +693,7 @@ ompt_map_callback(ompt_id_t target_id,
                   size_t *bytes,
                   unsigned int *mapping_flags)
 {
-  bool * ompt_need_flush = OMPT_GETSPECIFIC(ompt_need_flush);
-  *ompt_need_flush = true;
+  OMPT_GET(ompt_need_flush) = true;
 }
 
 
@@ -709,8 +703,7 @@ ompt_runtime_status_get
  void
 )
 {
-  bool * ompt_runtime_api_flag = OMPT_GETSPECIFIC(ompt_runtime_api_flag);
-  return *ompt_runtime_api_flag;
+  return OMPT_GET(ompt_runtime_api_flag);
 }
 
 
@@ -720,8 +713,7 @@ ompt_trace_node_get
  void
 )
 {
-  cct_node_t ** trace_node = OMPT_GETSPECIFIC(trace_node);
-  return *trace_node;
+  return OMPT_GET(trace_node);
 }
 
 void

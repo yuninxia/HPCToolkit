@@ -48,7 +48,7 @@ lazy_getspecific(void)
 
 #define TLS_GET_BASE_PTR()  ((void *) lazy_getspecific())
 
-#define TLS_GET_BASE(base, field)  (((struct tls_data *) (base))->field)
+#define TLS_BASE_GET(base, field)  (((struct tls_data *) (base))->field)
 
 //----------------------------------------------------------------------
 

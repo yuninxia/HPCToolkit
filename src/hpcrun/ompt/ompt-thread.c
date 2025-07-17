@@ -27,8 +27,7 @@ ompt_thread_type_set
  ompt_thread_t ttype
 )
 {
-  int * ompt_thread_type = OMPT_GETSPECIFIC(ompt_thread_type);
-  *ompt_thread_type = ttype;
+  OMPT_GET(ompt_thread_type) = ttype;
 }
 
 
@@ -37,8 +36,7 @@ ompt_thread_type_get
 (
 )
 {
-  int * ompt_thread_type = OMPT_GETSPECIFIC(ompt_thread_type);
-  return *ompt_thread_type;
+  return OMPT_GET(ompt_thread_type);
 }
 
 
@@ -68,11 +66,10 @@ top_region_stack
  void
 )
 {
-  region_stack_el_t * region_stack = OMPT_GETSPECIFIC(region_stack[0]);
-  int * top_index = OMPT_GETSPECIFIC(top_index);
+  int * top_index = &OMPT_GET(top_index);
 
   // FIXME: is invalid value for region ID
-  return (*top_index > -1) ? &region_stack[*top_index] : NULL;
+  return (*top_index > -1) ? &OMPT_GET(region_stack)[*top_index] : NULL;
 }
 
 region_stack_el_t*
@@ -81,10 +78,9 @@ pop_region_stack
  void
 )
 {
-  region_stack_el_t * region_stack = OMPT_GETSPECIFIC(region_stack[0]);
-  int * top_index = OMPT_GETSPECIFIC(top_index);
+  int * top_index = &OMPT_GET(top_index);
 
-  return (*top_index > -1) ? &region_stack[(*top_index)--] : NULL;
+  return (*top_index > -1) ? &OMPT_GET(region_stack)[(*top_index)--] : NULL;
 }
 
 
@@ -96,8 +92,8 @@ push_region_stack
  bool team_master
 )
 {
-  region_stack_el_t * region_stack = OMPT_GETSPECIFIC(region_stack[0]);
-  int * top_index = OMPT_GETSPECIFIC(top_index);
+  region_stack_el_t * region_stack = OMPT_GET(region_stack);
+  int * top_index = &OMPT_GET(top_index);
 
   // FIXME: potential place of segfault, when stack is full
   (*top_index)++;
@@ -113,8 +109,7 @@ clear_region_stack
  void
 )
 {
-  int * top_index = OMPT_GETSPECIFIC(top_index);
-  *top_index = -1;
+  OMPT_GET(top_index) = -1;
 }
 
 
@@ -124,6 +119,5 @@ is_empty_region_stack
  void
 )
 {
-  int * top_index = OMPT_GETSPECIFIC(top_index);
-  return *top_index < 0;
+  return OMPT_GET(top_index) < 0;
 }
