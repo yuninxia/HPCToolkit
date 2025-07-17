@@ -24,16 +24,16 @@ struct callback_data {
 };
 
 static void error_exit() {
-    void (*exit_func)(int);
+  void (*exit_func)(int);
 
-    // Get the address of _exit using dlsym
-    exit_func = (void (*)(int))dlsym(RTLD_NEXT, "_exit");
+  // Get the address of _exit using dlsym
+  exit_func = (void (*)(int))dlsym(RTLD_NEXT, "_exit");
 
-    if (exit_func == NULL) {
-      abort(); // a less desirable way to force an exit
-    }
+  if (exit_func == NULL) {
+    abort(); // a less desirable way to force an exit
+  }
 
-    exit_func(-1);
+  exit_func(-1);
 }
 
 static int phdr_callback(struct dl_phdr_info* info, size_t sz, void* data_v) {
@@ -146,14 +146,15 @@ static void load_core_foil() {
 
   if (h == NULL) {
     fprintf(stderr, "hpcrun: Error loading libhpcrun.so: %s\n", dlerror());
-    fprintf(stderr,
-      "ADVICE: if the error is associated with a GPU runtime library, there\n"
-      "        may be an inconsistency between the GPU library paths curried into\n"
-      "        your executable and directories that are in your LD_LIBRARY_PATH as a\n"
-      "        result of loading a module. Confirm that any GPU modules that you\n"
-      "        have loaded match those that were loaded when your application or\n"
-      "        library was compiled. Check paths curried into a binary with the \n"
-      "        command 'readelf -d <your binary> | grep PATH'.\n");
+    fprintf(
+        stderr,
+        "ADVICE: if the error is associated with a GPU runtime library, there\n"
+        "        may be an inconsistency between the GPU library paths curried into\n"
+        "        your executable and directories that are in LD_LIBRARY_PATH as a\n"
+        "        result of loading a module. Confirm that any GPU modules that you\n"
+        "        have loaded match those that were loaded when your application or\n"
+        "        library was compiled. Check paths curried into a binary with the \n"
+        "        command 'readelf -d <your binary> | grep PATH'.\n");
     error_exit();
   }
   pfn_fetch_hooks = (struct pfn_fetch_hooks_t){

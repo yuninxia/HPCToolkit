@@ -234,7 +234,7 @@ convert_scratch_op
 
   switch(operation) {
   SCRATCH_KIND(KIND_CASE)
-  default: kind = GPU_SCRATCH_ILLEGAL; break;
+  default: kind = GPU_SCRATCH_MEMORY_ILLEGAL; break;
   }
 
   return kind;

@@ -485,7 +485,8 @@ get_gpu_scratch_placeholder
     case GPU_SCRATCH_MEMORY_ASYNC_RECLAIM:
       ph = gpu_placeholder_type_scratch_async_reclaim;
       break;
-    default:
+     case GPU_SCRATCH_MEMORY_ILLEGAL:
+      ph = gpu_placeholder_type_scratch_illegal;
       break;
   }
   return ph;
@@ -501,7 +502,7 @@ gpu_scratch_process
   gpu_placeholder_type_t ph =
     get_gpu_scratch_placeholder(activity->details.scratch.op_type);
 
-  ip_normalized_t dummy = ip_normalized_NULL;
+  ip_normalized_t dummy;
   cct_node_t *host_op_node =
     get_placeholder_node(correlation_id, ph, &dummy);
 

@@ -107,8 +107,7 @@ const struct hpcrun_foil_hookdispatch_opencl* hpcrun_foil_fetch_hooks_opencl();
 /// Thread-safe but not async-signal-safe.
 /// @returns A pointer to the corresponding dispatch-table in the main hpcrun namespace.
 HPCRUN_EXPOSED_API
-const struct hpcrun_foil_hookdispatch_rocm *
-hpcrun_foil_fetch_hooks_rocm();
+const struct hpcrun_foil_hookdispatch_rocm* hpcrun_foil_fetch_hooks_rocm();
 
 /// Fetch the dispatch-table of hooks for the Level Zero foil.
 /// Thread-safe but not async-signal-safe.

@@ -73,7 +73,8 @@ struct hpcrun_foil_appdispatch_level0 {
                                        zet_module_debug_info_format_t, size_t*,
                                        uint8_t*);
   ze_result_t (*zeDeviceGetGlobalTimestamps)(ze_device_handle_t hDevice,
-    uint64_t *hostTimestamp, uint64_t *deviceTimestamp);
+                                             uint64_t* hostTimestamp,
+                                             uint64_t* deviceTimestamp);
 };
 
 struct hpcrun_foil_hookdispatch_level0 {
@@ -124,8 +125,9 @@ struct hpcrun_foil_hookdispatch_level0 {
                               const struct hpcrun_foil_appdispatch_level0*);
   ze_result_t (*zeCommandQueueSynchronize)(ze_command_queue_handle_t, uint64_t,
                                            const struct hpcrun_foil_appdispatch_level0*);
-  ze_result_t (*zeDeviceGetGlobalTimestamps)(ze_device_handle_t hDevice,
-    uint64_t *hostTimestamp, uint64_t *deviceTimestamp, const struct hpcrun_foil_appdispatch_level0*);
+  ze_result_t (*zeDeviceGetGlobalTimestamps)(
+      ze_device_handle_t hDevice, uint64_t* hostTimestamp, uint64_t* deviceTimestamp,
+      const struct hpcrun_foil_appdispatch_level0*);
 };
 
 #endif // HPCRUN_FOIL_LEVEL0_PRIVATE_H

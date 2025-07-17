@@ -17,8 +17,7 @@ const struct hpcrun_foil_hookdispatch_opencl* hpcrun_foil_fetch_hooks_opencl() {
 #endif
 
 #ifndef USE_ROCM
-const struct hpcrun_foil_hookdispatch_rocm*
-hpcrun_foil_fetch_hooks_rocm() {
+const struct hpcrun_foil_hookdispatch_rocm* hpcrun_foil_fetch_hooks_rocm() {
   fprintf(stderr,
           "hpcrun: Internal library not built with ROCm support, cannot continue!\n");
   abort();

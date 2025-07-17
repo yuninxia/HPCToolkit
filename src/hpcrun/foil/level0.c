@@ -214,7 +214,9 @@ ze_result_t f_zetModuleGetDebugInfo(
   return dispatch->zetModuleGetDebugInfo(hModule, format, pSize, pDebugInfo);
 }
 
-ze_result_t f_zeDeviceGetGlobalTimestamps(ze_device_handle_t hDevice,
-  uint64_t *hostTimestamp, uint64_t *deviceTimestamp, const struct hpcrun_foil_appdispatch_level0* dispatch) {
-return dispatch->zeDeviceGetGlobalTimestamps(hDevice, hostTimestamp, deviceTimestamp);
+ze_result_t
+f_zeDeviceGetGlobalTimestamps(ze_device_handle_t hDevice, uint64_t* hostTimestamp,
+                              uint64_t* deviceTimestamp,
+                              const struct hpcrun_foil_appdispatch_level0* dispatch) {
+  return dispatch->zeDeviceGetGlobalTimestamps(hDevice, hostTimestamp, deviceTimestamp);
 }

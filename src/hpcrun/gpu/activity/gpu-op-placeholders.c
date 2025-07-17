@@ -94,8 +94,6 @@ gpu_op_placeholder_ip
   CASE(kernel_anon)
   CASE(paging)
   #undef CASE
-  case gpu_placeholder_type_count:
-    break;
   }
   assert(false && "Invalid GPU placeholder type!");
   hpcrun_terminate();

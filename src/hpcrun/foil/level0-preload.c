@@ -162,7 +162,8 @@ zeCommandQueueSynchronize(ze_command_queue_handle_t hCommandQueue, uint64_t time
 }
 
 HPCRUN_EXPOSED_API ze_result_t zeDeviceGetGlobalTimestamps(ze_device_handle_t hDevice,
-  uint64_t *hostTimestamp, uint64_t *deviceTimestamp) {
+                                                           uint64_t* hostTimestamp,
+                                                           uint64_t* deviceTimestamp) {
   return hpcrun_foil_fetch_hooks_level0_dl()->zeDeviceGetGlobalTimestamps(
-    hDevice, hostTimestamp, deviceTimestamp, dispatch());
+      hDevice, hostTimestamp, deviceTimestamp, dispatch());
 }
