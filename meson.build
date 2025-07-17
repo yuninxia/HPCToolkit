@@ -8,7 +8,7 @@ project(
   'cpp',
   version: '2024.01.99-next',
   meson_version: '>=1.1.0',
-  license: 'BSD-3-Clause',
+  license: 'Apache-2.0',
   default_options: [
     'buildtype=debugoptimized',
     'c_std=gnu11',
