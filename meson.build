@@ -508,6 +508,7 @@ endif
 # removes some fallbacks/checks, but it works when we link.
 #
 # There are a couple different Meson bugs and antifeatures at play here to cause this, but it works.
+
 nvdisasm = find_program(
   'nvdisasm',
   '/usr/local/cuda/bin/nvdisasm',
@@ -540,24 +541,12 @@ if get_option('cuda').allowed()
     )
   endif
 endif
-if cupti_dep.found()
-  add_project_arguments(
-    '-DOPT_HAVE_CUDA',
-    '-DENABLE_CUDA',
-    '-DHPCRUN_SS_NVIDIA',
-    '-DCUPTI_INSTALL_PREFIX="/nonexistent"',  # TODO
-    language: ['c', 'cpp'],
-  )
-endif
-if false  # get_option('papi_cupti')  # --enable-papi-c-cupti
-  add_project_arguments('-DHPCRUN_SS_PAPI_C_CUPTI', language: ['c', 'cpp'])
-endif
 
 # Note that we only need the CUDA language for the tests, so if cupti_dep wasn't found we don't
 # enable this here either.
 has_cuda = false
 if cupti_dep.found()
-  has_cuda = add_languages('cuda', native: false, required: get_option('tests'))
+  has_cuda = add_languages('cuda', native: false, required: get_option('cuda'))
   if has_cuda
     cuda_cc = meson.get_compiler('cuda')
     if cuda_cc.get_id() == 'nvcc'
@@ -573,9 +562,23 @@ if cupti_dep.found()
         language: 'cuda',
       )
     endif
+  else
+    cupti_dep = dependency('', required: false)
   endif
 endif
 
+if cupti_dep.found()
+  add_project_arguments(
+    '-DOPT_HAVE_CUDA',
+    '-DENABLE_CUDA',
+    '-DHPCRUN_SS_NVIDIA',
+    '-DCUPTI_INSTALL_PREFIX="/nonexistent"',  # TODO
+    language: ['c', 'cpp'],
+  )
+endif
+if false  # get_option('papi_cupti')  # --enable-papi-c-cupti
+  add_project_arguments('-DHPCRUN_SS_PAPI_C_CUPTI', language: ['c', 'cpp'])
+endif
 
 # Find support for ROCm performance monitoring
 hip_dep = dependency(
