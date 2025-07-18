@@ -97,7 +97,7 @@ Thanks for your efforts to improve HPCToolkit, and welcome to the community of C
 
 ### The Legal Stuff
 
-1. We require that all technical changes are made under the [BSD 3-Clause license](https://opensources.org/licenses/BSD-3-Clause) or under the [MIT license](https://opensource.org/license/mit). Documentation changes must be under the [Creative Commons Attribution 4.0](https://creativecommons.org/licenses/by/4.0). Data must be under the [CDLA-Permissive 2.0 license](https://cdla.dev/permissive-2.0).
+1. We require that all technical changes are made under the [Apache License 2.0](https://opensource.org/license/apache-2-0) or under the [MIT license](https://opensource.org/license/mit). Documentation changes must be under the [Creative Commons Attribution 4.0](https://creativecommons.org/licenses/by/4.0). Data must be under the [CDLA-Permissive 2.0 license](https://cdla.dev/permissive-2.0).
 
 1. The copyright and license must be specified by headers compatible with the [REUSE Specification](https://reuse.software). In most cases this is in a comment at the top of the file, for example:
 
@@ -106,6 +106,18 @@ Thanks for your efforts to improve HPCToolkit, and welcome to the community of C
    //
    // SPDX-License-Identifier: Apache-2.0
    ```
+
+   > If you're editing an existing file, it may be that the licensing annotations at the top of the file don't quite match the license for your contribution. This is especially true if your contribution contains code copied from another project. If your change is fairly self-contained, you should consider separating your new code as a "snippet" with its own REUSE headers:
+   >
+   > ```c
+   > // SPDX-SnippetBegin
+   > // SPDX-FileCopyrightText: Contributors to the HPCToolkit Project
+   > // SPDX-License-Identifier: Apache-2.0
+   >
+   > // ... your code here ...
+   >
+   > // SPDX-SnippetEnd
+   > ```
 
 1. Copyrights should be made out to "Contributors to the HPCToolkit Project," meaning you! We do not require that you hand over your copyright rights to contribute.
 

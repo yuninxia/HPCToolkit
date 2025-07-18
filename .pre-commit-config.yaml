@@ -76,10 +76,6 @@ repos:
     args: [--wrap=80, --number]
     additional_dependencies:
     - mdformat-tables ==1.0.0
-  # LICENSE.md is a pure-CommonMark format with full numbering in the source
-  - id: mdformat
-    files: ^LICENSE\.md$
-    args: [--number]
   # Format MyST (CommonMark for Sphinx) files to have a consistent style.
   - id: mdformat
     files: ^doc/src/
