@@ -22,7 +22,7 @@
 
 
 #define _GNU_SOURCE
-
+#include <assert.h>
 #include <fcntl.h>   // open
 #include <dlfcn.h>  // dlopen
 #include <limits.h>  // PATH_MAX
@@ -64,28 +64,11 @@
 #define PRINT(...)
 #endif
 
-
-//***************************************************************************
-// type declarations
-//***************************************************************************
-
-typedef struct module_ignore_entry {
-  bool empty;
-  load_module_t *module;
-} module_ignore_entry_t;
-
-
+#define MODULES_MAX 1024
 
 //***************************************************************************
 // static data
 //***************************************************************************
-
-
-// TODO:
-// We will need to refactor this code to make the NUM_FNS a variable
-// and the table of functions to be looked up can be a linked list,
-// where any GPU can indicate that its functions should be added to
-// the module ignore map when that type of GPU is being monitored.
 
 static const char *IGNORE_FNS[] = {
   "cuLaunchKernel",
@@ -98,15 +81,23 @@ static const char *IGNORE_FNS[] = {
   "hsa_init",                  // amd hsa runtime
   "hpcrun_malloc",             // hpcrun library
   "clIcdGetPlatformIDsKHR",    // libigdrcl.so(intel opencl)
+  "clGetPlatformInfo",         // OpenCL
   "zeKernelCreate"             // libze_intel_gpu.so (intel L0) ISSUE: not getting ignored
 };
 
 #define NUM_FNS (sizeof IGNORE_FNS / sizeof IGNORE_FNS[0])
 
-static module_ignore_entry_t modules[NUM_FNS];
+static load_module_t *modules[MODULES_MAX];
+
+static unsigned int modules_cnt = 0;
+
 static pfq_rwlock_t modules_lock;
 
-int
+//***************************************************************************
+// private operations
+//***************************************************************************
+
+static int
 pseudo_module_p
 (
   char *name
@@ -139,11 +130,7 @@ module_ignore_map_init
  void
 )
 {
-  size_t i;
-  for (i = 0; i < NUM_FNS; ++i) {
-    modules[i].empty = true;
-    modules[i].module = NULL;
-  }
+  modules_cnt = 0;
   pfq_rwlock_init(&modules_lock);
 }
 
@@ -158,8 +145,8 @@ module_ignore_map_module_id_lookup
   size_t i;
   bool result = false;
   pfq_rwlock_read_lock(&modules_lock);
-  for (i = 0; i < NUM_FNS; ++i) {
-    if (modules[i].empty == false && modules[i].module->id == module_id) {
+  for (i = 0; i < modules_cnt; ++i) {
+    if (modules[i]->id == module_id) {
       /* current module should be ignored */
       result = true;
       break;
@@ -202,10 +189,9 @@ module_ignore_map_lookup
   size_t i;
   bool result = false;
   pfq_rwlock_read_lock(&modules_lock);
-  for (i = 0; i < NUM_FNS; ++i) {
-    if (modules[i].empty == false &&
-      modules[i].module->dso_info->start_addr <= start &&
-      modules[i].module->dso_info->end_addr >= end) {
+  for (i = 0; i < modules_cnt; ++i) {
+    if (modules[i]->dso_info->start_addr <= start &&
+        modules[i]->dso_info->end_addr >= end) {
       /* current module should be ignored */
       result = true;
       break;
@@ -238,7 +224,7 @@ search_functions_in_module(Elf *e, GElf_Shdr* secHead, Elf_Scn *section)
     // We need to find functions defined in the module.
     if ( (symType == STT_FUNC) && (symBind == STB_GLOBAL) && (curSym.st_value != 0)) {
       for (i = 0; i < NUM_FNS; ++i) {
-        if (modules[i].empty && (strcmp(symName, IGNORE_FNS[i]) == 0)) {
+        if (strcmp(symName, IGNORE_FNS[i]) == 0) {
           return i;
         }
       }
@@ -302,8 +288,8 @@ module_ignore_map_ignore
       if (secHead.sh_type != SHT_DYNSYM) continue;
       int module_ignore_index = search_functions_in_module(elf, &secHead, scn);
       if (module_ignore_index != -1) {
-        modules[module_ignore_index].module = module;
-        modules[module_ignore_index].empty = false;
+        assert(modules_cnt < MODULES_MAX);
+        modules[modules_cnt++] = module; // append module at end of table
         result = true;
         break;
       }
@@ -326,11 +312,10 @@ module_ignore_map_delete
   bool result = false;
   pfq_rwlock_node_t me;
   pfq_rwlock_write_lock(&modules_lock, &me);
-  for (i = 0; i < NUM_FNS; ++i) {
-    if (modules[i].empty == false && modules[i].module == lm) {
-      modules[i].empty = true;
-      modules[i].module = NULL;
-      result = true;
+  for (i = 0; i < modules_cnt; ++i) {
+    if (modules[i] == lm) {
+      modules[i] = modules[modules_cnt - 1]; // swap last into current slot
+      modules_cnt--; // decrement count
       break;
     }
   }
