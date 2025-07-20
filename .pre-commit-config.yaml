@@ -63,7 +63,7 @@ repos:
     - meson ==1.5.2
 
 - repo: https://github.com/executablebooks/mdformat
-  rev: 0.7.17
+  rev: 0.7.22
   hooks:
   # Format CommonMark (Markdown) files to have a consistent style.
   - id: mdformat
@@ -80,13 +80,13 @@ repos:
   - id: mdformat
     files: ^doc/src/
     additional_dependencies:
-    - mdformat-myst ==0.1.5
-    - mdformat-deflist ==0.1.2
+    - mdformat-myst ==0.2.1
+    - mdformat-deflist ==0.1.3
   # Format GFM (CommmonMark for GitHub/GitLab) files to have a consistent style.
   - id: mdformat
     files: ^\.gitlab/
     additional_dependencies:
-    - mdformat-gfm ==0.3.6
+    - mdformat-gfm ==0.4.1
 
 - repo: https://github.com/pre-commit/pre-commit-hooks
   rev: v4.6.0
