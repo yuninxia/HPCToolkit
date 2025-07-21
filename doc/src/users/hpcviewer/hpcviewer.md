@@ -215,7 +215,7 @@ In Figure [10.1](#fig:hpcviewer-legend), they are labeled as "navigation/metric 
 
 Navigation control also provides several context menus by clicking the right-button of the mouse.
 
-- **Copy**: Copy into clipboard the selected line in navigation pane which includes the name of the node in the tree, and the values of visible metrics in metric pane (Section  [10.3.3](#sec:pane-metric)). The values of hidden metrics will not be copied.
+- **Copy**: Copy into clipboard the selected line in navigation pane which includes the name of the node in the tree, and the values of visible metrics in metric pane (Section [10.3.3](#sec:pane-metric)). The values of hidden metrics will not be copied.
 
 - **Find**: Display the Find window to allow the user to search a text within the Scope column of the current table. The window has several options such as case sensitivity, whole word search and using regular expressions.
 
