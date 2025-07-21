@@ -134,7 +134,7 @@ Thanks for your efforts to improve HPCToolkit, and welcome to the community of C
    > git rebase -x 'git commit --amend -s --no-edit' develop
    > ```
 
-1. Read over the [LICENSE.md](/LICENSE.md) for information on how your contribution will be licensed when distributed as part of HPCToolkit.
+1. Read over the [LICENSE](/LICENSE) for information on how your contribution will be licensed when distributed as part of HPCToolkit.
 
 ### Before you push your changes
 
