@@ -20,8 +20,8 @@
 // system includes
 //***************************************************************************
 
-
 #define _GNU_SOURCE
+
 #include <assert.h>
 #include <fcntl.h>   // open
 #include <dlfcn.h>  // dlopen
@@ -31,23 +31,24 @@
 #include <sys/stat.h>
 
 
-//#include <stdlib.h>
-//#include <unistd.h>
 
-#include        <elf.h>
-#include        <libelf.h>
-#include        <gelf.h>
+//***************************************************************************
+// elfutils includes
+//***************************************************************************
+
+#include <elf.h>
+#include <libelf.h>
+#include <gelf.h>
+
 
 
 //***************************************************************************
 // local includes
 //***************************************************************************
 
-#include "libmonitor/monitor.h"
-
 #include "../common/lean/pfq-rwlock.h"
+#include "libmonitor/monitor.h"
 #include "loadmap.h"
-
 #include "module-ignore-map.h"
 
 
@@ -65,6 +66,8 @@
 #endif
 
 #define MODULES_MAX 1024
+
+
 
 //***************************************************************************
 // static data
@@ -93,6 +96,8 @@ static unsigned int modules_cnt = 0;
 
 static pfq_rwlock_t modules_lock;
 
+
+
 //***************************************************************************
 // private operations
 //***************************************************************************
@@ -116,6 +121,39 @@ pseudo_module_p
     // it actually has the name /path/to/measurement/directory/[vdso].
     // checking the last character tells us it is a virtual shared library.
     return lastchar == ']';
+}
+
+
+static int
+search_functions_in_module(Elf *e, GElf_Shdr* secHead, Elf_Scn *section)
+{
+  Elf_Data *data;
+  char *symName;
+  uint64_t count;
+  GElf_Sym curSym;
+  uint64_t i, ii,symType, symBind;
+  // char *marmite;
+
+  data = elf_getdata(section, NULL);           // use it to get the data
+  if (data == NULL || secHead->sh_entsize == 0) return -1;
+  count = (secHead->sh_size)/(secHead->sh_entsize);
+  for (ii=0; ii<count; ii++) {
+    gelf_getsym(data, ii, &curSym);
+    symName = elf_strptr(e, secHead->sh_link, curSym.st_name);
+    symType = GELF_ST_TYPE(curSym.st_info);
+    symBind = GELF_ST_BIND(curSym.st_info);
+
+    // the .dynsym section can contain undefined symbols that represent imported symbols.
+    // We need to find functions defined in the module.
+    if ( (symType == STT_FUNC) && (symBind == STB_GLOBAL) && (curSym.st_value != 0)) {
+      for (i = 0; i < NUM_FNS; ++i) {
+        if (strcmp(symName, IGNORE_FNS[i]) == 0) {
+          return i;
+        }
+      }
+    }
+        }
+  return -1;
 }
 
 
@@ -201,37 +239,6 @@ module_ignore_map_lookup
   return result;
 }
 
-int
-search_functions_in_module(Elf *e, GElf_Shdr* secHead, Elf_Scn *section)
-{
-  Elf_Data *data;
-  char *symName;
-  uint64_t count;
-  GElf_Sym curSym;
-  uint64_t i, ii,symType, symBind;
-  // char *marmite;
-
-  data = elf_getdata(section, NULL);           // use it to get the data
-  if (data == NULL || secHead->sh_entsize == 0) return -1;
-  count = (secHead->sh_size)/(secHead->sh_entsize);
-  for (ii=0; ii<count; ii++) {
-    gelf_getsym(data, ii, &curSym);
-    symName = elf_strptr(e, secHead->sh_link, curSym.st_name);
-    symType = GELF_ST_TYPE(curSym.st_info);
-    symBind = GELF_ST_BIND(curSym.st_info);
-
-    // the .dynsym section can contain undefined symbols that represent imported symbols.
-    // We need to find functions defined in the module.
-    if ( (symType == STT_FUNC) && (symBind == STB_GLOBAL) && (curSym.st_value != 0)) {
-      for (i = 0; i < NUM_FNS; ++i) {
-        if (strcmp(symName, IGNORE_FNS[i]) == 0) {
-          return i;
-        }
-      }
-    }
-        }
-  return -1;
-}
 
 bool
 module_ignore_map_ignore
