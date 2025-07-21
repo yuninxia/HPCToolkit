@@ -1,6 +1,6 @@
 # SPDX-FileCopyrightText: Contributors to the HPCToolkit Project
 #
-# SPDX-License-Identifier: BSD-3-Clause
+# SPDX-License-Identifier: Apache-2.0
 
 # This directory provides `hpctesttool`, a super-command for a series of helpful tools for writing
 # precise and robust test-scripts. And other debugging tool.
