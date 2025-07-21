@@ -89,6 +89,7 @@ If you can't find any similar feature requests, feel free to [open a new issue](
 
 1. Wait a little before trying to implement your feature yourself. There may be design or other high-level issues that may drastically change how the code is implemented.
 
+   > [!note]
    > However, if you do implement it yourself, we ask that you assign yourself to the issue and [contribute your changes](#contributing-changes) back to HPCToolkit.
 
 ## Contributing Changes
@@ -107,6 +108,7 @@ Thanks for your efforts to improve HPCToolkit, and welcome to the community of C
    // SPDX-License-Identifier: Apache-2.0
    ```
 
+   > [!important]
    > If you're editing an existing file, it may be that the licensing annotations at the top of the file don't quite match the license for your contribution. This is especially true if your contribution contains code copied from another project. If your change is fairly self-contained, you should consider separating your new code as a "snippet" with its own REUSE headers:
    >
    > ```c
@@ -127,6 +129,7 @@ Thanks for your efforts to improve HPCToolkit, and welcome to the community of C
    Signed-off-by: Thomas Jefferson <thomas.jefferson@president.gov>
    ```
 
+   > [!tip]
    > If your commits are missing this, you can edit the commit message and add the trailer with `git commit --amend -s`.\
    > For many commits, try:
    >
@@ -134,7 +137,7 @@ Thanks for your efforts to improve HPCToolkit, and welcome to the community of C
    > git rebase -x 'git commit --amend -s --no-edit' develop
    > ```
 
-1. Read over the [LICENSE](/LICENSE) for information on how your contribution will be licensed when distributed as part of HPCToolkit.
+1. Read over the [LICENSE](/LICENSE) for information about how your contribution will be licensed when distributed as part of HPCToolkit.
 
 ### Before you push your changes
 
@@ -144,6 +147,7 @@ Thanks for your efforts to improve HPCToolkit, and welcome to the community of C
 
 1. Double-check that the author name and email on your commits is valid and matches your email on GitLab. This helps ensure your commits are properly attributed to you and to your GitLab account.
 
+   > [!important]
    > If your commits have the wrong author, set `git config user.name 'Thomas Jefferson'` and `git config user.email 'thomas.jefferson@president.gov'`, then replace the authorship on your commits with `git commit --amend --reset-author`.\
    > For many commits, try:
    >
@@ -159,29 +163,102 @@ Thanks for your efforts to improve HPCToolkit, and welcome to the community of C
 
 1. [Create an MR](https://gitlab.com/hpctoolkit/hpctoolkit/-/merge_requests/new) for your changes. Feel free to mark it as a `Draft:` if you are still finalizing the details.
 
+   > [!note]
    > Include references to any related issues in your MR description, with phrases such as `Fixes #123`, `Resolves #456` or `Implements #789`. This [automatically closes the issues when the MR gets merged](https://docs.gitlab.com/ee/user/project/issues/managing_issues.html#closing-issues-automatically) and helps others find your changes.
 
 1. Check and fix any errors seen in the CI for your MR.
 
-1. Wait patently for a response and/or review. Be amenable to any requested changes.
+1. Wait patiently for a response and/or review. Be amenable to any requested changes.
 
 ### Tips and tricks for a successful MR
 
 1. Follow best practices for the programming language. While we don't have a rigid coding style, consider reading and following the [C++ Core Guidelines](https://isocpp.github.io/CppCoreGuidelines/CppCoreGuidelines) and the [LLVM Coding Standards](https://llvm.org/docs/CodingStandards.html).
 
-1. Run [`pre-commit`](https://pre-commit.com/#install) locally before submitting the MR, either manually with `pre-commit run -a` or as part of the Git hooks installed by `pre-commit install`. CI will run the same linters/formatters and thus this (may) fail CI before your code even has a chance to run.
+1. Fix any compiler warnings you see. Compiler warnings are errors (or unexpected behaviors) waiting to happen, cleaning them up improves your code for the better.
+
+1. Run our linters/formatters locally before pushing your changes. CI will run the following linters/formatters and will fail before your code even has a chance to run if they fail:
+
+   1. [`pre-commit`](https://pre-commit.com/#install) hooks via `pre-commit run -a`, and
+   1. [`clang-format`](https://clang.llvm.org/docs/ClangFormat.html) via `ninja clang-format`.
 
 1. When possible, add a test that your changes are working as intended. Even simple "doesn't crash" tests find plenty of bugs.
 
 1. Run the tests (`meson test`) at least once before submitting. The CI runs all the tests and will fail if any of them fail unexpectedly (or pass unexpectedly).
 
-1. Update the Sphinx documentation (`doc/src/`) with your new changes. This is what makes your changes usable by users.
+1. Update the User's Manual (`doc/src/`) with your new changes. This is what makes your changes usable by others.
 
-1. [Squash](https://stackoverflow.com/questions/5189560/how-do-i-squash-my-last-n-commits-together) your changes into a small and clean set of Git commits. Using multiple commits for related but separate changes is encouraged, e.g. a common CLI flag implemented in `hpcstruct` vs. `hpcprof`. Using multiple commits for entirely intermediate changes (e.g. multiple iterations of an API) is discouraged.
+   > [!note]
+   > If you enabled the Manual (`-Dmanual=enabled`) your changes will be visible in your build directory under `doc/src/html/**.html` after you build.
 
-   > You may instead opt to enable the "squash commits when merge request is approved" checkbox. This is allowed, but we discourage this since any details in the commit messages are lost when inspecting the Git history (e.g. `git blame`).
+1. Before you submit, consider squashing your changes into a small set of Git commits with clear commit messages. This makes tools like `git blame` and `git bisect` more effective, and overall makes the history easier to search later.
 
-1. Both before and after submitting your MR, fix any compiler warnings from your build and from CI. Compiler warnings are errors (or unexpected behaviors) waiting to happen, cleaning them up improves your code for the better.
+   > [!tip]
+   > You can squash your changes locally using either of the following `git` commands:
+   >
+   > <details>
+   > <summary>Squashing commits with <code>git reset</code></summary>
+   >
+   > To squash the last 5 commits together:
+   >
+   > ```console
+   > $ git reset --soft HEAD~5
+   > $ git commit -s
+   > ```
+   >
+   > To squash all changes made in the current branch compared to the base `develop`:
+   >
+   > ```console
+   > $ git reset --soft $(git merge-base HEAD develop)
+   > $ git commit -s
+   > ```
+   >
+   > </details>
+   > <details>
+   > <summary>Squashing commits with <code>git rebase</code></summary>
+   >
+   > During an interactive rebase (`git rebase -i`), a commit can be squashed into the last `pick`'d commit using the `fixup` or `squash` commands.
+   > Since squashing commits is so common, Git can mark commits to be squashed away ahead of time.
+   > For example, suppose you made a few commits:
+   >
+   > ```console
+   > $ git commit -s -m 'Implement the fuzzball API'
+   > $ git commit -s -m 'Document available vacuums'
+   > ```
+   >
+   > Now you notice an bug in the implementation. You can fix it and mark the commit to be squashed into the implementation commit with:
+   >
+   > ```console
+   > $ git commit -s --fixup HEAD~1
+   > $ git log --oneline
+   > ....... fixup! Implement the fuzzball API
+   > ....... Document available vacuums
+   > ....... Implement the fuzzball API
+   > ```
+   >
+   > You can even add more commits afterwards and push the branch:
+   >
+   > ```console
+   > $ git commit -s -m 'Continuously report dust status'
+   > $ git push   # This will automatically mark an existing MR as draft due to the fixup! commit
+   > ```
+   >
+   > And then finally squash them down during your next rebase:
+   >
+   > ```console
+   > $ git rebase -i --autosquash develop
+   > $ git log --oneline
+   > ....... Continuously report dust status
+   > ....... Update documentation
+   > ....... Implement the fuzzball API
+   > ```
+   >
+   > </details>
+   >
+   > These commands rewrite history, so after the history has been rewritten you will need to force the push:
+   >
+   > ```console
+   > $ git push --force-with-lease
+   > ```
 
 [gitlab issues]: https://gitlab.com/hpctoolkit/hpctoolkit/-/issues
 [the documentation]: https://hpctoolkit.gitlab.io/hpctoolkit
