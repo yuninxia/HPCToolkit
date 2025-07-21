@@ -100,17 +100,17 @@ All `*.db` files are structured as a file header containing format identifiers
 and version information, and references to "sections" in the rest of the file.
 The file header always has the following structure:
 
-|   Hex | Type     | Name           | Description (see the [Formats legend])                |
-| ----: | -------- | -------------- | ----------------------------------------------------- |
-| `00:` | u8\[10\] | `magic`        | Common format identifier, reads `HPCTOOLKIT` in ASCII |
-| `0a:` | u8\[4\]  | `format`       | Specific format identifier                            |
-| `0e:` | u8       | `majorVersion` | Common major version, currently 4                     |
-| `0f:` | u8       | `minorVersion` | Specific minor version                                |
-| `10:` | u64      | `szSection1`   | Total size of section 1                               |
-| `18:` | u8\*     | `pSection1`    | Pointer to the beginning of section 1                 |
-| `20:` | u64      | `szSection2`   | Total size of section 2                               |
-| `28:` | u8\*     | `pSection2`    | Pointer to the beginning of section 2                 |
-| `30:` |          | ...etc...      |                                                       |
+|   Hex | Type   | Name           | Description (see the [Formats legend])                |
+| ----: | ------ | -------------- | ----------------------------------------------------- |
+| `00:` | u8[10] | `magic`        | Common format identifier, reads `HPCTOOLKIT` in ASCII |
+| `0a:` | u8[4]  | `format`       | Specific format identifier                            |
+| `0e:` | u8     | `majorVersion` | Common major version, currently 4                     |
+| `0f:` | u8     | `minorVersion` | Specific minor version                                |
+| `10:` | u64    | `szSection1`   | Total size of section 1                               |
+| `18:` | u8\*   | `pSection1`    | Pointer to the beginning of section 1                 |
+| `20:` | u64    | `szSection2`   | Total size of section 2                               |
+| `28:` | u8\*   | `pSection2`    | Pointer to the beginning of section 2                 |
+| `30:` |        | ...etc...      |                                                       |
 
 `majorVersion` and `minorVersion` indicate the version of the writer of the
 file, see [Reader compatibility] for implications.
@@ -650,16 +650,16 @@ The Context Tree section starts with the following header:
 
 {Entry} above refers to the following structure:
 
-|   Hex | Type           | Name          | Ver. | Description (see the [Formats legend])  |
-| ----: | -------------- | ------------- | ---- | --------------------------------------- |
-| `A 8` |                | **ALIGNMENT** |      | See [Alignment properties]              |
-| `00:` | u64            | `szChildren`  | 4.0  | Total size of `*pChildren`, in bytes    |
-| `08:` | {Ctx}\[...\]\* | `pChildren`   | 4.0  | Pointer to the array of child contexts  |
-| `10:` | u32            | `ctxId`       | 4.0  | Unique identifier for this context      |
-| `14:` | u16            | `entryPoint`  | 4.0  | Type of entry point used here           |
-|       |                |               |      |                                         |
-| `18:` | char\*         | `pPrettyName` | 4.0  | Human-readable name for the entry point |
-| `20:` |                | **END**       |      | Extendable, see [Reader compatibility]  |
+|   Hex | Type         | Name          | Ver. | Description (see the [Formats legend])  |
+| ----: | ------------ | ------------- | ---- | --------------------------------------- |
+| `A 8` |              | **ALIGNMENT** |      | See [Alignment properties]              |
+| `00:` | u64          | `szChildren`  | 4.0  | Total size of `*pChildren`, in bytes    |
+| `08:` | {Ctx}[...]\* | `pChildren`   | 4.0  | Pointer to the array of child contexts  |
+| `10:` | u32          | `ctxId`       | 4.0  | Unique identifier for this context      |
+| `14:` | u16          | `entryPoint`  | 4.0  | Type of entry point used here           |
+|       |              |               |      |                                         |
+| `18:` | char\*       | `pPrettyName` | 4.0  | Human-readable name for the entry point |
+| `20:` |              | **END**       |      | Extendable, see [Reader compatibility]  |
 
 `entryPoint` is an enumeration of the following possible values (name in quotes
 is the associated canonical `*pPrettyName`):
@@ -681,28 +681,28 @@ Additional notes:
 
 {Ctx} above refers to the following structure:
 
-|   Hex | Type                    | Name          | Ver. | Description (see the [Formats legend])         |
-| ----: | ----------------------- | ------------- | ---- | ---------------------------------------------- |
-| `A 8` |                         | **ALIGNMENT** |      | See [Alignment properties]                     |
-| `00:` | u64                     | `szChildren`  | 4.0  | Total size of `*pChildren`, in bytes           |
-| `08:` | {Ctx}\[...\]\*          | `pChildren`   | 4.0  | Pointer to the array of child contexts         |
-| `10:` | u32                     | `ctxId`       | 4.0  | Unique identifier for this context             |
-| `14:` | {Flags}                 | `flags`       | 4.0  | See below                                      |
-| `15:` | u8                      | `relation`    | 4.0  | Relation this context has with its parent      |
-| `16:` | u8                      | `lexicalType` | 4.0  | Type of lexical context represented            |
-| `17:` | u8                      | `nFlexWords`  | 4.0  | Size of `flex`, in u8\[8\] "words" (bytes / 8) |
-| `18:` | u16                     | `propagation` | 4.0  | Bitmask for defining [propagation scopes][pms] |
-|       |                         |               |      |                                                |
-| `20:` | u8\[8\]\[`nFlexWords`\] | `flex`        | 4.0  | Flexible data region, see below                |
-| ` *:` |                         | **END**       |      |                                                |
+|   Hex | Type                  | Name          | Ver. | Description (see the [Formats legend])         |
+| ----: | --------------------- | ------------- | ---- | ---------------------------------------------- |
+| `A 8` |                       | **ALIGNMENT** |      | See [Alignment properties]                     |
+| `00:` | u64                   | `szChildren`  | 4.0  | Total size of `*pChildren`, in bytes           |
+| `08:` | {Ctx}[...]\*          | `pChildren`   | 4.0  | Pointer to the array of child contexts         |
+| `10:` | u32                   | `ctxId`       | 4.0  | Unique identifier for this context             |
+| `14:` | {Flags}               | `flags`       | 4.0  | See below                                      |
+| `15:` | u8                    | `relation`    | 4.0  | Relation this context has with its parent      |
+| `16:` | u8                    | `lexicalType` | 4.0  | Type of lexical context represented            |
+| `17:` | u8                    | `nFlexWords`  | 4.0  | Size of `flex`, in u8[8] "words" (bytes / 8)   |
+| `18:` | u16                   | `propagation` | 4.0  | Bitmask for defining [propagation scopes][pms] |
+|       |                       |               |      |                                                |
+| `20:` | u8[8]\[`nFlexWords`\] | `flex`        | 4.0  | Flexible data region, see below                |
+| ` *:` |                       | **END**       |      |                                                |
 
 `flex` contains a dynamic sequence of sub-fields, which are sequentially
 "packed" into the next unused bytes at the minimum alignment. In particular:
 
-- An u64 sub-field will always take the next full u8\[8\] "word" and never span
+- An u64 sub-field will always take the next full u8[8] "word" and never span
   two words, but
-- Two u32 sub-fields will share a single u8\[8\] word even if an u64 sub-field
-  is between them in the packing order.
+- Two u32 sub-fields will share a single u8[8] word even if an u64 sub-field is
+  between them in the packing order.
 
 The packing order is indicated by the index on `flex`, ie. `flex[1]` is the
 sub-field next in the packing order after `flex[0]`. This order still holds even
