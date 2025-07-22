@@ -13,7 +13,7 @@
 // rocprofiler includes
 //******************************************************************************
 
-// Note: 
+// Note:
 //    rocprofiler-sdk/registration.h isn't included in rocprofiler.h.
 //    It needs to be included separately.
 

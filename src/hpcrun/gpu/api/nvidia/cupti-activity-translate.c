@@ -190,7 +190,7 @@ set_gpu_instruction_fields
  uint64_t *correlation_id
 )
 {
-  uint64_t host_correlation_id;
+  uint64_t host_correlation_id = 0;
   bool found = get_host_correlation_id(activity_correlation_id, &host_correlation_id);
 
   PRINT("NVIDIA set gpu inst fields: activity cid = 0x%x activity host cid = 0x%lx found=%d\n",

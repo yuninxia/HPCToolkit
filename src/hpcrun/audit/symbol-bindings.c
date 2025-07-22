@@ -9,7 +9,7 @@
 //***************************************************************************
 
 #define _GNU_SOURCE
-#include <dlfcn.h>  // for dlopen, dlsym, and RTLD_LAZY 
+#include <dlfcn.h>  // for dlopen, dlsym, and RTLD_LAZY
 
 #include <stdlib.h> // for exit and getenv
 #include <stdio.h>  // for fprintf
