@@ -19,6 +19,7 @@
 
 #include "../../../common/lean/mcs-lock.h"
 #include "../../../common/lean/binarytree.h"
+#include "../../tls_specific.h"
 #include "binarytree_uwi.h"
 
 #define NUM_NODES 10
@@ -29,7 +30,6 @@ static struct {
   mem_alloc alloc;
 } GF[NUM_UNWINDERS];
 
-static __thread  bitree_uwi_t *_lf_uwi_tree[NUM_UNWINDERS]; // thread local free unwind interval tree
 
 /*
  * initialize the MCS lock for the hidden global free unwind interval tree.
@@ -50,26 +50,28 @@ bitree_uwi_t*
 bitree_uwi_malloc(unwinder_t uw,
                   size_t recipe_size)
 {
-  if (!_lf_uwi_tree[uw]) {
+  bitree_uwi_t ** lf_uwi_tree = TLS_GET(lf_uwi_tree);
+
+  if (!lf_uwi_tree[uw]) {
     mcs_node_t me;
     if (mcs_trylock(&GF[uw].lock, &me)) {
       // the global free list is locked, so use it
-      _lf_uwi_tree[uw] = GF[uw].tree;
-      if (_lf_uwi_tree[uw])
-        GF[uw].tree = bitree_uwi_leftsubtree(_lf_uwi_tree[uw]);
+      lf_uwi_tree[uw] = GF[uw].tree;
+      if (lf_uwi_tree[uw])
+        GF[uw].tree = bitree_uwi_leftsubtree(lf_uwi_tree[uw]);
       mcs_unlock(&GF[uw].lock, &me);
-      if (_lf_uwi_tree[uw])
-        bitree_uwi_set_leftsubtree(_lf_uwi_tree[uw], NULL);
+      if (lf_uwi_tree[uw])
+        bitree_uwi_set_leftsubtree(lf_uwi_tree[uw], NULL);
     }
-    if (!_lf_uwi_tree[uw])
-      _lf_uwi_tree[uw] =
+    if (!lf_uwi_tree[uw])
+      lf_uwi_tree[uw] =
         (bitree_uwi_t *)binarytree_listalloc(sizeof(uwi_t) + recipe_size,
                                              NUM_NODES, GF[uw].alloc);
   }
 
-  bitree_uwi_t *top = _lf_uwi_tree[uw];
+  bitree_uwi_t *top = lf_uwi_tree[uw];
   if (top) {
-    _lf_uwi_tree[uw] = bitree_uwi_rightsubtree(top);
+    lf_uwi_tree[uw] = bitree_uwi_rightsubtree(top);
     bitree_uwi_set_rightsubtree(top, NULL);
   }
   return top;

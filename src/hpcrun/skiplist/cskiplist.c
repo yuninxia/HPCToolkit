@@ -25,6 +25,7 @@
 
 #include "randomizer.h"
 #include "cskiplist.h"
+#include "../tls_specific.h"
 
 //******************************************************************************
 // macros
@@ -62,7 +63,7 @@ typedef enum {
 
 static csklnode_t *GF_cskl_nodes = NULL; // global free csklnode list
 static mcs_lock_t GFCN_lock;  // lock for GF_cskl_nodes
-static __thread  csklnode_t *_lf_cskl_nodes = NULL;  // thread local free csklnode list
+
 
 
 //******************************************************************************
@@ -91,11 +92,13 @@ csklnode_add_nodes_to_lfl(
         int maxheight,
         mem_alloc m_alloc)
 {
+  csklnode_t ** lf_cskl_nodes = &TLS_GET(lf_cskl_nodes);
+
   for (int i = 0; i < NUM_NODES; i++) {
         int my_height  = random_level(maxheight);
         csklnode_t* node = csklnode_alloc_node(my_height, m_alloc);
-        node->nexts[0] = _lf_cskl_nodes;
-        _lf_cskl_nodes = node;
+        node->nexts[0] = *lf_cskl_nodes;
+        *lf_cskl_nodes = node;
   }
 }
 
@@ -108,8 +111,10 @@ static csklnode_t*
 csklnode_alloc_from_lfl(
         void* val)
 {
-  csklnode_t *result = _lf_cskl_nodes;
-  _lf_cskl_nodes = _lf_cskl_nodes->nexts[0];
+  csklnode_t ** lf_cskl_nodes = &TLS_GET(lf_cskl_nodes);
+
+  csklnode_t *result = *lf_cskl_nodes;
+  *lf_cskl_nodes = (*lf_cskl_nodes)->nexts[0];
   result->nexts[0] = NULL;
   result->val = val;
   return result;
@@ -121,8 +126,10 @@ csklnode_alloc_from_lfl(
 static void
 csklnode_free_to_lfl(csklnode_t *node)
 {
-  node->nexts[0] = _lf_cskl_nodes;
-  _lf_cskl_nodes = node;
+  csklnode_t ** lf_cskl_nodes = &TLS_GET(lf_cskl_nodes);
+
+  node->nexts[0] = *lf_cskl_nodes;
+  *lf_cskl_nodes = node;
 }
 
 
@@ -136,6 +143,8 @@ csklnode_populate_lfl(
         int maxheight,
         mem_alloc m_alloc)
 {
+  csklnode_t ** lf_cskl_nodes = &TLS_GET(lf_cskl_nodes);
+
   mcs_node_t me;
   bool acquired = mcs_trylock(&GFCN_lock, &me);
   if (acquired) {
@@ -145,14 +154,14 @@ csklnode_populate_lfl(
           while (GF_cskl_nodes && n < NUM_NODES) {
                 csklnode_t *head = GF_cskl_nodes;
                 GF_cskl_nodes = GF_cskl_nodes->nexts[0];
-                head->nexts[0] = _lf_cskl_nodes;
-                _lf_cskl_nodes = head;
+                head->nexts[0] = *lf_cskl_nodes;
+                *lf_cskl_nodes = head;
                 n++;
           }
         }
         mcs_unlock(&GFCN_lock, &me);
   }
-  if (!_lf_cskl_nodes) {
+  if (! *lf_cskl_nodes) {
         csklnode_add_nodes_to_lfl(maxheight, m_alloc);
   }
 }
@@ -163,12 +172,14 @@ csklnode_malloc(
         int maxheight,
         mem_alloc m_alloc)
 {
-  if (!_lf_cskl_nodes) {
+  csklnode_t ** lf_cskl_nodes = &TLS_GET(lf_cskl_nodes);
+
+  if (! *lf_cskl_nodes) {
         csklnode_populate_lfl(maxheight, m_alloc);
   }
 
 #if CSKL_DEBUG
-  if (!_lf_cskl_nodes)
+  if (! *lf_cskl_nodes)
     abort();
 #endif
 

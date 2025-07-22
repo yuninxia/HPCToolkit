@@ -31,7 +31,8 @@
 // local includes
 //******************************************************************************
 
-#include "usec_time.h"
+#include "../../common/lean/usec_time.h"
+#include "../tls_specific.h"
 
 
 //******************************************************************************
@@ -39,15 +40,6 @@
 //******************************************************************************
 
 #define LOW_32BITS ((unsigned int) ~0)
-
-
-
-//******************************************************************************
-// local thread private data
-//******************************************************************************
-
-static __thread int urand_initialized = 0;
-static __thread unsigned int urand_data;
 
 
 
@@ -69,11 +61,14 @@ static __thread unsigned int urand_data;
 int
 urand()
 {
-  if (!urand_initialized) {
-    urand_data = usec_time() & LOW_32BITS;
-    urand_initialized = 1;
+  int * urand_initialized = &TLS_GET(urand_initialized);
+  unsigned int * urand_data = &TLS_GET(urand_data);
+
+  if (! *urand_initialized) {
+    *urand_data = usec_time() & LOW_32BITS;
+    *urand_initialized = 1;
   }
-  return rand_r(&urand_data);
+  return rand_r(urand_data);
 }
 
 

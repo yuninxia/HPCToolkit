@@ -17,6 +17,17 @@
 #define PTHREAD_BLOCKWAIT_METRIC "PTHREAD_BLOCK_WAIT"
 #define PTHREAD_SPINWAIT_METRIC "PTHREAD_SPIN_WAIT"
 
+typedef enum {
+  Running,
+  Spinning,
+  Blocked,
+} state_t;
+
+typedef struct {
+  uint64_t target;
+  state_t state;
+} blame_t;
+
 // pthread blame shifting enabled
 extern bool pthread_blame_lockwait_enabled(void);
 

@@ -28,6 +28,7 @@
 //******************************************************************************
 #include "threadmgr.h"
 #include "thread_data.h"
+#include "tls_specific.h"
 #include "write_data.h"
 #include "trace.h"
 #include "sample_sources_all.h"
@@ -166,6 +167,8 @@ finalize_all_thread_data(void *arg)
 {
   thread_list_t *data = (thread_list_t *) arg;
 
+  hpcrun_tls_specific_init_thread();
+
   while (data != NULL) {
     core_profile_trace_data_t *cptd = &data->thread_data->core_profile_trace_data;
     hpcrun_set_thread_data(data->thread_data); //YUMENG: added to make sure writer can hpcrun_malloc(pretend I am this thread)
@@ -175,6 +178,7 @@ finalize_all_thread_data(void *arg)
 
     data = grab_thread_data();
   }
+
   return NULL;
 }
 

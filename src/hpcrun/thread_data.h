@@ -149,6 +149,7 @@ typedef struct thread_data_t {
   bool           timer_init;
 
   uint64_t       last_time_us; // microseconds
+  uint64_t       prev_nanotime;
 
   // ----------------------------------------
   // core_profile_trace_data contains the following

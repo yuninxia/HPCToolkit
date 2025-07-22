@@ -43,11 +43,12 @@
 #include "../../memory/hpcrun-malloc.h"
 #include "../../main.h"
 #include "../../thread_data.h"
+#include "../../tls_specific.h"
 #include "uw_hash.h"
 #include "uw_recipe_map.h"
 #include "unwind-interval.h"
 #include "../../fnbounds/fnbounds_interface.h"
-#include "../../../common/lean/cskiplist.h"
+#include "../../skiplist/cskiplist.h"
 #include "../../../common/lean/mcs-lock.h"
 #include "../../../common/lean/binarytree.h"
 #include "binarytree_uwi.h"
@@ -114,7 +115,7 @@ ilmstat_btuwi_pair_inrange(void *itp, void *address)
 
 static ilmstat_btuwi_pair_t *GF_ilmstat_btuwi = NULL; // global free list of ilmstat_btuwi_pair_t*
 static mcs_lock_t GFL_lock;  // lock for GF_ilmstat_btuwi
-static __thread  ilmstat_btuwi_pair_t *_lf_ilmstat_btuwi = NULL;  // thread local free list of ilmstat_btuwi_pair_t*
+
 
 
 //******************************************************************************
@@ -167,7 +168,9 @@ ilmstat_btuwi_pair_malloc(
         tree_stat_t treestat,
         mem_alloc m_alloc)
 {
-  if (!_lf_ilmstat_btuwi) {
+  ilmstat_btuwi_pair_t ** lf_ilmstat_btuwi = &TLS_GET(lf_ilmstat_btuwi);
+
+  if (! *lf_ilmstat_btuwi) {
     /*
      * Look for nodes in the global free list.
      * If the global free list is not empty,
@@ -182,23 +185,23 @@ ilmstat_btuwi_pair_malloc(
         int n = 0;
         while (GF_ilmstat_btuwi && n < NUM_NODES) {
           ilmstat_btuwi_pair_t *head = pop_free_pair(&GF_ilmstat_btuwi);
-          push_free_pair(&_lf_ilmstat_btuwi, head);
+          push_free_pair(lf_ilmstat_btuwi, head);
           n++;
         }
       }
       mcs_unlock(&GFL_lock, &me);
     }
-    if (!_lf_ilmstat_btuwi) {
-      /* add a bunch of nodes to _lf_ilmstat_btuwi */
+    if (! *lf_ilmstat_btuwi) {
+      /* add a bunch of nodes to lf_ilmstat_btuwi */
       for (int i = 0; i < NUM_NODES; i++) {
         ilmstat_btuwi_pair_t *node = m_alloc(sizeof(*node));
-        push_free_pair(&_lf_ilmstat_btuwi, node);
+        push_free_pair(lf_ilmstat_btuwi, node);
       }
     }
   }
 
 #if UW_RECIPE_MAP_DEBUG
-  assert (_lf_ilmstat_btuwi);
+  assert (*lf_ilmstat_btuwi);
 #endif
 
 /*
@@ -206,7 +209,7 @@ ilmstat_btuwi_pair_malloc(
  * set its fields using the appropriate parameters
  * return the head node.
  */
-  ilmstat_btuwi_pair_t *result = pop_free_pair(&_lf_ilmstat_btuwi);
+  ilmstat_btuwi_pair_t *result = pop_free_pair(lf_ilmstat_btuwi);
   return ilmstat__btuwi_pair_init(result, treestat, lm, start, end);
 }
 
