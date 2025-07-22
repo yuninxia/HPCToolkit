@@ -1071,4 +1071,3 @@ level0_timestamp_to_realtime
 
   return result;
 }
-

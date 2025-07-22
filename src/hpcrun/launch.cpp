@@ -305,6 +305,16 @@ int main(int argc, char* argv[]) {
       return value;
     };
 
+    // AMD GPUs need these settings to work with CPU timer interrupts
+    // These settings if you even if you don't build with ROCm support
+    // but you try to measure GPU-accelerated programs that offload onto
+    // AMD GPUs. You might inadvertently fire up ROCm if there is an AMD
+    // GPU on your system even if you are trying to run an OpenCL program
+    // on another kind of GPU. Set these variables to guard against
+    // failure if you happen to use AMD GPUs without gpu=rocm.
+    env["HSA_ENABLE_INTERRUPTS"] = "0";
+    env["ROCP_HSA_INTERCEPT"] = "1";
+
     if (strmatch(arg, {"-md", "--monitor-debug"})) {
       env["MONITOR_DEBUG"] = "1";
     } else if (strmatch(arg, {"-d", "--debug"})) {
@@ -348,14 +358,12 @@ int main(int argc, char* argv[]) {
       } else if (strstartswith(ev, "gpu=rocm") || strstartswith(ev, "gpu=amd") || strstartswith(ev, "rocm::")) {
 #ifdef USE_ROCM
         if (strstartswith(ev, "gpu=amd")) {
-	  ev.replace(4,3,"rocm");
+          ev.replace(4,3,"rocm");
           std::cerr <<
            "hpcrun: NOTE: 'gpu=amd' is deprecated and will be removed; "
            "'gpu=rocm' should be used instead\n";
         }
         preload_list.emplace_back(HPCRUN_PRELOAD_ROCM_SO);
-        env["HSA_ENABLE_INTERRUPTS"] = "0";
-        env["ROCP_HSA_INTERCEPT"] = "1";
         // FIXME:
         //    The following setting is currently necessary for rocprofiler-sdk.
         //    Otherwise, an api callback may occur on a runtime thread where
@@ -370,7 +378,7 @@ int main(int argc, char* argv[]) {
       } else if (strstartswith(ev, "gpu=cuda") || strstartswith(ev, "gpu=nvidia")) {
 #ifdef OPT_HAVE_CUDA
         if (strstartswith(ev, "gpu=nvidia")) {
-	  ev.replace(4,6,"cuda");
+          ev.replace(4,6,"cuda");
           std::cerr <<
            "hpcrun: NOTE: 'gpu=nvidia' is deprecated and will be removed; "
            "'gpu=cuda' should be used instead\n";

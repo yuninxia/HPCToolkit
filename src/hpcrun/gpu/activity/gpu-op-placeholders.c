@@ -90,6 +90,7 @@ gpu_op_placeholder_ip
   CASE(scratch_alloc)
   CASE(scratch_free)
   CASE(scratch_async_reclaim)
+  CASE(scratch_illegal)
   CASE(runtime)
   CASE(kernel_anon)
   CASE(paging)

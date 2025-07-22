@@ -73,4 +73,3 @@ gpu_timestamp_boottime_to_realtime
 
   return result;
 }
-

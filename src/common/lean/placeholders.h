@@ -77,7 +77,8 @@ enum hpcrun_placeholder {
   hpcrun_placeholder_gpu_trace   = PLACEHOLDER_VALUE('G','P','U','T','r','a','c','e'),
   hpcrun_placeholder_gpu_scratch_alloc = PLACEHOLDER_VALUE('G','P','U','S','c','A','l','c'),
   hpcrun_placeholder_gpu_scratch_free = PLACEHOLDER_VALUE('G','P','U','S','c','F','r','e'),
-  hpcrun_placeholder_gpu_scratch_async_reclaim = PLACEHOLDER_VALUE('G','P','U','A','R','c','l','m'),
+  hpcrun_placeholder_gpu_scratch_async_reclaim = PLACEHOLDER_VALUE('G','P','U','S','c','A','R','c'),
+  hpcrun_placeholder_gpu_scratch_illegal = PLACEHOLDER_VALUE('G','P','U','S','c','I','l','l'),
   hpcrun_placeholder_gpu_runtime = PLACEHOLDER_VALUE('G','P','U','R','u','n','T','m'),
   hpcrun_placeholder_gpu_kernel_anon  = PLACEHOLDER_VALUE('G','P','U','K','A','n','o','n'),
   hpcrun_placeholder_gpu_paging  = PLACEHOLDER_VALUE('P','a','g','i','n','g','.','.')

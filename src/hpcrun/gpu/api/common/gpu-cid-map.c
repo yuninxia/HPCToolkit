@@ -123,7 +123,7 @@ gpu_cid_map_insert
 
   PRINT("gpu_cid_map_insert(cid=0x%lx, cct_node=%p) on thread %d \n", correlation_id, node, monitor_get_thread_num());
 
-  return true;
+  return inserted;
 }
 
 
@@ -165,5 +165,5 @@ gpu_cid_map_delete
 
   PRINT("gpu_cid_map_delete(cid=0x%lx)\n)", correlation_id);
 
-  return true;
+  return entry != NULL;
 }

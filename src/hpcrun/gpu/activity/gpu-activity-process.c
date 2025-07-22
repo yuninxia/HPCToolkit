@@ -467,13 +467,13 @@ gpu_migration_process
 }
 
 
-static gpu_scratch_op_t
+static gpu_placeholder_type_t
 get_gpu_scratch_placeholder
 (
   gpu_scratch_op_t op
 )
 {
-  gpu_placeholder_type_t ph;
+  gpu_placeholder_type_t ph = gpu_placeholder_type_scratch_illegal;
 
   switch(op) {
     case GPU_SCRATCH_MEMORY_ALLOC:
@@ -485,7 +485,7 @@ get_gpu_scratch_placeholder
     case GPU_SCRATCH_MEMORY_ASYNC_RECLAIM:
       ph = gpu_placeholder_type_scratch_async_reclaim;
       break;
-     case GPU_SCRATCH_MEMORY_ILLEGAL:
+    case GPU_SCRATCH_MEMORY_ILLEGAL:
       ph = gpu_placeholder_type_scratch_illegal;
       break;
   }
