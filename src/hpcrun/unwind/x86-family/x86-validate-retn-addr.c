@@ -245,6 +245,10 @@ static void *
 x86_plt_branch_target(void *ins, xed_decoded_inst_t *xptr)
 {
   const xed_inst_t *xi = xed_decoded_inst_inst(xptr);
+
+  // if there is no operand, there is no explicit branch target
+  if (xed_inst_noperands(xi) < 1) return NULL;
+
   const xed_operand_t *op0 =  xed_inst_operand(xi, 0);
   xed_operand_enum_t   op0_name = xed_operand_name(op0);
   xed_operand_type_enum_t op0_type = xed_operand_type(op0);
