@@ -743,7 +743,17 @@ hpcrun_sonames.set_quoted(
 configure_file(output: 'hpcrun-sonames.h', configuration: hpcrun_sonames)
 
 # Configure and install the hpcrun launcher
-hpcrun = executable('hpcrun', 'launch.cpp', version_cpp, install: true)
+hpcrun = executable(
+  'hpcrun',
+  'launch.cpp',
+  version_cpp,
+  cpp_args: [
+    '-DHPCRUN_USE_AUDITOR_BY_DEFAULT=@0@'.format(
+      get_option('hpcrun_use_auditor_by_default') ? '1' : '0',
+    ),
+  ],
+  install: true,
+)
 
 # Build and install the client API
 install_headers('hpctoolkit.h')
