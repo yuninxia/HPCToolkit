@@ -173,11 +173,10 @@ Options to consider only when hpcrun causes an application to fail:
                        to track dynamic library operations by intercepting
                        dlopen and dlclose instead of using LD_AUDIT. Note
                        that this alternate approach can cause problem with
-                       load modules that specify a RUNPATH. Due to a glibc bug,
-                       this option is disabled by default on ARM.
+                       load modules that specify a RUNPATH.
 
-  --enable-auditor     LD_AUDIT is by default disabled on ARM due to a glib bug.
-                       Use this option to enable LD_AUDIT on ARM.
+  --enable-auditor     Enable LD_AUDIT support. If the LD_AUDIT default is changed at
+                       build time, this flag can be used to override the default.
 
   --disable-auditor-got-rewriting
                        By default, hpcrun uses LD_AUDIT to help track dynamic
@@ -263,9 +262,10 @@ int main(int argc, char* argv[]) {
   // directly instead of using libmonitor's reimplementation.
   env["MONITOR_NO_SYSTEM_OVERRIDE"] = "1";
 
-#ifdef HOST_CPU_AARCH64
-  // LD_AUDIT is crippled on Arm systems until at least glibc 2.35.
-  // On Arm systems, emulate LD_AUDIT support at present to avoid failures due to LD_AUDIT bugs.
+#if !HPCRUN_USE_AUDITOR_BY_DEFAULT
+  // LD_AUDIT may be crippled. If it is, use the emulated LD_AUDIT support to avoid
+  // consistent failures. This can always be overridden using
+  // `--enable-auditor`.
   env["HPCRUN_AUDIT_FAKE_AUDITOR"] = "1";
 #endif
 
