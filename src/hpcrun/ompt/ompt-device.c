@@ -21,6 +21,7 @@
 
 #include "../../common/lean/placeholders.h"
 
+#include "../disabled.h"
 #include "../safe-sampling.h"
 #include "../thread_data.h"
 #include "../device-finalizers.h"
@@ -466,6 +467,8 @@ ompt_buffer_complete
  int buffer_owned
 )
 {
+  if (hpcrun_get_disabled()) return;
+
   PRINT("ompt_callback_buffer_complete enter device=%d\n", device_id);
   if (ompt_shutdown_complete == 0) {
 
@@ -610,6 +613,8 @@ ompt_target_callback_emi
   const void *codeptr_ra
 )
 {
+  if (hpcrun_get_disabled()) return;
+
   cct_node_t ** target_node = &OMPT_GET(target_node);
 
   if (endpoint == ompt_scope_end) {
@@ -641,6 +646,8 @@ ompt_data_op_callback_emi
   const void *codeptr_ra
 )
 {
+  if (hpcrun_get_disabled()) return;
+
   if (endpoint == ompt_scope_begin) {
     *host_op_id = gpu_activity_channel_generate_correlation_id();
   }
@@ -672,6 +679,8 @@ ompt_submit_callback_emi
  unsigned int requested_num_teams
 )
 {
+  if (hpcrun_get_disabled()) return;
+
   if (endpoint == ompt_scope_begin) {
     *host_op_id = gpu_activity_channel_generate_correlation_id();
   }

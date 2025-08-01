@@ -1057,6 +1057,9 @@ monitor_fini_process(int how, void* data)
   hpcrun_fini_internal();
 
   hpcrun_safe_exit();
+
+  // disable monitoring from now on. this prevents measurement from happening in any destructors invoked later.
+  hpcrun_set_disabled();
 }
 
 void
