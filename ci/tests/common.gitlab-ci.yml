@@ -1,6 +1,6 @@
 # SPDX-FileCopyrightText: Contributors to the HPCToolkit Project
 #
-# SPDX-License-Identifier: BSD-3-Clause
+# SPDX-License-Identifier: Apache-2.0
 
 # The vast majority of jobs in this sequence do a build and then run some tests. This is the base
 # job spec for such jobs, configurable via a small number of variables.

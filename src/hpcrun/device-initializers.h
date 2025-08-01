@@ -1,6 +1,6 @@
 // SPDX-FileCopyrightText: Contributors to the HPCToolkit Project
 //
-// SPDX-License-Identifier: BSD-3-Clause
+// SPDX-License-Identifier: Apache-2.0
 
 #ifndef _HPCTOOLKIT_DEVICE_INITIALIZERS_H_
 #define _HPCTOOLKIT_DEVICE_INITIALIZERS_H_

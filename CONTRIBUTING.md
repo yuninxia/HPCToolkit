@@ -104,7 +104,7 @@ Thanks for your efforts to improve HPCToolkit, and welcome to the community of C
    ```c
    // SPDX-FileCopyrightText: Contributors to the HPCToolkit Project
    //
-   // SPDX-License-Identifier: BSD-3-Clause
+   // SPDX-License-Identifier: Apache-2.0
    ```
 
 1. Copyrights should be made out to "Contributors to the HPCToolkit Project," meaning you! We do not require that you hand over your copyright rights to contribute.
