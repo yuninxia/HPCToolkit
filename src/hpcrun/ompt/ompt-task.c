@@ -18,6 +18,7 @@
 // local includes
 //*****************************************************************************
 
+#include "../disabled.h"
 #include "../safe-sampling.h"
 #include "../sample_event.h"
 #include "../thread_data.h"
@@ -109,6 +110,8 @@ ompt_task_create
  const void *codeptr_ra
 )
 {
+  if (hpcrun_get_disabled()) return;
+
   hpcrun_safe_enter();
 
   new_task_data->ptr = NULL;
