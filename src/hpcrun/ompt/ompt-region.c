@@ -26,6 +26,7 @@
 // local includes
 //*****************************************************************************
 
+#include "../disabled.h"
 #include "../safe-sampling.h"
 #include "../thread_data.h"
 #include "../memory/hpcrun-malloc.h"
@@ -216,6 +217,8 @@ ompt_parallel_begin
  const void *codeptr_ra
 )
 {
+  if (hpcrun_get_disabled()) return;
+
   hpcrun_safe_enter();
 
   ompt_parallel_begin_internal(parallel_data, flags);
@@ -233,6 +236,8 @@ ompt_parallel_end
  const void *codeptr_ra
 )
 {
+  if (hpcrun_get_disabled()) return;
+
   hpcrun_safe_enter();
 
   ompt_parallel_end_internal(parallel_data, flag);
@@ -308,6 +313,8 @@ ompt_implicit_task
  int flags
 )
 {
+  if (hpcrun_get_disabled()) return;
+
   if (flags == ompt_thread_initial && parallel_data == NULL)  {
     // implicit task for implicit parallel region. nothing to do here.
     return;
