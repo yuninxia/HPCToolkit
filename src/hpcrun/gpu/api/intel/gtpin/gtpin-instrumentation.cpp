@@ -1,7 +1,7 @@
 // SPDX-FileCopyrightText: 2016-2022 Intel Corporation
 // SPDX-FileCopyrightText: Contributors to the HPCToolkit Project
 //
-// SPDX-License-Identifier: BSD-3-Clause
+// SPDX-License-Identifier: Apache-2.0
 // SPDX-License-Identifier: MIT
 
 // Parts of this file are adapted from code written by the Intel Corperation and distributed under

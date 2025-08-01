@@ -1,6 +1,6 @@
 # SPDX-FileCopyrightText: Contributors to the HPCToolkit Project
 #
-# SPDX-License-Identifier: BSD-3-Clause
+# SPDX-License-Identifier: Apache-2.0
 
 default_language_version:
   python: python3
@@ -63,7 +63,7 @@ repos:
     - meson ==1.5.2
 
 - repo: https://github.com/executablebooks/mdformat
-  rev: 0.7.17
+  rev: 0.7.22
   hooks:
   # Format CommonMark (Markdown) files to have a consistent style.
   - id: mdformat
@@ -76,21 +76,17 @@ repos:
     args: [--wrap=80, --number]
     additional_dependencies:
     - mdformat-tables ==1.0.0
-  # LICENSE.md is a pure-CommonMark format with full numbering in the source
-  - id: mdformat
-    files: ^LICENSE\.md$
-    args: [--number]
   # Format MyST (CommonMark for Sphinx) files to have a consistent style.
   - id: mdformat
     files: ^doc/src/
     additional_dependencies:
-    - mdformat-myst ==0.1.5
-    - mdformat-deflist ==0.1.2
+    - mdformat-myst ==0.2.1
+    - mdformat-deflist ==0.1.3
   # Format GFM (CommmonMark for GitHub/GitLab) files to have a consistent style.
   - id: mdformat
     files: ^\.gitlab/
     additional_dependencies:
-    - mdformat-gfm ==0.3.6
+    - mdformat-gfm ==0.4.1
 
 - repo: https://github.com/pre-commit/pre-commit-hooks
   rev: v4.6.0

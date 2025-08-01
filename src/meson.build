@@ -1,6 +1,6 @@
 # SPDX-FileCopyrightText: Contributors to the HPCToolkit Project
 #
-# SPDX-License-Identifier: BSD-3-Clause
+# SPDX-License-Identifier: Apache-2.0
 
 # Some environment modifications and extra dependencies are needed in order to make the tools work
 # when run out of the build directory. These variables collect these details, and <tool>_test_*

@@ -1,6 +1,6 @@
 # SPDX-FileCopyrightText: Contributors to the HPCToolkit Project
 #
-# SPDX-License-Identifier: BSD-3-Clause
+# SPDX-License-Identifier: Apache-2.0
 
 if not rst2man.found()
   subdir_done()
@@ -24,10 +24,10 @@ print(f"{months[today.month]} {today.year:d}")
 )
 _cdata.set('DATE', _date.stdout().strip())
 
-assert(meson.project_license() == ['BSD-3-Clause'])
+assert(meson.project_license() == ['Apache-2.0'])
 _cdata.set(
   'LICENSE_RST',
-  'the BSD 3-Clause License <`<https://opensource.org/license/bsd-3-clause/>`_>',
+  'the Apache License 2.0 <`<https://opensource.org/license/apache-2-0>`_>',
 )
 
 _srcs = files(

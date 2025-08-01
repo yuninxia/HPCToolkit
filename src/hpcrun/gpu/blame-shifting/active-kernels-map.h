@@ -1,6 +1,6 @@
 // SPDX-FileCopyrightText: Contributors to the HPCToolkit Project
 //
-// SPDX-License-Identifier: BSD-3-Clause
+// SPDX-License-Identifier: Apache-2.0
 
 #ifndef gpu_blame_opencl_active_kernels_map_h_
 #define gpu_blame_opencl_active_kernels_map_h_
