@@ -23,7 +23,7 @@ fi
 trap 'rm -rf "$tmpdir"' EXIT
 tmpdir=$(mktemp --directory --tmpdir=.)
 
-"$hpcrun" -o "$tmpdir"/m -a python -e REALTIME "$python" "$script"
+"$hpcrun" -o "$tmpdir"/m -a python -e REALTIME --enable-auditor "$python" "$script"
 "$hpctesttool" test produces-profiles "$tmpdir"/m \
   '^NODE [^A-Z]+\s+(CORE [^A-Z]+\s+)?THREAD [^A-Z]+$' \
   "$@"

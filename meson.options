@@ -33,6 +33,13 @@ option('opencl', type: 'feature', description: 'Enable OpenCL metrics')
 option('rocm', type: 'feature', description: 'Enable ROCm metrics')
 
 option(
+  'hpcrun_use_auditor_by_default',
+  type: 'boolean',
+  value: true,
+  description: 'Set whether hpcrun should by default use LD_AUDIT for monitoring',
+)
+
+option(
   'valgrind_annotations',
   type: 'boolean',
   value: false,
