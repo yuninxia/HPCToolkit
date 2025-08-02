@@ -168,18 +168,19 @@ R"==(
 
 Options to consider only when hpcrun causes an application to fail:
 
-  --disable-auditor    By default, hpcrun uses LD_AUDIT to track dynamic library
+  --disable-auditor    Typically, hpcrun uses LD_AUDIT to track dynamic library
                        operations (see NOTES). This option instructs hpcrun
                        to track dynamic library operations by intercepting
                        dlopen and dlclose instead of using LD_AUDIT. Note
                        that this alternate approach can cause problem with
                        load modules that specify a RUNPATH.
 
-  --enable-auditor     Enable LD_AUDIT support. If the LD_AUDIT default is changed at
-                       build time, this flag can be used to override the default.
+  --enable-auditor     Enable LD_AUDIT support. If the default setting for
+                       LD_AUDIT is configured at build time as 'disabled',
+                       this flag can be used to enable it.
 
   --disable-auditor-got-rewriting
-                       By default, hpcrun uses LD_AUDIT to help track dynamic
+                       Typically, hpcrun uses LD_AUDIT to help track dynamic
                        library operations using an 'auditor' library. When using
                        an auditor library, glibc unnecessarily intercepts
                        every call to a function in a shared library. hpcrun
@@ -194,13 +195,11 @@ Options to consider only when hpcrun causes an application to fail:
                        can cause an application to crash when using glibc < 2.32
                        (see NOTES). This option asks HPCToolkit to load all
                        shared libraries within the application namespace, which
-                       might help avoid a crash.  (Default when performing
-                       instruction-level measurements of Intel GPU binaries.)
+                       might help avoid a crash.
 
   --namespace-multiple dlmopen may load a shared library into an alternate
                        namespace. Force HPCToolkit to allow dlmopen to create
-                       alternate namespaces.  (Default unless performing
-                       instruction-level measurements of Intel GPU binaries.)
+                       alternate namespaces.
 
   --disable-gprof      Override and disable gprof instrumentation  This option
                        is only useful when using hpcrun to add HPCToolkit's
@@ -215,11 +214,15 @@ NOTES:
 * hpcrun uses preloaded shared libraries to initiate profiling.  For this
   reason, it cannot be used to profile setuid programs.
 
-* By default, hpcrun use LD_AUDIT to monitor an application's use of dynamic
+* Typically, hpcrun uses LD_AUDIT to monitor an application's use of dynamic
   libraries. Use of LD_AUDIT is needed to properly interpret a load module's
-  RUNPATH attribute. However, use of LD_AUDIT will cause dlmopen to fail
-  for glibc < 2.32. Intel's GTPin library for instrumentation of Intel GPU
-  binaries uses dlmopen.
+  RUNPATH attribute. However, use of LD_AUDIT will cause dlmopen to fail and
+  can cause heap corruption for stock glibc < 2.32. On systems with stock
+  glibc < 2.32, it is recommended that HPCToolkit be configured to disable
+  default use of LD_AUDIT to avoid potential heap corruption by glibc. Since
+  Intel's GTPin library for instrumentation of Intel GPU binaries uses dlmopen,
+  LD_AUDIT is disabled automatically when GTPin is used to avoid LD_AUDIT
+  problems on systems with glibc < 2.32.
 
 )==";
 }
