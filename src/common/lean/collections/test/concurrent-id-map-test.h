@@ -6,6 +6,8 @@
 
 #include "test-util.h"
 
+#include <stdint.h>
+
 size_t alloc_counter = 0;
 
 void* alloc(size_t size) {
