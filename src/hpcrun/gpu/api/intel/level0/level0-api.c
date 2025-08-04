@@ -800,9 +800,6 @@ hpcrun_zeModuleDestroy
   const struct hpcrun_foil_appdispatch_level0* dispatch
 )
 {
-  // Entry action
-  level0_module_handle_map_delete(hModule);
-
   ze_result_t ret = f_zeModuleDestroy(hModule, dispatch);
 
   return ret;
