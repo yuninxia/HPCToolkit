@@ -147,23 +147,28 @@ TEST(SplayTreeTest, InsertLookup) {
   // Insert [0, N) keys
   for (size_t i = 0; i < N; ++i) {
     my_splay_tree_entry_t *entry = new_entry(i);
-
     ASSERT_TRUE(my_splay_tree_insert(&tree, entry));
 
-    // Create an entry with the same key and try insert it
+    // Verify intermediate size, values, and order
+    test_tree(&tree, i + 1);
+  }
+
+  // Insert [0, N) duplicate keys
+  for (size_t i = 0; i < N; ++i) {
     my_splay_tree_entry_t *entry_dup = new_entry(i);
     ASSERT_FALSE(my_splay_tree_insert(&tree, entry_dup));
     free(entry_dup);
-
-    // Verify size, values, and order
-    test_tree(&tree, i + 1);
   }
+
+  // Verify final size, values, and order
+  test_tree(&tree, N);
 
   // Lookup [0, N] keys
   for (size_t i = 0; i < N; ++i) {
     my_splay_tree_entry_t *entry = my_splay_tree_lookup(&tree, idx_to_key(i));
     ASSERT_NE(entry, NULL);
 
+    // Verify re-splayed size, values, and order
     test_tree(&tree, N);
   }
 
@@ -175,11 +180,12 @@ TEST(SplayTreeTest, InsertLookup) {
 
     ASSERT_EQ(my_splay_tree_delete(&tree, idx_to_key(i)), NULL);
 
-    // Verify size, values, and order
+    // Verify intermediate size, values, and order
     test_tree(&tree, N - i - 1);
   }
 
-  test_empty_tree(&tree);
+  // Verify final size, values, and order
+  test_tree(&tree, 0);
 }
 
 

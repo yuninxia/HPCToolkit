@@ -4,6 +4,7 @@
 
 #include <stdlib.h>
 #include <stdatomic.h>
+#include <stdint.h>
 
 #include "collections-util.h"
 
