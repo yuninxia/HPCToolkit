@@ -13,7 +13,6 @@
 #include "level0-command-process.h"
 #include "level0-data-node.h"
 #include "level0-binary.h"
-#include "level0-kernel-module-map.h"
 #include "level0-api.h"
 
 #include "../../../activity/gpu-activity-channel.h"

@@ -461,7 +461,6 @@ if level0_dep.found()
     'gpu/api/intel/level0/level0-event-map.c',
     'gpu/api/intel/level0/level0-fence-map.c',
     'gpu/api/intel/level0/level0-handle-map.c',
-    'gpu/api/intel/level0/level0-kernel-module-map.c',
     'sample-sources/level0.c',
   )
 endif
