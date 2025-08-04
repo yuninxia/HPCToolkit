@@ -29,7 +29,6 @@
 #include "level0-data-node.h"
 #include "level0-debug.h"
 #include "level0-fence-map.h"
-#include "level0-kernel-module-map.h"
 
 #include "../../../../utilities/linuxtimer.h"
 
@@ -820,8 +819,6 @@ hpcrun_zeKernelCreate
 {
   ze_result_t ret = f_zeKernelCreate(hModule, desc, phKernel, dispatch);
   PRINT("foilbase_zeKernelCreate: module handle %p, kernel handle %p\n",hModule, *phKernel);
-  // Exit action
-  level0_kernel_module_map_insert(*phKernel, hModule);
   return ret;
 }
 
@@ -832,9 +829,6 @@ hpcrun_zeKernelDestroy
   const struct hpcrun_foil_appdispatch_level0* dispatch
 )
 {
-  // Entry action
-  level0_kernel_module_map_delete(hKernel);
-
   ze_result_t ret = f_zeKernelDestroy(hKernel, dispatch);
 
   return ret;
