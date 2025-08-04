@@ -37,6 +37,10 @@
   #define SPLAY_TREE_GT(A, B) ((A) > (B))
 #endif
 
+#ifndef SPLAY_TREE_EQ
+  #define SPLAY_TREE_EQ(A, B) ((A) == (B))
+#endif
+
 
 #if !defined(SPLAY_TREE_DECLARE) && !defined(SPLAY_TREE_DEFINE)
 #define SPLAY_TREE_DEFINE_INPLACE
@@ -269,15 +273,14 @@ SPLAY_TREE_MEMBER(insert)
   entry->left = NULL;
   entry->right = NULL;
 
-  SPLAY_TREE_ENTRY_TYPE *root = splay_tree->root;
-  if (root != NULL) {
-    SPLAY_TREE_MEMBER(splay)(&root, entry->SPLAY_TREE_KEY_FIELD);
-
-    if (entry->SPLAY_TREE_KEY_FIELD < root->SPLAY_TREE_KEY_FIELD) {
+  if (splay_tree->root != NULL) {
+    SPLAY_TREE_MEMBER(splay)(&splay_tree->root, entry->SPLAY_TREE_KEY_FIELD);
+    SPLAY_TREE_ENTRY_TYPE *root = splay_tree->root;
+    if (SPLAY_TREE_LT(entry->SPLAY_TREE_KEY_FIELD, root->SPLAY_TREE_KEY_FIELD)) {
       entry->left = root->left;
       entry->right = root;
       root->left = NULL;
-    } else if (entry->SPLAY_TREE_KEY_FIELD > root->SPLAY_TREE_KEY_FIELD) {
+    } else if (SPLAY_TREE_GT(entry->SPLAY_TREE_KEY_FIELD, root->SPLAY_TREE_KEY_FIELD)) {
       entry->left = root;
       entry->right = root->right;
       root->right = NULL;
@@ -303,7 +306,7 @@ SPLAY_TREE_MEMBER(lookup)
   SPLAY_TREE_MEMBER(splay)(&splay_tree->root, key);
 
   return splay_tree->root != NULL
-         && splay_tree->root->SPLAY_TREE_KEY_FIELD == key
+         && SPLAY_TREE_EQ(key, splay_tree->root->SPLAY_TREE_KEY_FIELD)
           ? splay_tree->root
           : NULL;
 }
@@ -320,7 +323,7 @@ SPLAY_TREE_MEMBER(delete)
   SPLAY_TREE_MEMBER(splay)(&splay_tree->root, key);
 
   return splay_tree->root != NULL
-         && splay_tree->root->SPLAY_TREE_KEY_FIELD == key
+         && SPLAY_TREE_EQ(key, splay_tree->root->SPLAY_TREE_KEY_FIELD)
            ? SPLAY_TREE_MEMBER(delete_root)(splay_tree)
            : NULL;
 }
