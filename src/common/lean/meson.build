@@ -60,3 +60,5 @@ test(
   args: [files('elf-hash-example')],
   protocol: 'gtest',
 )
+
+subdir('collections/test')
