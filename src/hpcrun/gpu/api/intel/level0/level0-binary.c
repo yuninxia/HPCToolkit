@@ -20,72 +20,8 @@
 #include "../../../../messages/messages.h"
 
 #include "../../../../../common/lean/crypto-hash.h"
-#include "../../../../../common/lean/spinlock.h"
 
 #include "level0-binary.h"
-#include "level0-handle-map.h"
-
-
-//*****************************************************************************
-// type declarations
-//*****************************************************************************
-
-typedef struct {
-  const char *hash_string;
-  gpu_binary_kind_t bkind;
-} module_info_t;
-
-
-
-//******************************************************************************
-// local variables
-//******************************************************************************
-
-static level0_handle_map_entry_t *module_map_root = NULL;
-
-static level0_handle_map_entry_t *module_free_list = NULL;
-
-static spinlock_t module_lock = SPINLOCK_UNLOCKED;
-
-
-
-//******************************************************************************
-// private operations
-//******************************************************************************
-
-module_info_t *
-module_info_new
-(
-  const char *hash_string,
-  gpu_binary_kind_t bkind
-)
-{
-  module_info_t *mi = (module_info_t *) malloc(sizeof(module_info_t));
-
-  mi->hash_string = hash_string;
-  mi->bkind = bkind;
-
-  return mi;
-}
-
-
-void
-level0_module_handle_map_insert
-(
-  ze_module_handle_t module,
-  const char* hash_string,
-  gpu_binary_kind_t bkind
-)
-{
-  spinlock_lock(&module_lock);
-
-  uint64_t key = (uint64_t)module;
-  level0_handle_map_entry_t *entry =
-    level0_handle_map_entry_new(&module_free_list, key, (level0_data_node_t*) module_info_new(hash_string, bkind));
-  level0_handle_map_insert(&module_map_root, entry);
-
-  spinlock_unlock(&module_lock);
-}
 
 
 
@@ -149,45 +85,4 @@ level0_binary_process
          "Instruction-level may not be possible for kernels in this binary");
     break;
   }
-
-  level0_module_handle_map_insert(module, hash_buf, bkind);
-}
-
-
-void
-level0_module_handle_map_lookup
-(
-  ze_module_handle_t module,
-  const char **hash_string,
-  gpu_binary_kind_t *bkind
-)
-{
-  spinlock_lock(&module_lock);
-
-  uint64_t key = (uint64_t)module;
-  level0_handle_map_entry_t *entry =
-    level0_handle_map_lookup(&module_map_root, key);
-  module_info_t  *mi = (module_info_t *) (*level0_handle_map_entry_data_get(entry));
-  spinlock_unlock(&module_lock);
-
-  *hash_string = mi->hash_string;
-  *bkind = mi->bkind;
-}
-
-void
-level0_module_handle_map_delete
-(
-  ze_module_handle_t module
-)
-{
-  spinlock_lock(&module_lock);
-
-  uint64_t key = (uint64_t)module;
-  level0_handle_map_delete(
-    &module_map_root,
-    &module_free_list,
-    key
-  );
-
-  spinlock_unlock(&module_lock);
 }
