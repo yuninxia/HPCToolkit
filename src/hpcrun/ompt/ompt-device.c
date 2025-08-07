@@ -189,8 +189,6 @@ get_callpath
   thread_data_t *td = hpcrun_get_thread_data();
   td->overhead++;
 
-  hpcrun_safe_enter();
-
   int skip_this_frame = 1; // omit this procedure frame on the call path
   cct_node_t *node =
     hpcrun_sample_callpath(&uc, zero_metric_id, zero_metric_incr,
@@ -207,11 +205,6 @@ get_callpath
     if (get_load_module(node) != lm) break;
   }
 #endif
-
-  // Must be under a safe region to prevent self interrupt
-  hpcrun_trace_node(OMPT_GET(target_node));
-
-  hpcrun_safe_exit();
 
   td->overhead--;
 
@@ -249,6 +242,8 @@ hpcrun_ompt_op_id_notify(ompt_scope_endpoint_t endpoint,
     // target region. in this case, use stack unwinding to determine
     // the call path where the operation was invoked.
     cct_node_t *callpath = target_node ? target_node : get_callpath();
+    // Must be under a safe region to prevent self interrupt
+    hpcrun_trace_node(callpath);
 
     cct_node_t *api_node = hpcrun_cct_insert_addr(callpath, &frm, true);
 
@@ -627,7 +622,11 @@ ompt_target_callback_emi
   target_data->value = gpu_activity_channel_generate_correlation_id();
   PRINT("ompt_target_callback->target_id 0x%lx\n", target_data->value);
 
+  // Must be under a safe region to prevent self interrupt
+  hpcrun_safe_enter();
   *target_node = get_callpath();
+  hpcrun_trace_node(*target_node);
+  hpcrun_safe_exit();
 }
 
 void
