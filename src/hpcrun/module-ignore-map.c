@@ -132,7 +132,6 @@ search_functions_in_module(Elf *e, GElf_Shdr* secHead, Elf_Scn *section)
   uint64_t count;
   GElf_Sym curSym;
   uint64_t i, ii,symType, symBind;
-  // char *marmite;
 
   data = elf_getdata(section, NULL);           // use it to get the data
   if (data == NULL || secHead->sh_entsize == 0) return -1;
