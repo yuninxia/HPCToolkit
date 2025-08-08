@@ -682,7 +682,6 @@ opencl_activity_completion_callback
  void *user_data
 )
 {
-  hpcrun_thread_init_mem_pool_once(TOOL_THREAD_ID, NULL, HPCRUN_NO_TRACE, true);
   opencl_object_t *cb_data = (opencl_object_t*)user_data;
   cl_basic_callback_t cb_basic = opencl_cb_basic_get(cb_data);
 
@@ -736,8 +735,6 @@ opencl_api_initialize
 )
 {
   ETMSG(OPENCL, "CL_TARGET_OPENCL_VERSION: %d", CL_TARGET_OPENCL_VERSION);
-  // we need this even when instrumentation is off inorder to get kernel names in hpcviewer
-  hpcrun_thread_init_mem_pool_once(TOOL_THREAD_ID, NULL, HPCRUN_NO_TRACE, true);
 
   // GPU_IDLE_CAUSE should be attributed only to application thread
   // application thread calls this fn
