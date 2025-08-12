@@ -24,12 +24,12 @@
 #if __has_include(<bit>)
 #define HPCTOOLKIT_STDSHIM_STD_HAS_bit
 #endif
-#else  // defined(__has_include)
+#else // defined(__has_include)
 // If we can't test it directly, just assume the compiler has it
 #define HPCTOOLKIT_STDSHIM_STD_HAS_bit
 #endif
 
-#endif  // __cplusplus >= 201903L
+#endif // __cplusplus >= 201903L
 #if __cplusplus >= 201703L
 
 #if defined(__has_include)
@@ -39,7 +39,7 @@
 // We assume experimental/filesystem is available, its close enough to work with
 #define HPCTOOLKIT_STDSHIM_STD_HAS_experimental_filesystem
 #endif
-#else  // defined(__has_include)
+#else // defined(__has_include)
 // If we can't test it directly, just assume the compiler has it
 #define HPCTOOLKIT_STDSHIM_STD_HAS_filesystem
 #endif
@@ -47,6 +47,6 @@
 #ifndef HPCTOOLKIT_SLOW_LIBC
 #define HPCTOOLKIT_STDSHIM_STD_HAS_shared_mutex
 #endif
-#endif  // __cplusplus >= 201703L
+#endif // __cplusplus >= 201703L
 
-#endif  // HPCTOOLKIT_STDSHIM_VERSION_H
+#endif // HPCTOOLKIT_STDSHIM_VERSION_H

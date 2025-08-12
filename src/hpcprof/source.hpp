@@ -8,7 +8,6 @@
 #define HPCTOOLKIT_PROFILE_SOURCE_H
 
 #include "pipeline.hpp"
-
 #include "util/locked_unordered.hpp"
 #include "util/ref_wrappers.hpp"
 
@@ -26,7 +25,8 @@ public:
   /// Instantiates the proper Source for the given arguments. In time more
   /// overloadings may be added that will handle more interesting cases.
   // MT: Internally Synchronized
-  static std::unique_ptr<ProfileSource> create_for(const stdshim::filesystem::path&, const stdshim::filesystem::path&);
+  static std::unique_ptr<ProfileSource> create_for(const stdshim::filesystem::path&,
+                                                   const stdshim::filesystem::path&);
 
   /// Most format errors from a Source can be handled within the Source itself,
   /// but if errors happen during construction callers (create_for) will want to
@@ -65,6 +65,6 @@ protected:
   ProfileSource() = default;
 };
 
-}
+} // namespace hpctoolkit
 
-#endif  // HPCTOOLKIT_PROFILE_SOURCE_H
+#endif // HPCTOOLKIT_PROFILE_SOURCE_H

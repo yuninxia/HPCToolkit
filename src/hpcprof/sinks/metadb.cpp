@@ -8,13 +8,11 @@
 
 #include "metadb.hpp"
 
-#include "../util/log.hpp"
-#include "../util/once.hpp"
-
+#include "../../common/lean/placeholders.h"
 #include "../formats/metadb.hpp"
 #include "../formats/primitives.hpp"
-
-#include "../../common/lean/placeholders.h"
+#include "../util/log.hpp"
+#include "../util/once.hpp"
 
 #include <fstream>
 #include <stack>
@@ -23,9 +21,9 @@ using namespace hpctoolkit;
 using namespace sinks;
 
 MetaDB::MetaDB(stdshim::filesystem::path in_dir, bool copySources)
-  : dir(std::move(in_dir)), copySources(copySources) {
+    : dir(std::move(in_dir)), copySources(copySources) {
 
-  if(dir.empty())
+  if (dir.empty())
     util::log::fatal{} << "SparseDB doesn't allow for dry runs!";
   else
     stdshim::filesystem::create_directory(dir);
@@ -40,8 +38,7 @@ void MetaDB::notifyPipeline() noexcept {
   ud.context = ss.context.add_default<udContext>();
 }
 
-template<class I>
-static constexpr I align(I v, uint8_t a) {
+template <class I> static constexpr I align(I v, uint8_t a) {
   return (v + a - 1) / a * a;
 }
 
@@ -52,48 +49,84 @@ std::string MetaDB::accumulateFormulaString(const Expression& e) {
   std::stack<std::string, std::vector<std::string>> infix;
   infix.push("!!!");
   e.citerate_all(
-    [&](double v){
-      if(!first.top()) ss << infix.top();
-      first.top() = false;
-      ss << v;
-    },
-    [&](Expression::uservalue_t){
-      if(!first.top()) ss << infix.top();
-      first.top() = false;
-      ss << "$$";
-    },
-    [&](const Expression& e) {
-      if(!first.top()) ss << infix.top();
-      first.top() = false;
-      std::string fix = "!!!";
-      switch(e.kind()) {
-      case Expression::Kind::constant:
-      case Expression::Kind::subexpression:
-      case Expression::Kind::variable:
-        std::abort();
-      case Expression::Kind::op_sum:  ss << '('; fix = "+"; break;
-      case Expression::Kind::op_sub:  ss << '('; fix = "-"; break;
-      case Expression::Kind::op_neg:  ss << "-("; break;
-      case Expression::Kind::op_prod: ss << '('; fix = "*"; break;
-      case Expression::Kind::op_div:  ss << '('; fix = "/"; break;
-      case Expression::Kind::op_pow:  ss << '('; fix = "^"; break;
-      case Expression::Kind::op_sqrt: ss << "sqrt("; break;
-      case Expression::Kind::op_log:  ss << "log("; fix = ","; break;
-      case Expression::Kind::op_ln:   ss << "ln(";break;
-      case Expression::Kind::op_min:  ss << "min("; fix = ","; break;
-      case Expression::Kind::op_max:  ss << "max("; fix = ","; break;
-      case Expression::Kind::op_floor: ss << "floor("; break;
-      case Expression::Kind::op_ceil: ss << "ceil("; break;
-      }
-      first.push(true);
-      infix.push(std::move(fix));
-    },
-    [&](const Expression&) {
-      first.pop();
-      infix.pop();
-      ss << ')';
-    }
-  );
+      [&](double v) {
+        if (!first.top())
+          ss << infix.top();
+        first.top() = false;
+        ss << v;
+      },
+      [&](Expression::uservalue_t) {
+        if (!first.top())
+          ss << infix.top();
+        first.top() = false;
+        ss << "$$";
+      },
+      [&](const Expression& e) {
+        if (!first.top())
+          ss << infix.top();
+        first.top() = false;
+        std::string fix = "!!!";
+        switch (e.kind()) {
+        case Expression::Kind::constant:
+        case Expression::Kind::subexpression:
+        case Expression::Kind::variable:
+          std::abort();
+        case Expression::Kind::op_sum:
+          ss << '(';
+          fix = "+";
+          break;
+        case Expression::Kind::op_sub:
+          ss << '(';
+          fix = "-";
+          break;
+        case Expression::Kind::op_neg:
+          ss << "-(";
+          break;
+        case Expression::Kind::op_prod:
+          ss << '(';
+          fix = "*";
+          break;
+        case Expression::Kind::op_div:
+          ss << '(';
+          fix = "/";
+          break;
+        case Expression::Kind::op_pow:
+          ss << '(';
+          fix = "^";
+          break;
+        case Expression::Kind::op_sqrt:
+          ss << "sqrt(";
+          break;
+        case Expression::Kind::op_log:
+          ss << "log(";
+          fix = ",";
+          break;
+        case Expression::Kind::op_ln:
+          ss << "ln(";
+          break;
+        case Expression::Kind::op_min:
+          ss << "min(";
+          fix = ",";
+          break;
+        case Expression::Kind::op_max:
+          ss << "max(";
+          fix = ",";
+          break;
+        case Expression::Kind::op_floor:
+          ss << "floor(";
+          break;
+        case Expression::Kind::op_ceil:
+          ss << "ceil(";
+          break;
+        }
+        first.push(true);
+        infix.push(std::move(fix));
+      },
+      [&](const Expression&) {
+        first.pop();
+        infix.pop();
+        ss << ')';
+      });
   return ss.str();
 }
 
@@ -101,36 +134,39 @@ std::size_t MetaDB::stringsTableLookup(const std::string& s) {
   {
     std::shared_lock<std::shared_mutex> l(stringsLock);
     auto it = stringsTable.find(s);
-    if(it != stringsTable.end()) return it->second;
+    if (it != stringsTable.end())
+      return it->second;
   }
   std::unique_lock<std::shared_mutex> l(stringsLock);
   auto [it, first] = stringsTable.try_emplace(s, stringsList.size());
-  if(first)
+  if (first)
     stringsList.push_back(it->first);
   return it->second;
 }
 
 void MetaDB::instance(const File& f) {
   auto& udf = f.userdata[ud];
-  util::call_once(udf.once, [&]{
-    if(copySources) {
+  util::call_once(udf.once, [&] {
+    if (copySources) {
       const auto& rp = f.userdata[src.resolvedPath()];
-      if(!rp.empty()) {
-        assert(rp.is_absolute());  // This technique only works on absolute paths
-        auto relative = stdshim::filesystem::path("src") / rp.relative_path().lexically_normal();
+      if (!rp.empty()) {
+        assert(rp.is_absolute()); // This technique only works on absolute paths
+        auto relative =
+            stdshim::filesystem::path("src") / rp.relative_path().lexically_normal();
         auto p = dir / relative;
 
         bool ok = false;
         try {
           stdshim::filesystem::create_directories(p.parent_path());
-          stdshim::filesystem::copy_file(rp, p,
-              stdshim::filesystem::copy_options::overwrite_existing);
+          stdshim::filesystem::copy_file(
+              rp, p, stdshim::filesystem::copy_options::overwrite_existing);
           ok = true;
-        } catch(const stdshim::filesystem::filesystem_error& e) {
-          util::log::warning{} << "Failed to copy source file to database: "
-            << e.code().message() << " [" << rp.string() << "]";
+        } catch (const stdshim::filesystem::filesystem_error& e) {
+          util::log::warning{}
+              << "Failed to copy source file to database: " << e.code().message()
+              << " [" << rp.string() << "]";
         }
-        if(ok) {
+        if (ok) {
           udf.pathSIdx = stringsTableLookup(relative.string());
           udf.copied = true;
           return;
@@ -144,10 +180,10 @@ void MetaDB::instance(const File& f) {
 
 void MetaDB::instance(const Module& m) {
   auto& udm = m.userdata[ud];
-  util::call_once(udm.once, [&]{
-    if(m.relative_path().empty()){
+  util::call_once(udm.once, [&] {
+    if (m.relative_path().empty()) {
       udm.pathSIdx = stringsTableLookup(m.path().string());
-    }else{
+    } else {
       udm.pathSIdx = stringsTableLookup(m.relative_path().string());
     }
   });
@@ -155,17 +191,21 @@ void MetaDB::instance(const Module& m) {
 
 void MetaDB::instance(const Function& f) {
   auto [udf, first] = udFuncs.try_emplace(f);
-  if(!first) return;
+  if (!first)
+    return;
   udf.nameSIdx = stringsTableLookup(f.name());
   instance(f.module());
-  if(auto sl = f.sourceLocation()) instance(sl->first);
+  if (auto sl = f.sourceLocation())
+    instance(sl->first);
 }
 
 void MetaDB::instance(Scope::placeholder_t, const Scope& s) {
   auto [udf, first] = udPlaceholders.try_emplace(s.enumerated_data());
-  if(!first) return;
+  if (!first)
+    return;
   std::string name(s.enumerated_pretty_name());
-  if(name.empty()) name = s.enumerated_fallback_name();
+  if (name.empty())
+    name = s.enumerated_fallback_name();
   udf.nameSIdx = stringsTableLookup(std::move(name));
 }
 
@@ -173,17 +213,17 @@ void MetaDB::notifyContext(const Context& c) {
   const auto& s = c.scope();
   const auto& sf = s.flat();
 
-  if(c.direct_parent() && !c.direct_parent()->direct_parent()) {
+  if (c.direct_parent() && !c.direct_parent()->direct_parent()) {
     // This is a top-level Context, which will be converted into an entry point,
     // so most of the usual operations don't apply.
     auto& udc = c.userdata[ud];
-    switch(sf.type()) {
+    switch (sf.type()) {
     case Scope::Type::unknown:
       udc.entryPoint = FMT_METADB_ENTRYPOINT_UNKNOWN_ENTRY;
       udc.prettyNameSIdx = stringsTableLookup("unknown entry");
       break;
     case Scope::Type::placeholder:
-      switch(sf.enumerated_data()) {
+      switch (sf.enumerated_data()) {
       case hpcrun_placeholder_fence_main:
         udc.entryPoint = FMT_METADB_ENTRYPOINT_MAIN_THREAD;
         udc.prettyNameSIdx = stringsTableLookup("main thread");
@@ -205,7 +245,7 @@ void MetaDB::notifyContext(const Context& c) {
   }
 
   // Otherwise handle it as a normal Context
-  switch(sf.type()) {
+  switch (sf.type()) {
   case Scope::Type::unknown:
   case Scope::Type::global:
     break;
@@ -230,7 +270,7 @@ void MetaDB::notifyContext(const Context& c) {
 
   auto& udc = c.userdata[ud];
   udc.propagation = 0;
-  switch(s.relation()) {
+  switch (s.relation()) {
   case Relation::global:
   case Relation::call:
   case Relation::inlined_call:
@@ -252,29 +292,31 @@ void MetaDB::write() try {
     { // General Properties section
       formats::SubWriteGuard<fmt_metadb_generalSHdr_t> gphdr(l, *fileHdr);
 
-      formats::Written<std::string_view, formats::NullTerminatedString> title(l,
-          src.attributes().name() ? std::string_view(src.attributes().name().value())
-                                  : std::string_view("<unnamed>"));
+      formats::Written<std::string_view, formats::NullTerminatedString> title(
+          l, src.attributes().name() ? std::string_view(src.attributes().name().value())
+                                     : std::string_view("<unnamed>"));
       gphdr->pTitle = title.ptr();
 
-      formats::Written<std::string_view, formats::NullTerminatedString> description(l,
-          "TODO database description");
+      formats::Written<std::string_view, formats::NullTerminatedString> description(
+          l, "TODO database description");
       gphdr->pDescription = description.ptr();
     }
 
     { // Identifier Names section
       formats::SubWriteGuard<fmt_metadb_idNamesSHdr_t> idhdr(l, *fileHdr);
 
-      std::deque<util::optional_ref<const std::string>> names(src.attributes().idtupleNames().size());
-      for(const auto& kv: src.attributes().idtupleNames()) {
-        if(names.size() <= kv.first) names.resize(kv.first+1);
+      std::deque<util::optional_ref<const std::string>> names(
+          src.attributes().idtupleNames().size());
+      for (const auto& kv : src.attributes().idtupleNames()) {
+        if (names.size() <= kv.first)
+          names.resize(kv.first + 1);
         names[kv.first] = kv.second;
       }
 
       // Write out the names
       formats::Written<std::string, formats::NullTerminatedString> nullStr(l, "");
       std::deque<formats::Written<std::string_view, formats::NullTerminatedString>> strs;
-      for(const auto& n: names) {
+      for (const auto& n : names) {
         if (n)
           strs.emplace_back(l, *n);
       }
@@ -293,29 +335,37 @@ void MetaDB::write() try {
       std::map<MetricScope, std::size_t> scopeIdxs;
       auto scopes_f = [&l, &scopeIdxs]() -> auto {
         std::deque<fmt_metadb_propScope_t> scopes;
-        for(MetricScope ms: MetricScopeSet(MetricScopeSet::all)) {
+        for (MetricScope ms : MetricScopeSet(MetricScopeSet::all)) {
           fmt_metadb_propScope_t scope = {};
           scope.propagationIndex = 255;
-          switch(ms) {
+          switch (ms) {
           case MetricScope::point:
             scope.pScopeName =
-                formats::Written<std::string_view, formats::NullTerminatedString>(l, "point").ptr();
+                formats::Written<std::string_view, formats::NullTerminatedString>(
+                    l, "point")
+                    .ptr();
             scope.type = FMT_METADB_SCOPETYPE_Point;
             break;
           case MetricScope::function:
             scope.pScopeName =
-                formats::Written<std::string_view, formats::NullTerminatedString>(l, "function").ptr();
+                formats::Written<std::string_view, formats::NullTerminatedString>(
+                    l, "function")
+                    .ptr();
             scope.type = FMT_METADB_SCOPETYPE_Transitive;
             scope.propagationIndex = 0;
             break;
           case MetricScope::lex_aware:
             scope.pScopeName =
-                formats::Written<std::string_view, formats::NullTerminatedString>(l, "lex_aware").ptr();
+                formats::Written<std::string_view, formats::NullTerminatedString>(
+                    l, "lex_aware")
+                    .ptr();
             scope.type = FMT_METADB_SCOPETYPE_Custom;
             break;
           case MetricScope::execution:
             scope.pScopeName =
-                formats::Written<std::string_view, formats::NullTerminatedString>(l, "execution").ptr();
+                formats::Written<std::string_view, formats::NullTerminatedString>(
+                    l, "execution")
+                    .ptr();
             scope.type = FMT_METADB_SCOPETYPE_Execution;
             break;
           }
@@ -331,15 +381,15 @@ void MetaDB::write() try {
       // Next the metrics
       auto metrics_f = [this, &l, &scopeIdxs, &scopes]() -> auto {
         std::deque<fmt_metadb_metricDesc_t> metrics;
-        for(const Metric& m: src.metrics().citerate()) {
+        for (const Metric& m : src.metrics().citerate()) {
           const Metric::Identifier& id = m.userdata[src.identifier()];
 
           auto scopeInsts_f = [&m, &id, &scopeIdxs, &scopes]() -> auto {
             std::deque<fmt_metadb_propScopeInst_t> scopeInsts;
-            for(MetricScope ms: m.scopes()) {
+            for (MetricScope ms : m.scopes()) {
               scopeInsts.push_back((fmt_metadb_propScopeInst_t){
-                .pScope = scopes.ptr(scopeIdxs.at(ms)),
-                .propMetricId = static_cast<uint16_t>(id.getFor(ms)),
+                  .pScope = scopes.ptr(scopeIdxs.at(ms)),
+                  .propMetricId = static_cast<uint16_t>(id.getFor(ms)),
               });
             }
             return scopeInsts;
@@ -348,11 +398,11 @@ void MetaDB::write() try {
 
           auto summaries_f = [&m, &id, &l, &scopeIdxs, &scopes]() -> auto {
             std::deque<fmt_metadb_summaryStat_t> summaries;
-            for(MetricScope ms: m.scopes()) {
+            for (MetricScope ms : m.scopes()) {
               auto pScope = scopes.ptr(scopeIdxs.at(ms));
-              for(const auto& p: m.partials()) {
+              for (const auto& p : m.partials()) {
                 std::uint8_t combine = 255;
-                switch(p.combinator()) {
+                switch (p.combinator()) {
                 case Statistic::combination_t::sum:
                   combine = FMT_METADB_COMBINE_Sum;
                   break;
@@ -364,11 +414,13 @@ void MetaDB::write() try {
                   break;
                 }
                 summaries.push_back((fmt_metadb_summaryStat_t){
-                  .pScope = pScope,
-                  .pFormula = formats::Written<std::string, formats::NullTerminatedString>(l,
-                      accumulateFormulaString(p.accumulate())).ptr(),
-                  .combine = combine,
-                  .statMetricId = static_cast<uint16_t>(id.getFor(p, ms)),
+                    .pScope = pScope,
+                    .pFormula =
+                        formats::Written<std::string, formats::NullTerminatedString>(
+                            l, accumulateFormulaString(p.accumulate()))
+                            .ptr(),
+                    .combine = combine,
+                    .statMetricId = static_cast<uint16_t>(id.getFor(p, ms)),
                 });
               }
             }
@@ -377,12 +429,14 @@ void MetaDB::write() try {
           formats::Written summaries(l, summaries_f());
 
           metrics.push_back((fmt_metadb_metricDesc_t){
-            .pName = formats::Written<std::string_view, formats::NullTerminatedString>(l,
-                m.name()).ptr(),
-            .pScopeInsts = scopeInsts.ptr(),
-            .pSummaries = summaries.ptr(),
-            .nScopeInsts = static_cast<std::uint16_t>(scopeInsts->size()),
-            .nSummaries = static_cast<std::uint16_t>(summaries->size()),
+              .pName =
+                  formats::Written<std::string_view, formats::NullTerminatedString>(
+                      l, m.name())
+                      .ptr(),
+              .pScopeInsts = scopeInsts.ptr(),
+              .pSummaries = summaries.ptr(),
+              .nScopeInsts = static_cast<std::uint16_t>(scopeInsts->size()),
+              .nSummaries = static_cast<std::uint16_t>(summaries->size()),
           });
         }
         return metrics;
@@ -394,7 +448,7 @@ void MetaDB::write() try {
 
     // Common String Table (section)
     formats::Written strings(l, std::move(stringsList),
-        formats::DynamicArray<formats::NullTerminatedString>());
+                             formats::DynamicArray<formats::NullTerminatedString>());
     fileHdr->pStrings = strings.ptr();
     fileHdr->szStrings = strings.bytesize();
 
@@ -404,12 +458,13 @@ void MetaDB::write() try {
       std::deque<std::reference_wrapper<udModule>> moduleUds;
       auto modules_f = [&]() -> auto {
         std::deque<fmt_metadb_moduleSpec_t> modules;
-        for(const Module& m: src.modules().citerate()) {
+        for (const Module& m : src.modules().citerate()) {
           auto& udm = m.userdata[ud];
-          if(udm.pathSIdx == std::numeric_limits<std::size_t>::max()) continue;
+          if (udm.pathSIdx == std::numeric_limits<std::size_t>::max())
+            continue;
           moduleUds.emplace_back(std::ref(udm));
           modules.push_back((fmt_metadb_moduleSpec_t){
-            .pPath = strings.ptr(udm.pathSIdx),
+              .pPath = strings.ptr(udm.pathSIdx),
           });
         }
         return modules;
@@ -418,7 +473,7 @@ void MetaDB::write() try {
       shdr->pModules = modules.ptr();
       shdr->nModules = modules->size();
       std::size_t i = 0;
-      for(udModule& ud: moduleUds)
+      for (udModule& ud : moduleUds)
         ud.ptr = modules.ptr(i++);
     }
 
@@ -428,13 +483,14 @@ void MetaDB::write() try {
       std::deque<std::reference_wrapper<udFile>> fileUds;
       auto files_f = [&]() -> auto {
         std::deque<fmt_metadb_fileSpec_t> files;
-        for(const File& ff: src.files().citerate()) {
+        for (const File& ff : src.files().citerate()) {
           auto& udf = ff.userdata[ud];
-          if(udf.pathSIdx == std::numeric_limits<std::size_t>::max()) continue;
+          if (udf.pathSIdx == std::numeric_limits<std::size_t>::max())
+            continue;
           fileUds.emplace_back(std::ref(udf));
           files.push_back((fmt_metadb_fileSpec_t){
-            .copied = udf.copied,
-            .pPath = strings.ptr(udf.pathSIdx),
+              .copied = udf.copied,
+              .pPath = strings.ptr(udf.pathSIdx),
           });
         }
         return files;
@@ -443,7 +499,7 @@ void MetaDB::write() try {
       shdr->pFiles = files.ptr();
       shdr->nFiles = files->size();
       std::size_t i = 0;
-      for(udFile& ud: fileUds)
+      for (udFile& ud : fileUds)
         ud.ptr = files.ptr(i++);
     }
 
@@ -453,24 +509,26 @@ void MetaDB::write() try {
       std::deque<std::reference_wrapper<udFunction>> functionUds;
       auto functions_f = [&]() -> auto {
         std::deque<fmt_metadb_functionSpec_t> functions;
-        for(auto& [rff, udf]: udFuncs.iterate()) {
+        for (auto& [rff, udf] : udFuncs.iterate()) {
           const Function& ff = rff;
           functionUds.emplace_back(std::ref(udf));
           auto sl = ff.sourceLocation();
           functions.push_back((fmt_metadb_functionSpec_t){
-            .pName = strings.ptr(udf.nameSIdx),
-            .pModule = ff.module().userdata[ud].ptr,
-            .offset = ff.offset().value_or(0),
-            .pFile = sl ? sl->first.userdata[ud].ptr : 0,
-            .line = sl ? static_cast<uint32_t>(sl->second) : 0,
+              .pName = strings.ptr(udf.nameSIdx),
+              .pModule = ff.module().userdata[ud].ptr,
+              .offset = ff.offset().value_or(0),
+              .pFile = sl ? sl->first.userdata[ud].ptr : 0,
+              .line = sl ? static_cast<uint32_t>(sl->second) : 0,
           });
         }
-        for(auto& [dat, udf]: udPlaceholders.iterate()) {
+        for (auto& [dat, udf] : udPlaceholders.iterate()) {
           functionUds.emplace_back(std::ref(udf));
           functions.push_back((fmt_metadb_functionSpec_t){
-            .pName = strings.ptr(udf.nameSIdx),
-            .pModule = 0, .offset = 0,
-            .pFile = 0, .line = 0,
+              .pName = strings.ptr(udf.nameSIdx),
+              .pModule = 0,
+              .offset = 0,
+              .pFile = 0,
+              .line = 0,
           });
         }
         return functions;
@@ -479,7 +537,7 @@ void MetaDB::write() try {
       shdr->pFunctions = functions.ptr();
       shdr->nFunctions = functions->size();
       std::size_t i = 0;
-      for(udFunction& ud: functionUds)
+      for (udFunction& ud : functionUds)
         ud.ptr = functions.ptr(i++);
     }
 
@@ -494,8 +552,9 @@ void MetaDB::write() try {
         ctx.ctxId = c.userdata[src.identifier()];
         ctx.propagation = udc.propagation;
         ctx.pFunction = ctx.pFile = ctx.pModule = 0;
-        switch(c.scope().relation()) {
-        case Relation::global: std::abort();
+        switch (c.scope().relation()) {
+        case Relation::global:
+          std::abort();
         case Relation::enclosure:
           ctx.relation = FMT_METADB_RELATION_LexicalNest;
           break;
@@ -507,25 +566,26 @@ void MetaDB::write() try {
           break;
         }
 
-        const auto setFunction = [&](const udFunction& ud){
+        const auto setFunction = [&](const udFunction& ud) {
           ctx.pFunction = ud.ptr;
           assert(ctx.pFunction != std::numeric_limits<uint64_t>::max());
         };
-        const auto setSrcLine = [&]{
+        const auto setSrcLine = [&] {
           const auto [f, l] = c.scope().flat().line_data();
           ctx.pFile = f.userdata[ud].ptr;
           assert(ctx.pFile != std::numeric_limits<uint64_t>::max());
           ctx.line = l;
         };
-        const auto setPoint = [&]{
+        const auto setPoint = [&] {
           const auto [m, o] = c.scope().flat().point_data();
           ctx.pModule = m.userdata[ud].ptr;
           assert(ctx.pModule != std::numeric_limits<uint64_t>::max());
           ctx.offset = o;
         };
 
-        switch(c.scope().flat().type()) {
-        case Scope::Type::global: std::abort();
+        switch (c.scope().flat().type()) {
+        case Scope::Type::global:
+          std::abort();
         case Scope::Type::unknown:
           ctx.lexicalType = FMT_METADB_LEXTYPE_Function;
           // ...But we don't know the function, so pFunction = 0 still.
@@ -546,7 +606,7 @@ void MetaDB::write() try {
         case Scope::Type::binary_loop:
           ctx.lexicalType = FMT_METADB_LEXTYPE_Loop;
           setSrcLine();
-          if(c.scope().flat().type() == Scope::Type::binary_loop)
+          if (c.scope().flat().type() == Scope::Type::binary_loop)
             setPoint();
           break;
         case Scope::Type::point:
@@ -559,18 +619,20 @@ void MetaDB::write() try {
 
       auto entryPoints_f = [&]() -> auto {
         std::deque<fmt_metadb_entryPoint_t> entryPoints;
-        for(const Context& top: src.contexts().children().citerate()) {
+        for (const Context& top : src.contexts().children().citerate()) {
           // Output Contexts in reversed DFS order, since that's easier to implement
-          top.citerate(nullptr, [&](const Context& c){
-            if(c.children().empty()) return;
-            if(elide(c)) return;
+          top.citerate(nullptr, [&](const Context& c) {
+            if (c.children().empty())
+              return;
+            if (elide(c))
+              return;
 
             auto& udc = c.userdata[ud];
             auto children_f = [&]() -> auto {
               std::deque<fmt_metadb_context_t> children;
-              for(const Context& cc: c.children().citerate()) {
-                if(elide(cc)) {
-                  for(const Context& gcc: cc.children().citerate()) {
+              for (const Context& cc : c.children().citerate()) {
+                if (elide(cc)) {
+                  for (const Context& gcc : cc.children().citerate()) {
                     assert(!elide(gcc) && "Recursion needed for this algorithm!");
                     children.push_back(compose(gcc));
                   }
@@ -588,10 +650,11 @@ void MetaDB::write() try {
           // Then compose the entry point
           auto& udc = top.userdata[ud];
           entryPoints.push_back((fmt_metadb_entryPoint_t){
-            .szChildren = udc.szChildren, .pChildren = udc.pChildren,
-            .ctxId = top.userdata[src.identifier()],
-            .entryPoint = udc.entryPoint,
-            .pPrettyName = strings.ptr(udc.prettyNameSIdx),
+              .szChildren = udc.szChildren,
+              .pChildren = udc.pChildren,
+              .ctxId = top.userdata[src.identifier()],
+              .entryPoint = udc.entryPoint,
+              .pPrettyName = strings.ptr(udc.prettyNameSIdx),
           });
         }
         return entryPoints;
@@ -604,6 +667,6 @@ void MetaDB::write() try {
 
   // File footer
   file.writeat(l.size(), sizeof fmt_metadb_footer, fmt_metadb_footer);
-} catch(const std::exception& e) {
+} catch (const std::exception& e) {
   util::log::fatal{} << "Error while writing meta.db: " << e.what();
 }

@@ -7,19 +7,20 @@
 #include "stable_hash.hpp"
 
 #include "../stdshim/bit.hpp"
+
 #include <cassert>
 #include <stdexcept>
 
 using namespace hpctoolkit::util;
 
-stable_hash_state::stable_hash_state()
-  : state(XXH3_createState()) {
-  if(!state) throw std::bad_alloc();
+stable_hash_state::stable_hash_state() : state(XXH3_createState()) {
+  if (!state)
+    throw std::bad_alloc();
   XXH3_64bits_reset(state.get());
 }
 
 stable_hash_state::stable_hash_state(const stable_hash_state& other)
-  : stable_hash_state() {
+    : stable_hash_state() {
   XXH3_copyState(state.get(), other.state.get());
 }
 
@@ -36,12 +37,14 @@ std::uint64_t stable_hash_state::squeeze() noexcept {
   return XXH3_64bits_digest(state.get());
 }
 
-stable_hash_state& stable_hash_state::inject(const char* data, std::size_t size) noexcept {
+stable_hash_state& stable_hash_state::inject(const char* data,
+                                             std::size_t size) noexcept {
   XXH3_64bits_update(state.get(), data, size);
   return *this;
 }
 
-stable_hash_state& stable_hash_state::inject(const std::uint8_t* data, std::size_t size) noexcept {
+stable_hash_state& stable_hash_state::inject(const std::uint8_t* data,
+                                             std::size_t size) noexcept {
   XXH3_64bits_update(state.get(), data, size);
   return *this;
 }

@@ -7,10 +7,10 @@
 #ifndef HPCTOOLKIT_PROFILE_SCOPE_H
 #define HPCTOOLKIT_PROFILE_SCOPE_H
 
-#include "util/uniqable.hpp"
-#include "util/ragged_vector.hpp"
-
 #include "stdshim/filesystem.hpp"
+#include "util/ragged_vector.hpp"
+#include "util/uniqable.hpp"
+
 #include <string>
 #include <string_view>
 
@@ -65,13 +65,13 @@ public:
 
   /// Full list of possible Scopes that can be represented.
   enum class Type {
-    unknown,  ///< Some amount of missing Context data, of unknown depth.
-    global,  ///< Scope of the global Context, root of the entire execution.
-    point,  ///< A single instruction within the application, thus a "point".
-    function,  ///< A normal ordinary function within the application.
-    lexical_loop,  ///< A loop-like construct, potentially source-level.
+    unknown,      ///< Some amount of missing Context data, of unknown depth.
+    global,       ///< Scope of the global Context, root of the entire execution.
+    point,        ///< A single instruction within the application, thus a "point".
+    function,     ///< A normal ordinary function within the application.
+    lexical_loop, ///< A loop-like construct, potentially source-level.
     binary_loop,  ///< A loop-like construct, potentially source-level.
-    line,  ///< A single line within the original source.
+    line,         ///< A single line within the original source.
     placeholder,  ///< A marker context with special meaning (and nothing else).
   };
 
@@ -121,44 +121,29 @@ public:
 private:
   Type ty;
   union Data {
-    struct {} empty;
+    struct {
+    } empty;
     struct point_u {
       const Module* m;
       uint64_t offset;
-      bool operator==(const point_u& o) const {
-        return m == o.m && offset == o.offset;
-      }
+      bool operator==(const point_u& o) const { return m == o.m && offset == o.offset; }
       bool operator<(const point_u& o) const {
         return m != o.m ? m < o.m : offset < o.offset;
       }
-      operator std::pair<const Module&, uint64_t>() const {
-        return {*m, offset};
-      }
+      operator std::pair<const Module&, uint64_t>() const { return {*m, offset}; }
     } point;
     struct function_u {
       const Function* f;
-      bool operator==(const function_u& o) const {
-        return f == o.f;
-      }
-      bool operator<(const function_u& o) const {
-        return f < o.f;
-      }
-      operator const Function&() const {
-        return *f;
-      }
+      bool operator==(const function_u& o) const { return f == o.f; }
+      bool operator<(const function_u& o) const { return f < o.f; }
+      operator const Function&() const { return *f; }
     } function;
     struct line_u {
       const File* s;
       uint64_t l;
-      bool operator==(const line_u& o) const {
-        return s == o.s && l == o.l;
-      }
-      bool operator<(const line_u& o) const {
-        return s != o.s ? s < o.s : l < o.l;
-      }
-      operator std::pair<const File&, uint64_t>() const {
-        return {*s, l};
-      }
+      bool operator==(const line_u& o) const { return s == o.s && l == o.l; }
+      bool operator<(const line_u& o) const { return s != o.s ? s < o.s : l < o.l; }
+      operator std::pair<const File&, uint64_t>() const { return {*s, l}; }
     } line;
     struct point_line_u {
       struct point_u point;
@@ -172,20 +157,17 @@ private:
     } point_line;
     uint64_t enumerated;
     Data() : empty{} {};
-    Data(const Module& m, uint64_t o)
-      : point{&m, o} {};
-    Data(const Function& f)
-      : function{&f} {};
-    Data(const File& s, uint64_t l)
-      : line{&s, l} {};
+    Data(const Module& m, uint64_t o) : point{&m, o} {};
+    Data(const Function& f) : function{&f} {};
+    Data(const File& s, uint64_t l) : line{&s, l} {};
     Data(const Module& m, uint64_t o, const File& s, uint64_t l)
-      : point_line{{&m, o}, {&s, l}} {};
-    Data(uint64_t l)
-      : enumerated{l} {};
+        : point_line{{&m, o}, {&s, l}} {};
+    Data(uint64_t l) : enumerated{l} {};
   } data;
 
   friend class std::hash<Scope>;
-  friend util::stable_hash_state& operator<<(util::stable_hash_state&, const Scope&) noexcept;
+  friend util::stable_hash_state& operator<<(util::stable_hash_state&,
+                                             const Scope&) noexcept;
 
   // A special constructor only available to Profiles for the `global` Scope.
   friend class ProfilePipeline;
@@ -269,27 +251,28 @@ private:
   Scope m_flat;
 };
 
-util::stable_hash_state& operator<<(util::stable_hash_state&, const NestedScope&) noexcept;
+util::stable_hash_state& operator<<(util::stable_hash_state&,
+                                    const NestedScope&) noexcept;
 
-}
+} // namespace hpctoolkit
 
 namespace std {
-  using namespace hpctoolkit;
-  template<> struct hash<Scope> {
-    std::hash<const Function*> h_func;
-    std::hash<const Module*> h_mod;
-    std::hash<const File*> h_file;
-    std::hash<uint64_t> h_u64;
-    std::size_t operator()(const Scope&) const noexcept;
-  };
-  template<> struct hash<NestedScope> {
-    std::hash<Relation> h_rel;
-    std::hash<Scope> h_scope;
-    std::size_t operator()(const NestedScope&) const noexcept;
-  };
-  std::ostream& operator<<(std::ostream&, const Scope&) noexcept;
-  std::ostream& operator<<(std::ostream&, Relation) noexcept;
-  std::ostream& operator<<(std::ostream&, const NestedScope&) noexcept;
-}
+using namespace hpctoolkit;
+template <> struct hash<Scope> {
+  std::hash<const Function*> h_func;
+  std::hash<const Module*> h_mod;
+  std::hash<const File*> h_file;
+  std::hash<uint64_t> h_u64;
+  std::size_t operator()(const Scope&) const noexcept;
+};
+template <> struct hash<NestedScope> {
+  std::hash<Relation> h_rel;
+  std::hash<Scope> h_scope;
+  std::size_t operator()(const NestedScope&) const noexcept;
+};
+std::ostream& operator<<(std::ostream&, const Scope&) noexcept;
+std::ostream& operator<<(std::ostream&, Relation) noexcept;
+std::ostream& operator<<(std::ostream&, const NestedScope&) noexcept;
+} // namespace std
 
-#endif  // HPCTOOLKIT_PROFILE_SCOPE_H
+#endif // HPCTOOLKIT_PROFILE_SCOPE_H

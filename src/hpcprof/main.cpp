@@ -7,19 +7,18 @@
 #include "util/vgannotations.hpp"
 
 #include "args.hpp"
-
+#include "finalizers/denseids.hpp"
+#include "finalizers/directclassification.hpp"
+#include "finalizers/logical.hpp"
 #include "pipeline.hpp"
-#include "source.hpp"
 #include "sinks/hpctracedb2.hpp"
 #include "sinks/metadb.hpp"
 #include "sinks/metricsyaml.hpp"
 #include "sinks/sparsedb.hpp"
-#include "finalizers/denseids.hpp"
-#include "finalizers/directclassification.hpp"
-#include "finalizers/logical.hpp"
+#include "source.hpp"
 
-#include <memory>
 #include <iostream>
+#include <memory>
 
 using namespace hpctoolkit;
 namespace fs = stdshim::filesystem;
@@ -30,7 +29,8 @@ int main(int argc, char* const argv[]) {
 
   // Get the main core of the Pipeline set up.
   ProfilePipeline::Settings pipelineB;
-  for(auto& sp : args.sources) pipelineB << std::move(sp.first);
+  for (auto& sp : args.sources)
+    pipelineB << std::move(sp.first);
   ProfArgs::StatisticsExtender se(args);
   pipelineB << se;
 
@@ -45,10 +45,12 @@ int main(int argc, char* const argv[]) {
   // Load in the Finalizers for special cases
   finalizers::LogicalFile lf;
   pipelineB << lf;
-  for(auto& sp : args.ksyms) pipelineB << std::move(sp.first);
+  for (auto& sp : args.ksyms)
+    pipelineB << std::move(sp.first);
 
   // Load in the Finalizers for Structfiles
-  for(auto& sp : args.structs) pipelineB << std::move(sp.first);
+  for (auto& sp : args.structs)
+    pipelineB << std::move(sp.first);
   ProfArgs::StructPartialMatch spm(args);
   pipelineB << spm;
 
@@ -56,12 +58,12 @@ int main(int argc, char* const argv[]) {
   // This is used as a fallback if the Structfiles aren't available.
   pipelineB << std::make_unique<finalizers::DirectClassification>(args.dwarfMaxSize);
 
-  switch(args.format) {
+  switch (args.format) {
   case ProfArgs::Format::metadb: {
     pipelineB << std::make_unique<sinks::MetaDB>(args.output, args.include_sources)
               << std::make_unique<sinks::SparseDB>(args.output)
               << std::make_unique<sinks::MetricsYAML>(args.output);
-    if(args.include_traces)
+    if (args.include_traces)
       pipelineB << std::make_unique<sinks::HPCTraceDB2>(args.output);
     break;
   }
@@ -73,7 +75,8 @@ int main(int argc, char* const argv[]) {
   // Drain the Pipeline, and make everything happen.
   pipeline.run();
 
-  if(args.valgrindUnclean) std::exit(0);  // Skips local cleanup of pipeline
+  if (args.valgrindUnclean)
+    std::exit(0); // Skips local cleanup of pipeline
 
   return 0;
 }

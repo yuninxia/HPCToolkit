@@ -31,10 +31,12 @@ std::optional<unsigned int> ProfileFinalizer::identify(const Thread&) noexcept {
   return std::nullopt;
 }
 
-std::optional<stdshim::filesystem::path> ProfileFinalizer::resolvePath(const File&) noexcept {
+std::optional<stdshim::filesystem::path>
+ProfileFinalizer::resolvePath(const File&) noexcept {
   return std::nullopt;
 }
-std::optional<stdshim::filesystem::path> ProfileFinalizer::resolvePath(const Module&) noexcept {
+std::optional<stdshim::filesystem::path>
+ProfileFinalizer::resolvePath(const Module&) noexcept {
   return std::nullopt;
 }
 
@@ -43,8 +45,6 @@ ProfileFinalizer::classify(Context&, NestedScope&) noexcept {
   return std::nullopt;
 }
 
-bool ProfileFinalizer::resolve(ContextFlowGraph&) noexcept {
-  return false;
-}
+bool ProfileFinalizer::resolve(ContextFlowGraph&) noexcept { return false; }
 
 void ProfileFinalizer::appendStatistics(const Metric&, Metric::StatsAccess) noexcept {};

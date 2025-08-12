@@ -82,20 +82,23 @@ public:
 
   /// Notify the Sink that some number of Context-type timepoints have been emitted.
   // MT: Internally Synchronized
-  virtual void notifyTimepoints(const Thread&, const std::vector<
-    std::pair<std::chrono::nanoseconds, std::reference_wrapper<const Context>>>&);
+  virtual void notifyTimepoints(
+      const Thread&,
+      const std::vector<
+          std::pair<std::chrono::nanoseconds, std::reference_wrapper<const Context>>>&);
 
-  /// Notify the Sink that the next Context-type timepoint will not be the sequentially next,
-  /// but instead be rewound back to the first.
+  /// Notify the Sink that the next Context-type timepoint will not be the sequentially
+  /// next, but instead be rewound back to the first.
   virtual void notifyCtxTimepointRewindStart(const Thread&);
 
   /// Notify the Sink that some number of Metric-type timepoints have been emitted.
   // MT: Internally Synchronized
-  virtual void notifyTimepoints(const Thread&, const Metric&, const std::vector<
-    std::pair<std::chrono::nanoseconds, double>>&);
+  virtual void
+  notifyTimepoints(const Thread&, const Metric&,
+                   const std::vector<std::pair<std::chrono::nanoseconds, double>>&);
 
-  /// Notify the Sink that the next Metric-type timepoint will not be the sequentially next,
-  /// but instead be rewound back to the first.
+  /// Notify the Sink that the next Metric-type timepoint will not be the sequentially
+  /// next, but instead be rewound back to the first.
   virtual void notifyMetricTimepointRewindStart(const Thread&, const Metric&);
 
   /// Notify the Sink that a Thread has finished.
@@ -109,6 +112,6 @@ protected:
   ProfilePipeline::Sink src;
 };
 
-}
+} // namespace hpctoolkit
 
-#endif  // HPCTOOLKIT_PROFILE_SINK_H
+#endif // HPCTOOLKIT_PROFILE_SINK_H

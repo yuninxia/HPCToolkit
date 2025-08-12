@@ -5,18 +5,17 @@
 #ifndef HPCTOOLKIT_PROFILE_FORMATS_PRIMITIVES_H
 #define HPCTOOLKIT_PROFILE_FORMATS_PRIMITIVES_H
 
+#include "../../common/lean/formats/primitive.h"
 #include "core.hpp"
 
-#include "../../common/lean/formats/primitive.h"
-
-#include <cstdint>
 #include <cassert>
+#include <cstdint>
 #include <string>
 #include <string_view>
 
 namespace hpctoolkit::formats {
 
-template<>
+template <>
 struct DataTraits<std::uint16_t> final : ConstSizeDataTraits<std::uint16_t, 2> {
   ser_type serialize(const std::uint16_t& data) noexcept {
     ser_type buf;
@@ -25,7 +24,7 @@ struct DataTraits<std::uint16_t> final : ConstSizeDataTraits<std::uint16_t, 2> {
   }
 };
 
-template<>
+template <>
 struct DataTraits<std::uint32_t> final : ConstSizeDataTraits<std::uint32_t, 4> {
   ser_type serialize(const std::uint32_t& data) noexcept {
     ser_type buf;
@@ -34,7 +33,7 @@ struct DataTraits<std::uint32_t> final : ConstSizeDataTraits<std::uint32_t, 4> {
   }
 };
 
-template<>
+template <>
 struct DataTraits<std::uint64_t> final : ConstSizeDataTraits<std::uint64_t, 8> {
   ser_type serialize(const std::uint64_t& data) noexcept {
     ser_type buf;
@@ -43,7 +42,7 @@ struct DataTraits<std::uint64_t> final : ConstSizeDataTraits<std::uint64_t, 8> {
   }
 };
 
-template<class T, class Tr>
+template <class T, class Tr>
 struct DataTraits<Written<T, Tr>> final : ConstSizeDataTraits<std::uint64_t, 8> {
   ser_type serialize(const Written<T, Tr>& data) noexcept {
     ser_type buf;
@@ -52,9 +51,7 @@ struct DataTraits<Written<T, Tr>> final : ConstSizeDataTraits<std::uint64_t, 8> 
   }
 };
 
-
-template<>
-struct DataTraits<double> final : ConstSizeDataTraits<double, 8> {
+template <> struct DataTraits<double> final : ConstSizeDataTraits<double, 8> {
   ser_type serialize(const double& data) noexcept {
     ser_type buf;
     fmt_f64_write(buf.data(), data);
@@ -79,6 +76,6 @@ struct NullTerminatedString {
   }
 };
 
-}  // namespace hpctoolkit::formats
+} // namespace hpctoolkit::formats
 
 #endif // HPCTOOLKIT_PROFILE_FORMATS_PRIMITIVES_H

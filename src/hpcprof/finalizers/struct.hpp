@@ -8,19 +8,18 @@
 #define HPCTOOLKIT_PROFILE_FINALIZERS_STRUCT_H
 
 #include "../finalizer.hpp"
-
 #include "../util/range_map.hpp"
 
 #include <deque>
-#include <mutex>
 #include <map>
+#include <mutex>
 
 namespace hpctoolkit::finalizers {
 
 namespace detail {
 struct LMData;
 class StructFileParser;
-}
+} // namespace detail
 
 // When a struct file is around, this draws data from it to Classify a Module.
 class StructFile final : public ProfileFinalizer {
@@ -28,7 +27,7 @@ public:
   class RecommendationStore {
   public:
     RecommendationStore(bool measDir, std::string hpcstructArgs = "")
-      : measDir(measDir), hpcstructArgs(std::move(hpcstructArgs)) {}
+        : measDir(measDir), hpcstructArgs(std::move(hpcstructArgs)) {}
     ~RecommendationStore() = default;
 
   private:
@@ -43,7 +42,8 @@ public:
     std::once_flag once;
   };
 
-  StructFile(stdshim::filesystem::path path, stdshim::filesystem::path meas, std::shared_ptr<RecommendationStore> store);
+  StructFile(stdshim::filesystem::path path, stdshim::filesystem::path meas,
+             std::shared_ptr<RecommendationStore> store);
   ~StructFile();
 
   void notifyPipeline() noexcept override;
@@ -65,28 +65,30 @@ private:
 
   /// Current status of the call graph data from a Structfile
   enum class CallGraphStatus {
-    NONE,  ///< Default status
-    NOT_PRESENT,  ///< Call graph data was never requested or generated
-    VALID,  ///< Call graph data was found and parsed successfully
-    ERRORED,  ///< Call graph data was generated but failed to parse somehow
+    NONE,        ///< Default status
+    NOT_PRESENT, ///< Call graph data was never requested or generated
+    VALID,       ///< Call graph data was found and parsed successfully
+    ERRORED,     ///< Call graph data was generated but failed to parse somehow
   };
 
   struct udModule final {
     // Storage for Function data
     std::deque<Function> funcs;
-    using trienode = std::pair<std::pair<Scope, Relation>, const void* /* const trienode* */>;
+    using trienode =
+        std::pair<std::pair<Scope, Relation>, const void* /* const trienode* */>;
     // Trie of Scopes, for efficiently storing nested Scopes
     std::deque<trienode> trie;
     // Bounds-map (instruction -> nested Scope and top Function)
-    std::map<util::interval<uint64_t>, std::pair<
-        std::reference_wrapper<const trienode>,
-        std::reference_wrapper<const Function>>> leaves;
+    std::map<util::interval<uint64_t>, std::pair<std::reference_wrapper<const trienode>,
+                                                 std::reference_wrapper<const Function>>>
+        leaves;
 
     // Status of the call graph data for
     CallGraphStatus cfgStatus = CallGraphStatus::NONE;
     // Reversed call graph (callee Function -> caller instruction and top Function)
     std::unordered_multimap<util::reference_index<const Function>,
-        std::pair<uint64_t, std::reference_wrapper<const Function>>> rcg;
+                            std::pair<uint64_t, std::reference_wrapper<const Function>>>
+        rcg;
   };
   friend class hpctoolkit::finalizers::detail::StructFileParser;
 
@@ -99,11 +101,12 @@ private:
   // each binary path with the properly initialized Parser for that tag.
   std::mutex lms_lock;
   std::unordered_map<stdshim::filesystem::path,
-      std::pair<std::unique_ptr<finalizers::detail::LMData>,
-          std::unique_ptr<finalizers::detail::StructFileParser>>,
-      stdshim::hash_path> lms;
+                     std::pair<std::unique_ptr<finalizers::detail::LMData>,
+                               std::unique_ptr<finalizers::detail::StructFileParser>>,
+                     stdshim::hash_path>
+      lms;
 };
 
-}
+} // namespace hpctoolkit::finalizers
 
-#endif  // HPCTOOLKIT_PROFILE_FINALIZERS_STRUCT_H
+#endif // HPCTOOLKIT_PROFILE_FINALIZERS_STRUCT_H

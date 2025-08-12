@@ -26,6 +26,6 @@ private:
 
 std::ostream& operator<<(std::ostream&, const xmlquoted&);
 
-}
+} // namespace hpctoolkit::util
 
-#endif  // HPCTOOLKIT_PROFILE_UTIL_XML_H
+#endif // HPCTOOLKIT_PROFILE_UTIL_XML_H

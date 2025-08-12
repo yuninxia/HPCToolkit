@@ -7,10 +7,8 @@
 #ifndef HPCTOOLKIT_PROFILE_SINKS_PACKED_H
 #define HPCTOOLKIT_PROFILE_SINKS_PACKED_H
 
-#include "../sink.hpp"
-
 #include "../finalizer.hpp"
-
+#include "../sink.hpp"
 #include "../util/parallel_work.hpp"
 #include "../util/ref_wrappers.hpp"
 
@@ -37,9 +35,7 @@ public:
     ExtensionClass provides() const noexcept override {
       return ExtensionClass::classification;
     }
-    ExtensionClass requirements() const noexcept override {
-      return {};
-    }
+    ExtensionClass requirements() const noexcept override { return {}; }
 
     std::optional<std::pair<util::optional_ref<Context>, Context&>>
     classify(Context& ancestor, NestedScope&) noexcept override {
@@ -128,12 +124,15 @@ private:
 
   // Parallel workshares for the Context groups
   std::uint8_t* output = nullptr;
-  util::ParallelForEach<std::pair<std::size_t,
-      std::vector<std::reference_wrapper<const Context>>>> fePackMetrics;
+  util::ParallelForEach<
+      std::pair<std::size_t, std::vector<std::reference_wrapper<const Context>>>>
+      fePackMetrics;
 
-  void packMetricGroup(std::pair<std::size_t, std::vector<std::reference_wrapper<const Context>>>&) noexcept;
+  void packMetricGroup(
+      std::pair<std::size_t,
+                std::vector<std::reference_wrapper<const Context>>>&) noexcept;
 };
 
-}
+} // namespace hpctoolkit::sinks
 
-#endif  // HPCTOOLKIT_PROFILE_SINKS_PACKED_H
+#endif // HPCTOOLKIT_PROFILE_SINKS_PACKED_H

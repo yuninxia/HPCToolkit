@@ -8,11 +8,10 @@
 #define HPCTOOLKIT_PROFILE_SINKS_MetaDB_H
 
 #include "../sink.hpp"
-
+#include "../stdshim/filesystem.hpp"
 #include "../util/file.hpp"
 
 #include <mutex>
-#include "../stdshim/filesystem.hpp"
 
 namespace hpctoolkit::sinks {
 
@@ -36,7 +35,8 @@ public:
   ExtensionClass requirements() const noexcept override {
     using namespace hpctoolkit::literals::extensions;
     Class ret = classification + identifier;
-    if(copySources) ret += resolvedPath;
+    if (copySources)
+      ret += resolvedPath;
     return ret;
   }
 
@@ -45,9 +45,8 @@ public:
   // Check whether the given Context should be elided from the output
   // TODO: Remove once the Viewer can handle instruction-grain data
   static bool elide(const Context& c) noexcept {
-    return c.direct_parent()
-           && c.scope().relation() == Relation::enclosure
-           && c.scope().flat().type() == Scope::Type::point;
+    return c.direct_parent() && c.scope().relation() == Relation::enclosure &&
+           c.scope().flat().type() == Scope::Type::point;
   }
 
 private:
@@ -103,6 +102,6 @@ private:
   util::locked_unordered_map<uint64_t, udFunction> udPlaceholders;
 };
 
-}  // namespace hpctoolkit::sinks
+} // namespace hpctoolkit::sinks
 
-#endif  // HPCTOOLKIT_PROFILE_SINKS_MetaDB_H
+#endif // HPCTOOLKIT_PROFILE_SINKS_MetaDB_H

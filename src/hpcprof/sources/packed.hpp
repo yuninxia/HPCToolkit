@@ -7,8 +7,8 @@
 #ifndef HPCTOOLKIT_PROFILE_SOURCES_PACKED_H
 #define HPCTOOLKIT_PROFILE_SOURCES_PACKED_H
 
-#include "../source.hpp"
 #include "../sink.hpp"
+#include "../source.hpp"
 #include "../util/locked_unordered.hpp"
 
 namespace hpctoolkit::sources {
@@ -41,7 +41,8 @@ public:
   private:
     friend class Packed;
     util::locked_unordered_map<std::uint64_t, std::reference_wrapper<Context>> contexts;
-    util::locked_unordered_map<std::uint64_t, std::reference_wrapper<const Metric>> metrics;
+    util::locked_unordered_map<std::uint64_t, std::reference_wrapper<const Metric>>
+        metrics;
   };
 
   /// The given IdTracker should be in the same Pipeline as this Source, and
@@ -80,6 +81,6 @@ private:
   std::vector<std::reference_wrapper<Module>> modules;
 };
 
-}
+} // namespace hpctoolkit::sources
 
-#endif  // HPCTOOLKIT_PROFILE_SOURCES_PACKED_H
+#endif // HPCTOOLKIT_PROFILE_SOURCES_PACKED_H

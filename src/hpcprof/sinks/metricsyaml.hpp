@@ -8,9 +8,9 @@
 #define HPCTOOLKIT_PROFILE_SINKS_MetricsYAML_H
 
 #include "../sink.hpp"
+#include "../stdshim/filesystem.hpp"
 
 #include <iosfwd>
-#include "../stdshim/filesystem.hpp"
 
 namespace hpctoolkit::sinks {
 
@@ -40,6 +40,6 @@ private:
   void standard(std::ostream&);
 };
 
-}
+} // namespace hpctoolkit::sinks
 
-#endif  // HPCTOOLKIT_PROFILE_SINKS_MetricsYAML_H
+#endif // HPCTOOLKIT_PROFILE_SINKS_MetricsYAML_H

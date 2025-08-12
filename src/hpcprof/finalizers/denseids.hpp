@@ -36,6 +36,6 @@ private:
   std::atomic<unsigned int> t_id;
 };
 
-}
+} // namespace hpctoolkit::finalizers
 
-#endif  // HPCTOOLKIT_PROFILE_FINALIZERS_DENSEIDS_H
+#endif // HPCTOOLKIT_PROFILE_FINALIZERS_DENSEIDS_H

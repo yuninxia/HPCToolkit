@@ -9,12 +9,12 @@
 
 #include <xxhash.h>
 
-#include <type_traits>
-#include <cstdint>
 #include <array>
+#include <cstdint>
+#include <memory>
 #include <string>
 #include <string_view>
-#include <memory>
+#include <type_traits>
 
 /// \file
 /// Alternative to std::hash that is guaranteed to be stable and consistent
@@ -44,28 +44,26 @@ public:
   /// Inject hashable data into the hash-state.
   stable_hash_state& operator<<(std::uint64_t v) noexcept {
     std::array<std::uint8_t, 8> buf;
-    for(std::size_t i = 0, o = 0; i < buf.size(); ++i, o += 8)
+    for (std::size_t i = 0, o = 0; i < buf.size(); ++i, o += 8)
       buf[i] = (v >> o) & 0xFF;
     return inject(buf.data(), buf.size());
   }
 
   stable_hash_state& operator<<(std::uint32_t v) noexcept {
     std::array<std::uint8_t, 4> buf;
-    for(std::size_t i = 0, o = 0; i < buf.size(); ++i, o += 8)
+    for (std::size_t i = 0, o = 0; i < buf.size(); ++i, o += 8)
       buf[i] = (v >> o) & 0xFF;
     return inject(buf.data(), buf.size());
   }
 
   stable_hash_state& operator<<(std::uint16_t v) noexcept {
     std::array<std::uint8_t, 2> buf;
-    for(std::size_t i = 0, o = 0; i < buf.size(); ++i, o += 8)
+    for (std::size_t i = 0, o = 0; i < buf.size(); ++i, o += 8)
       buf[i] = (v >> o) & 0xFF;
     return inject(buf.data(), buf.size());
   }
 
-  stable_hash_state& operator<<(std::uint8_t v) noexcept {
-    return inject(&v, 1);
-  }
+  stable_hash_state& operator<<(std::uint8_t v) noexcept { return inject(&v, 1); }
 
   stable_hash_state& operator<<(std::string_view v) noexcept {
     return inject(v.data(), v.size());
@@ -87,8 +85,7 @@ private:
 };
 
 /// Drop-in replacement for std::hash using the stable hash functions.
-template<class T>
-struct stable_hash {
+template <class T> struct stable_hash {
   std::size_t operator()(const T& v) const noexcept {
     stable_hash_state s;
     s << v;
@@ -96,6 +93,6 @@ struct stable_hash {
   };
 };
 
-}  // namespace hpctoolkit::util
+} // namespace hpctoolkit::util
 
-#endif  // HPCTOOLKIT_PROFILE_UTIL_STABLE_HASH_H
+#endif // HPCTOOLKIT_PROFILE_UTIL_STABLE_HASH_H

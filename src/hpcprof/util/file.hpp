@@ -8,6 +8,7 @@
 #define HPCTOOLKIT_PROFILE_UTIL_FILE_H
 
 #include "../stdshim/filesystem.hpp"
+
 #include <functional>
 #include <ios>
 #include <memory>
@@ -17,7 +18,7 @@ namespace hpctoolkit::util {
 namespace detail {
 struct FileImpl;
 struct FileInstanceImpl;
-}
+} // namespace detail
 
 /// This represents a file available for access on the filesystem.
 class File final {
@@ -80,11 +81,11 @@ public:
 
     /// Write a block of bytes at the given offset, from the given buffer.
     /// Throws a fatal error on I/O errors.
-    void writeat(std::uint_fast64_t offset, std::size_t size, const char* data) noexcept;
+    void writeat(std::uint_fast64_t offset, std::size_t size,
+                 const char* data) noexcept;
 
     /// Wrapper for writeat for things like std::array and std::vector
-    template<class T>
-    void writeat(std::uint_fast64_t offset, const T& data) noexcept {
+    template <class T> void writeat(std::uint_fast64_t offset, const T& data) noexcept {
       return writeat(offset, data.size(), data.data());
     }
 
@@ -99,6 +100,6 @@ private:
   std::unique_ptr<detail::FileImpl> impl;
 };
 
-}
+} // namespace hpctoolkit::util
 
-#endif  // HPCTOOLKIT_PROFILE_UTIL_FILE_H
+#endif // HPCTOOLKIT_PROFILE_UTIL_FILE_H

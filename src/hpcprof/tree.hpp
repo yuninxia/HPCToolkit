@@ -7,9 +7,9 @@
 #ifndef HPCPROF_MPI_TREE_HPP
 #define HPCPROF_MPI_TREE_HPP
 
+#include "pipeline.hpp"
 #include "sinks/packed.hpp"
 #include "sources/packed.hpp"
-#include "pipeline.hpp"
 
 #include <vector>
 
@@ -54,13 +54,14 @@ public:
     using namespace hpctoolkit::literals;
     return data::attributes + data::references + data::contexts;
   }
-  hpctoolkit::DataClass finalizeRequest(const hpctoolkit::DataClass& d) const noexcept override {
+  hpctoolkit::DataClass
+  finalizeRequest(const hpctoolkit::DataClass& d) const noexcept override {
     return d;
   }
   void read(const hpctoolkit::DataClass&) override;
 
   static void append(hpctoolkit::ProfilePipeline::Settings&, RankTree&,
-      std::deque<std::vector<std::uint8_t>>&);
+                     std::deque<std::vector<std::uint8_t>>&);
 
 private:
   std::size_t peer;
@@ -99,13 +100,14 @@ public:
     using namespace hpctoolkit::literals;
     return data::metrics + data::ctxTimepoints;
   }
-  hpctoolkit::DataClass finalizeRequest(const hpctoolkit::DataClass& d) const noexcept override {
+  hpctoolkit::DataClass
+  finalizeRequest(const hpctoolkit::DataClass& d) const noexcept override {
     return d;
   }
   void read(const hpctoolkit::DataClass& d) override;
 
   static void append(hpctoolkit::ProfilePipeline::Settings&, RankTree&,
-      hpctoolkit::sources::Packed::IdTracker&);
+                     hpctoolkit::sources::Packed::IdTracker&);
 
 private:
   std::size_t peer;
@@ -114,4 +116,4 @@ private:
   bool parsedBlock = false;
 };
 
-#endif  // HPCPROF_MPI_TREE_HPP
+#endif // HPCPROF_MPI_TREE_HPP

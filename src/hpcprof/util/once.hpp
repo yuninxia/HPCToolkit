@@ -10,11 +10,11 @@
 #include "../stdshim/atomic.hpp"
 
 #include <atomic>
-#include <thread>
-#include <stdexcept>
-#include <future>
 #include <functional>
+#include <future>
 #include <mutex>
+#include <stdexcept>
+#include <thread>
 
 namespace hpctoolkit::util {
 
@@ -33,7 +33,7 @@ public:
 
   private:
     friend class Once;
-    Caller(Once& o) : once(o) {};
+    Caller(Once& o) : once(o){};
     Once& once;
   };
 
@@ -51,11 +51,9 @@ private:
 
 /// Just your ordinary std::call_once with Valgrind annotation support.
 void call_once_detail(std::once_flag&, const std::function<void(void)>&);
-template<class F, class... Args>
+template <class F, class... Args>
 void call_once(std::once_flag& flag, F&& f, Args&&... args) {
-  call_once_detail(flag, [&]{
-    std::forward<F>(f)(std::forward<Args>(args)...);
-  });
+  call_once_detail(flag, [&] { std::forward<F>(f)(std::forward<Args>(args)...); });
 }
 
 /// Variant of std::call_once, that can be queried for the current status.
@@ -66,21 +64,15 @@ public:
 
   /// Call the function, once. All caveats of std::call_once apply.
   // MT: Internally Synchronized
-  template<class F, class... Args>
-  void call(F&& f, Args&&... args) {
-    call_detail(true, [&]{
-      std::forward<F>(f)(std::forward<Args>(args)...);
-    });
+  template <class F, class... Args> void call(F&& f, Args&&... args) {
+    call_detail(true, [&] { std::forward<F>(f)(std::forward<Args>(args)...); });
   }
 
   /// Call the function, once. All caveats of std::call_once apply.
   /// Does not wait for the function to complete before returning.
   // MT: Internally Synchronized, Unsafe (provides no synchronization)
-  template<class F, class... Args>
-  void call_nowait(F&& f, Args&&... args) {
-    call_detail(false, [&]{
-      std::forward<F>(f)(std::forward<Args>(args)...);
-    });
+  template <class F, class... Args> void call_nowait(F&& f, Args&&... args) {
+    call_detail(false, [&] { std::forward<F>(f)(std::forward<Args>(args)...); });
   }
 
   /// Check whether this flag has been call()'d.
@@ -93,6 +85,6 @@ private:
   stdshim::atomic<Status> status;
 };
 
-};
+}; // namespace hpctoolkit::util
 
-#endif  // HPCTOOLKIT_PROFILE_UTIL_ONCE_H
+#endif // HPCTOOLKIT_PROFILE_UTIL_ONCE_H

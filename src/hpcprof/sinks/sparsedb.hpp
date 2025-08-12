@@ -7,14 +7,13 @@
 #ifndef HPCTOOLKIT_PROF2MPI_SPARSE_H
 #define HPCTOOLKIT_PROF2MPI_SPARSE_H
 
+#include "../../common/lean/formats/profiledb.h"
+#include "../mpi/all.hpp"
 #include "../sink.hpp"
 #include "../stdshim/filesystem.hpp"
-#include "../util/once.hpp"
-#include "../util/locked_unordered.hpp"
 #include "../util/file.hpp"
-#include "../mpi/all.hpp"
-
-#include "../../common/lean/formats/profiledb.h"
+#include "../util/locked_unordered.hpp"
+#include "../util/once.hpp"
 
 #include <vector>
 
@@ -46,7 +45,8 @@ public:
   void notifyPipeline() noexcept override;
 
   void notifyWavefront(hpctoolkit::DataClass) noexcept override;
-  void notifyThreadFinal(std::shared_ptr<const hpctoolkit::PerThreadTemporary>) override;
+  void
+      notifyThreadFinal(std::shared_ptr<const hpctoolkit::PerThreadTemporary>) override;
 
 private:
   struct udContext {
@@ -58,7 +58,9 @@ private:
   };
   struct {
     hpctoolkit::Context::ud_t::typed_member_t<udContext> context;
-    const auto& operator()(hpctoolkit::Context::ud_t&) const noexcept { return context; }
+    const auto& operator()(hpctoolkit::Context::ud_t&) const noexcept {
+      return context;
+    }
     hpctoolkit::Thread::ud_t::typed_member_t<udThread> thread;
     const auto& operator()(hpctoolkit::Thread::ud_t&) const noexcept { return thread; }
   } ud;
@@ -115,7 +117,7 @@ private:
     int currentBuf = 0;
 
     struct Buffer {
-      static constexpr size_t bufferSize = 64 * 1024 * 1024;  // 64MiB
+      static constexpr size_t bufferSize = 64 * 1024 * 1024; // 64MiB
       Buffer() { blob.reserve(bufferSize); }
 
       // Lock for per-Buffer state
@@ -143,14 +145,13 @@ private:
   std::deque<std::reference_wrapper<const hpctoolkit::Context>> contexts;
 
   // Parallel workshares for the various parallel operations
-  hpctoolkit::util::ParallelForEach<
-      std::reference_wrapper<const Thread>> forEachThread;
+  hpctoolkit::util::ParallelForEach<std::reference_wrapper<const Thread>> forEachThread;
   hpctoolkit::util::ParallelFor forProfilesParse;
   hpctoolkit::util::RepeatingParallelFor forProfilesLoad;
-  hpctoolkit::util::RepeatingParallelForEach<
-      std::pair<uint32_t, uint32_t>> forEachContextRange;
+  hpctoolkit::util::RepeatingParallelForEach<std::pair<uint32_t, uint32_t>>
+      forEachContextRange;
 };
 
-}
+} // namespace hpctoolkit::sinks
 
-#endif  // HPCTOOLKIT_PROF2MPI_SPARSE_H
+#endif // HPCTOOLKIT_PROF2MPI_SPARSE_H
