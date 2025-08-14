@@ -21,8 +21,12 @@ int main() {
   {
     int nDevices = 0;
     err = cudaGetDeviceCount(&nDevices);
-    if(err != cudaSuccess || nDevices == 0) {
-      std::cerr << "No devices available!\n";
+    if (err != cudaSuccess) {
+      std::cerr << "Error getting CUDA-compatible devices: " << cudaGetErrorString(err) << "\n";
+      return 77;  // SKIP
+    }
+    if(nDevices == 0) {
+      std::cerr << "No CUDA-compatible devices available!\n";
       return 77;  // SKIP
     }
   }
@@ -72,6 +76,16 @@ int main() {
   // Launch the kernel
   int tpb = 256;
   vectorAdd<<<(a.size() + tpb - 1) / tpb, tpb>>>(d_a, d_b, d_c, a.size());
+  err = cudaPeekAtLastError();
+  if (err != cudaSuccess) {
+    std::cerr << "Failed to launch kernel: " << cudaGetErrorString(err) << "\n";
+    return 1;
+  }
+  err = cudaDeviceSynchronize();
+  if (err != cudaSuccess) {
+    std::cerr << "Kernel threw an error during execution: " << cudaGetErrorString(err) << "\n";
+    return 1;
+  }
 
   // Copy the result back out
   err = cudaMemcpy(c.data(), d_c, c.size() * sizeof(decltype(c)::value_type), cudaMemcpyDeviceToHost);
