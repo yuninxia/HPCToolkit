@@ -26,6 +26,9 @@ semifresh nvidia sw-cuda:
     - export PATH="$PATH":/usr/local/nvidia/bin
     - export LD_LIBRARY_PATH="${LD_LIBRARY_PATH:+$LD_LIBRARY_PATH:}"/usr/local/nvidia/lib:/usr/local/nvidia/lib64
   variables:
+    # FIXME: -arch=native is needed in CI to avoid PTX JIT-compilation, without this the
+    # CI falls over if the CUDA is too new compared to the driver.
+    SETUP_ARGS: -Dcuda_args=-arch=native
     REGEN_SUITES: nvidia sw-cuda
 
 semifresh amd:
