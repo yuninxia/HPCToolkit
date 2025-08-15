@@ -44,6 +44,8 @@ static void init_dispatch() {
       .pselect = foil_dlsym("pselect"),
       .poll = foil_dlsym("poll"),
       .ppoll = foil_dlsym("ppoll"),
+      .open = foil_dlsym("open"),
+      .open64 = foil_dlsym("open64"),
   };
 }
 
@@ -446,6 +448,48 @@ HPCRUN_EXPOSED_API int ppoll(struct pollfd* fds, nfds_t nfds,
       }
     }
   }
+
+  return ret;
+}
+
+HPCRUN_EXPOSED_API int open(const char* __file, int __oflag, mode_t __mode) {
+  const struct hpcrun_foil_appdispatch_libc* d = dispatch();
+
+  sigset_t mask_all_blocked, mask_on_entry;
+
+  // block all signals for current thread so that open isn't interrupted
+  sigfillset(&mask_all_blocked); // initialize all_blocked to include all signals
+  d->pthread_sigmask(SIG_SETMASK, &mask_all_blocked, &mask_on_entry);
+
+  int ret = d->open(__file, __oflag, __mode); // uninterrupted open
+
+  int open_errno = errno; // remember errno from open
+
+  // restore signal mask to prior value
+  d->pthread_sigmask(SIG_SETMASK, &mask_on_entry, NULL);
+
+  errno = open_errno; // provide errno from open to caller
+
+  return ret;
+}
+
+HPCRUN_EXPOSED_API int open64(const char* __file, int __oflag, mode_t __mode) {
+  const struct hpcrun_foil_appdispatch_libc* d = dispatch();
+
+  sigset_t mask_all_blocked, mask_on_entry;
+
+  // block all signals for current thread so that open64 isn't interrupted
+  sigfillset(&mask_all_blocked); // initialize all_blocked to include all signals
+  d->pthread_sigmask(SIG_SETMASK, &mask_all_blocked, &mask_on_entry);
+
+  int ret = d->open64(__file, __oflag, __mode); // uninterrupted open64
+
+  int open_errno = errno; // remember errno from open
+
+  // restore signal mask to prior value
+  d->pthread_sigmask(SIG_SETMASK, &mask_on_entry, NULL);
+
+  errno = open_errno; // provide errno from open to caller
 
   return ret;
 }
