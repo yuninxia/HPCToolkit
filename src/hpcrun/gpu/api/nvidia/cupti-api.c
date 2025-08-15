@@ -161,11 +161,12 @@ flush_alarm_handler(int sig, siginfo_t* siginfo, void* context)
 #define HPCRUN_CUPTI_ACTIVITY_BUFFER_SIZE (16 * 1024 * 1024)
 #define HPCRUN_CUPTI_ACTIVITY_BUFFER_ALIGNMENT (8)
 
+// NOTE: &#fn[2] strips off the f_ at the start of the string
 #define HPCRUN_CUPTI_CALL(fn, args)  \
 {  \
   CUptiResult status = fn args;  \
   if (status != CUPTI_SUCCESS) {  \
-    cupti_error_report(status, #fn);  \
+    cupti_error_report(status, &#fn[2]);  \
   }  \
 }
 

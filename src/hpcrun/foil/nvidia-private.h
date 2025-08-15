@@ -58,6 +58,7 @@ struct hpcrun_foil_appdispatch_nvidia {
   cudaError_t (*cudaDeviceSynchronize)();
   cudaError_t (*cudaMemcpy)(void* dst, const void* src, size_t count,
                             enum cudaMemcpyKind kind);
+  const char *(*cudaGetErrorString)(cudaError_t error);
 };
 
 HPCRUN_EXPOSED_API const struct hpcrun_foil_appdispatch_nvidia hpcrun_dispatch_nvidia;

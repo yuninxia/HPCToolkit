@@ -44,12 +44,15 @@
 //*****************************************************************************
 // macros
 //*****************************************************************************
+// NOTE: &#fn[2] strips off the f_ at the start of the string
 #define HPCRUN_CUDA_API_CALL(fn, args)                              \
 {                                                                   \
   CUresult error_result = fn args;                    \
   if (error_result != CUDA_SUCCESS) {                               \
-    ETMSG(CUDA, "cuda api %s returned %d", #fn,                     \
-          (int) error_result);                                      \
+    const char* error_string = f_cudaGetErrorString(error_result);  \
+    fprintf(stderr, "FATAL: hpcrun failure: failure type = "        \
+            "CUDA result error, function %s failed with error %s\n",\
+            &#fn[2], error_string);                                 \
     exit(-1);                                                       \
   }                                                                 \
 }

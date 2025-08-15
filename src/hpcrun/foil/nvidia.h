@@ -53,6 +53,7 @@ cudaError_t f_cudaRuntimeGetVersion(int* runtimeVersion);
 cudaError_t f_cudaDeviceSynchronize();
 cudaError_t f_cudaMemcpy(void* dst, const void* src, size_t count,
                          enum cudaMemcpyKind kind);
+const char *f_cudaGetErrorString(cudaError_t);
 
 #ifdef __cplusplus
 } // extern "C"
