@@ -46,20 +46,11 @@ if nvdisasm.found()
   _srcs += files('gpu/CudaCFG.cpp')
 endif
 
-if igc_dep.found()
+if iga_dep.found()
   _srcs += files('intel/GPUCFG_Intel.cpp')
 endif
 
-_deps = [
-  boost_dep,
-  dyninst_dep,
-  iga_dep,
-  igc_dep,
-  libdw_dep,
-  libelf_dep,
-  openmp_dep,
-  xed_dep,
-]
+_deps = [boost_dep, dyninst_dep, iga_dep, libdw_dep, libelf_dep, openmp_dep, xed_dep]
 
 _srcs += common_srcs
 _deps += common_deps

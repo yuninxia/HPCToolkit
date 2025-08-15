@@ -82,9 +82,9 @@ extern "C" {
 }
 #endif
 
-#ifdef ENABLE_IGC
+#ifdef ENABLE_IGA
 #include "intel/GPUCFG_Intel.hpp"
-#endif // ENABLE_IGC
+#endif // ENABLE_IGA
 
 #ifdef ENABLE_OPENMP
 #include <omp.h>
@@ -786,7 +786,7 @@ makeStructure(string absfilepath,
 
     if (intel_file) { // don't run parseapi on intel binary
       intel_gpu_arch = 1;
-#ifdef ENABLE_IGC
+#ifdef ENABLE_IGA
       bool compute_intel_gpu_cfg = true;
       parsable = buildIntelGPUCFG(search_path, elfFile, the_symtab,
                               compute_intel_gpu_cfg, false,
@@ -794,7 +794,7 @@ makeStructure(string absfilepath,
       has_calls = compute_intel_gpu_cfg;
 #else
       has_calls = false;
-#endif  // ENABLE_IGC
+#endif  // ENABLE_IGA
     } else {
       if (cuda_file) {
         cuda_arch = elfFile->getArch();
