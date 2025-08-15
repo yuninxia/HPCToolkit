@@ -33,4 +33,4 @@ const struct hpcrun_foil_appdispatch_nvidia hpcrun_dispatch_nvidia = {
     .cudaDeviceSynchronize = &cudaDeviceSynchronize,
     .cudaMemcpy = &cudaMemcpy,
     .cudaGetErrorString = &cudaGetErrorString,
-};
+    .cuGetErrorString = &cuGetErrorString};

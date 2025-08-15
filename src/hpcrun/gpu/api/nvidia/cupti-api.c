@@ -161,12 +161,11 @@ flush_alarm_handler(int sig, siginfo_t* siginfo, void* context)
 #define HPCRUN_CUPTI_ACTIVITY_BUFFER_SIZE (16 * 1024 * 1024)
 #define HPCRUN_CUPTI_ACTIVITY_BUFFER_ALIGNMENT (8)
 
-// NOTE: &#fn[2] strips off the f_ at the start of the string
 #define HPCRUN_CUPTI_CALL(fn, args)  \
 {  \
-  CUptiResult status = fn args;  \
+  CUptiResult status = f_ ## fn args;  \
   if (status != CUPTI_SUCCESS) {  \
-    cupti_error_report(status, &#fn[2]);  \
+    cupti_error_report(#fn, status);  \
   }  \
 }
 
@@ -314,15 +313,15 @@ cupti_error_callback_dummy // __attribute__((unused))
 static void
 cupti_error_report
 (
- CUptiResult error,
- const char *fn
+ const char *fn,
+ CUptiResult error_code
 )
 {
   const char *error_string;
-  f_cuptiGetResultString(error, &error_string);
+  f_cuptiGetResultString(error_code, &error_string);
 
   int exitcode;
-  switch(error) {
+  switch(error_code) {
   case CUPTI_ERROR_NOT_INITIALIZED:
   case CUPTI_ERROR_DISABLED:
   case CUPTI_ERROR_HARDWARE_BUSY:
@@ -861,7 +860,7 @@ cupti_device_timestamp_get
  uint64_t *time
 )
 {
-  HPCRUN_CUPTI_CALL(f_cuptiGetTimestamp, (time));
+  HPCRUN_CUPTI_CALL(cuptiGetTimestamp, (time));
 }
 
 
@@ -871,7 +870,7 @@ cupti_activity_timestamp_get
  uint64_t *time
 )
 {
-  HPCRUN_CUPTI_CALL(f_cuptiGetTimestamp, (time));
+  HPCRUN_CUPTI_CALL(cuptiGetTimestamp, (time));
 }
 
 
@@ -883,12 +882,12 @@ cupti_device_buffer_config
 )
 {
   size_t value_size = sizeof(size_t);
-  HPCRUN_CUPTI_CALL(f_cuptiActivitySetAttribute,
+  HPCRUN_CUPTI_CALL(cuptiActivitySetAttribute,
                    (CUPTI_ACTIVITY_ATTR_DEVICE_BUFFER_SIZE, &value_size, &buf_size));
   int rt_major, rt_minor;
   cuda_get_runtime_version(&rt_major, &rt_minor);
   if (rt_major <= 12 && rt_minor < 3) {
-    HPCRUN_CUPTI_CALL(f_cuptiActivitySetAttribute,
+    HPCRUN_CUPTI_CALL(cuptiActivitySetAttribute,
                      (CUPTI_ACTIVITY_ATTR_PROFILING_SEMAPHORE_POOL_SIZE, &value_size, &sem_size));
   }
 }
@@ -1039,7 +1038,7 @@ cupti_start
  void
 )
 {
-  HPCRUN_CUPTI_CALL(f_cuptiActivityRegisterCallbacks,
+  HPCRUN_CUPTI_CALL(cuptiActivityRegisterCallbacks,
                    (cupti_activity_enabled.buffer_request,
                     cupti_activity_enabled.buffer_complete));
 }
@@ -1051,7 +1050,7 @@ cupti_finalize
  void
 )
 {
-  HPCRUN_CUPTI_CALL(f_cuptiFinalize, ());
+  HPCRUN_CUPTI_CALL(cuptiFinalize, ());
 }
 
 
@@ -1063,7 +1062,7 @@ cupti_num_dropped_records_get
  size_t* dropped
 )
 {
-  HPCRUN_CUPTI_CALL(f_cuptiActivityGetNumDroppedRecords,
+  HPCRUN_CUPTI_CALL(cuptiActivityGetNumDroppedRecords,
                    (context, streamId, dropped));
 }
 
@@ -1082,17 +1081,17 @@ cupti_callbacks_subscribe
   cupti_unload_callback = cupti_unload_callback_cuda;
   cupti_correlation_callback = gpu_application_thread_correlation_callback;
 
-  HPCRUN_CUPTI_CALL(f_cuptiSubscribe, (&cupti_subscriber,
+  HPCRUN_CUPTI_CALL(cuptiSubscribe, (&cupti_subscriber,
                    (CUpti_CallbackFunc) cupti_subscriber_callback,
                    (void *) NULL));
 
-  HPCRUN_CUPTI_CALL(f_cuptiEnableDomain,
+  HPCRUN_CUPTI_CALL(cuptiEnableDomain,
                    (1, cupti_subscriber, CUPTI_CB_DOMAIN_DRIVER_API));
 
-  HPCRUN_CUPTI_CALL(f_cuptiEnableDomain,
+  HPCRUN_CUPTI_CALL(cuptiEnableDomain,
                    (1, cupti_subscriber, CUPTI_CB_DOMAIN_RUNTIME_API));
 
-  HPCRUN_CUPTI_CALL(f_cuptiEnableDomain,
+  HPCRUN_CUPTI_CALL(cuptiEnableDomain,
                    (1, cupti_subscriber, CUPTI_CB_DOMAIN_RESOURCE));
 }
 
@@ -1106,16 +1105,16 @@ cupti_callbacks_unsubscribe
   cupti_unload_callback = 0;
   cupti_correlation_callback = 0;
 
-  HPCRUN_CUPTI_CALL(f_cuptiEnableDomain,
+  HPCRUN_CUPTI_CALL(cuptiEnableDomain,
                    (0, cupti_subscriber, CUPTI_CB_DOMAIN_RESOURCE));
 
-  HPCRUN_CUPTI_CALL(f_cuptiEnableDomain,
+  HPCRUN_CUPTI_CALL(cuptiEnableDomain,
                    (0, cupti_subscriber, CUPTI_CB_DOMAIN_RUNTIME_API));
 
-  HPCRUN_CUPTI_CALL(f_cuptiEnableDomain,
+  HPCRUN_CUPTI_CALL(cuptiEnableDomain,
                     (0, cupti_subscriber, CUPTI_CB_DOMAIN_DRIVER_API));
 
-  HPCRUN_CUPTI_CALL(f_cuptiUnsubscribe, (cupti_subscriber));
+  HPCRUN_CUPTI_CALL(cuptiUnsubscribe, (cupti_subscriber));
 }
 
 
@@ -1129,7 +1128,7 @@ cupti_correlation_enable
 
   // For unknown reasons, external correlation ids do not return using
   // cuptiActivityEnableContext
-  HPCRUN_CUPTI_CALL(f_cuptiActivityEnable,
+  HPCRUN_CUPTI_CALL(cuptiActivityEnable,
                    (CUPTI_ACTIVITY_KIND_EXTERNAL_CORRELATION));
 
   TMSG(CUPTI, "exit cupti_correlation_enable");
@@ -1142,7 +1141,7 @@ cupti_correlation_disable
 )
 {
   if (cupti_correlation_enabled) {
-    HPCRUN_CUPTI_CALL(f_cuptiActivityDisable,
+    HPCRUN_CUPTI_CALL(cuptiActivityDisable,
                      (CUPTI_ACTIVITY_KIND_EXTERNAL_CORRELATION));
     cupti_correlation_enabled = false;
   }
@@ -1180,12 +1179,12 @@ cupti_pc_sampling_enable
   if (retval == 0) { // only turn something on if success determining mode
 
     if (!required) {
-      HPCRUN_CUPTI_CALL(f_cuptiActivityConfigurePCSampling, (context, &config));
+      HPCRUN_CUPTI_CALL(cuptiActivityConfigurePCSampling, (context, &config));
 
-      HPCRUN_CUPTI_CALL(f_cuptiActivityEnableContext,
+      HPCRUN_CUPTI_CALL(cuptiActivityEnableContext,
                         (context, CUPTI_ACTIVITY_KIND_PC_SAMPLING));
      } else {
-      HPCRUN_CUPTI_CALL(f_cuptiActivityEnable, (CUPTI_ACTIVITY_KIND_PC_SAMPLING));
+      HPCRUN_CUPTI_CALL(cuptiActivityEnable, (CUPTI_ACTIVITY_KIND_PC_SAMPLING));
      }
   }
 
@@ -1200,7 +1199,7 @@ cupti_pc_sampling_disable
 )
 {
   if (cupti_pc_sampling_context_set) {
-    HPCRUN_CUPTI_CALL(f_cuptiActivityDisableContext,
+    HPCRUN_CUPTI_CALL(cuptiActivityDisableContext,
                      (context, CUPTI_ACTIVITY_KIND_PC_SAMPLING));
 
     cupti_pc_sampling_context_set = false;
@@ -1273,7 +1272,7 @@ cupti_runtime_api_flag_set()
 void
 cupti_correlation_id_push(uint64_t id)
 {
-  HPCRUN_CUPTI_CALL(f_cuptiActivityPushExternalCorrelationId,
+  HPCRUN_CUPTI_CALL(cuptiActivityPushExternalCorrelationId,
     (CUPTI_EXTERNAL_CORRELATION_KIND_UNKNOWN, id));
 }
 
@@ -1282,7 +1281,7 @@ uint64_t
 cupti_correlation_id_pop()
 {
   uint64_t id;
-  HPCRUN_CUPTI_CALL(f_cuptiActivityPopExternalCorrelationId,
+  HPCRUN_CUPTI_CALL(cuptiActivityPopExternalCorrelationId,
     (CUPTI_EXTERNAL_CORRELATION_KIND_UNKNOWN, &id));
   return id;
 }

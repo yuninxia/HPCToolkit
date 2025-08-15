@@ -240,11 +240,19 @@ cudaError_t f_cudaMemcpy(void* dst, const void* src, size_t count,
   return d->cudaMemcpy(dst, src, count, kind);
 }
 
-const char *f_cudaGetErrorString(cudaError_t error) {
+const char* f_cudaGetErrorString(cudaError_t error_code) {
   const struct hpcrun_foil_appdispatch_nvidia* d = dispatch();
   if (d == NULL) {
-    fprintf(stderr, "FATAL: hpcrun failure: unable to call cudaGetErrorString\n");
-    exit(-1);
+    return "no string available";
   }
-  return d->cudaGetErrorString(error);
+  return d->cudaGetErrorString(error_code);
+}
+
+const char* f_cuGetErrorString(CUresult error_code) {
+  const struct hpcrun_foil_appdispatch_nvidia* d = dispatch();
+  const char* error_string;
+  if (d == NULL || d->cuGetErrorString(error_code, &error_string) != CUDA_SUCCESS) {
+    return "no string available";
+  }
+  return error_string;
 }
