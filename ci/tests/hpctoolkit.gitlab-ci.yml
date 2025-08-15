@@ -34,6 +34,9 @@ rhel9 ppc64le:
   extends: .individual test job
   tags: [saas-linux-medium-amd64-gpu-standard]
   variables:
+    # FIXME: -arch=native is needed in CI to avoid PTX JIT-compilation, without this the
+    # CI falls over if the CUDA is too new compared to the driver.
+    SETUP_ARGS: -Dcuda_args=-arch=native
     TEST_ARGS: >-
       --suite opencl
       --suite cuda
