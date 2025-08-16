@@ -22,7 +22,7 @@ public:
 
 private:
   // Enum-like class hierarchy for singleton sets.
-  class singleton_c { protected: singleton_c() = default; };
+  class singleton_c { public: singleton_c() = default; };
 #define CONTENTS(BIT) : public singleton_c {             \
   DataClass operator|(const DataClass& o) const noexcept \
     { return DataClass(*this) | o; }                     \
@@ -147,7 +147,7 @@ public:
 
 private:
   // Enum-like class hierarchy for singleton sets.
-  class singleton_c { protected: singleton_c() = default; };
+  class singleton_c { public: singleton_c() = default; };
 #define CONTENTS(BIT) : public singleton_c {                       \
   ExtensionClass operator|(const ExtensionClass& o) const noexcept \
     { return ExtensionClass(*this) | o; }                          \

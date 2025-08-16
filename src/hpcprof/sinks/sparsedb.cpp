@@ -242,9 +242,10 @@ void SparseDB::process(std::shared_ptr<const PerThreadTemporary> tt) {
           std::pair<const util::reference_index<const Metric>, MetricAccumulator>>> pairs;
       pairs.reserve(accums->size());
       for(const auto& mx: iter) pairs.push_back(std::cref(mx));
-      std::sort(pairs.begin(), pairs.end(), [=](const auto& a, const auto& b){
-        return a.get().first->userdata[src.identifier()].base()
-               < b.get().first->userdata[src.identifier()].base();
+      const auto& src_x = src;
+      std::sort(pairs.begin(), pairs.end(), [=, &src_x](const auto& a, const auto& b){
+        return a.get().first->userdata[src_x.identifier()].base()
+               < b.get().first->userdata[src_x.identifier()].base();
       });
       for(const auto& mx: pairs) {
         const Metric& m = mx.get().first;
@@ -715,9 +716,10 @@ void SparseDB::write() {
             std::pair<const util::reference_index<const Metric>, StatisticAccumulator>>> pairs;
         pairs.reserve(stats.size());
         for(const auto& mx: iter) pairs.push_back(std::cref(mx));
-        std::sort(pairs.begin(), pairs.end(), [=](const auto& a, const auto& b){
-          return a.get().first->userdata[src.identifier()].base()
-                 < b.get().first->userdata[src.identifier()].base();
+        const auto& src_x = src;
+        std::sort(pairs.begin(), pairs.end(), [=, &src_x](const auto& a, const auto& b){
+          return a.get().first->userdata[src_x.identifier()].base()
+                 < b.get().first->userdata[src_x.identifier()].base();
         });
         for(const auto& mx: pairs) {
           const Metric& m = mx.get().first;
