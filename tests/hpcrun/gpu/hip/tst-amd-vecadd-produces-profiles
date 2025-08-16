@@ -7,8 +7,9 @@
 hpctesttool="$1"
 hpcrun="$2"
 tstexe_amd_vecadd="$3"
-trace="$4"
-shift 4
+event="$4"
+trace="$5"
+shift 5
 remaining_args=("$@")
 
 set -- '^NODE [^A-Z]+\s+(((CORE [^A-Z]+\s+)?THREAD [^A-Z]+)|(GPUCONTEXT [^A-Z]+\s+GPUSTREAM [^A-Z]+))$' \
@@ -34,5 +35,5 @@ trap 'rm -rf "$tmpdir"' EXIT
 tmpdir=$(mktemp --directory --tmpdir=.)
 
 # shellcheck disable=SC2086
-"$hpcrun" -o "$tmpdir"/m -e gpu=amd $trace "${remaining_args[@]}" "$tstexe_amd_vecadd"
+"$hpcrun" -o "$tmpdir"/m -e "$event" $trace "${remaining_args[@]}" "$tstexe_amd_vecadd"
 "$hpctesttool" test produces-profiles "$tracearg" "$tmpdir"/m "$@"
