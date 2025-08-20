@@ -10,6 +10,7 @@ SPDX-License-Identifier: CC-BY-4.0
 introduction.md
 overview.md
 quickstart.md
+spack.md
 effective-analysis/effective-analysis.md
 hpcrun/hpcrun.md
 hpclink.md
