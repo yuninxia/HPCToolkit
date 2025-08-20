@@ -25,7 +25,7 @@ HPCToolkit databases are platform-independent and it is common to run
 Building `hpctoolkit` requires a fairly recent C/C++ compiler that supports
 C++17 and common GNU extensions (including LLVM).
 GNU gcc/g++ 12.x or later should do fine.
-Spack reuires Python 3.8 or later plus various build utilities:
+Spack requires Python 3.8 or later plus various build utilities:
 bash, git, curl, patch, tar, bzip2, unzip, etc.
 
 `Hpcviewer` requires Java 17 or later, but this can easily be installed
@@ -359,7 +359,7 @@ Use the `+python` variant.
 spack install hpctoolkit +python
 ```
 
-You shoud use python 3.10 or later and use the same version as the application.
+You should use python 3.10 or later and use the same version as the application.
 
 ## Helpful Hints
 
