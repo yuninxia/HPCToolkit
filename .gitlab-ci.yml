@@ -76,5 +76,3 @@ include:
     rules: *hpctoolkit_gitlab_com
   - local: ci/docs.gitlab-ci.yml
     rules: *gitlab_com
-  - local: ci/spack/.gitlab-ci.yml
-    rules: *hpctoolkit_gitlab_com
