@@ -34,6 +34,7 @@
 #include "thread_data.h"
 #include "trace.h"
 #include "threadmgr.h"
+#include "tls_specific.h"
 
 #include "messages/messages.h"
 #include "trampoline/common/trampoline.h"
@@ -77,14 +78,9 @@ hpcrun_thread_core_bindings
 // data
 //***************************************************************************
 
-#ifdef USE_GCC_THREAD
-__thread int monitor_tid = -1;
-#endif // USE_GCC_THREAD
-
 static thread_data_t _local_td;
 static pthread_key_t _hpcrun_key;
 static int use_getspecific = 0;
-static __thread bool mem_pool_initialized = false;
 
 void
 hpcrun_init_pthread_key
@@ -223,7 +219,7 @@ hpcrun_thread_init_mem_pool_once
 {
   thread_data_t* td = NULL;
 
-  if (mem_pool_initialized == false){
+  if (TLS_GET(mem_pool_initialized) == false){
     hpcrun_mmap_init();
     hpcrun_threadMgr_data_get(id, thr_ctxt, &td, trace, demand_new_thread);
     hpcrun_set_thread_data(td);
@@ -334,7 +330,8 @@ hpcrun_thread_data_init
   td->memstore = memstore;
   hpcrun_make_memstore(&td->memstore);
   td->mem_low = 0;
-  mem_pool_initialized = true;
+
+  TLS_GET(mem_pool_initialized) = true;
 
 
   // ----------------------------------------
@@ -394,6 +391,7 @@ hpcrun_thread_data_init
 
   td->timer_init = false;
   td->last_time_us = 0;
+  td->prev_nanotime = 0;
 
 
   // ----------------------------------------

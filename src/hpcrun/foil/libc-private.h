@@ -59,6 +59,8 @@ struct hpcrun_foil_appdispatch_libc {
                  const struct timespec* restrict, const sigset_t* restrict);
   int (*poll)(struct pollfd*, nfds_t, int);
   int (*ppoll)(struct pollfd*, nfds_t, const struct timespec*, const sigset_t*);
+  int (*open)(const char*, int, mode_t);
+  int (*open64)(const char*, int, mode_t);
 };
 
 struct hpcrun_foil_appdispatch_libc_sync {

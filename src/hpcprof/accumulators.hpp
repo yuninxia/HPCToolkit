@@ -74,19 +74,19 @@ public:
   constexpr MetricScopeSet(all_t)
     : base(std::numeric_limits<unsigned long long>::max()) {}
 
-  bool has(MetricScope s) const noexcept { return base::operator[](static_cast<size_t>(s)); }
-  auto operator[](MetricScope s) noexcept { return base::operator[](static_cast<size_t>(s)); }
+  bool has(MetricScope s) const noexcept { return ((base&)*this)[static_cast<size_t>(s)]; }
+  auto operator[](MetricScope s) noexcept { return ((base&)*this)[static_cast<size_t>(s)]; }
 
   using base::size;
 
-  MetricScopeSet operator|(const MetricScopeSet& o) { return (base)*this | (base)o; }
-  MetricScopeSet operator+(const MetricScopeSet& o) { return (base)*this | (base)o; }
-  MetricScopeSet operator&(const MetricScopeSet& o) { return (base)*this & (base)o; }
-  MetricScopeSet& operator|=(const MetricScopeSet& o) { base::operator|=(o); return *this; }
-  MetricScopeSet& operator+=(const MetricScopeSet& o) { base::operator|=(o); return *this; }
-  MetricScopeSet& operator&=(const MetricScopeSet& o) { base::operator&=(o); return *this; }
-  bool operator==(const MetricScopeSet& o) { return base::operator==(o); }
-  bool operator!=(const MetricScopeSet& o) { return base::operator!=(o); }
+  MetricScopeSet operator|(const MetricScopeSet& o) const { return (const base&)*this | (const base&)o; }
+  MetricScopeSet operator+(const MetricScopeSet& o) const { return (const base&)*this | (const base&)o; }
+  MetricScopeSet operator&(const MetricScopeSet& o) const { return (const base&)*this & (const base&)o; }
+  MetricScopeSet& operator|=(const MetricScopeSet& o) { (base&)*this |= o; return *this; }
+  MetricScopeSet& operator+=(const MetricScopeSet& o) { (base&)*this |= o; return *this; }
+  MetricScopeSet& operator&=(const MetricScopeSet& o) { (base&)*this &= o; return *this; }
+  bool operator==(const MetricScopeSet& o) const { return (const base&)*this == o; }
+  bool operator!=(const MetricScopeSet& o) const { return (const base&)*this != o; }
 
   int_type toInt() const noexcept { return base::to_ullong(); }
 

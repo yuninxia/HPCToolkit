@@ -547,22 +547,7 @@ endif
 has_cuda = false
 if cupti_dep.found()
   has_cuda = add_languages('cuda', native: false, required: get_option('cuda'))
-  if has_cuda
-    cuda_cc = meson.get_compiler('cuda')
-    if cuda_cc.get_id() == 'nvcc'
-      _arches = 'All'
-      unstable_cuda = import('unstable-cuda')
-      message(
-        'Building for CUDA architectures: ' + ' '.join(
-          unstable_cuda.nvcc_arch_readable(cuda_cc.version(), _arches),
-        ),
-      )
-      add_project_arguments(
-        unstable_cuda.nvcc_arch_flags(cuda_cc.version(), _arches),
-        language: 'cuda',
-      )
-    endif
-  else
+  if not has_cuda
     cupti_dep = dependency('', required: false)
   endif
 endif

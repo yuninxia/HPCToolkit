@@ -20,6 +20,7 @@
 #include "../../../common/lean/linux_info.h"
 
 #include "../../metrics.h"
+#include "../../tls_specific.h"
 
 #include "kernel_blocking.h"
 
@@ -61,10 +62,6 @@ static kind_info_t *blocktime_kind;
 static event_custom_t event_kernel_blocking;
 
 
-static __thread u64          time_cs_out = 0;    // time when leaving the application process
-static __thread cct_node_t  *cct_kernel  = NULL; // cct of the last access to kernel
-static __thread u32          cpu = 0;           // cpu of the last sample
-static __thread u32          pid = 0, tid = 0;  // last pid/tid
 
 /******************************************************************************
  * private operations
@@ -74,10 +71,15 @@ static void
 blame_kernel_time(event_thread_t *current_event, cct_node_t *cct_kernel,
     perf_mmap_data_t *mmap_data)
 {
+  u64 * time_cs_out = &TLS_GET(perf_time_cs_out);
+  u32 * cpu = &TLS_GET(perf_cpu);
+  u32 * pid = &TLS_GET(perf_pid);
+  u32 * tid = &TLS_GET(perf_tid);
+
   // make sure the time is is zero or positive
-  if (mmap_data->time < time_cs_out) {
+  if (mmap_data->time < *time_cs_out) {
     TMSG(LINUX_PERF, "old t: %l, c: %d, p: %d, td: %d -- vs -- t: %l, c: %d, p: %d, td: %d",
-        time_cs_out, cpu, pid, tid, mmap_data->time, mmap_data->cpu, mmap_data->pid, mmap_data->tid);
+        *time_cs_out, *cpu, *pid, *tid, mmap_data->time, mmap_data->cpu, mmap_data->pid, mmap_data->tid);
     return;
   }
 
@@ -86,7 +88,7 @@ blame_kernel_time(event_thread_t *current_event, cct_node_t *cct_kernel,
   // to convert it to sec by multiply it with 1e-09
   const double SEC_PER_NANOSEC = 0.000000001;
 
-  uint64_t delta = mmap_data->time - time_cs_out;
+  uint64_t delta = mmap_data->time - *time_cs_out;
   double   delta_in_sec = delta * SEC_PER_NANOSEC;
 
   // ----------------------------------------------------------------
@@ -127,6 +129,12 @@ void
 kernel_block_handler( event_thread_t *current_event, sample_val_t sv,
     perf_mmap_data_t *mmap_data)
 {
+  u64 * time_cs_out = &TLS_GET(perf_time_cs_out);
+  cct_node_t ** cct_kernel = &TLS_GET(perf_cct_kernel);
+  u32 * cpu = &TLS_GET(perf_cpu);
+  u32 * pid = &TLS_GET(perf_pid);
+  u32 * tid = &TLS_GET(perf_tid);
+
   if (metric_blocking_index < 0)
     return; // not initialized or something wrong happens in the initialization
 
@@ -152,24 +160,24 @@ kernel_block_handler( event_thread_t *current_event, sample_val_t sv,
 
     if (mmap_data->header_type == PERF_RECORD_SAMPLE) {
       // (1) sample record: store the current cct for further usage
-      cct_kernel = sv.sample_node;
+      *cct_kernel = sv.sample_node;
       return;
     }
 
     if (mmap_data->header_misc == PERF_RECORD_MISC_SWITCH_OUT) {
       // (2) leaving the process, entering the kernel: store the time
-      time_cs_out = mmap_data->time;
-      cpu = mmap_data->cpu;
-      pid = mmap_data->pid;
-      tid = mmap_data->tid;
+      *time_cs_out = mmap_data->time;
+      *cpu = mmap_data->cpu;
+      *pid = mmap_data->pid;
+      *tid = mmap_data->tid;
 
     } else {
       // (3) leaving the kernel, entering the process: compute the block time
-      if (cct_kernel != NULL && time_cs_out>0)
-        blame_kernel_time(current_event, cct_kernel, mmap_data);
+      if (*cct_kernel != NULL && *time_cs_out>0)
+        blame_kernel_time(current_event, *cct_kernel, mmap_data);
 
-      time_cs_out  = 0;
-      cct_kernel = NULL;
+      *time_cs_out  = 0;
+      *cct_kernel = NULL;
     }
   }
 }

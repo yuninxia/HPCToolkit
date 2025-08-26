@@ -34,6 +34,7 @@
 #include "newmem.h"
 #include "../sample_event.h"
 #include "../thread_data.h"
+#include "../tls_specific.h"
 #include "../safe-sampling.h"
 
 #include "../messages/messages.h"
@@ -55,13 +56,6 @@ static long total_freeable = 0;
 static long total_non_freeable = 0;
 
 static int out_of_mem_mesg = 0;
-
-
-// ---------------------------------------------------
-// hpcrun_malloc() memory thread local data structures
-// ---------------------------------------------------
-__thread hpcrun_meminfo_t memstore;
-__thread int              mem_low;
 
 
 
@@ -221,10 +215,10 @@ hpcrun_make_memstore(hpcrun_meminfo_t *mi)
 void
 hpcrun_reclaim_freeable_mem(void)
 {
-  hpcrun_meminfo_t *mi = &memstore;
+  hpcrun_meminfo_t *mi = &TLS_GET(memstore);
 
   mi->mi_low = mi->mi_start;
-  mem_low = 0;
+  TLS_GET(mem_low) = 0;
   num_reclaims++;
   TMSG(MALLOC, "%s: %d", __func__, num_reclaims);
 }
@@ -236,15 +230,13 @@ hpcrun_reclaim_freeable_mem(void)
 void *
 hpcrun_malloc(size_t size)
 {
-  hpcrun_meminfo_t *mi;
-  void *addr;
-
   // Lush wants to ask for 0 bytes and get back NULL.
   if (size == 0) {
     return NULL;
   }
 
-  mi = &memstore;
+  hpcrun_meminfo_t *mi = &TLS_GET(memstore);
+  void *addr;
   size = round_up(size);
 
   // For a large request that doesn't fit within the existing
@@ -349,5 +341,5 @@ get_mem_low(
   void
 )
 {
-  return mem_low;
+  return TLS_GET(mem_low);
 }

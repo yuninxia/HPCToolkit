@@ -49,6 +49,7 @@
 #include "../sample_prob.h"
 #include "../thread_data.h"
 #include "../thread_use.h"
+#include "../tls_specific.h"
 
 
 
@@ -224,9 +225,9 @@ safely_get_tid_str(char* buf, size_t len)
     strncpy(buf, "??", len);
   }
 #else // USE_GCC_THREAD
-  extern __thread monitor_tid;
-  if (monitor_tid != -1) {
-    hpcrun_msg_ns(buf, len, "%d", monitor_tid);
+  int * monitor_tid = &TLS_GET(monitor_tid);
+  if (*monitor_tid != -1) {
+    hpcrun_msg_ns(buf, len, "%d", *monitor_tid);
   }
   else {
     strncpy(buf, "??", len);

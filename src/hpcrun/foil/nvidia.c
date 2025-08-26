@@ -13,6 +13,7 @@
 #include <assert.h>
 #include <dlfcn.h>
 #include <stdbool.h>
+#include <stdio.h>
 #include <stdlib.h>
 #include <threads.h>
 
@@ -237,4 +238,21 @@ cudaError_t f_cudaMemcpy(void* dst, const void* src, size_t count,
   if (d == NULL)
     return cudaErrorNoDevice;
   return d->cudaMemcpy(dst, src, count, kind);
+}
+
+const char* f_cudaGetErrorString(cudaError_t error_code) {
+  const struct hpcrun_foil_appdispatch_nvidia* d = dispatch();
+  if (d == NULL) {
+    return "no string available";
+  }
+  return d->cudaGetErrorString(error_code);
+}
+
+const char* f_cuGetErrorString(CUresult error_code) {
+  const struct hpcrun_foil_appdispatch_nvidia* d = dispatch();
+  const char* error_string;
+  if (d == NULL || d->cuGetErrorString(error_code, &error_string) != CUDA_SUCCESS) {
+    return "no string available";
+  }
+  return error_string;
 }
