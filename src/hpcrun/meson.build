@@ -3,15 +3,25 @@
 # SPDX-License-Identifier: Apache-2.0
 
 test_srcs = files(
+  '../common/lean/usec_time.c',
   'sample-sources/exclude-test.cpp',
   'sample-sources/exclude.c',
   'sample-sources/perf/event_name_parser.c',
   'sample-sources/perf/event_name_parser_test.cpp',
+  'skiplist/randomizer-support.c',
+  'skiplist/randomizer-test.cpp',
+  'skiplist/randomizer.c',
+  'skiplist/urand.c',
+  'tls_specific.c',
 )
 
 test(
   'hpcrun-unit',
-  executable('hpcrun-unit-test', test_srcs, dependencies: [gtest_main_dep, gmock_dep]),
+  executable(
+    'hpcrun-unit-test',
+    test_srcs,
+    dependencies: [gtest_main_dep, gmock_dep, papi_dep],
+  ),
   protocol: 'gtest',
 )
 
@@ -169,6 +179,7 @@ srcs = files(
   'ompt/ompt-queues.c',
   'ompt/ompt-region-debug.c',
   'ompt/ompt-region.c',
+  'ompt/ompt-specific.c',
   'ompt/ompt-task.c',
   'ompt/ompt-thread.c',
   'rank.c',
@@ -201,12 +212,16 @@ srcs = files(
   'sample_sources_all.c',
   'sample_sources_registered.c',
   'segv_handler.c',
+  'skiplist/cskiplist.c',
+  'skiplist/randomizer.c',
+  'skiplist/urand.c',
   'start-stop.c',
   'term_handler.c',
   'thread_data.c',
   'thread_finalize.c',
   'thread_use.c',
   'threadmgr.c',
+  'tls_specific.c',
   'trace.c',
   'unwind/common/backtrace.c',
   'unwind/common/binarytree_uwi.c',

@@ -2,8 +2,6 @@
 #
 # SPDX-License-Identifier: Apache-2.0
 
-project('collection-tests', 'c')
-
 incdir = include_directories('..', '../../../../')
 
 e = executable(

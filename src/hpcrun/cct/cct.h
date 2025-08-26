@@ -265,19 +265,10 @@ extern void hpcrun_cct_merge(cct_node_t* cct_a, cct_node_t* cct_b,
                              merge_op_t merge, merge_op_arg_t arg);
 
 
-
-
-// FIXME: This should not be here vi3: allocation and free cct_node_t
-extern __thread cct_node_t* cct_node_freelist_head;
-
 cct_node_t* hpcrun_cct_node_alloc();
 void hpcrun_cct_node_free(cct_node_t *cct);
 // remove Children from cct
 void cct_remove_my_subtree(cct_node_t* cct);
-
-
-
-
 
 
 // copy cct node

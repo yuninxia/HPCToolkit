@@ -28,10 +28,12 @@
 //******************************************************************************
 #include "threadmgr.h"
 #include "thread_data.h"
+#include "tls_specific.h"
 #include "write_data.h"
 #include "trace.h"
 #include "sample_sources_all.h"
 #include "memory/hpcrun-malloc.h"
+#include "utilities/hpcrun-nanotime.h"
 
 #include <stdatomic.h>
 #include "../common/lean/spinlock.h"
@@ -166,6 +168,8 @@ finalize_all_thread_data(void *arg)
 {
   thread_list_t *data = (thread_list_t *) arg;
 
+  hpcrun_tls_specific_init_thread();
+
   while (data != NULL) {
     core_profile_trace_data_t *cptd = &data->thread_data->core_profile_trace_data;
     hpcrun_set_thread_data(data->thread_data); //YUMENG: added to make sure writer can hpcrun_malloc(pretend I am this thread)
@@ -175,6 +179,7 @@ finalize_all_thread_data(void *arg)
 
     data = grab_thread_data();
   }
+
   return NULL;
 }
 
@@ -287,8 +292,9 @@ hpcrun_threadMgr_non_compact_data_get(int id, cct_ctxt_t* thr_ctxt, thread_data_
 }
 
 void
-hpcrun_threadMgr_data_put( epoch_t *epoch, thread_data_t *data, bool add_separator)
+hpcrun_threadMgr_data_put(epoch_t *epoch, thread_data_t *data, bool add_separator)
 {
+  core_profile_trace_data_t *cptd = &data->core_profile_trace_data;
 
   // ---------------------------------------------------------------------
   // case 1: non-compact threads:
@@ -297,10 +303,8 @@ hpcrun_threadMgr_data_put( epoch_t *epoch, thread_data_t *data, bool add_separat
   // ---------------------------------------------------------------------
 
   if (hpcrun_threadMgr_compact_thread() == OPTION_NO_COMPACT_THREAD) {
-
-    hpcrun_write_profile_data( &data->core_profile_trace_data );
-    hpcrun_trace_close( &data->core_profile_trace_data );
-
+    hpcrun_write_profile_data(cptd);
+    hpcrun_trace_close(cptd);
     return;
   }
 
@@ -313,11 +317,17 @@ hpcrun_threadMgr_data_put( epoch_t *epoch, thread_data_t *data, bool add_separat
 
   // step 1: get the dummy node that marks the end of the thread trace
 
-  if (add_separator && data->core_profile_trace_data.id != TOOL_THREAD_ID) {
+  if (add_separator && cptd->id != TOOL_THREAD_ID) {
     cct_node_t *node  = hpcrun_cct_bundle_get_no_activity_node(&epoch->csdata);
     if (node) {
-      hpcrun_trace_append(&(data->core_profile_trace_data), node, 0,
-                          HPCTRACE_FMT_DLCA_NULL, 0);
+      int32_t no_activity_call_path_id = hpcrun_cct_persistent_id(node);
+
+      // compute time to assert <no activity>: either immediately after the last event
+      // or right now if last event unavailable
+      uint64_t prev_nanotime = TD_GET(prev_nanotime);
+      uint64_t time = (prev_nanotime == 0) ? hpcrun_nanotime() : prev_nanotime + 1;
+
+      hpcrun_trace_append_with_time(cptd, no_activity_call_path_id, 0, time);
     }
   }
 

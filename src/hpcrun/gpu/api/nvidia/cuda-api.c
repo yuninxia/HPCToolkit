@@ -46,22 +46,18 @@
 //*****************************************************************************
 #define HPCRUN_CUDA_API_CALL(fn, args)                              \
 {                                                                   \
-  CUresult error_result = fn args;                    \
+  CUresult error_result = f_ ## fn args;                            \
   if (error_result != CUDA_SUCCESS) {                               \
-    ETMSG(CUDA, "cuda api %s returned %d", #fn,                     \
-          (int) error_result);                                      \
-    exit(-1);                                                       \
+    fatal_CUresult(#fn, error_result);                              \
   }                                                                 \
 }
 
 
 #define HPCRUN_CUDA_RUNTIME_CALL(fn, args)                          \
 {                                                                   \
-  cudaError_t error_result = fn args;                 \
+  cudaError_t error_result = f_ ## fn args;                         \
   if (error_result != cudaSuccess) {                                \
-    ETMSG(CUDA, "cuda runtime %s returned %d", #fn,                 \
-          (int) error_result);                                      \
-    exit(-1);                                                       \
+    fatal_cudaError_t(#fn, error_result);                           \
   }                                                                 \
 }
 
@@ -101,6 +97,24 @@
 // private operations
 //******************************************************************************
 
+static void
+fatal_cudaError_t(const char *fn, cudaError_t error_result)
+{
+  const char *error_string = f_cudaGetErrorString(error_result);
+  fprintf(stderr, "FATAL: hpcrun CUDA error: function %s failed with "
+    "error code %d (error string '%s')\n", fn, error_result, error_string);
+  exit(-1);
+}
+
+static void
+fatal_CUresult(const char *fn, CUresult error_result)
+{
+  const char* error_string = f_cuGetErrorString(error_result);
+  fprintf(stderr, "FATAL: hpcrun CUDA Driver API error: function %s failed with "
+    "error code %d (error string '%s')\n", fn, error_result, error_string);
+  exit(-1);
+}
+
 
 static int
 cuda_device_sm_blocks_query
@@ -130,10 +144,10 @@ cuda_device_compute_capability
   int *minor
 )
 {
-  HPCRUN_CUDA_API_CALL(f_cuDeviceGetAttribute,
+  HPCRUN_CUDA_API_CALL(cuDeviceGetAttribute,
     (major, CU_DEVICE_ATTRIBUTE_COMPUTE_CAPABILITY_MAJOR, device_id));
 
-  HPCRUN_CUDA_API_CALL(f_cuDeviceGetAttribute,
+  HPCRUN_CUDA_API_CALL(cuDeviceGetAttribute,
     (minor, CU_DEVICE_ATTRIBUTE_COMPUTE_CAPABILITY_MINOR, device_id));
 
   return 0;
@@ -147,7 +161,7 @@ cuda_device_id
   int *device_id
 )
 {
-  HPCRUN_CUDA_RUNTIME_CALL(f_cudaGetDevice, (device_id));
+  HPCRUN_CUDA_RUNTIME_CALL(cudaGetDevice, (device_id));
   return 0;
 }
 
@@ -158,7 +172,7 @@ cuda_runtime_version
   int *rt_version
 )
 {
-  HPCRUN_CUDA_RUNTIME_CALL(f_cudaRuntimeGetVersion, (rt_version));
+  HPCRUN_CUDA_RUNTIME_CALL(cudaRuntimeGetVersion, (rt_version));
 }
 
 
@@ -174,7 +188,7 @@ cuda_context
  CUcontext *ctx
 )
 {
-  HPCRUN_CUDA_API_CALL(f_cuCtxGetCurrent, (ctx));
+  HPCRUN_CUDA_API_CALL(cuCtxGetCurrent, (ctx));
   return 0;
 }
 
@@ -185,34 +199,34 @@ cuda_device_property_query
  cuda_device_property_t *property
 )
 {
-  HPCRUN_CUDA_API_CALL(f_cuDeviceGetAttribute,
+  HPCRUN_CUDA_API_CALL(cuDeviceGetAttribute,
     (&property->sm_count, CU_DEVICE_ATTRIBUTE_MULTIPROCESSOR_COUNT, device_id));
 
-  HPCRUN_CUDA_API_CALL(f_cuDeviceGetAttribute,
+  HPCRUN_CUDA_API_CALL(cuDeviceGetAttribute,
     (&property->sm_clock_rate, CU_DEVICE_ATTRIBUTE_CLOCK_RATE, device_id));
 
-  HPCRUN_CUDA_API_CALL(f_cuDeviceGetAttribute,
+  HPCRUN_CUDA_API_CALL(cuDeviceGetAttribute,
     (&property->sm_shared_memory,
      CU_DEVICE_ATTRIBUTE_MAX_SHARED_MEMORY_PER_MULTIPROCESSOR, device_id));
 
-  HPCRUN_CUDA_API_CALL(f_cuDeviceGetAttribute,
+  HPCRUN_CUDA_API_CALL(cuDeviceGetAttribute,
     (&property->sm_registers,
      CU_DEVICE_ATTRIBUTE_MAX_REGISTERS_PER_MULTIPROCESSOR, device_id));
 
-  HPCRUN_CUDA_API_CALL(f_cuDeviceGetAttribute,
+  HPCRUN_CUDA_API_CALL(cuDeviceGetAttribute,
     (&property->sm_threads, CU_DEVICE_ATTRIBUTE_MAX_THREADS_PER_MULTIPROCESSOR,
      device_id));
 
-  HPCRUN_CUDA_API_CALL(f_cuDeviceGetAttribute,
+  HPCRUN_CUDA_API_CALL(cuDeviceGetAttribute,
     (&property->num_threads_per_warp, CU_DEVICE_ATTRIBUTE_WARP_SIZE,
      device_id));
 
   int major = 0, minor = 0;
 
-  HPCRUN_CUDA_API_CALL(f_cuDeviceGetAttribute,
+  HPCRUN_CUDA_API_CALL(cuDeviceGetAttribute,
     (&major, CU_DEVICE_ATTRIBUTE_COMPUTE_CAPABILITY_MAJOR, device_id));
 
-  HPCRUN_CUDA_API_CALL(f_cuDeviceGetAttribute,
+  HPCRUN_CUDA_API_CALL(cuDeviceGetAttribute,
     (&minor, CU_DEVICE_ATTRIBUTE_COMPUTE_CAPABILITY_MINOR, device_id));
 
   property->sm_blocks = cuda_device_sm_blocks_query(major, minor);
@@ -257,7 +271,7 @@ cuda_get_module
  CUfunction fn
 )
 {
-  HPCRUN_CUDA_API_CALL(f_cuFuncGetModule, (mod, fn));
+  HPCRUN_CUDA_API_CALL(cuFuncGetModule, (mod, fn));
   return 0;
 }
 
@@ -271,7 +285,7 @@ cuda_get_driver_version
 {
   int version;
 
-  HPCRUN_CUDA_API_CALL(f_cuDriverGetVersion, (&version));
+  HPCRUN_CUDA_API_CALL(cuDriverGetVersion, (&version));
 
   *major = version / 1000;
   *minor = version - *major * 1000;
@@ -305,6 +319,6 @@ cuda_get_code
  size_t bytes
 )
 {
-  HPCRUN_CUDA_RUNTIME_CALL(f_cudaMemcpy, (host, dev, bytes, cudaMemcpyDeviceToHost));
+  HPCRUN_CUDA_RUNTIME_CALL(cudaMemcpy, (host, dev, bytes, cudaMemcpyDeviceToHost));
   return 0;
 }

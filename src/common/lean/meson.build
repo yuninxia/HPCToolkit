@@ -11,7 +11,6 @@ common_lean_srcs = files(
   'compress_lzma.c',
   'cpuset_hwthreads.c',
   'crypto-hash.c',
-  'cskiplist.c',
   'demangle.c',
   'elf-extract.c',
   'elf-hash.c',
@@ -33,12 +32,10 @@ common_lean_srcs = files(
   'procmaps.c',
   'producer_wfq.c',
   'queues.c',
-  'randomizer.c',
   'spinlock.c',
   'splay-uint64.c',
   'stacks.c',
   'timer.c',
-  'urand.c',
   'usec_time.c',
   'vdso.c',
 )
@@ -50,12 +47,7 @@ common_lean_deps = [
   subproject('md5-g72cf2cd').get_variable('md5_dep'),
 ]
 
-test_srcs = files(
-  'compress_lzma_test.cpp',
-  'crypto-hash-test.cpp',
-  'elf-hash-test.cpp',
-  'randomizer-test.cpp',
-)
+test_srcs = files('compress_lzma_test.cpp', 'crypto-hash-test.cpp', 'elf-hash-test.cpp')
 
 test(
   'common-lean',
@@ -68,3 +60,5 @@ test(
   args: [files('elf-hash-example')],
   protocol: 'gtest',
 )
+
+subdir('collections/test')

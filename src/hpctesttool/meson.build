@@ -5,9 +5,9 @@
 # This directory provides `hpctesttool`, a super-command for a series of helpful tools for writing
 # precise and robust test-scripts. And other debugging tool.
 
-hpctesttool_venv = custom_target(
-  'hpctesttool',
-  output: ['hpctesttool', 'python'],
+# Install the test tool inside a Python virtual environment, for easy dependency management
+hpctesttool_python = custom_target(
+  output: 'hpctesttool-python',
   build_by_default: false,
   command: [
     python,
@@ -19,9 +19,26 @@ hpctesttool_venv = custom_target(
   ],
   depend_files: [files('pyproject.toml')],
 )
-meson.add_devenv({'PATH': meson.current_build_dir()}, method: 'prepend')
 
-hpctesttool = hpctesttool_venv[0]
+# Generate a simple script that will defer to the hpctesttool module. We use a
+# custom_target here to propagate the dependency on hpctesttool_python.
+# NB: hpctesttool needs to be a custom_target (not custom_idx) to dodge
+# https://github.com/mesonbuild/meson/issues/14743
+hpctesttool_generator = '''
+import pathlib, sys
+out = pathlib.Path(sys.argv[1])
+out.unlink(missing_ok=True)
+out.write_text(f"""#!/bin/sh
+exec {sys.executable} -m hpctesttool "$@"
+""")
+out.chmod(out.stat().st_mode | 0o111)
+'''
+hpctesttool = custom_target(
+  output: 'hpctesttool',
+  command: [hpctesttool_python, '-c', hpctesttool_generator, '@OUTPUT@'],
+  build_by_default: false,
+)
+meson.add_devenv({'PATH': meson.current_build_dir()}, method: 'prepend')
 
 # Also run pytest to test the utilities themselves
 _env = environment()
@@ -39,10 +56,11 @@ test(
     '-c',
     'filename="$1"; shift; exec "$(realpath "$filename")" "$@"',
     'sh',
-    hpctesttool_venv[1],
+    hpctesttool_python,
     files('pytest-as-gtest.py'),
     '--override-ini=cache_dir=@0@'.format(meson.current_build_dir() / '.pytest_cache'),
     meson.current_source_dir() / 'hpctesttool',
   ],
   workdir: meson.current_build_dir(),
+  suite: 'hpctesttool',
 )

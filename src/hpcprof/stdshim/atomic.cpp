@@ -6,6 +6,8 @@
 
 #include "atomic.hpp"
 
+#ifndef HPCTOOLKIT_STDSHIM_STD_HAS_atomic_wait
+
 #include <thread>
 
 using namespace hpctoolkit::stdshim;
@@ -79,3 +81,5 @@ volatile std::uint32_t* atomic_uint32::ptr() volatile noexcept {
 const volatile std::uint32_t* atomic_uint32::ptr() const volatile noexcept {
   return reinterpret_cast<const volatile std::uint32_t*>(this);
 }
+
+#endif

@@ -352,8 +352,11 @@ int main(int argc, char* argv[]) {
         preload_list.emplace_back(HPCRUN_PRELOAD_LIBC_ALLOC_SO);
       } else if (strstartswith(ev, "PTHREAD_WAIT")) {
         preload_list.emplace_back(HPCRUN_PRELOAD_LIBC_SYNC_SO);
-      } else if (ev == "gpu=amd" || strstartswith(ev, "rocprof::")) {
+      } else if (ev == "gpu=amd" || (ev == "gpu=rocm") || strstartswith(ev, "rocprof::")) {
 #ifdef USE_ROCM
+        if (ev == "gpu=rocm") { // quietly support the new syntax
+          ev.replace(4,4,"amd"); // transform it into what the software still expects
+        }
         env["HSA_ENABLE_INTERRUPTS"] = "0";
         env["ROCP_TOOL_LIB"] = HPCRUN_DLOPEN_ROCM_SO;
         env["ROCP_HSA_INTERCEPT"] = "1";
@@ -362,8 +365,12 @@ int main(int argc, char* argv[]) {
         std::cerr << "hpcrun: HPCToolkit was not compiled with AMD ROCm support enabled" << diemsg;
         return 1;
 #endif
-      } else if (strstartswith(ev, "gpu=nvidia")) {
-#ifndef OPT_HAVE_CUDA
+      } else if (strstartswith(ev, "gpu=nvidia") || strstartswith(ev, "gpu=cuda")) {
+#ifdef OPT_HAVE_CUDA
+        if (strstartswith(ev, "gpu=cuda")) {  // quietly support the new syntax
+          ev.replace(4,4,"nvidia"); // transform it into what the software still expects
+        }
+#else
         std::cerr << "hpcrun: HPCToolkit was not compiled with NVIDIA CUDA support enabled" << diemsg;
         return 1;
 #endif

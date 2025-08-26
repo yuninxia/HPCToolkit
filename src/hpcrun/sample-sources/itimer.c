@@ -62,6 +62,7 @@
 #include "../thread_data.h"
 #include "../ompt/ompt-region.h"
 #include "../trace.h"
+#include "../tls_specific.h"
 
 #include "../messages/messages.h"
 
@@ -148,7 +149,6 @@ static struct itimerspec itspec_stop;
 
 static sigset_t timer_mask;
 
-static __thread bool wallclock_ok = false;
 
 // ****************************************************************************
 // * public helper function
@@ -156,7 +156,7 @@ static __thread bool wallclock_ok = false;
 
 void hpcrun_itimer_wallclock_ok(bool flag)
 {
-  wallclock_ok = flag;
+  TLS_GET(wallclock_ok) = flag;
 }
 
 /******************************************************************************
@@ -604,7 +604,7 @@ itimer_signal_handler(int sig, siginfo_t* siginfo, void* context)
   }
 
   // If we got a wallclock signal not meant for our thread, then drop the sample
-  if (! wallclock_ok) {
+  if (! TLS_GET(wallclock_ok)) {
     EMSG("Received Linux timer signal, but thread not initialized");
   }
   // If the interrupt came from inside our code, then drop the sample

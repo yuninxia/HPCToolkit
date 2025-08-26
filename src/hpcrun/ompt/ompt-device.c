@@ -32,6 +32,7 @@
 #include "ompt-interface.h"
 #include "ompt-device-map.h"
 #include "ompt-device.h"
+#include "ompt-specific.h"
 
 #include "../gpu/gpu-application-thread-api.h"
 #include "../gpu/activity/correlation/gpu-correlation-channel.h"
@@ -133,8 +134,6 @@ static int ompt_shutdown_complete = 0;
 
 static ompt_device_entry_t *device_list = 0;
 
-static __thread bool ompt_need_flush = false;
-
 static ompt_get_code_t ompt_get_code;
 
 
@@ -172,15 +171,6 @@ FOREACH_OMPT_TARGET_FN(ompt_decl_name)
 
 
 //*****************************************************************************
-// thread-local variables
-//*****************************************************************************
-
-static __thread cct_node_t *target_node = NULL;
-static __thread cct_node_t *trace_node = NULL;
-
-static __thread bool ompt_runtime_api_flag = false;
-
-//*****************************************************************************
 // device operations
 //*****************************************************************************
 
@@ -199,8 +189,6 @@ get_callpath
   thread_data_t *td = hpcrun_get_thread_data();
   td->overhead++;
 
-  hpcrun_safe_enter();
-
   int skip_this_frame = 1; // omit this procedure frame on the call path
   cct_node_t *node =
     hpcrun_sample_callpath(&uc, zero_metric_id, zero_metric_incr,
@@ -218,11 +206,6 @@ get_callpath
   }
 #endif
 
-  // Must be under a safe region to prevent self interrupt
-  hpcrun_trace_node(target_node);
-
-  hpcrun_safe_exit();
-
   td->overhead--;
 
   return node;
@@ -233,11 +216,14 @@ hpcrun_ompt_op_id_notify(ompt_scope_endpoint_t endpoint,
                          ompt_id_t host_op_id,
                          ip_normalized_t ip_norm)
 {
+  void * base = OMPT_GET_BASE_PTR();
+  cct_node_t * target_node = OMPT_GET(target_node);
+
   // A runtime API must be implemented by driver APIs.
   if (endpoint == ompt_scope_begin) {
     // Enter a ompt runtime api
     PRINT("enter ompt runtime op %lu\n", host_op_id);
-    ompt_runtime_api_flag = true;
+    OMPT_BASE_GET(base, ompt_runtime_api_flag) = true;
 
     gpu_application_thread_process_activities();
 
@@ -256,6 +242,8 @@ hpcrun_ompt_op_id_notify(ompt_scope_endpoint_t endpoint,
     // target region. in this case, use stack unwinding to determine
     // the call path where the operation was invoked.
     cct_node_t *callpath = target_node ? target_node : get_callpath();
+    // Must be under a safe region to prevent self interrupt
+    hpcrun_trace_node(callpath);
 
     cct_node_t *api_node = hpcrun_cct_insert_addr(callpath, &frm, true);
 
@@ -263,7 +251,7 @@ hpcrun_ompt_op_id_notify(ompt_scope_endpoint_t endpoint,
 
     hpcrun_safe_exit();
 
-    trace_node = gpu_op_ccts.ccts[gpu_placeholder_type_trace];
+    OMPT_BASE_GET(base, trace_node) = gpu_op_ccts.ccts[gpu_placeholder_type_trace];
 
     // Inform the worker about the placeholders
     uint64_t cpu_submit_time = hpcrun_nanotime();
@@ -276,9 +264,9 @@ hpcrun_ompt_op_id_notify(ompt_scope_endpoint_t endpoint,
   } else {
     PRINT("exit ompt runtime op %lu\n", host_op_id);
     // Enter a runtime api
-    ompt_runtime_api_flag = false;
+    OMPT_BASE_GET(base, ompt_runtime_api_flag) = false;
     // Clear kernel status
-    trace_node = NULL;
+    OMPT_BASE_GET(base, trace_node) = NULL;
   }
 
   return;
@@ -417,7 +405,7 @@ ompt_finalize_flush
     while (e) {
       PRINT("ompt_finalize_flush flush id=%d device=%p\n",
             e->device_id, e->device);
-      if (ompt_need_flush) ompt_flush_trace(e->device);
+      if (OMPT_GET(ompt_need_flush)) ompt_flush_trace(e->device);
       e = e->next;
     }
   }
@@ -601,7 +589,7 @@ get_load_module
   cct_node_t *node
 )
 {
-  cct_addr_t *addr = hpcrun_cct_addr(target_node);
+  cct_addr_t *addr = hpcrun_cct_addr(OMPT_GET(target_node));
   ip_normalized_t ip = addr->ip_norm;
   return ip.lm_id;
 }
@@ -622,17 +610,23 @@ ompt_target_callback_emi
 {
   if (hpcrun_get_disabled()) return;
 
+  cct_node_t ** target_node = &OMPT_GET(target_node);
+
   if (endpoint == ompt_scope_end) {
-    target_node = NULL;
+    *target_node = NULL;
     return;
   }
 
-  ompt_need_flush = true;
+  OMPT_GET(ompt_need_flush) = true;
 
   target_data->value = gpu_activity_channel_generate_correlation_id();
   PRINT("ompt_target_callback->target_id 0x%lx\n", target_data->value);
 
-  target_node = get_callpath();
+  // Must be under a safe region to prevent self interrupt
+  hpcrun_safe_enter();
+  *target_node = get_callpath();
+  hpcrun_trace_node(*target_node);
+  hpcrun_safe_exit();
 }
 
 void
@@ -707,7 +701,7 @@ ompt_map_callback(ompt_id_t target_id,
                   size_t *bytes,
                   unsigned int *mapping_flags)
 {
-  ompt_need_flush = true;
+  OMPT_GET(ompt_need_flush) = true;
 }
 
 
@@ -717,7 +711,7 @@ ompt_runtime_status_get
  void
 )
 {
-  return ompt_runtime_api_flag;
+  return OMPT_GET(ompt_runtime_api_flag);
 }
 
 
@@ -727,7 +721,7 @@ ompt_trace_node_get
  void
 )
 {
-  return trace_node;
+  return OMPT_GET(trace_node);
 }
 
 void

@@ -16,9 +16,6 @@ ruamel-yaml = "^0.17.16"
 pytest = "^7.2.1"
 pyparsing = "^3.0.9"
 
-[tool.poetry.scripts]
-hpctesttool = "hpctesttool.__main__:main"
-
 [tool.pytest.ini_options]
 xfail_strict = true
 junit_suite_name = "py-hpctesttool"

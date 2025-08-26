@@ -4,8 +4,7 @@
     "PERFMON"
   ],
   "containerEnv": {
-    "OMPI_ALLOW_RUN_AS_ROOT": "1",
-    "OMPI_ALLOW_RUN_AS_ROOT_CONFIRM": "1"
+    "LANG": "${localEnv:LANG:C.UTF-8}"
   },
   "customizations": {
     "vscode": {
@@ -21,6 +20,9 @@
       }
     }
   },
+  "features": {
+    "./add-remote-user": {}
+  },
   "image": "registry.gitlab.com/hpctoolkit/rtt-images:1.0.0-aio",
   "mounts": [
     {
@@ -32,5 +34,6 @@
   "remoteEnv": {
     "BUILDDIR": "${containerWorkspaceFolder}/.devcontainer/builddir-${devcontainerId}",
     "builddir": "${containerWorkspaceFolder}/.devcontainer/builddir-${devcontainerId}"
-  }
+  },
+  "remoteUser": "dev"
 }
