@@ -30,7 +30,7 @@ case "$trace" in
 esac
 
 trap 'rm -rf "$tmpdir"' EXIT
-tmpdir=$(mktemp --directory --tmpdir=.)
+tmpdir=$(mktemp --directory)
 
 # shellcheck disable=SC2086
 "$hpcrun" -o "$tmpdir"/m -e "$event" -ck HPCRUN_CUPTI_SYSTEM_ERROR_EXITCODE=77 $trace "$tstexe_cuda_vecadd"

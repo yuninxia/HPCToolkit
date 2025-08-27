@@ -11,7 +11,7 @@ hpcprof="$4"
 shift 4  # Remaining arguments are the app command line
 
 trap 'rm -rf "$tmpdir"' EXIT
-tmpdir=$(mktemp --directory --tmpdir=.)
+tmpdir=$(mktemp --directory)
 
 "$hpcrun" -o "$tmpdir"/m "$@"
 "$hpcstruct" "$tmpdir"/m

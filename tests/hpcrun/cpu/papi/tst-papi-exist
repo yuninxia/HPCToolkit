@@ -12,7 +12,7 @@ tstexe_1loop="$3"
 if [ "$(cat /proc/sys/kernel/perf_event_paranoid)" -ge 3 ]; then exit 77; fi
 
 trap 'rm -rf "$tmpdir"' EXIT
-tmpdir=$(mktemp --directory --tmpdir=.)
+tmpdir=$(mktemp --directory)
 
 # test the existence of a PAPI event, and then test its handling in hpcrun
 # arguments:
