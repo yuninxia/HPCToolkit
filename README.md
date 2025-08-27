@@ -53,13 +53,13 @@ For more information about Spack and how to install HPCToolkit using Spack, see 
 
 ## Building HPCToolkit from source with Meson (recommended for developers)
 
-HPCToolkit supports building from source using [Meson].
+HPCToolkit supports building from source using [Meson](https://mesonbuild.com).
 
 For information about Meson and how to build HPCToolkit from source using Meson, see the HPCToolkit User's Manual section [Building from Source using Meson](https://hpctoolkit.gitlab.io/hpctoolkit/users/meson.html)
 
 ## Documentation
 
-The HPCToolkit User Manual is available online.
+The HPCToolkit User Manual is available [here](https://hpctoolkit.gitlab.io/hpctoolkit/index.html).
 
 ## License
 
