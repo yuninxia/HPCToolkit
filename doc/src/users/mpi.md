@@ -20,22 +20,6 @@ For a dynamically linked application binary `app`, use a command line similar to
 
 Observe that the MPI launcher (`mpirun`, `mpiexec`, etc.) is used to launch `hpcrun`, which is then used to launch the application program.
 
-To use HPCToolkit to monitor statically linked binaries, use `hpclink` to build a statically linked version of your application that includes HPCToolkit's monitoring library.
-For example, to link your application binary `app`:
-
-> ```
-> hpclink <linker> -o app <linker-arguments>
-> ```
-
-Then, set the `HPCRUN_EVENT_LIST` environment variable in the launch script before running the application:
-
-> ```
-> export HPCRUN_EVENT_LIST="CYCLES@f200"
-> <mpi-launcher> app [app-arguments]
-> ```
-
-See the Chapter [6](#chpt:statically-linked-apps) for more information.
-
 In this example, `s3d_f90.x` is the Fortran S3D program compiled with OpenMPI and run with the command line
 
 > `mpiexec -n 4 hpcrun -e PAPI_TOT_CYC:2500000 ./s3d_f90.x`
@@ -94,9 +78,9 @@ C, C++ and Fortran are supported.
 
 ## Building and Installing HPCToolkit
 
-No, HPCToolkit is designed to work with multiple MPI implementations at the same time.
-That is, you don't need to provide an `mpi.h` include path, and you don't need to compile multiple versions of HPCToolkit, one for each MPI implementation.
+A single installation of HPCToolkit is designed to work with multiple MPI implementations.
+That is, you don't need to provide an `mpi.h` include path when building HPCToolkit, and you don't need to compile multiple versions of HPCToolkit, one for each MPI implementation.
 
-The technically-minded reader will note that each MPI implementation uses a different value for `MPI_COMM_WORLD` and may wonder how this is possible.
-`hpcrun` (actually `libmonitor`) waits for the application to call `MPI_Comm_rank()` and uses the same communicator value that the application uses.
+A technically-minded reader will note that each MPI implementation uses a different value for `MPI_COMM_WORLD` and may wonder how this is possible.
+`hpcrun` waits for the application to call `MPI_Comm_rank()` and uses the same communicator value that the application uses.
 This is why we need the application to call `MPI_Comm_rank()` with communicator `MPI_COMM_WORLD`.

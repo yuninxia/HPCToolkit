@@ -46,19 +46,16 @@ While HPCToolkit does not need information about the mapping between machine ins
 having such information included in the binary code by the compiler can be helpful to users trying to interpret performance measurements.
 Since compilers can usually provide information about line mappings and inlining for fully-optimized code,
 this requirement usually involves a one-time trivial adjustment to the an application's build scripts
-to provide a better experience with tools. Such mapping information enables tools such as HPCToolkit,
-race detectors, and memory analysis tools to attribute information more precisely.
+to provide a better experience with tools. Such mapping information enables tools such as HPCToolkit to attribute performance metrics to source code constructs within procedures rather than only at the procedure level.
 
-For statically linked executables, such as those often used on Cray supercomputers, the final link step is done with `hpclink`.
 
 (chpt:quickstart:tour:measurement)=
 
 ### Measuring Application Performance
 
-Measurement of application performance takes two different forms depending on whether your application is dynamically or statically linked.
+Today, HPCToolkit is designed to measure executions of dynamically-linked applications.
 To monitor a dynamically linked application, simply use `hpcrun` to launch the application.
-To monitor a statically linked application, the data to be collected is specified by environment variables.
-In either case, the application may be sequential, multithreaded or based on MPI.
+An application may be sequential, multithreaded or based on MPI.
 The commands below give examples for an application named `app`.
 
 - Dynamically linked applications:
@@ -69,24 +66,8 @@ The commands below give examples for an application named `app`.
 
   Of course, `<mpi-launcher>` is only needed for MPI programs and is sometimes a program like `mpiexec` or `mpirun`, or a workload manager's utilities such as Slurm's `srun` or IBM's Job Step Manager utility `jsrun`.
 
-- Statically linked applications:
 
-  First, link `hpcrun`'s monitoring code into `app`, using `hpclink`:
-
-  > `hpclink <linker> -o app <linker-arguments>`
-
-  Then monitor `app` by passing `hpcrun` options through environment variables.
-  For instance:
-
-  > ```
-  > export HPCRUN_EVENT_LIST="CYCLES"
-  > [<mpi-launcher>] app [app-arguments]
-  > ```
-
-  `hpclink`'s `--help` option gives a list of environment variables that affect monitoring.
-  See Chapter [6](#chpt:statically-linked-apps) for more information.
-
-Any of these commands will produce a measurements database that contains separate measurement information for each MPI rank and thread in the application.
+hpcrun will produce a measurements database that contains separate measurement information for each MPI rank and thread in the application.
 The database is named according the form:
 
 > `hpctoolkit-app-measurements[-<jobid>]`

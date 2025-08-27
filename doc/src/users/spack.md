@@ -6,7 +6,7 @@ SPDX-License-Identifier: CC-BY-4.0
 
 # Installing HPCToolkit with Spack
 
-This chapter outlines how to build and install HPCToolkit and Hpcviewer with spack.
+This chapter outlines how to build and install HPCToolkit and Hpcviewer with [Spack](https://spack.readthedocs.io/en/latest/). If you are unfamiliar with Spack, see the section below [Running Spack for the First Time](#spack-first-time).
 
 HPCToolkit proper (`hpcrun`, `hpcstruct` and `hpcprof`) is used to measure and
 analyze an application's performance and then produce a database for `hpcviewer`.
@@ -17,8 +17,8 @@ with spack.
 We provide binary distributions for `hpcviewer` on Linux (x86_64, ppc64/le
 and aarch64), Windows (x86_64) and MacOS (x86_64, M1, M2 and M3).
 Although `hpcviewer` is normally included as part of HPCToolkit, we provide
-`hpcviewer` as a separate package to install on platforms where hpctoolkit
-is not available.
+`hpcviewer` as a separate package to install on platforms, such as MacOS and Windows laptops, 
+where HPCToolkit proper is not available.
 HPCToolkit databases are platform-independent and it is common to run
 `hpcrun` on one machine and then view the results on another machine.
 
@@ -28,8 +28,10 @@ GNU gcc/g++ 12.x or later should do fine.
 Spack requires Python 3.8 or later plus various build utilities:
 bash, git, curl, patch, tar, bzip2, unzip, etc.
 
-`Hpcviewer` requires Java 17 or later, but this can easily be installed
-via spack (recommended).
+`Hpcviewer` requires Java 17 or later.
+Without any configuration, Spack will automatically install an appropriate version of Java OpenJDK to support `hpcviewer`. 
+
+When installing `hpctoolkit` using Spack, `hpcviewer` will be installed automatically by default.
 
 Gitlab repositories:
 
@@ -108,7 +110,9 @@ Or, you could just hand edit the module file.
 
 See: <https://spack.readthedocs.io/en/latest/configuration.html#>
 
-## Basic Spack Install
+## Installing a Basic HPCToolkit 
+
+Here we explain how to install a basic version of HPCToolkit with Spack. Following these directions will build and install a version of HPCToolkit that only profiles a program's CPU activity. To inatall a GPU-aware version of HPCToolkit or configure HPCToolkit for post-mortem analysis of thousands of profiles, see the [Configuration Options](#configuration-options) section on this page for descriptions of options that can be provided to a Spack install.
 
 Although spack can install packages with a single `spack install`
 command, we recommend that you always run `spack spec` first to verify
@@ -148,11 +152,10 @@ spack install hpctoolkit buildtype=debug
 Possible values for `buildtype` are `release` (default), `debug`,
 `debugoptimized`, `minsize` and `plain`.
 
-## Hpcviewer
+## Installing Hpcviewer
 
-`Hpcviewer` and the integrated `hpctraceviewer` are installed by default
-as part of HPCToolkit.
-However, they are available as a separate package.
+HPCToolkit's `hpcviewer` user interface is installed by default when installing `hpctoolkit` with Spack.
+However, `hpcviewer` is also available as a separate package.
 If you want to run `hpcviewer` on a platform (eg, laptop) without installing
 all of `hpctoolkit`, then you can install just the `hpcviewer` package.
 
@@ -160,21 +163,23 @@ all of `hpctoolkit`, then you can install just the `hpcviewer` package.
 spack install hpcviewer
 ```
 
-We provide binary distributions for `hpcviewer` on Linux (x86_64, ppc64/le
-and aarch64), Windows (x86_64) and MacOS (x86_64, M1, M2 and M3).
-`Hpcviewer` uses Java 17 or later, but this is installed by spack as a dependency
+We provide binary distributions for HPCToolkit's `hpcviewer` graphical user interface 
+on Linux (x86_64, ppc64/le
+and aarch64), Windows (x86_64) and MacOS (x86_64 and Apple M-series processors).
+`Hpcviewer` uses Java 17 or later, but this is installed automatically by Spack as a dependency
 of `hpcviewer`.
 
 **Note:**
 HPCToolkit databases are platform-independent and it is common to run
 `hpcrun` on one machine and then view the results on another machine.
 
-## Advanced Options
+(configuration-options)=
+## Configuration Options
 
 ### CUDA (`+cuda`)
 
 HPCToolkit supports profiling nVidia GPUs through the CUDA interface.
-You can either use an existing CUDA module or let spack build one.
+You can either use an existing CUDA module or let Spack build one.
 
 To use an existing CUDA module (recommended), load the `cuda` module
 and run `spack external find`.
@@ -218,9 +223,9 @@ spack install hpctoolkit +level_zero
 
 Advanced support to see inside the GPU kernels requires the `oneapi-igc`
 (Intel Graphics Compiler) package.
-This is an externals only package, spack does not download or install it.
+This is an externals only package, Spack does not download or install it.
 Normally, this is installed in `/usr` and you should manually add a
-spack externals entry for it.
+Spack externals entry for it.
 
 ```
 packages:
@@ -242,9 +247,9 @@ at runtime which options to use.
 ### ROCm (`+rocm`)
 
 HPCToolkit supports profiling AMD GPUs through the ROCm interface.
-You can either use an existing ROCm module or let spack build one.
+You can either use an existing ROCm module or let Spack build one.
 
-For ROCm support, HPCToolkit uses four spack packages:
+For ROCm support, HPCToolkit uses four Spack packages:
 `hip`, `hsa-rocr-dev`, `roctracer-dev` and `rocprofiler-dev`.
 To use an existing ROCm module (recommended), load the `rocm` module
 and run `spack external find` on all four packages.
@@ -305,7 +310,7 @@ We recommend adding opencl support for all GPU types.
 ### MPI (`+mpi`)
 
 HPCToolkit always supports profiling MPI applications.
-The spack variant `+mpi` is for building `hpcprof-mpi`, the MPI version of `hpcprof`.
+The Spack variant `+mpi` is for building `hpcprof-mpi`, the MPI version of `hpcprof`.
 If you want to build `hpcprof-mpi`, then you need to supply an installation of MPI.
 
 ```
@@ -365,11 +370,12 @@ You should use python 3.10 or later and use the same version as the application.
 
 ### Generic Targets
 
-Normally, spack builds for the specific architecture of the build machine
-(skylake, sapphirerapids, zen3, etc).
-If you're preparing an install that will be run on multiple machines with
-different hardware, then you should set `target` to a common architecture.
-For example:
+Normally, spack builds for the specific architecture on which it is compiled
+(skylake, sapphirerapids, zen3, etc). Some care is required when installing HPCToolkit on a system with multiple kinds of x86_64 processors.
+In some cases, processor heterogeneity is obvious.
+For instance, on NREL's Kestrel platform, some compute nodes employ Intel Sapphire Rapids processors and others employ AMD processors accelerated with NVIDIA GPUs. In other cases, processor heterogeneity is less obvious. On Argonne's Aurora supercomputer, login nodes use Intel Icelake processors while compute nodes use Intel Sapphire Rapids processors.
+
+You can cope with such cases by configuring HPCToolkit for a generic x86_64 processor as follows:
 
 ```
 spack install hpctoolkit target=x86_64
@@ -383,27 +389,28 @@ packages:
     require: "target=x86_64"
 ```
 
-You can see a list spack's targets and families with `spack arch`.
+You can see a list Spack's targets and families with `spack arch`.
 
 ```
 spack arch --known-targets
 ```
 
-See: <https://spack.readthedocs.io/en/latest/spec_syntax.html#architecture-specifiers>
+For further information, see Spack's documentation about [architecture specifiers](https://spack.readthedocs.io/en/latest/spec_syntax.html#architecture-specifiers).
 
+(spack-first-time)=
 ## Running Spack for the First Time
 
-If you have never run spack before, then follow these steps to set up your system.
-Some of these steps may take several minutes for the first time while spack
+If you have never run Spack before, then follow these steps to set up your system.
+Some of these steps may take several minutes for the first time while Spack
 initializes its files.
 
-Start by cloning spack from GitHub.
+Start by cloning Spack from GitHub.
 
 ```
 git clone https://github.com/spack/spack.git
 ```
 
-Source the spack setup script for your shell.
+Source the Spack setup script for your shell.
 This adds `spack` to your `PATH` and sets up support for `spack load`.
 For example, for `bash:`
 
@@ -414,7 +421,7 @@ cd spack/share/spack
 
 If `/usr/bin/python3` is older than 3.8 or 3.9, then find or install a
 later version and set `SPACK_PYTHON` to that path.
-This is the version of `python3` used to run the spack scripts.
+This is the version of `python3` used to run the Spack scripts.
 If a package uses python as a dependency, then that is separate.
 For example:
 
@@ -423,7 +430,7 @@ export SPACK_PYTHON=/usr/bin/python3.11
 ```
 
 Run `spack info` on a small package.
-This will trigger cloning the spack packages repository.
+This will trigger cloning the Spack packages repository.
 
 ```
 spack info zlib
@@ -436,7 +443,7 @@ spack compiler find
 ```
 
 Run `spack solve` or `spack spec` on a small package.
-This will cause spack to install the concretizer, spack's main engine for
+This will cause Spack to install the concretizer, Spack's main engine for
 resolving specs.
 
 ```
@@ -447,7 +454,7 @@ Then you're ready to start installing packages.
 Edit `config.yaml` and `modules.yaml` as described above, run
 `spack external find` as needed, and then install `hpctoolkit`.
 
-If your system compiler is too old, you can have spack build a later one.
+If your system compiler is too old, you can have Spack build a later one.
 For example, on one RHEL 8.x system, `/usr/bin/gcc` is 8.5.0.
 I used that to build gcc 14.3.0 and then used gcc 14.3.0 to build `hpctoolkit`.
 
@@ -458,4 +465,4 @@ spack compiler find
 spack install hpctoolkit %gcc@14.3.0
 ```
 
-See: <https://spack.readthedocs.io/en/latest/getting_started.html>
+For more information about using Spack, consult Spack's [Getting Started](https://spack.readthedocs.io/en/latest/getting_started.html) documentation.

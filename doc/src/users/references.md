@@ -6,44 +6,55 @@ SPDX-License-Identifier: CC-BY-4.0
 
 # References
 
-Adhianto, Laksono, Sinchan Banerjee, Mike Fagan, Mark Krentel, Gabriel Marin, John Mellor-Crummey, and Nathan R. Tallent. 2010. "HPCToolkit: Tools for Performance Analysis of Optimized Parallel Programs." *Concurrency and Computation: Practice and Experience* 22 (6): 685--701. https://doi.org/<http://dx.doi.org/10.1002/cpe.1553>.
+Adhianto L, Anderson J, Barnett RM, et al. Refining HPCToolkit for application performance analysis at exascale. The International Journal of High Performance Computing Applications. 2024;38(6):612-632. <https://dx.doi.org/10.1177/10943420241277839>
 
-Adhianto, Laksono, John Mellor-Crummey, and Nathan R. Tallent. 2010. "Effectively Presenting Call Path Profiles of Application Performance." In *PSTI 2010: Workshop on Parallel Software Tools and Tool Infrastructures, in Conjunction with the 2010 International Conference on Parallel Processing*.
+Dragana Grbic and John Mellor-Crummey. 2025. Analyzing the Performance of Applications at Exascale. In Proceedings of the 39th ACM International Conference on Supercomputing (ICS '25). Association for Computing Machinery, New York, NY, USA, 792–806. <https://doi.org/10.1145/3721145.3730417>
 
-Advanced Micro Devices. n.d. "ROCm Tracer Callback/Activity Library for Performance tracing AMD GPU's."
+Jonathon Anderson, Yumeng Liu, and John Mellor-Crummey. 2022. Preparing for performance analysis at exascale. In Proceedings of the 36th ACM International Conference on Supercomputing (ICS '22). Association for Computing Machinery, New York, NY, USA, Article 34, 1–13. <https://doi.org/10.1145/3524059.3532397>
+
+Keren Zhou, Jonathon Anderson, Xiaozhu Meng, and John Mellor-Crummey. 2022. Low overhead and context sensitive profiling of GPU-accelerated applications. In Proceedings of the 36th ACM International Conference on Supercomputing (ICS '22). Association for Computing Machinery, New York, NY, USA, Article 1, 1–13. <https://doi.org/10.1145/3524059.3532388>
+
+Keren Zhou, Laksono Adhianto, Jonathon Anderson, Aaron Cherian, Dejan Grubisic, Mark Krentel, Yumeng Liu, Xiaozhu Meng, John Mellor-Crummey,
+Measurement and analysis of GPU-accelerated applications with HPCToolkit,
+Parallel Computing, Volume 108, 2021, 102837, <https://doi.org/10.1016/j.parco.2021.102837>.
+
+Adhianto, Laksono, Sinchan Banerjee, Mike Fagan, Mark Krentel, Gabriel Marin, John Mellor-Crummey, and Nathan R. Tallent. 2010. "HPCToolkit: Tools for Performance Analysis of Optimized Parallel Programs." *Concurrency and Computation: Practice and Experience* 22 (6): 685--701. <http://dx.doi.org/10.1002/cpe.1553>.
+
+L. Adhianto, J. Mellor-Crummey and N. R. Tallent, "Effectively Presenting Call Path Profiles of Application Performance," 2010 39th International Conference on Parallel Processing Workshops, San Diego, CA, USA, 2010, pp. 179-188, <http://dx.doi.org/10.1109/ICPPW.2010.35>.
+
+Advanced Micro Devices. "ROCm Tracer Callback/Activity Library for Performance tracing AMD GPU's." <https://rocm.docs.amd.com/projects/roctracer/en/docs-6.2.0/reference/roctracer-spec.html>
 
 Anderson, Jonathon, Yumeng Liu, and John Mellor-Crummey. 2022. "Preparing for Performance Analysis at Exascale." In *Proceedings of the 36th ACM International Conference on Supercomputing*. ICS '22. New York, NY, USA: Association for Computing Machinery. <https://doi.org/10.1145/3524059.3532397>.
 
-Coarfa, Cristian, John Mellor-Crummey, Nathan Froyd, and Yuri Dotsenko. 2007. "Scalability Analysis of SPMD Codes Using Expectations." In *ICS '07: Proc. Of the 21st International Conference on Supercomputing*, 13--22. New York, NY, USA: ACM. https://doi.org/<http://doi.acm.org/10.1145/1274971.1274976>.
+Coarfa, Cristian, John Mellor-Crummey, Nathan Froyd, and Yuri Dotsenko. 2007. "Scalability Analysis of SPMD Codes Using Expectations." In *ICS '07: Proc. Of the 21st International Conference on Supercomputing*, 13--22. New York, NY, USA: ACM. <http://doi.acm.org/10.1145/1274971.1274976>.
 
 Corporation, NVIDIA. 2019. "PC Sampling." <https://docs.nvidia.com/cupti/Cupti/r_main.html#r_pc_sampling>.
 
-Froyd, Nathan, John Mellor-Crummey, and Rob Fowler. 2005. "Low-Overhead Call Path Profiling of Unmodified, Optimized Code." In *Proc. Of the 19th International Conference on Supercomputing*, 81--90. New York, NY, USA: ACM. https://doi.org/<http://doi.acm.org/10.1145/1088149.1088161>.
+Froyd, Nathan, John Mellor-Crummey, and Rob Fowler. 2005. "Low-Overhead Call Path Profiling of Unmodified, Optimized Code." In *Proc. Of the 19th International Conference on Supercomputing*, 81--90. New York, NY, USA: ACM. <http://doi.acm.org/10.1145/1088149.1088161>.
 
-Lawrence Livermore National Laboratory. n.d.a. "Laghos: High-order Lagrangian Hydrodynamics Miniapp."
+Lawrence Livermore National Laboratory. n.d.a. "Laghos: High-order Lagrangian Hydrodynamics Miniapp." <https://github.com/CEED/Laghos/blob/master/README.md>
 
-n.d.b. "Quicksilver: A Proxy App for the Monte Carlo Transport Code, Mercury."
+"Quicksilver: A Proxy App for the Monte Carlo Transport Code, Mercury." <https://asc.llnl.gov/codes/proxy-apps/quicksilver>
 
 Libpfm4. 2008. "Libpfm4: A Helper Library for Performance Tools Using Hardware Counters." <http://perfmon2.sf.net/>.
 
-McKenney, Paul E. 1999. "Differential Profiling." *Software: Practice and Experience* 29 (3): 219--34. https://doi.org/[http://dx.doi.org/10.1002/(SICI)1097-024X(199903)29:3\<219::AID-SPE230>3.0.CO;2-0](<http://dx.doi.org/10.1002/(SICI)1097-024X(199903)29:3%3C219::AID-SPE230%3E3.0.CO;2-0>).
+McKenney, Paul E. 1999. "Differential Profiling." *Software: Practice and Experience* 29 (3): 219--34. <http://dx.doi.org/10.1002/(SICI)1097-024X(199903)29:3%3C219::AID-SPE230%3E3.0.CO;2-0>.
 
 Mytkowicz, Todd, Amer Diwan, Matthias Hauswirth, and Peter F. Sweeney. 2009. "Producing Wrong Data Without Doing Anything Obviously Wrong!" *SIGARCH Comput. Archit. News* 37 (1): 265--76. <https://doi.org/10.1145/2528521.1508275>.
 
-NVIDIA Corporation. 2019. \*\*.
 
-Rice University. n.d. "HPCToolkit Performance Tools." <http://hpctoolkit.org>.
+Linux Foundation. "HPCToolkit Performance Tools." <http://hpctoolkit.org>.
 
-Tallent, Nathan R., Laksono Adhianto, and John M. Mellor-Crummey. 2010. "Scalable Identification of Load Imbalance in Parallel Executions Using Call Path Profiles." In *SC '10: Proc. Of the 2010 ACM/IEEE Conference on Supercomputing*, 1--11. Washington, DC, USA: IEEE Computer Society. https://doi.org/<http://dx.doi.org/10.1109/SC.2010.47>.
+Tallent, Nathan R., Laksono Adhianto, and John M. Mellor-Crummey. 2010. "Scalable Identification of Load Imbalance in Parallel Executions Using Call Path Profiles." In *SC '10: Proc. Of the 2010 ACM/IEEE Conference on Supercomputing*, 1--11. Washington, DC, USA: IEEE Computer Society. <http://dx.doi.org/10.1109/SC.2010.47>.
 
-Tallent, Nathan R., and John Mellor-Crummey. 2009. "Effective Performance Measurement and Analysis of Multithreaded Applications." In *PPoPP '09: Proc. Of the 14th ACM SIGPLAN Symposium on Principles and Practice of Parallel Programming*, 229--40. New York, NY, USA: ACM. https://doi.org/<http://doi.acm.org/10.1145/1504176.1504210>.
+Tallent, Nathan R., and John Mellor-Crummey. 2009. "Effective Performance Measurement and Analysis of Multithreaded Applications." In *PPoPP '09: Proc. Of the 14th ACM SIGPLAN Symposium on Principles and Practice of Parallel Programming*, 229--40. New York, NY, USA: ACM. <http://doi.acm.org/10.1145/1504176.1504210>.
 
-Tallent, Nathan R., John M. Mellor-Crummey, Laksono Adhianto, Michael W. Fagan, and Mark Krentel. 2009. "Diagnosing Performance Bottlenecks in Emerging Petascale Applications." In *SC '09: Proc. Of the 2009 ACM/IEEE Conference on Supercomputing*, 1--11. New York, NY, USA: ACM. https://doi.org/<http://doi.acm.org/10.1145/1654059.1654111>.
+Tallent, Nathan R., John M. Mellor-Crummey, Laksono Adhianto, Michael W. Fagan, and Mark Krentel. 2009. "Diagnosing Performance Bottlenecks in Emerging Petascale Applications." In *SC '09: Proc. Of the 2009 ACM/IEEE Conference on Supercomputing*, 1--11. New York, NY, USA: ACM. <http://doi.acm.org/10.1145/1654059.1654111>.
 
-Tallent, Nathan R., John M. Mellor-Crummey, Michael Franco, Reed Landrum, and Laksono Adhianto. 2011. "Scalable Fine-Grained Call Path Tracing." In *ICS '11: Proc. Of the 25th International Conference on Supercomputing*, 63--74. New York, NY, USA: ACM. https://doi.org/<http://doi.acm.org/10.1145/1995896.1995908>.
+Tallent, Nathan R., John M. Mellor-Crummey, Michael Franco, Reed Landrum, and Laksono Adhianto. 2011. "Scalable Fine-Grained Call Path Tracing." In *ICS '11: Proc. Of the 25th International Conference on Supercomputing*, 63--74. New York, NY, USA: ACM. <http://doi.acm.org/10.1145/1995896.1995908>.
 
-Tallent, Nathan R., John M. Mellor-Crummey, and Allan Porterfield. 2010. "Analyzing Lock Contention in Multithreaded Applications." In *PPoPP '10: Proc. Of the 15th ACM SIGPLAN Symposium on Principles and Practice of Parallel Programming*, 269--80. New York, NY, USA: ACM. https://doi.org/<http://doi.acm.org/10.1145/1693453.1693489>.
+Tallent, Nathan R., John M. Mellor-Crummey, and Allan Porterfield. 2010. "Analyzing Lock Contention in Multithreaded Applications." In *PPoPP '10: Proc. Of the 15th ACM SIGPLAN Symposium on Principles and Practice of Parallel Programming*, 269--80. New York, NY, USA: ACM. <http://doi.acm.org/10.1145/1693453.1693489>.
 
-Tallent, Nathan R., John Mellor-Crummey, and Michael W. Fagan. 2009. "Binary Analysis for Measurement and Attribution of Program Performance." In *PLDI '09: Proc. Of the 2009 ACM SIGPLAN Conference on Programming Language Design and Implementation*, 441--52. New York, NY, USA: ACM. https://doi.org/<http://doi.acm.org/10.1145/1542476.1542526>.
+Tallent, Nathan R., John Mellor-Crummey, and Michael W. Fagan. 2009. "Binary Analysis for Measurement and Attribution of Program Performance." In *PLDI '09: Proc. Of the 2009 ACM SIGPLAN Conference on Programming Language Design and Implementation*, 441--52. New York, NY, USA: ACM. <http://doi.acm.org/10.1145/1542476.1542526>.
 
 Tallent, Nathan, John Mellor-Crummey, Laksono Adhianto, Mike Fagan, and Mark Krentel. 2008. "HPCToolkit: Performance Tools for Scientific Computing." *Journal of Physics: Conference Series* 125: 012088 (5pp). <http://stacks.iop.org/1742-6596/125/012088>.
