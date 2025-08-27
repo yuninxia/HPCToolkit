@@ -112,7 +112,13 @@ See: <https://spack.readthedocs.io/en/latest/configuration.html#>
 
 ## Installing a Basic HPCToolkit 
 
-Here we explain how to install a basic version of HPCToolkit with Spack. Following these directions will build and install a version of HPCToolkit that only profiles a program's CPU activity. To inatall a GPU-aware version of HPCToolkit or configure HPCToolkit for post-mortem analysis of thousands of profiles, see the [Configuration Options](#configuration-options) section on this page for descriptions of options that can be provided to a Spack install.
+Here we explain how to install a basic version of HPCToolkit with Spack.
+The directions immediately below build and install a version of HPCToolkit
+that profiles only a program's CPU activity.
+To install a GPU-aware version of HPCToolkit or configure HPCToolkit for post-mortem
+analysis of thousands of profiles, see the [Configuration Options](#configuration-options)
+section on this page for a description of how to enable optional HPCToolkit features when building
+with Spack.
 
 Although spack can install packages with a single `spack install`
 command, we recommend that you always run `spack spec` first to verify
