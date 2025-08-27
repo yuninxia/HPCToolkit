@@ -51,7 +51,7 @@ $ spack load hpctoolkit [+features...]
 For more information about Spack and how to install HPCToolkit using Spack, see the HPCToolkit User's Manual section [Installing HPCToolkit using Spack](https://hpctoolkit.gitlab.io/hpctoolkit/users/spack.html)
 
 
-## Building HPCToolkit from source with Meson (recommended for developers)
+## Building HPCToolkit from Source with Meson (recommended for developers)
 
 HPCToolkit supports building from source using [Meson](https://mesonbuild.com).
 
@@ -60,6 +60,15 @@ For information about Meson and how to build HPCToolkit from source using Meson,
 ## Documentation
 
 The HPCToolkit User Manual is available [here](https://hpctoolkit.gitlab.io/hpctoolkit/index.html).
+
+## Getting Help
+
+The HPCToolkit project team operates the 'HPCToolkit Users' Discord server.
+Discord offers a Slack-like experience for interacting developers and other users.
+We welcome questions, problem reports, or feature requests.
+
+[Join here!](https://discord.gg/erpsXZB4Vr)
+
 
 ## License
 
