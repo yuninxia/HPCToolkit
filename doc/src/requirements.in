@@ -4,3 +4,4 @@
 
 Sphinx>=6,<9
 myst-parser>=3,<5
+sphinx-book-theme>=1,<2
