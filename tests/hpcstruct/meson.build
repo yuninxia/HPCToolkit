@@ -35,6 +35,7 @@ endforeach
 _tst = find_program(files('tst-consistent'))
 foreach name, struct : testdata_struct
   _threads = [1, 3]
+  _timeout = 30
   _args = [
     hpctesttool,
     hpcstruct,
@@ -44,15 +45,18 @@ foreach name, struct : testdata_struct
   ]
   _suffix = struct['gpucfg'] ? '+gpucfg' : ''
 
-  # FIXME: Multithread cases frequently fail consistency for CUDA binaries.
-  # See https://gitlab.com/hpctoolkit/hpctoolkit/-/issues/733
   if struct['binary'].get('cuda', false)
-    _threads = [1]
-
     # If the required support is not available, do not emit any tests.
     if struct['gpucfg'] and not nvdisasm.found()
       continue
     endif
+
+    # nvdisasm is quite slow. Don't let it cause test failures due to timeouts.
+    _timeout = 0
+
+    # FIXME: Multithread cases frequently fail consistency for CUDA binaries.
+    # See https://gitlab.com/hpctoolkit/hpctoolkit/-/issues/733
+    _threads = [1]
   endif
 
   foreach threads : _threads
@@ -90,6 +94,7 @@ foreach name, struct : testdata_struct
       args: _args + [f'-j@threads@'],
       suite: 'hpcstruct',
       should_fail: _should_fail,
+      timeout: _timeout,
     )
   endforeach
 endforeach

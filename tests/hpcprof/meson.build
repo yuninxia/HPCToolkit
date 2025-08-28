@@ -9,6 +9,7 @@ foreach name, meas : testdata_meas
     _tst,
     args: [hpctesttool, hpcprof, meas['dir']],
     suite: 'hpcprof',
+    timeout: 60,  # These tests run hpcprof twice
   )
 endforeach
 
@@ -27,6 +28,7 @@ foreach name, dbase : testdata_dbase
         dbase['measurements']['dir'],
       ],
       suite: 'hpcprof',
+      timeout: 30 * threads,  # Multithreaded tests may need extra time
     )
   endforeach
 endforeach
