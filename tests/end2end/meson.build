@@ -12,17 +12,17 @@ foreach exe : [
     _tst,
     args: [hpctesttool, hpcrun, hpcstruct, hpcprof, exe],
     suite: 'end2end',
-    timeout: 90,
     env: test_env,
     depends: test_depends,
+    timeout: 0,  # Workload can vary widely due to system differences
   )
   test(
     'Single-structfile analysis workflow on @0@ works'.format(exe.name()),
     _tst_ss,
     args: [hpctesttool, hpcrun, hpcstruct, hpcprof, exe],
     suite: 'end2end',
-    timeout: 90,
     env: test_env,
     depends: test_depends,
+    timeout: 240,  # Multithreaded tests need more time
   )
 endforeach

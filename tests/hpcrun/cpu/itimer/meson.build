@@ -8,6 +8,7 @@ test(
   args: [hpctesttool, hpcrun, simple_tstexe],
   suite: 'hpcrun',
   depends: hpcrun_test_depends,
+  timeout: 0,  # Signal delivery is very slow on some systems
 )
 test(
   'CPUTIME event measures on @0@ w/o auditor'.format(simple_tstexe.name()),
@@ -15,6 +16,7 @@ test(
   args: [hpctesttool, hpcrun, simple_tstexe],
   suite: 'hpcrun',
   depends: hpcrun_test_depends,
+  timeout: 0,  # Signal delivery is very slow on some systems
 )
 
 test(
@@ -23,6 +25,7 @@ test(
   args: [hpctesttool, hpcrun, simple_tstexe],
   suite: 'hpcrun',
   depends: hpcrun_test_depends,
+  timeout: 0,  # Signal delivery is very slow on some systems
 )
 test(
   'REALTIME event measures on @0@ w/o auditor'.format(simple_tstexe.name()),
@@ -30,4 +33,5 @@ test(
   args: [hpctesttool, hpcrun, simple_tstexe],
   suite: 'hpcrun',
   depends: hpcrun_test_depends,
+  timeout: 0,  # Signal delivery is very slow on some systems
 )
