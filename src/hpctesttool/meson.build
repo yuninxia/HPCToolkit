@@ -46,7 +46,6 @@ _env.set('TEST_DATA_DIR', meson.current_source_dir() / '../../tests/data')
 test(
   'pytest',
   find_program('sh'),
-  timeout: 0,
   protocol: 'gtest',
   verbose: true,
   env: _env,

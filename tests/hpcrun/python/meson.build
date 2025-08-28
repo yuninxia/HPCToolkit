@@ -13,6 +13,7 @@ test(
   args: [hpctesttool, hpcrun, hpcprof, python.full_path(), files('simple-1thread'), '1'],
   suite: ['hpcrun', 'python'],
   depends: hpcrun_test_depends,
+  timeout: 0,  # Signal delivery is very slow on some systems
 )
 test(
   'Measurement of simple-mthread unwound Python',
@@ -22,6 +23,7 @@ test(
   depends: hpcrun_test_depends,
   # FIXME: The Python support currently can't detect Python-spawned threads
   should_fail: true,
+  timeout: 0,  # Signal delivery is very slow on some systems
 )
 test(
   'Measurement of simple-exception unwound Python',
@@ -36,6 +38,7 @@ test(
   ],
   suite: ['hpcrun', 'python'],
   depends: hpcrun_test_depends,
+  timeout: 0,  # Signal delivery is very slow on some systems
 )
 test(
   'Measurement of simple-signals unwound Python',
@@ -43,6 +46,7 @@ test(
   args: [hpctesttool, hpcrun, hpcprof, python.full_path(), files('simple-signals'), '1'],
   suite: ['hpcrun', 'python'],
   depends: hpcrun_test_depends,
+  timeout: 0,  # Signal delivery is very slow on some systems
 )
 
 _tst = find_program(files('tst-python-simple-noaudit'))
@@ -52,4 +56,5 @@ test(
   args: [hpctesttool, hpcrun, hpcprof, python.full_path(), files('simple-1thread'), '1'],
   suite: ['hpcrun', 'python'],
   depends: hpcrun_test_depends,
+  timeout: 0,  # Signal delivery is very slow on some systems
 )
