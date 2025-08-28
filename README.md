@@ -31,22 +31,19 @@ The sibling HPCViewer graphical explorer supports a wider range of platforms, se
 
 ## Getting HPCToolkit via Spack (recommended for users)
 
-For system administrators or users, the recommended way to install HPCToolkit using [Spack](https://spack.readthedocs.io/en/latest). If you have an installation of Spack at your fingertips, you can inquire about HPCToolkit installation options as shown below:
+For system administrators or users, the recommended way to install HPCToolkit using [Spack](https://spack.readthedocs.io/en/latest).
 
-```console
-$ spack info hpctoolkit
-```
-
-You can install HPCToolkit with Spack as shown below:
+You can install HPCToolkit with Spack and load into your shell with the following commands:
 
 ```console
 $ spack install hpctoolkit [+features...]
+$ spack load hpctoolkit [+features...]
 ```
 
-You can load a version of HPCToolkit installed with Spack as shown below:
+To inquire about the optional features available when installing HPCToolkit (e.g. support for various GPUs), use the following command:
 
 ```console
-$ spack load hpctoolkit [+features...]
+$ spack info hpctoolkit
 ```
 
 For more information about Spack and how to install HPCToolkit using Spack, see the HPCToolkit User's Manual section [Installing HPCToolkit using Spack](https://hpctoolkit.gitlab.io/hpctoolkit/users/spack.html)
@@ -54,6 +51,13 @@ For more information about Spack and how to install HPCToolkit using Spack, see 
 ## Building HPCToolkit from Source with Meson (recommended for developers)
 
 HPCToolkit supports building from source using [Meson](https://mesonbuild.com).
+
+```console
+$ meson setup builddir/
+$ cd builddir/
+$ meson compile  # -OR- ninja
+$ meson test     # -OR- ninja test
+```
 
 For information about Meson and how to build HPCToolkit from source using Meson, see the HPCToolkit User's Manual section [Building from Source using Meson](https://hpctoolkit.gitlab.io/hpctoolkit/users/meson.html)
 
