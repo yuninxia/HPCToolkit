@@ -6,55 +6,6 @@ SPDX-License-Identifier: CC-BY-4.0
 
 # FAQ and Troubleshooting
 
-To measure an application's performance with HPCToolkit, one must add
-HPCToolkit's measurement subsystem to an application's address
-space.
-
-- For a statically-linked binary, one adds HPCToolkit's
-  measurement subsystem directly into the binary
-  by prefixing your link command
-  with HPCToolkit's `hpclink` command.
-
-- For a dynamically-linked
-  binary, launching your application with HPCToolkit's `hpcrun`
-  command pre-loads HPCToolkit's measurement subsystem into your
-  application's address space before the application begins to execute.
-
-In this chapter, for convenience, we refer to HPCToolkit's measurement
-system simply as `hpcrun` since the measurement subsystem is most commonly used
-with dynamically-linked binaries. From the context, it should be clear enough
-whether we are talking about HPCToolkit's measurement subsystem
-or the `hpcrun` command itself.
-
-## Instrumenting Statically-linked Applications
-
-### Using `hpclink` with `cmake`
-
-When creating a statically-linked executable with `cmake`, it is not obvious how to add `hpclink` as a prefix to a link command. Unless it is overridden somewhere along the way, the following rule found in `Modules/CMakeCXXInformation.cmake` is
-used to create the link command line for a C++ executable:
-
-```cmake
-if(NOT CMAKE_CXX_LINK_EXECUTABLE)
-  set(CMAKE_CXX_LINK_EXECUTABLE
-      "<CMAKE_CXX_COMPILER> <FLAGS> <CMAKE_CXX_LINK_FLAGS> <LINK_FLAGS>
-                            <OBJECTS> -o <TARGET> <LINK_LIBRARIES>")
-endif()
-```
-
-As the rule shows, by default, the C++ compiler is used to link C++ executables. One way to change this is to override the definition for `CMAKE_CXX_LINK_EXECUTABLE` on the `cmake` command line so that it includes the necessary `hpclink` prefix, as shown below:
-
-```bash
-cmake srcdir ... \
-    -DCMAKE_CXX_LINK_EXECUTABLE="hpclink <CMAKE_CXX_COMPILER> \
-        <FLAGS> <CMAKE_CXX_LINK_FLAGS> <LINK_FLAGS> <OBJECTS> -o <TARGET> \
-        <LINK_LIBRARIES>" ...
-```
-
-If your project has executables linked with a C or Fortran compiler, you will need analogous redefinitions for `CMAKE_C_LINK_EXECUTABLE` or `CMAKE_Fortran_LINK_EXECUTABLE` as well.
-
-Rather than adding the redefinitions of these linker rules to the `cmake` command line,
-you may find it more convenient to add definitions of these rules to your `CMakeLists.cmake` file.
-
 ## General Measurement Failures
 
 ### Unable to find HPCTOOLKIT root directory
