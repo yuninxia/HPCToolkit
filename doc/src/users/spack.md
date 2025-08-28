@@ -42,7 +42,6 @@ Spack Documentation:
 
 - <https://spack.readthedocs.io/en/latest>
 
-Last revised: August 2025.
 
 ## Config Files
 
@@ -50,7 +49,10 @@ Spack uses a variety of config files for setting paths, options, etc.
 The simplest way to set or change a value is to copy the default file from
 `spack/etc/spack/defaults` one directory up and make the change there.
 
-**Config.yaml**
+A complete discussion of this topic is available in Spack's documentation about [configuration files](https://spack.readthedocs.io/en/latest/configuration.html).
+Here, we only mention a few key configuration details that you might want to adjust when installing HPCToolkit with Spack.
+
+### Config.yaml
 In `config.yaml`, you may want to set the path to the install tree.
 
 ```
@@ -60,7 +62,7 @@ config:
     root:  /path/to/root/of/install/tree
 ```
 
-**Modules.yaml**
+### Modules.yaml
 If you are using modules (TCL or Lmod), you need to `enable` the module type
 and provide the path to the modules directory.
 
@@ -78,11 +80,12 @@ modules:
      - lmod
 ```
 
-**Important:**
+```{important}
 You should disable the module `autoload` feature for `hpctoolkit`.
 HPCToolkit does not need its dependency modules loaded and loading them
 may interfere with your application's dependencies.
 Do this for both `tcl` and `lmod` modules (whichever one you are using).
+```
 
 ```
 modules:
@@ -101,14 +104,13 @@ modules:
         autoload: direct
 ```
 
-**Note:**
+```{tip}
 If you forget to turn off `autoload` for `hpctoolkit`, you don't have
 to start over from scratch.
 You can uninstall `hpctoolkit`, fix the `modules.yaml` file and then
 reinstall `hpctoolkit`.
 Or, you could just hand edit the module file.
-
-See: <https://spack.readthedocs.io/en/latest/configuration.html#>
+```
 
 ## Installing a Basic HPCToolkit
 
@@ -138,25 +140,52 @@ Then, install HPCToolkit with:
 spack install hpctoolkit
 ```
 
-**Tip:**
-We recommend using the latest versions for `hpctoolkit` and `dyninst`.
-If the latest release is somewhat old, then consider using hpctoolkit
-`develop` and dyninst `master`.
+
+```{important}
+Normally, Spack builds HPCToolkit for the specific architecture (skylake, sapphirerapids, zen3, etc) on which `spack install hpctoolkit` is run.
+Some care is required when installing HPCToolkit on a system that contains multiple kinds of x86_64 processors. A default Spack build of HPCToolkit on one kind of x86_64 processor and running on another may cause `illegal instruction` errors.
+
+It is worth noting that in some cases, processor heterogeneity is less than obvious. For example, on Argonne's Aurora supercomputer, login nodes use Intel Icelake processors while compute nodes use Intel Sapphire Rapids processors. 
+
+You can avoid problems when multiple kinds of x86_64 processors are present by configuring HPCToolkit for a generic x86_64 processor as follows:
+
+`spack install hpctoolkit target=x86_64`
+```
+
+HPCToolkit can also be configured for a generic x86_64 target in `packages.yaml` with:
 
 ```
-spack install hpctoolkit@develop ^dyninst@master
+packages:
+  all:
+    require: "target=x86_64"
 ```
 
-By default, this will build a `release` version of `hpctoolkit`
+You can see a list Spack's targets and families with `spack arch`.
+
+```
+spack arch --known-targets
+```
+
+For further information, see Spack's documentation about [architecture specifiers](https://spack.readthedocs.io/en/latest/spec_syntax.html#architecture-specifiers).
+
+```{tip} Configuring HPCToolkit for debugging
+By default, Spack will build a `release` version of `hpctoolkit`
 (full optimization and no debug info).
 If you want a `debug` version, use the `buildtype` variant.
 
-```
+`
 spack install hpctoolkit buildtype=debug
-```
+`
 
 Possible values for `buildtype` are `release` (default), `debug`,
 `debugoptimized`, `minsize` and `plain`.
+```
+
+```{tip}
+If you encounter problems with the latest release of HPCToolkit, you might trying the in-development versions of HPCToolkit and Dyninst; namely, `hpctoolkit@develop` and `dyninst@master`: 
+
+   `spack install hpctoolkit@develop ^dyninst@master`
+```
 
 ## Installing Hpcviewer
 
@@ -175,12 +204,12 @@ and aarch64), Windows (x86_64) and MacOS (x86_64 and Apple M-series processors).
 `Hpcviewer` uses Java 17 or later, but this is installed automatically by Spack as a dependency
 of `hpcviewer`.
 
-**Note:**
+```{note}
 HPCToolkit databases are platform-independent and it is common to run
 `hpcrun` on one machine and then view the results on another machine.
+```
 
 (configuration-options)=
-
 ## Configuration Options
 
 ### CUDA (`+cuda`)
@@ -213,10 +242,6 @@ Then, build `hpctoolkit` with `+cuda`.
 ```
 spack install hpctoolkit +cuda
 ```
-
-**Note:**
-`cmake` 3.30 and 3.31 don't detect CUDA properly.
-So, if building with CUDA, then use `cmake` 3.29 or 4.0 or later.
 
 ### Level Zero (`+level_zero`)
 
@@ -264,10 +289,7 @@ For example:
 
 ```
 module load rocm/6.4.0
-spack external find hip
-spack external find hsa-rocr-dev
-spack external find roctracer-dev
-spack external find rocprofiler-dev
+spack external find hip hsa-rocr-dev roctracer-dev rocprofiler-dev
 ```
 
 This should create entries in `packages.yaml` similar to the following.
@@ -341,9 +363,10 @@ packages:
       - mpich/4.1.2
 ```
 
-**Note:**
+```{note}
 This version of MPI is for `hpcprof-mpi` only and is entirely separate from
 any MPI in your application.
+```
 
 ### PAPI vs Perfmon (`+papi`)
 
@@ -373,36 +396,6 @@ spack install hpctoolkit +python
 
 You should use python 3.10 or later and use the same version as the application.
 
-## Helpful Hints
-
-### Generic Targets
-
-Normally, spack builds for the specific architecture on which it is compiled
-(skylake, sapphirerapids, zen3, etc). Some care is required when installing HPCToolkit on a system with multiple kinds of x86_64 processors.
-In some cases, processor heterogeneity is obvious.
-For instance, on NREL's Kestrel platform, some compute nodes employ Intel Sapphire Rapids processors and others employ AMD processors accelerated with NVIDIA GPUs. In other cases, processor heterogeneity is less obvious. On Argonne's Aurora supercomputer, login nodes use Intel Icelake processors while compute nodes use Intel Sapphire Rapids processors.
-
-You can cope with such cases by configuring HPCToolkit for a generic x86_64 processor as follows:
-
-```
-spack install hpctoolkit target=x86_64
-```
-
-You can also set this in `packages.yaml` with:
-
-```
-packages:
-  all:
-    require: "target=x86_64"
-```
-
-You can see a list Spack's targets and families with `spack arch`.
-
-```
-spack arch --known-targets
-```
-
-For further information, see Spack's documentation about [architecture specifiers](https://spack.readthedocs.io/en/latest/spec_syntax.html#architecture-specifiers).
 
 (spack-first-time)=
 
