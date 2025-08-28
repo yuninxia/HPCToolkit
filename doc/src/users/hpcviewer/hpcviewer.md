@@ -19,7 +19,7 @@ This time dimension is only available if the application is profiled with traces
 Finally, the *metric* dimension constitutes program measurements performed by *hpcrun* such as cycles, number of instructions, stall percentages and also some derived metrics such as ratio of idleness.
 
 To simplify performance data visualization, `hpcviewer` restricts
-display two dimensions at a time: the *Profile view* (Section [10.2](#sec:profile)) displays
+display two dimensions at a time: the *Profile viewer* (Section [10.2](#sec:profile)) displays
 pairs of (tree node context, metric) or (execution context,
 metric) dimensions; and the *Trace viewer* (Section [10.9](#sec:trace)) visualizes the
 behavior of execution contexts over time.
@@ -27,14 +27,14 @@ Table below summarizes views supported by hpcviewer.
 
 | View                  | Dimension                    | Note                                                                |
 | :-------------------- | :--------------------------- | :------------------------------------------------------------------ |
-| Profile view - Table  | Tree node context x Metrics  | display the tree and its associated metrics                         |
-| Profile view - Thread | Tree node context x Metrics  | display the tree and its metrics for a set of execution contexts    |
-| Profile view - Graph  | Execution contexts x Metrics | display a metric of a specific tree node for all execution contexts |
-| Trace view - Main     | Execution contexts x Time    | display execution context behavior over time                        |
-| Trace view - Depth    | Tree node context x Time     | display call stacks over time of an execution context               |
+| Profile viewer - Table  | Tree node context x Metrics  | display the tree and its associated metrics                         |
+| Profile viewer - Thread | Tree node context x Metrics  | display the tree and its metrics for a set of execution contexts    |
+| Profile viewer - Graph  | Execution contexts x Metrics | display a metric of a specific tree node for all execution contexts |
+| Trace viewer - Main     | Execution contexts x Time    | display execution context behavior over time                        |
+| Trace viewer - Depth    | Tree node context x Time     | display call stacks over time of an execution context               |
 
-Note that in the Profile view, GPU stream execution contexts are not shown in this view; metrics for a GPU operation are associated with the calling context in the thread that initiated the GPU operation (Section [10.6](#sec:hpcviewer:thread-level)).
-In the Trace view, GPU streams have their own trace lines independently from their host so that it allows to separate traces between hosts and devices.
+Note that in the Profile viewer, GPU stream execution contexts are not shown in this view; metrics for a GPU operation are associated with the calling context in the thread that initiated the GPU operation (Section [10.6](#sec:hpcviewer:thread-level)).
+In the Trace viewer, GPU streams have their own trace lines independently from their host so that it allows to separate traces between hosts and devices.
 
 ## Launching
 
@@ -70,28 +70,28 @@ On MacOS, this file is located at `hpcviewer.app/Contents/Eclipse/hpcviewer.ini`
 
 (sec:profile)=
 
-## Profile View
+## Profile Viewer
+
+The Profile viewer is the default view and displays pairs of \<context, metric> dimensions.
+It interactively presents context-sensitive performance metrics correlated to program structure and mapped to a program's source code, if available.
+It can present an arbitrary collection of performance metrics gathered during one or more runs or compute derived metrics.
 
 ```{figure-md} fig:hpcviewer-legend
 ![](hpcviewer-legend.png)
 
-An annotated screenshot of `hpcviewer`'s interface.
+Figure 10.1: An annotated screenshot of `hpcviewer`'s interface.
 ```
 
-This view is the default view and displays pairs of \<context, metric> dimensions.
-It interactively presents context-sensitive performance metrics correlated to program structure and mapped to a program's source code, if available.
-It can present an arbitrary collection of performance metrics gathered during one or more runs or compute derived metrics.
-
-Figure [10.1](#fig:hpcviewer-legend) shows an annotated screenshot of `hpcviewer`'s user interface presenting a call path profile.
+Figure [10.1](#fig:hpcviewer-legend) shows an annotated screenshot of `hpcviewer`'s user interface presenting a call path profile in its Profile viewer.
 The annotations highlight `hpcviewer`'s principal window panes and key controls.
 The browser window is divided into three panes.
 The Source pane (top) displays program source code.
 The Navigation and Metric panes (bottom) associate a table of performance metrics with static or dynamic program structure.
 These panes are discussed in more detail in Section [10.3](#sec:hpcviewer:panes).
 
-`hpcviewer` displays calling-context-sensitive performance data in three different views: a top-down *Top-down View*, a bottom-up *Bottom-up View*, and a *Flat View*.
+`hpcviewer` displays calling-context-sensitive performance data in three different views: a *Top-down View*, a *Bottom-up View*, and a *Flat View*.
 One selects the desired view by clicking on the corresponding view control tab.
-We briefly describe the three views and their corresponding purposes.
+We briefly describe the three views of profile data and their corresponding purposes.
 
 - **Top-down View**.
   This top-down view shows the dynamic calling contexts (call paths) in which costs were incurred.
@@ -122,7 +122,7 @@ We briefly describe the three views and their corresponding purposes.
 
 ## Panes
 
-`hpcviewer`'s browser window is divided into three panes: the *Navigation pane*, *Source pane*, and the *Metrics pane*.
+`hpcviewer`'s Profile viewer is divided into three panes: the *Navigation pane*, *Source pane*, and the *Metrics pane*.
 We briefly describe the role of each pane.
 
 ### Source Pane
@@ -239,7 +239,7 @@ Vertical scrolling of the metric and navigation panes is synchronized.
 
 `hpcviewer` can present an arbitrary collection of performance metrics gathered during one or more runs, or compute derived metrics expressed as formulae. A derived metric may be specified with a formula that typically uses one or more existing metrics as terms in an expression.
 
-For any given scope in `hpcviewer`'s three views, `hpcviewer` computes both *inclusive* and *exclusive* metric values.
+For any given scope in `hpcviewer`'s Profile viewer computes both *inclusive* and *exclusive* metric values in the Top-down, Bottom-up, and Flat views.
 First, consider the Top-down View.
 Inclusive metrics reflect costs for the entire subtree rooted at that scope.
 Exclusive metrics are of two flavors, depending on the scope.
@@ -290,25 +290,25 @@ h () {
 }
 ```
 
-A sample program divided into two source files.
+Figure 10.2: A sample program divided into two source files.
 ````
 
 ```{figure-md} fig:cct
 ![](metrics-cct.png)
 
-Top-down View. Each node of the tree has three boxes: the left-most is the name of the node (or in this case the name of the routine, the center is the inclusive value, and on the right is the exclusive value.
+Figure 10.3: Top-down View. Each node of the tree has three boxes: the left-most is the name of the node (or in this case the name of the routine, the center is the inclusive value, and on the right is the exclusive value.
 ```
 
 ```{figure-md} fig:metrics-callers
 ![](metrics-callers.png)
 
-Bottom-up View
+Figure 10.4: Bottom-up View
 ```
 
 ```{figure-md} fig:metrics-flat
 ![](metrics-flat.png)
 
-Flat View
+Figure 10.5: Flat View
 ```
 
 Figure [10.2](#fig:source-files) shows an example of a recursive program separated into two files, `file1.c` and `file2.c`.
@@ -371,7 +371,7 @@ width: 80.0%
 ---
 ![](hpcviewer-dialog-derived-metric.png)
 
-Derived metric dialog box
+Figure 10.6: Derived metric dialog box
 ```
 
 A derived metric can be created by clicking the **Derived metric** tool item in the navigation/control pane.
@@ -418,15 +418,15 @@ One can then review again the formula (or metric name) by clicking the small tri
 
 (sec:hpcviewer:thread-level)=
 
-## Metrics in Execution-context level
+## Execution Contexts
 
-**Execution context** is an abstract concept of a measurable code execution.
+An **execution context** is an abstract concept of a measurable code execution.
 For example, in a pure MPI application, an execution context is an MPI rank,
 while an execution context of an OpenMP application is an OpenMP thread,
 and an execution context of GPU applications can be a GPU stream.
 For hybrid MPI+OpenMP applications, its execution context is its MPI rank and its OpenMP master and worker threads.
 
-There are two types of execution context: **physical** such as NODE and CORE, and **logical** like RANK, THREAD, GPUCONTEXT and GPUSTREAM.
+There are two types of execution context: **physical** contexts such as NODE and CORE, and **logical** contexts such as RANK, THREAD, GPUCONTEXT and GPUSTREAM.
 NODE is the id of the compute node, RANK is the rank of the process (like MPI),
 CORE is the CPU core where the application thread is bound to,
 THREAD is the application CPU thread (such as OpenMP thread),
@@ -443,7 +443,8 @@ width: 80.0%
 ---
 ![](hpcviewer-view-rawmetrics.png)
 
-Plot graph view of a procedure in GAMESS MPI+OpenMP application showing a imbalance where a group of execution contexts have much higher GPU operations than others.
+Figure 10.7: Plot graph view of the time in seconds of GPU operations for a procedure in 
+GAMESS---an MPI+OpenMP ab-initio quantum chemistry code---showing a imbalance where a group of execution contexts have much higher GPU operations than others.
 ```
 
 HPCToolkit Experiment databases that have been generated by `hpcprof` can be used by `hpcviewer` to plot graphs of metric values for each execution context.
@@ -491,7 +492,7 @@ width: 80.0%
 ---
 ![](hpcviewer-dialog-thread.png)
 
-A snapshot of a thread filter dialog. Users can refine the list of threads using regular expression by selecting the Regular expression checkbox.
+Figure 10.8: A snapshot of a thread filter dialog. Users can refine the list of threads using regular expression by selecting the Regular expression checkbox.
 ```
 
 ```{figure-md} fig:hpcviewer-view-thread-level
@@ -500,7 +501,7 @@ width: 80.0%
 ---
 ![](hpcviewer-thread-table.png)
 
-Example of a Thread View which display thread-level metrics of a set of threads. The first column is a CCT equivalent to the CCT in the Top-down View, the second and third columns represent the metrics of the selected threads (in this case they are the sum of metrics from threads 0.1, to 7.1)
+Figure 10.9: Example of a Thread View which display thread-level metrics of a set of threads. The first column is a CCT equivalent to the CCT in the Top-down View, the second and third columns represent the metrics of the selected threads (in this case they are the sum of metrics from threads 0.1, to 7.1)
 ```
 
 `hpcviewer` also provides a feature to view the metrics of a certain threads (or processes) named Thread View.
@@ -536,13 +537,13 @@ remove matched nodes and its descendants.
 ```{figure-md} fig:filter-cct
 ![](hpcviewer-filter-cct.png)
 
-The original CCT tree.
+Figure 10.10: The original CCT tree.
 ```
 
 ```{figure-md} fig:filter-self
 ![](hpcviewer-filter-self.png)
 
-The result of applying *self only* filter on node `C`.
+Figure 10.11: The result of applying *self only* filter on node `C`.
 Node `C` is elided and its children (nodes `D` and `E`) are augmented to the parent of node `C`.
 The exclusive cost of node `C` is also augmented to node `A`..
 ```
@@ -550,14 +551,14 @@ The exclusive cost of node `C` is also augmented to node `A`..
 ```{figure-md} fig:filter-children
 ![](hpcviewer-filter-children.png)
 
-The result of applying *Descendants only* filter on node `C`.
+Figure 10.12: The result of applying *Descendants only* filter on node `C`.
 All the children of node `C` (nodes `D` and `E`) are elided, and the total of their exclusive cost is added to node `C`.
 ```
 
 ```{figure-md} fig:filter-selfchildren
 ![](hpcviewer-filter-self_children.png)
 
-The result of applying *self and descendants* filter on node `C`.
+Figure 10.13: The result of applying *self and descendants* filter on node `C`.
 Nodes `C` and its descendants are elided, and their exclusive cost is augmented to node `A` which is the parent of node `C`.
 ```
 
@@ -569,7 +570,7 @@ Each node is attributed with two boxes on its right. The left box represents the
 ```{figure-md} fig:filter-window
 ![](hpcviewer-filter-window.png)
 
-The window of filter property.
+Figure 10.14: The window of filter property.
 ```
 
 Self only
@@ -591,7 +592,7 @@ Self and descendants
   Figure [10.13](#fig:filter-selfchildren) shows that filtering node `C` will elide the node and its children (nodes `D` and `E`).
   The total of the exclusive cost of the elided nodes is augmented to the exclusive cost of node `A`.
 
-The filter feature can be accessed by clicking the menu "Filter" and then submenu "Show filter property", which will then show a Filter property window (Figure [10.15](#fig:filter-window)).
+The filter feature can be accessed by clicking the menu "Filter" and then submenu "Show filter property", which will then show a Filter property window (Figure [10.14](#fig:filter-window)).
 The window consists of a table of filters, and a group of action buttons: *add* to create a new filter; *edit* to modify a selected filter; and *delete* to remove a set of selected filters..
 The table comprises of two columns: the left column is to display a filter's switch whether the filter is enabled or disabled, and a glob-like filter pattern; and the second column is to show the type of pattern (self only, children only or self and children).
 If a checkbox is checked, it signifies the filter is enabled; otherwise the filter is disabled.
@@ -657,62 +658,62 @@ For the metric pane, `hpcviewer` has some convenient features:
 
 (sec:trace)=
 
-## Trace view
+## Trace viewer
 
 ```{figure-md} fig:hpctraceviewer-callpath
 ![](hpctraceviewer-callpath.png)
 
-Logical view of trace call path samples on three dimensions: time, execution context (rank/thread/GPU) and call path depth.
+Figure 10.15: Logical view of trace call path samples on three dimensions: time, execution context (rank/thread/GPU) and call path depth.
 ```
 
-Trace view (N. R. Tallent et al. 2011) is a time-centric user interface for interactive examination of a sample-based time series (hereafter referred to as a trace) view of a program execution.
-Trace view can interactively present a large-scale execution trace without concern for the scale of parallelism it represents.
+Trace viewer (N. R. Tallent et al. 2011) is a time-centric user interface for interactive examination of a sample-based time series (hereafter referred to as a trace) view of a program execution.
+Trace viewer can interactively present a large-scale execution trace without concern for the scale of parallelism it represents.
 
 To collect a trace for a program execution, one must instruct HPCToolkit's measurement system to collect a trace.
 When launching a dynamically-linked executable with `hpcrun`, add the `-t ` flag to enable tracing.
 When launching a statically-linked executable, set the environment variable `HPCRUN_TRACE=1` to enable tracing.
 When collecting a trace, one must also specify a metric to measure. The best way to collect a useful trace is to asynchronously sample the execution with a time-based metric such as `REALTIME`, `CYCLES`, or `CPUTIME`.
 
-As shown in Figure [10.16](#fig:hpctraceviewer-callpath), call path traces consist of data in three dimensions: *profile* (process/thread rank), *time*, and *call path* depth.
-A *crosshair* in Trace view is defined by a triplet (p,t,d) where p is the selected process/thread rank, t is the selected time, and d is the selected call path depth.
+As shown in Figure [10.15](#fig:hpctraceviewer-callpath), call path traces consist of data in three dimensions: *profile* (process/thread rank), *time*, and *call path* depth.
+A *crosshair* in Trace viewer is defined by a triplet (p,t,d) where p is the selected process/thread rank, t is the selected time, and d is the selected call path depth.
 
-Trace view renders a view of processes and threads over time. The *Depth View* (Section [10.9.2](#sec:depthview)) shows the call path depth over time for the thread selected by the cursor.
-Trace view's *Call Stack View* (Section [10.9.4](#sec:callview)) shows the call path associated with the thread and time pair specified by the cursor.
+Trace viewer renders a view of processes and threads over time. The *Depth View* (Section [10.9.2](#sec:depthview)) shows the call path depth over time for the thread selected by the cursor.
+Trace viewer's *Call Stack View* (Section [10.9.4](#sec:callview)) shows the call path associated with the thread and time pair specified by the cursor.
 Each of these views plays a role for understanding an application's performance.
 
-In Trace view, each procedure is assigned specific color. Figure [10.16](#fig:hpctraceviewer-callpath) shows that at depth 1 each call path has the same color: blue. This node represents the main program that serves as the root of the call chain in all process at all times. At depth 2, all processes have a green node, which indicates another procedure.
+In Trace viewer, each procedure is assigned specific color. Figure [10.15](#fig:hpctraceviewer-callpath) shows that at depth 1 each call path has the same color: blue. This node represents the main program that serves as the root of the call chain in all process at all times. At depth 2, all processes have a green node, which indicates another procedure.
 At depth 3, in the first time step all processes have a yellow node; in subsequent time steps they have purple nodes.
 This might indicate that the processes first are observed in an initialization procedure (represented by yellow) and later observed in a solve procedure (represented by purple). The pattern of colors that appears in a particular depth slice of the Main View enables a user to visually identify inefficiencies such as load imbalance and serialization.
 
 ```{figure-md} fig:hpctraceviewer-legend
 ![](traceview-legend.png)
 
-A screenshot of `hpcviewer`'s Trace view.
+Figure 10.16: A screenshot of `hpcviewer`'s Trace viewer.
 ```
 
 ```{figure-md} fig:hpctraceviewer-stat
 ![](traceview-stat.png)
 
-A screenshot of `hpcviewer`'s Trace view showing the Summary View and Statistics View.
+Figure 10.17: A screenshot of `hpcviewer`'s Trace viewer showing the Summary View and Statistics View.
 ```
 
-Figures [10.17](#fig:hpctraceviewer-legend) and [10.18](#fig:hpctraceviewer-stat) show screenshots of Trace view's capabilities in presenting call path traces.
-Figure [10.17](#fig:hpctraceviewer-legend) highlights Trace view's four principal window panes: Main View(the main view), Depth View, Call Stack View and Mini Map View,
-while Figure[10.18](#fig:hpctraceviewer-stat) shows additional two window panes: Summary View and Statistics View.
+Figures [10.16](#fig:hpctraceviewer-legend) and [10.17](#fig:hpctraceviewer-stat) show screenshots of Trace viewer's capabilities in presenting call path traces.
+Figure [10.16](#fig:hpctraceviewer-legend) highlights Trace viewer's four principal window panes: Main View(the main view), Depth View, Call Stack View and Mini Map View,
+while Figure[10.17](#fig:hpctraceviewer-stat) shows additional two window panes: Summary View and Statistics View.
 
 - **Main View** (top, left pane):
-  This is Trace view's primary view.
+  This is Trace viewer's primary view.
   This view, which is similar to a conventional process/time (or space/time) view, shows time on the horizontal axis and process (or thread) rank on the vertical axis; time moves from left to right.
   Compared to typical process/time views, there is one key difference.
   To show call path hierarchy, the view is actually a user-controllable slice of the process/time/call-path space.
   Given a call path depth, the view shows the color of the currently active procedure at a given time and process rank.
-  (If the requested depth is deeper than a particular call path, then Trace view simply displays the deepest procedure frame and, space permitting, overlays an annotation indicating the fact that this frame represents a shallower depth.)
+  (If the requested depth is deeper than a particular call path, then Trace viewer simply displays the deepest procedure frame and, space permitting, overlays an annotation indicating the fact that this frame represents a shallower depth.)
 
-  Trace view assigns colors to procedures based on (static) source code procedures.
+  Trace viewer assigns colors to procedures based on (static) source code procedures.
   Although the color assignment is currently random, it is consistent across the different views.
   Thus, the same color within the Trace and Depth Views refers to the same procedure.
 
-  The Trace View has a white crosshair that represents a selected point in time and process space.
+  The Trace Viewer has a white crosshair that represents a selected point in time and process space.
   For this selected point, the Call Path View shows the corresponding call path.
   The Depth View shows the selected process.
 
@@ -720,27 +721,27 @@ while Figure[10.18](#fig:hpctraceviewer-stat) shows additional two window panes:
   This is a call-path/time view for the process rank selected by the Main View's crosshair.
   Given a process rank, the view shows for each virtual time along the horizontal axis a stylized call path along the vertical axis, where 'main' is at the top and leaves (samples) are at the bottom.
   In other words, this view shows for the whole time range, in qualitative fashion, what the Call Path View shows for a selected point.
-  The horizontal time axis is exactly aligned with the Trace View's time axis; and the colors are consistent across both views.
+  The horizontal time axis is exactly aligned with the Trace Viewer's time axis; and the colors are consistent across both views.
   This view has its own crosshair that corresponds to the currently selected time and call path depth.
 
 - **Summary View** (tab in bottom, left pane):
   The view shows for the whole time range displayed, the proportion of each subroutine in a certain time.
-  Similar to Depth view, the time range in Summary reflects to the time range in the Trace view.
+  Similar to Depth view, the time range in Summary reflects to the time range in the Trace viewer.
 
 - **Call Stack View** (tab in top, right pane):
-  This view shows two things: (1) the current call path depth that defines the hierarchical slice shown in the Trace View; and (2) the actual call path for the point selected by the Trace View's crosshair.
+  This view shows two things: (1) the current call path depth that defines the hierarchical slice shown in the Trace Viewer; and (2) the actual call path for the point selected by the Trace Viewer's crosshair.
   (To easily coordinate the call path depth value with the call path, the Call Path View currently suppresses details such as loop structure and call sites; we may use indentation or other techniques to display this in the future.)
 
 - **Statistics View** (tab in top, right pane):
-  This view shows the list of procedures active in the space-time region shown in the Trace View at the current Call Path Depth. Each procedure's percentage in the Statistics View indicates the percentage of pixels in the Trace View pane that are filled with this procedure's color at the current Call Path Depth. When the Trace View is navigated to show a new time-space interval or the Call Path Depth is changed, the statistics view will update its list of procedures and the percentage of execution time to reflect the new space-time interval or depth selection.
+  This view shows the list of procedures active in the space-time region shown in the Trace viewer at the current Call Path Depth. Each procedure's percentage in the Statistics View indicates the percentage of pixels in the Trace viewer pane that are filled with this procedure's color at the current Call Path Depth. When the Trace viewer is navigated to show a new time-space interval or the Call Path Depth is changed, the statistics view will update its list of procedures and the percentage of execution time to reflect the new space-time interval or depth selection.
 
 - **GPU Idleness Blame View** (tab in top, right pane):
-  The view shows the list of procedures that cause GPU idleness displayed in the trace view.
-  If the trace view displays one CPU thread and multiple GPU streams, then the CPU thread will be blamed for the idleness for those GPU streams.
+  The view shows the list of procedures that cause GPU idleness displayed in the Trace viewer.
+  If the Trace viewer displays one CPU thread and multiple GPU streams, then the CPU thread will be blamed for the idleness for those GPU streams.
   If the view contains more than one CPU threads and multiple GPU streams, then the cost of idleness is share among the CPU threads.
 
 - **Mini Map View** (right, bottom):
-  The Mini Map shows, relative to the process/time dimensions, the portion of the execution shown by the Trace View.
+  The Mini Map shows, relative to the process/time dimensions, the portion of the execution shown by the Trace viewer.
   The Mini Map enables one to zoom and to move from one close-up to another quickly.
 
 ### Main View
@@ -755,7 +756,7 @@ The buttons in the action pane are the following:
 
 - **Vertical zoom in ![image](hpctraceviewer-button-zoom-in-process.png) / out ![image](hpctraceviewer-button-zoom-out-process.png)** : Zooming in/out the process dimension of the traces.
 
-- **Navigation buttons** ![image](hpctraceviewer-button-go-east.png), ![image](hpctraceviewer-button-go-west.png), ![image](hpctraceviewer-button-go-north.png), ![image](hpctraceviewer-button-go-south.png) : Navigating the trace view to the left, right, up and bottom, respectively. It is also possible to navigate with the arrow keys in the keyboard. Since Main View does not support scroll bars, the only way to navigate is through navigation buttons (or arrow keys).
+- **Navigation buttons** ![image](hpctraceviewer-button-go-east.png), ![image](hpctraceviewer-button-go-west.png), ![image](hpctraceviewer-button-go-north.png), ![image](hpctraceviewer-button-go-south.png) : Navigating the Trace viewer to the left, right, up and bottom, respectively. It is also possible to navigate with the arrow keys in the keyboard. Since Main View does not support scroll bars, the only way to navigate is through navigation buttons (or arrow keys).
 
 - **Undo** ![image](hpctraceviewer-button-undo.png) : Canceling the action of zoom or navigation and returning back to the previous view configuration.
 
@@ -783,11 +784,11 @@ On the other hand, any user action such as crosshair and time range selection in
 
 In Depth View a user can specify a new crosshair time and a new time range.
 
-#### Specifying a new crosshair time.
+#### Specifying a New Crosshair Time
 
 Selecting a new crosshair time `t` can be performed by clicking a pixel within Depth View. This will update the crosshair in Main View and the call path in Call Stack View.
 
-#### Selecting a new time range.
+#### Selecting a New Time Range
 
 Selecting a new time range \[`t_m`,`t_n`\] = {`t` | `t_m` \<= `t` \<= `t_n`} is performed by first clicking the position of `t_m` and drag the cursor to the position of `t_n`. A new content in Depth View and Main View is then updated. Note that this action will not update the call path in Call Stack View since it does not change the position of the crosshair.
 
@@ -801,7 +802,7 @@ Similar to Depth View, the time range in Summary View is always consistent with 
 ### Call Stack View
 
 This view lists the call path of process p and time t specified in Main View and Depth View.
-Figure [10.17](#fig:hpctraceviewer-legend) shows a call path of the current cross hair, and the current depth is 10 as shown in the depth editor (located on the top part of the view).
+Figure [10.16](#fig:hpctraceviewer-legend) shows a call path of the current cross hair, and the current depth is 10 as shown in the depth editor (located on the top part of the view).
 
 In this view, the user can select the depth dimension of Main View by either typing the depth in the depth editor or selecting a procedure in the table of call path.
 
@@ -811,7 +812,7 @@ The Mini Map View shows, relative to the process/time dimensions, the portion of
 In Mini Map View, the user can select a new process/time (`p_a`,`t_a`),(`p_b`,`t_b`) dimensions by clicking the first process/time position (`p_a`,`t_a`) and then drag the cursor to the second position (`p_b`,`t_b`).
 The user can also moving the current selected region to another region by clicking the white rectangle and drag it to the new place.
 
-Trace view also provides a context menu to save the current image of the view.
+Trace viewer also provides a context menu to save the current image of the view.
 This context menu is available is three views: trace view, depth view and summary view.
 
 ## Menus
@@ -851,7 +852,7 @@ This menu includes several menu items for controlling basic viewer operations.
 
   - **Appearance** Change the fonts for tree and metric columns and source viewer.
 
-  - **Traces** Specify settings for Trace view such as the rendering option, the number of working threads to be used and the tooltip's delay.
+  - **Traces** Specify settings for Trace viewer such as the rendering option, the number of working threads to be used and the tooltip's delay.
 
 - **Exit**
   Quit the `hpcviewer` application.
@@ -863,9 +864,9 @@ This menu only contains one submenu:
 - **Filter CCT nodes**
   Open a filter property window which lists a set of filters and its properties (Section [10.7](#sec:filter)).
 
-- **Filter execution contexts** *(Trace view only)*
+- **Filter execution contexts** *(Trace viewer only)*
   Open a window for selecting which nodes will be hidden in the tree.
-  Currently filtering CCT nodes only affect the Profile view, and doesn't affect the Trace view.
+  Currently filtering CCT nodes only affect the Profile viewer, and doesn't affect the Trace viewer.
 
 ### View
 
@@ -875,20 +876,20 @@ width: 3.4in
 ---
 ![](hpctraceviewer-dialog-mapping.png)
 
-Procedure-color mapping dialog box. This window shows that any procedure names that match with "MPI*" pattern are assigned with red, while procedures that match with "PMPI*" pattern are assigned with color black.
+Figure 10.18: Procedure-color mapping dialog box. This window shows that any procedure names that match with "MPI*" pattern are assigned with red, while procedures that match with "PMPI*" pattern are assigned with color black.
 ```
 
 This menu is only visible if at least one database is loaded.
 All actions in this menu are intended primarily for tool developer use.
 By default, the menu is hidden. Once you open a database, the menu is then shown.
 
-- **Show metrics** *(Profile view only)*
+- **Show metrics** *(Profile viewer only)*
   Display a list of (metric name, metric name description) pairs in a window. For GPU metrics, the descriptions are useful for explaining what the short and somewhat cryptic metric names mean.
   From this window, you can use the edit button to modify the name of the selected metric. When editing a derived metric, the metric editor will allow you to modify the formula for the metric in addition to the name.
   Once you modify a metric and exit this window by selecting the OK button, the metric pane will refresh the display of any metrics whose name or formula was modified.
 
-- **Show color mapping** *(Trace view only)*
-  Open a window which shows customized mapping between a procedure pattern and a color (Figure [10.19](#fig:hpctraceviewer-mapping)). Trace view allows users to customize assignment of a pattern of procedure names with a specific color.
+- **Show color mapping** *(Trace viewer only)*
+  Open a window which shows customized mapping between a procedure pattern and a color (Figure [10.18](#fig:hpctraceviewer-mapping)). Trace viewer allows users to customize assignment of a pattern of procedure names with a specific color.
 
 - **Debug** *(if the debug mode is enabled)*
 
