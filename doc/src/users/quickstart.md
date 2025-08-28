@@ -48,7 +48,6 @@ Since compilers can usually provide information about line mappings and inlining
 this requirement usually involves a one-time trivial adjustment to the an application's build scripts
 to provide a better experience with tools. Such mapping information enables tools such as HPCToolkit to attribute performance metrics to source code constructs within procedures rather than only at the procedure level.
 
-
 (chpt:quickstart:tour:measurement)=
 
 ### Measuring Application Performance
@@ -65,7 +64,6 @@ The commands below give examples for an application named `app`.
   > `[<mpi-launcher>] hpcrun [hpcrun-options] app [app-arguments]`
 
   Of course, `<mpi-launcher>` is only needed for MPI programs and is sometimes a program like `mpiexec` or `mpirun`, or a workload manager's utilities such as Slurm's `srun` or IBM's Job Step Manager utility `jsrun`.
-
 
 hpcrun will produce a measurements database that contains separate measurement information for each MPI rank and thread in the application.
 The database is named according the form:

@@ -25,8 +25,8 @@ metric) dimensions; and the *Trace viewer* (Section [10.9](#sec:trace)) visualiz
 behavior of execution contexts over time.
 Table below summarizes views supported by hpcviewer.
 
-| View                  | Dimension                    | Note                                                                |
-| :-------------------- | :--------------------------- | :------------------------------------------------------------------ |
+| View                    | Dimension                    | Note                                                                |
+| :---------------------- | :--------------------------- | :------------------------------------------------------------------ |
 | Profile viewer - Table  | Tree node context x Metrics  | display the tree and its associated metrics                         |
 | Profile viewer - Thread | Tree node context x Metrics  | display the tree and its metrics for a set of execution contexts    |
 | Profile viewer - Graph  | Execution contexts x Metrics | display a metric of a specific tree node for all execution contexts |
@@ -443,7 +443,7 @@ width: 80.0%
 ---
 ![](hpcviewer-view-rawmetrics.png)
 
-Figure 10.7: Plot graph view of the time in seconds of GPU operations for a procedure in 
+Figure 10.7: Plot graph view of the time in seconds of GPU operations for a procedure in
 GAMESS---an MPI+OpenMP ab-initio quantum chemistry code---showing a imbalance where a group of execution contexts have much higher GPU operations than others.
 ```
 

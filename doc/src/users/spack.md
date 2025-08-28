@@ -17,7 +17,7 @@ with spack.
 We provide binary distributions for `hpcviewer` on Linux (x86_64, ppc64/le
 and aarch64), Windows (x86_64) and MacOS (x86_64, M1, M2 and M3).
 Although `hpcviewer` is normally included as part of HPCToolkit, we provide
-`hpcviewer` as a separate package to install on platforms, such as MacOS and Windows laptops, 
+`hpcviewer` as a separate package to install on platforms, such as MacOS and Windows laptops,
 where HPCToolkit proper is not available.
 HPCToolkit databases are platform-independent and it is common to run
 `hpcrun` on one machine and then view the results on another machine.
@@ -29,7 +29,7 @@ Spack requires Python 3.8 or later plus various build utilities:
 bash, git, curl, patch, tar, bzip2, unzip, etc.
 
 `Hpcviewer` requires Java 17 or later.
-Without any configuration, Spack will automatically install an appropriate version of Java OpenJDK to support `hpcviewer`. 
+Without any configuration, Spack will automatically install an appropriate version of Java OpenJDK to support `hpcviewer`.
 
 When installing `hpctoolkit` using Spack, `hpcviewer` will be installed automatically by default.
 
@@ -110,7 +110,7 @@ Or, you could just hand edit the module file.
 
 See: <https://spack.readthedocs.io/en/latest/configuration.html#>
 
-## Installing a Basic HPCToolkit 
+## Installing a Basic HPCToolkit
 
 Here we explain how to install a basic version of HPCToolkit with Spack.
 The directions immediately below build and install a version of HPCToolkit
@@ -169,7 +169,7 @@ all of `hpctoolkit`, then you can install just the `hpcviewer` package.
 spack install hpcviewer
 ```
 
-We provide binary distributions for HPCToolkit's `hpcviewer` graphical user interface 
+We provide binary distributions for HPCToolkit's `hpcviewer` graphical user interface
 on Linux (x86_64, ppc64/le
 and aarch64), Windows (x86_64) and MacOS (x86_64 and Apple M-series processors).
 `Hpcviewer` uses Java 17 or later, but this is installed automatically by Spack as a dependency
@@ -180,6 +180,7 @@ HPCToolkit databases are platform-independent and it is common to run
 `hpcrun` on one machine and then view the results on another machine.
 
 (configuration-options)=
+
 ## Configuration Options
 
 ### CUDA (`+cuda`)
@@ -404,6 +405,7 @@ spack arch --known-targets
 For further information, see Spack's documentation about [architecture specifiers](https://spack.readthedocs.io/en/latest/spec_syntax.html#architecture-specifiers).
 
 (spack-first-time)=
+
 ## Running Spack for the First Time
 
 If you have never run Spack before, then follow these steps to set up your system.

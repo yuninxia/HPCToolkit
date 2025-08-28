@@ -13,6 +13,14 @@ Other known issues can be seen in the project's Gitlab issues pages:
 
 - For hpcviewer, see <https://gitlab.com/HPCToolkit/HPCViewer/issues>
 
+## No support for CUDA 13
+
+In CUDA 13.0, NVIDIA removed a deprecated API used by HPCToolkit for PC sampling, so HPCToolkit can't be compiled against CUDA 13. When compiled against CUDA 12 and run with CUDA 13, `hpcrun`'s calls to cuFuncGetModule fail. As a result, there is no way to use HPCToolkit with CUDA 13 at present. We recommend using CUDA 12 as a stopgap solution if you want to measure your program with HPCToolkit.
+
+## Using Level Zero, time may be observed as non-monotonic
+
+When using HPCToolkit to collect traces of GPU-accelerated applications on Aurora, we have frequently observed non-monotonic timestamp values associated with GPU operations launched with Level Zero. When this happens, it causes GPU operations to be reported in a trace at a time a few minutes in the past. We have commonly seen this in executions longer than six minutes or so. For short executions, our advice is to simply measure again and hope that the issue doesn't occur during the execution of your program. For long-running programs, there may not be a way to avoid this problem. This issue is a priority to resolve.
+
 ## Inaccurate attribution of performance information can occur on Sapphire Rapids processors with HPCToolkit
 
 Description:

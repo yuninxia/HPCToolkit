@@ -36,6 +36,7 @@ For system administrators or users, the recommended way to install HPCToolkit us
 ```console
 $ spack info hpctoolkit
 ```
+
 You can install HPCToolkit with Spack as shown below:
 
 ```console
@@ -49,7 +50,6 @@ $ spack load hpctoolkit [+features...]
 ```
 
 For more information about Spack and how to install HPCToolkit using Spack, see the HPCToolkit User's Manual section [Installing HPCToolkit using Spack](https://hpctoolkit.gitlab.io/hpctoolkit/users/spack.html)
-
 
 ## Building HPCToolkit from Source with Meson (recommended for developers)
 
@@ -68,7 +68,6 @@ Discord offers a Slack-like experience for interacting developers and other user
 We welcome questions, problem reports, or feature requests.
 
 [Join here!](https://discord.gg/erpsXZB4Vr)
-
 
 ## License
 

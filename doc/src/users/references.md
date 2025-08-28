@@ -42,7 +42,6 @@ McKenney, Paul E. 1999. "Differential Profiling." *Software: Practice and Experi
 
 Mytkowicz, Todd, Amer Diwan, Matthias Hauswirth, and Peter F. Sweeney. 2009. "Producing Wrong Data Without Doing Anything Obviously Wrong!" *SIGARCH Comput. Archit. News* 37 (1): 265--76. <https://doi.org/10.1145/2528521.1508275>.
 
-
 Linux Foundation. "HPCToolkit Performance Tools." <http://hpctoolkit.org>.
 
 Tallent, Nathan R., Laksono Adhianto, and John M. Mellor-Crummey. 2010. "Scalable Identification of Load Imbalance in Parallel Executions Using Call Path Profiles." In *SC '10: Proc. Of the 2010 ACM/IEEE Conference on Supercomputing*, 1--11. Washington, DC, USA: IEEE Computer Society. <http://dx.doi.org/10.1109/SC.2010.47>.

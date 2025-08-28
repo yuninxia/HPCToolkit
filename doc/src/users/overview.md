@@ -124,7 +124,7 @@ and constructing views; (3) enables a large variety of user-defined metrics to d
 and (4) automatically expands hot paths based on arbitrary performance metrics --- through calling contexts and static structure --- to rapidly highlight important performance data.
 
 `hpcviewer`'s time-centric trace tab enables an application developer to visualize how a parallel execution unfolds over time.
-This view makes it easy to spot key inefficiencies such as serialization and load imbalance. 
+This view makes it easy to spot key inefficiencies such as serialization and load imbalance.
 
 [^1]: For the most detailed attribution of application performance data using HPCToolkit, one should ensure that the compiler includes line mappings in the object code it generates. While HPCToolkit does not need this information to function, it can be helpful to users trying to interpret the results. Since compilers can usually provide line map information for fully optimized code, this requirement need not require a special build process. While adding a `-g` flag is the right thing to do for many compilers, some compilers provide other flags that provide line mapping and inlining information for profiling without compromising optimization. For instance, when compiling CUDA for NVIDIA GPUs with nvcc, one should use `-lineinfo` rather than `-g` to avoid inadvertantly disabling optimization.
 

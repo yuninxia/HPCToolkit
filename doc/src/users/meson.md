@@ -3,6 +3,7 @@ SPDX-FileCopyrightText: Contributors to the HPCToolkit Project
 
 SPDX-License-Identifier: CC-BY-4.0
 -->
+
 # Building from Source with Meson
 
 This chapter describes how to build HPCToolkit from source using [Meson](https://mesonbuild.com). This approach is recommended for HPCToolkit developers.
@@ -38,8 +39,7 @@ $ meson devenv
 ## Configuration
 
 Configuration arguments can be passed to the initial `meson setup` or later `meson configure` invocations with invocations as follows
- `meson setup [arguments] builddir/` or  `meson configure [arguments]`. Arguments that control the build of HPCToolkit are listed below:
-
+`meson setup [arguments] builddir/` or `meson configure [arguments]`. Arguments that control the build of HPCToolkit are listed below:
 
 - `-Dtests=(disabled|auto|enabled)`: Enable unit tests with `meson test`. (`disabled` only disables tests that require additional dependencies.)
 - `-Dmanpages=(disabled|auto|enabled)`: Generate and build man pages. Requires [Docutils](https://www.docutils.org/).
@@ -57,11 +57,12 @@ Configuration arguments can be passed to the initial `meson setup` or later `mes
 Note that many of the features above require additional optional dependencies when enabled.
 
 (wraps-no-root-required)=
+
 ## Installing Dependencies without Root
 
 ### Meson Wraps
 
-If core dependencies needed to build and run HPCToolkit can be found on your system, Meson will use those. To assist you in manually providing dependencies to Meson, see the discussion about how Meson [looks for dependencies](#finding-dependencies) later on this page. 
+If core dependencies needed to build and run HPCToolkit can be found on your system, Meson will use those. To assist you in manually providing dependencies to Meson, see the discussion about how Meson [looks for dependencies](#finding-dependencies) later on this page.
 
 If Meson cannot find HPCToolkit's dependencies on your system, `meson (setup|configure)` will use Meson [wraps](https://mesonbuild.com/Wrap-dependency-system-manual.html) to build HPCToolkit's core dependencies. No root privileges are needed to use Meson wraps.
 
@@ -84,7 +85,8 @@ If you let Meson wraps provide HPCToolkit's dependencies, then building HPCToolk
     yaml-cpp      : YES
     zstd          : YES (from elfutils)
 ```
-Meson wraps are downloaded and built only as needed. In some cases, a wrap will not be considered unless you enable a particular feature of HPCToolkit. 
+
+Meson wraps are downloaded and built only as needed. In some cases, a wrap will not be considered unless you enable a particular feature of HPCToolkit.
 For instance, `opencl-headers` will not be downloaded unless your `meson (setup|configure)` command includes the configuration option `-Dopencl=enabled`.
 If the internet is not available on the system running `meson setup`, you may also need to run `meson subprojects download` first on a system with internet to download the required sources.
 
@@ -92,7 +94,6 @@ If wraps are not desired, they can be disabled with `meson (setup|configure) --w
 With this setting, all dependencies must be installed or otherwise loaded into the build environment, except for force-fallback dependencies `meson (setup|configure) --force-fallback-for=dep1,dep2,...`.
 
 See the official Meson documentation about [wraps](https://mesonbuild.com/Wrap-dependency-system-manual.html) for more configuration options and implementation details.
-
 
 ### Dev Containers (BETA)
 
@@ -107,6 +108,7 @@ Multiple [Dev Container](https://containers.dev) configurations are provided for
 - `bare`: Bare minimum dependencies to build HPCToolkit
 
 (root-dependencies)=
+
 ## Installing Dependencies as Root
 
 ### Debian/Ubuntu and Derivatives
@@ -198,11 +200,12 @@ Additional packages can be installed for optional features:
 | [`rocm`](https://rocm.docs.amd.com/projects/install-on-linux/en/latest/index.html)                                | `-Drocm=enabled`        |                                                        |
 
 (finding-dependencies)=
+
 ## Custom Dependencies
 
 It is also possible to build and run HPCToolkit using custom versions of dependencies, e.g. one you have modified to fix a bug. However, to expose such dependencies to Meson, you will need some basic understanding of how Meson finds dependencies.
 
-This section is intended as a "peek behind the curtain" of how Meson understands dependencies, and an abridged version of [Meson's `dependency()` docs] for developers.
+This section is intended as a "peek behind the curtain" of how Meson understands dependencies, and an abridged version of \[Meson's `dependency()` docs\] for developers.
 
 Meson fetches all dependencies from the "build environment" aka the "machine" (technically two, the `build_machine` and the `host_machine`, which are only different when [cross-compiling](https://mesonbuild.com/Cross-compilation.html)).
 Whenever Meson configures (i.e. during `meson setup` or automatically during `meson compile/install/test/etc.`), queries the "machine" as defined by various environment variables:
@@ -251,7 +254,7 @@ And then can be used in a build directory by passing additional arguments to `me
 $ meson setup --native-file …/my-elf-dyn.ini builddir/
 ```
 
-See [`doc/developers/meson.ini`] for a more complete template listing the settings available in a native file.
+See \[`doc/developers/meson.ini`\] for a more complete template listing the settings available in a native file.
 
 ## Meson Documentation References
 
