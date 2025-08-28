@@ -13,7 +13,7 @@ Section [5.3](#sample-sources) and it can monitor GPU performance using tool sup
 
 In the following sections, we describe a generic substrate in HPCToolkit to interact with vendor specific runtime systems and libraries and the vendor specific details for measuring performance for NVIDIA, AMD, and Intel GPUs.
 
-A single version of HPCToolkit can be built that supports GPUs from multiple vendors and programming models. However, using HPCToolkit to collect GPU metrics using GPUs from multiple vendor runtimes (e.g. CUDA and ROCm) in a single execution is untested. However, measuring GPU offloading using both Level Zero and OpenCL is known to work. (This is useful because when compiling programs to offload onto Intel GPUs using Level Zero, Intel MKL BLAS offloads using OpenCL regardless.)
+A single version of HPCToolkit can be built that supports GPUs from multiple vendors and programming models. However, using HPCToolkit to collect GPU metrics using GPUs from multiple vendor runtimes (e.g. CUDA and ROCm) in a single execution is largely untested although measuring GPU offloading using both Level Zero and OpenCL is known to work.
 
 ## GPU Performance Measurement Substrate
 
