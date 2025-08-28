@@ -42,7 +42,6 @@ Spack Documentation:
 
 - <https://spack.readthedocs.io/en/latest>
 
-
 ## Config Files
 
 Spack uses a variety of config files for setting paths, options, etc.
@@ -53,6 +52,7 @@ A complete discussion of this topic is available in Spack's documentation about 
 Here, we only mention a few key configuration details that you might want to adjust when installing HPCToolkit with Spack.
 
 ### Config.yaml
+
 In `config.yaml`, you may want to set the path to the install tree.
 
 ```
@@ -63,6 +63,7 @@ config:
 ```
 
 ### Modules.yaml
+
 If you are using modules (TCL or Lmod), you need to `enable` the module type
 and provide the path to the modules directory.
 
@@ -140,12 +141,11 @@ Then, install HPCToolkit with:
 spack install hpctoolkit
 ```
 
-
 ```{important}
 Normally, Spack builds HPCToolkit for the specific architecture (skylake, sapphirerapids, zen3, etc) on which `spack install hpctoolkit` is run.
 Some care is required when installing HPCToolkit on a system that contains multiple kinds of x86_64 processors. A default Spack build of HPCToolkit on one kind of x86_64 processor and running on another may cause `illegal instruction` errors.
 
-It is worth noting that in some cases, processor heterogeneity is less than obvious. For example, on Argonne's Aurora supercomputer, login nodes use Intel Icelake processors while compute nodes use Intel Sapphire Rapids processors. 
+It is worth noting that in some cases, processor heterogeneity is less than obvious. For example, on Argonne's Aurora supercomputer, login nodes use Intel Icelake processors while compute nodes use Intel Sapphire Rapids processors.
 
 You can avoid problems when multiple kinds of x86_64 processors are present by configuring HPCToolkit for a generic x86_64 processor as follows:
 
@@ -182,7 +182,7 @@ Possible values for `buildtype` are `release` (default), `debug`,
 ```
 
 ```{tip}
-If you encounter problems with the latest release of HPCToolkit, you might trying the in-development versions of HPCToolkit and Dyninst; namely, `hpctoolkit@develop` and `dyninst@master`: 
+If you encounter problems with the latest release of HPCToolkit, you might trying the in-development versions of HPCToolkit and Dyninst; namely, `hpctoolkit@develop` and `dyninst@master`:
 
    `spack install hpctoolkit@develop ^dyninst@master`
 ```
@@ -210,6 +210,7 @@ HPCToolkit databases are platform-independent and it is common to run
 ```
 
 (configuration-options)=
+
 ## Configuration Options
 
 ### CUDA (`+cuda`)
@@ -395,7 +396,6 @@ spack install hpctoolkit +python
 ```
 
 You should use python 3.10 or later and use the same version as the application.
-
 
 (spack-first-time)=
 
