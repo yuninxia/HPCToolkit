@@ -49,7 +49,7 @@ assert(_project_name.to_lower() == meson.project_name())
 _sphinx_args = [
   '-q',
   '-E',
-  # '-W',
+  '-W',
   '--keep-going',
   '-d',
   '@PRIVATE_DIR@/.doctrees',
