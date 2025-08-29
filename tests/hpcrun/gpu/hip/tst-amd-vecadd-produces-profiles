@@ -32,7 +32,7 @@ case "$trace" in
 esac
 
 trap 'rm -rf "$tmpdir"' EXIT
-tmpdir=$(mktemp --directory --tmpdir=.)
+tmpdir=$(mktemp --directory)
 
 # shellcheck disable=SC2086
 "$hpcrun" -o "$tmpdir"/m -e "$event" $trace "${remaining_args[@]}" "$tstexe_amd_vecadd"

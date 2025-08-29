@@ -9,7 +9,7 @@ hpcprof="$2"
 meas="$3"
 
 trap 'rm -rf "$tmpdir"' EXIT
-tmpdir=$(mktemp --directory --tmpdir=.)
+tmpdir=$(mktemp --directory)
 
 if ls -1 "$meas"/*.hpctrace > /dev/null 2>&1
 then tracearg=--trace
