@@ -581,7 +581,6 @@ o debug hpcrun with a debugger use the following approach.
    > hpcrun --debug --event REALTIME@0 app [app-arguments]
    > ```
 
-
 1. Attach a debugger.
    The debugger should be spinning in a loop whose exit is conditioned by the
    `HPCRUN_DEBUGGER_WAIT` variable.
