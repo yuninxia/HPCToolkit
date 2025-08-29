@@ -88,10 +88,6 @@ To configure `hpcrun` with two samples sources, `e1@howoften1` and `e2@howoften2
 
 > `--event e1@howoften1 --event e2@howoften2`
 
-To use the same sample sources with an `hpclink`-ed application, use a command similar to:
-
-> `export HPCRUN_EVENT_LIST="e1@howoften1 e2@howoften2"`
-
 #### Measuring GPU Computations
 
 One can simply profile and optionally trace computations offloaded onto AMD, Intel, and NVIDIA GPUs by using one of the following event specifiers:

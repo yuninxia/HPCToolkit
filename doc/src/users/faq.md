@@ -57,7 +57,7 @@ to abort. One can detect the presence of `gprof` instrumentation in an
 application by the presence of the `__monstartup` and `_mcleanup` symbols
 in a executable. You can recompile your code without the
 `-pg` compiler flag and measure again. Alternatively, you can use the `--disable-gprof`
-argument to `hpcrun` or `hpclink` to disable `gprof` instrumentation while
+argument to `hpcrun` to disable `gprof` instrumentation while
 measuring performance with HPCToolkit.
 
 To cope with `gprof` instrumentation in dynamically-linked programs, you can use `hpcrun`'s `--disable-gprof` option.
@@ -263,7 +263,7 @@ measurement data for the `gprof` profiler. If you are using
 HPCToolkit to collect performance data, the `gprof` instrumentation
 is needlessly slowing your application. You can recompile your code without the
 `-pg` compiler flag and measure again. Alternatively, you can use the `--disable-gprof`
-argument to `hpcrun` or `hpclink` to disable `gprof` instrumentation while
+argument to `hpcrun` to disable `gprof` instrumentation while
 measuring performance with HPCToolkit.
 
 (section:hpcstruct-cubin)=
@@ -566,20 +566,9 @@ HPCToolkit's measurement subsystem is easiest to debug if you configure and
 build HPCToolkit by adding the `--enable-develop` option as an argument to `configure` when preparing to build HPCToolkit.
 (It is not necessary to rebuild HPCToolkit's `hpctoolkit-externals`.)
 
-One can debug a statically-linked or a dynamically-linked applications being measured by
-HPCToolkit's measurement subsystem.
+One can debug a dynamically-linked applications being measured by
+HPCToolkit's measurement subsystem. When launching an application with `hpcrun`, add the `--debug` option to `hpcrun`.
 
-- Dynamically-linked applications. When launching an application with `hpcrun`, add the `--debug` option to `hpcrun`.
-
-- Statically-linked applications. To debug a statically-linked application that has HPCToolkit's measurement subsystem linked into it, set `HPCRUN_WAIT` in the environment before launching the application, e.g.
-
-  ```
-  export HPCRUN_WAIT=1
-  export HPCRUN_EVENT_LIST="... the metric(s) you want to measure ..."
-  app [app-arguments]
-  ```
-
-There are two ways to use launch an application with a debugger when using
 To attach a debugger when monitoring an application using `hpcrun`, add `hpcrun`'s `--debug` option
 
 o debug hpcrun with a debugger use the following approach.
@@ -592,13 +581,6 @@ o debug hpcrun with a debugger use the following approach.
    > hpcrun --debug --event REALTIME@0 app [app-arguments]
    > ```
 
-   or
-
-   > ```
-   > export HPCRUN_WAIT=1
-   > export HPCRUN_EVENT_LIST="REALTIME@0"
-   > app [app-arguments]
-   > ```
 
 1. Attach a debugger.
    The debugger should be spinning in a loop whose exit is conditioned by the
@@ -607,7 +589,7 @@ o debug hpcrun with a debugger use the following approach.
 1. Set any desired breakpoints.
    To send a sampling signal at a particular point, make sure to stop at that point with a *one-time* or *temporary* breakpoint (`tbreak` in GDB).
 
-1. Call `hpcrun_continue()` or set the `HPCRUN_DEBUGGER_WAIT` variable to 0
+1. Call `(void) hpcrun_continue()` or set the `HPCRUN_DEBUGGER_WAIT` variable to 0
    and continue.
 
 1. To raise a controlled sampling signal, raise a SIGPROF, e.g., using GDB's command `signal SIGPROF`.

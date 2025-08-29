@@ -15,7 +15,7 @@ Other known issues can be seen in the project's Gitlab issues pages:
 
 ## No support for CUDA 13
 
-In CUDA 13.0, NVIDIA removed a deprecated API used by HPCToolkit for PC sampling, so HPCToolkit can't be compiled against CUDA 13. When compiled against CUDA 12 and run with CUDA 13, `hpcrun`'s calls to cuFuncGetModule fail. As a result, there is no way to use HPCToolkit with CUDA 13 at present. We recommend using CUDA 12 as a stopgap solution if you want to measure your program with HPCToolkit.
+In CUDA 13.0, NVIDIA removed a deprecated API used by HPCToolkit for PC sampling, so HPCToolkit can't be compiled against CUDA 13. When compiled against CUDA 12 and run with CUDA 13, `hpcrun`'s calls to `cuFuncGetModule` fail. As a result, there is no way to use HPCToolkit with CUDA 13 at present. We recommend using CUDA 12 as a stopgap solution if you want to measure your program with HPCToolkit.
 
 ## Using Level Zero, time may be observed as non-monotonic
 
@@ -157,7 +157,7 @@ Explanation:
 
 Workaround:
 
-: Unload the Darshan module before compiling a statically-linked application or running a dynamically-linked application.
+: Unload the Darshan module before running a dynamically-linked application.
 
 Development Plan:
 

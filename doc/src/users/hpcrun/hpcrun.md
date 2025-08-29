@@ -6,7 +6,7 @@ SPDX-License-Identifier: CC-BY-4.0
 
 # Monitoring Dynamically-linked Applications with `hpcrun`
 
-This chapter describes the mechanics of using `hpcrun` and `hpclink`
+This chapter describes the mechanics of using `hpcrun`
 to profile an application and collect performance data. For advice on
 how to choose events, perform scaling studies, etc., see
 Chapter [4](#chpt:effective-performance-analysis) *Effective
@@ -99,17 +99,7 @@ Note that `hpcrun` is intended for profiling dynamically linked
 *binaries*. It will not work well if used to profile a shell script.
 At best, you would be profiling the shell interpreter, not the script
 commands, and sometimes this will fail outright.
-
-It is possible to use `hpcrun` to launch a statically linked binary,
-but there are two problems with this. First, it is still necessary to
-build the binary with `hpclink`. Second, static binaries are
-commonly used on parallel clusters that require running the binary
-directly and do not accept a launch script. However, if your system
-allows it, and if the binary was produced with `hpclink`, then
-`hpcrun` will set the correct environment variables for profiling
-statically or dynamically linked binaries. All that `hpcrun` really
-does is set some environment variables (including `LD_PRELOAD`)
-and `exec` the binary.
+Profiling statically-linked binaries is no longer supported by HPCToolkit.
 
 ### If `hpcrun` causes your application to fail
 
@@ -240,8 +230,7 @@ An event name is case insensitive and is defined as followed:
 
 This section provides an overview of how to use sample sources supported by HPCToolkit. To
 see a list of the available sample sources and events that `hpcrun`
-supports, use '`hpcrun -L`' (dynamic) or set
-'`HPCRUN_EVENT_LIST=LIST`' (static). Note that on systems with
+supports, use '`hpcrun -L`'. Note that on systems with
 separate compute nodes, it is best to run this on a compute node.
 
 ### Linux `perf_events`
@@ -273,7 +262,7 @@ For circumstances where the user wants to use frequency-based sampling but
 HPCToolkit's default sampling frequency is inappropriate,
 one can specify the target sampling frequency for a particular event using the notation
 *event*`@f`*rate* when specifying an event or change the default sampling frequency.
-When measuring a dynamically-linked executable using `hpcrun`, one can change the default sampling frequency using `hpcrun`'s `-c` option. To set a new default sampling frequency for a statically-linked executable instrumented with `hpclink`, set the `HPCRUN_PERF_COUNT` environment variable.
+When measuring a dynamically-linked executable using `hpcrun`, one can change the default sampling frequency using `hpcrun`'s `-c` option.
 The section below entitled *Launching* provides
 examples of how to monitor an execution using frequency-based sampling.
 
@@ -568,17 +557,12 @@ and `fwrite` and records the number of bytes read or
 written along with their dynamic context synchronously rather
 than relying on data collection triggered by interrupts.
 
-To include this source, use the `IO` event (no period). In the
-static case, two steps are needed. Use the `--io` option for
-`hpclink` to link in the `IO` library and use the `IO` event
-to activate the `IO` source at runtime. For example,
+To include this source, use the `IO` event (no period).
+For example,
 
-> |           |                                                    |
-> | :-------: | :------------------------------------------------- |
-> | (dynamic) | `hpcrun -e IO app arg ...`                         |
-> | (static)  | `hpclink --io gcc -g -O -static -o app file.c ...` |
-> |           | `export HPCRUN_EVENT_LIST=IO`                      |
-> |           | `app arg ...`                                      |
+> ```
+> hpcrun -e IO app arg ...
+> ```
 
 The `IO` source is mainly used to find where your program reads or
 writes large amounts of data. However, it is also useful for tracing
@@ -608,17 +592,11 @@ allocate memory that is used throughout the lifetime of the process
 and not explicitly free it.
 
 To include this source, use the `MEMLEAK` event (no period).
-Again, two steps are needed in the static case. Use the `--memleak`
-option for `hpclink` to link in the `MEMLEAK` library
-and use the `MEMLEAK` event to activate it at runtime. For
-example,
+For example,
 
-> |           |                                                         |
-> | :-------: | :------------------------------------------------------ |
-> | (dynamic) | `hpcrun -e MEMLEAK app arg ...`                         |
-> | (static)  | `hpclink --memleak gcc -g -O -static -o app file.c ...` |
-> |           | `export HPCRUN_EVENT_LIST=MEMLEAK`                      |
-> |           | `app arg ...`                                           |
+> ```
+> hpcrun -e MEMLEAK app arg ...
+> ```
 
 If a program allocates and frees many small regions, the `MEMLEAK`
 source may result in a high overhead. In this case, you may reduce
@@ -626,12 +604,9 @@ the overhead by using the memleak probability option to record only a
 fraction of the mallocs. For example, to monitor 10% of the mallocs,
 use:
 
-> |           |                                                     |
-> | :-------: | :-------------------------------------------------- |
-> | (dynamic) | `hpcrun -e MEMLEAK --memleak-prob 0.10 app arg ...` |
-> | (static)  | `export HPCRUN_EVENT_LIST=MEMLEAK`                  |
-> |           | `export HPCRUN_MEMLEAK_PROB=0.10`                   |
-> |           | `app arg ...`                                       |
+> ```
+> hpcrun -e MEMLEAK --memleak-prob 0.10 app arg ...
+> ```
 
 It might appear that if you monitor only 10% of the program's
 mallocs, then you would have only a 10% chance of finding the leak.
@@ -646,12 +621,9 @@ allocation causing the program to segfault. If this happens, use the
 `hpcrun` debug (`dd`) variable `MEMLEAK_NO_HEADER` as a
 workaround.
 
-> |           |                                                       |
-> | :-------: | :---------------------------------------------------- |
-> | (dynamic) | `hpcrun -e MEMLEAK -dd MEMLEAK_NO_HEADER app arg ...` |
-> | (static)  | `export HPCRUN_EVENT_LIST=MEMLEAK`                    |
-> |           | `export HPCRUN_DEBUG_FLAGS=MEMLEAK_NO_HEADER`         |
-> |           | `app arg ...`                                         |
+> ```
+> hpcrun -e MEMLEAK -dd MEMLEAK_NO_HEADER app arg ...
+> ```
 
 The `MEMLEAK` source works by attaching a header or a footer to
 the application's `malloc`'d regions. Headers are faster but
@@ -680,9 +652,9 @@ The left database has no source code, since sources were not provided for the CP
 If HPCToolkit has been compiled with Python support enabled, `hpcrun` is able to replace segments of the C callstacks with the Python code running in those frames.
 To enable this transformation, profile your application the additional `-a python` flag:
 
-> |           |                                                          |
-> | :-------: | :------------------------------------------------------- |
-> | (dynamic) | `hpcrun -a python -e event@howoften python3 app arg ...` |
+> ```
+> hpcrun -a python -e event@howoften python3 app arg ...
+> ```
 
 As shown in Figure [5.1](#fig:python-support), passing this flag removes the CPython implementation details, replacing it with the much smaller Python callstack.
 When Python calls an external C library, HPCToolkit will report both the name of the Python function object and the C function being called, in this example `sleep` and Glibc's `clock_nanosleep` respectively.
@@ -732,13 +704,10 @@ application but do not record any measurement data. This is what the
 process fraction option (`-f` or `--process-fraction`) does.
 For example, to monitor 10% of the processes, use:
 
-> |           |                                                |
-> | :-------: | :--------------------------------------------- |
-> | (dynamic) | `hpcrun -f 0.10 -e event@howoften app arg ...` |
-> | (dynamic) | `hpcrun -f 1/10 -e event@howoften app arg ...` |
-> | (static)  | `export HPCRUN_EVENT_LIST='event@howoften'`    |
-> |           | `export HPCRUN_PROCESS_FRACTION=0.10`          |
-> |           | `app arg ...`                                  |
+> ```
+> hpcrun -f 0.10 -e event@howoften app arg ...
+> hpcrun -f 1/10 -e event@howoften app arg ...
+> ```
 
 With this option, each process generates a random number and records
 its measurement data with the given probability. The process fraction
@@ -809,13 +778,10 @@ Compile your application with `libhpctoolkit` with `-I` and
 The `libhpctoolkit` library provides weak symbol no-op definitions
 for the start and stop functions. For dynamically linked programs, be
 sure to include `-lhpctoolkit` on the link line (otherwise your
-program won't link). For statically linked programs, `hpclink` adds
-strong symbol definitions for these functions. So, `-lhpctoolkit`
-is not necessary in the static case, but it doesn't hurt.
+program won't link).
 
 To run the program, set the `LD_LIBRARY_PATH` environment
 variable to include the HPCToolkit `lib/hpctoolkit` directory.
-This step is only needed for dynamically linked programs.
 
 > ```
 > export LD_LIBRARY_PATH=/path/to/hpctoolkit/lib/hpctoolkit
@@ -823,15 +789,11 @@ This step is only needed for dynamically linked programs.
 
 Note that sampling is initially turned on until the program turns it
 off. If you want it initially turned off, then use the `-ds` (or
-`--delay-sampling`) option for `hpcrun` (dynamic) or set the
-`HPCRUN_DELAY_SAMPLING` environment variable (static).
+`--delay-sampling`) option for `hpcrun`.
 
-> |           |                                             |
-> | :-------: | :------------------------------------------ |
-> | (dynamic) | `hpcrun -ds -e event@howoften app arg ...`  |
-> | (static)  | `export HPCRUN_EVENT_LIST='event@howoften'` |
-> |           | `export HPCRUN_DELAY_SAMPLING=1`            |
-> |           | `app arg ...`                               |
+> ```
+> hpcrun -ds -e event@howoften app arg ...
+> ```
 
 (sec:env-vars)=
 
@@ -882,7 +844,6 @@ breaks `hpcrun`'s method for finding HPCToolkit's install directory.
 To fix this problem, in your job script, set `HPCTOOLKIT` to the top-level HPCToolkit installation directory
 (the directory containing the `bin`, `lib` and
 `libexec` subdirectories) and export it to the environment.
-(If launching statically-linked binaries created using `hpclink`, this step is unnecessary, but harmless.)
 Figure [5.2](#cray-alps) show a skeletal job script that sets the `HPCTOOLKIT` environment variable before monitoring
 a dynamically-linked executable with `hpcrun`:
 
