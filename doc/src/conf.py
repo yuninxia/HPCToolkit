@@ -16,7 +16,7 @@ nitpicky = True
 master_doc = "index"
 
 html_title = 'HPCToolkit'
-html_logo = 'hpctoolkit-wordmark.png'
+html_logo = '_static/hpctoolkit-wordmark.png'
 
 # Enable extensions. Custom extensions are under _ext/
 sys.path.insert(0, os.path.abspath("./_ext"))
