@@ -141,7 +141,7 @@ Then, install HPCToolkit with:
 spack install hpctoolkit
 ```
 
-```{important}
+````{important}
 Normally, Spack builds HPCToolkit for the specific architecture (skylake, sapphirerapids, zen3, etc) on which `spack install hpctoolkit` is run.
 Some care is required when installing HPCToolkit on a system that contains multiple kinds of x86_64 processors. A default Spack build of HPCToolkit on one kind of x86_64 processor and running on another may cause `illegal instruction` errors.
 
@@ -149,7 +149,8 @@ It is worth noting that in some cases, processor heterogeneity is less than obvi
 
 You can avoid problems when multiple kinds of x86_64 processors are present by configuring HPCToolkit for a generic x86_64 processor as follows:
 
-`spack install hpctoolkit target=x86_64`
+```
+spack install hpctoolkit target=x86_64
 ```
 
 HPCToolkit can also be configured for a generic x86_64 target in `packages.yaml` with:
@@ -167,6 +168,7 @@ spack arch --known-targets
 ```
 
 For further information, see Spack's documentation about [architecture specifiers](https://spack.readthedocs.io/en/latest/spec_syntax.html#architecture-specifiers).
+````
 
 ```{tip} Configuring HPCToolkit for debugging
 By default, Spack will build a `release` version of `hpctoolkit`
