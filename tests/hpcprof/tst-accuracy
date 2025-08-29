@@ -9,7 +9,7 @@ canonical="$2"
 shift 2  # Remaining arguments are the hpcprof command line
 
 trap 'rm -rf "$tmpdir"' EXIT
-tmpdir=$(mktemp --directory --tmpdir=.)
+tmpdir=$(mktemp --directory)
 
 "$@" -o "$tmpdir"/d
 "$hpctesttool" test db-compare "$tmpdir"/d "$canonical"

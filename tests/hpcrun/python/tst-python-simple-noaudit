@@ -21,7 +21,7 @@ else
 fi
 
 trap 'rm -rf "$tmpdir"' EXIT
-tmpdir=$(mktemp --directory --tmpdir=.)
+tmpdir=$(mktemp --directory)
 
 "$hpcrun" -o "$tmpdir"/m -a python -e REALTIME --disable-auditor "$python" "$script"
 "$hpctesttool" test produces-profiles "$tmpdir"/m \

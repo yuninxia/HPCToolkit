@@ -21,7 +21,7 @@ for arg in "$@"; do
 done
 
 trap 'rm -rf "$tmpdir"' EXIT
-tmpdir=$(mktemp --directory --tmpdir=.)
+tmpdir=$(mktemp --directory)
 
 "$hpcstruct" -o "$tmpdir"/s.hpcstruct --nocache "$@"
 "$hpctesttool" test struct-compare "$tmpdir"/s.hpcstruct "$canonical"

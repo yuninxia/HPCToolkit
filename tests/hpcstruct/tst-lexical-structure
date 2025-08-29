@@ -10,7 +10,7 @@ binary="$3"
 shift 3  # Remaining arguments go to the hpctesttool
 
 trap 'rm -rf "$tmpdir"' EXIT
-tmpdir=$(mktemp --directory --tmpdir=.)
+tmpdir=$(mktemp --directory)
 
 "$hpcstruct" -o "$tmpdir"/s.hpcstruct "$binary"
 "$hpctesttool" test match-struct "$tmpdir"/s.hpcstruct "$binary" "$@"
