@@ -1158,6 +1158,7 @@ add_project_arguments(
 )
 
 
+subdir('tools')
 subdir('doc')
 subdir('src')
 subdir('tests')
