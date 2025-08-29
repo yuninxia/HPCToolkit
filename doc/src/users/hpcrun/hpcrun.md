@@ -23,18 +23,18 @@ profiling code into the application at runtime via `LD_PRELOAD`.
 
 `hpcrun` monitors the execution of applications on a CPU using asynchronous sampling. If `hpcrun` is used without any arguments to measure a program
 
-> ```
-> hpcrun app arg ...
-> ```
+```
+hpcrun app arg ...
+```
 
 it will the measure the program's execution by sampling its CPUTIME and collect a call path profile for each thread in the execution. More about the CPUTIME metric can be found in Section [5.3.3](#linux-timers).
 
 In addition to a call path profile, `hpcrun` can collect a call path trace of an execution if the `-t` (or `--trace`) option is used
 turn on tracing. The following use of `hpcrun` will collect both a call path profile and a call path trace of CPU execution using the default CPUTIME sample source.
 
-> ```
-> hpcrun -t app arg ...
-> ```
+```
+hpcrun -t app arg ...
+```
 
 Traces are most useful for understanding the execution dynamics of multithreaded or multi-process applications; however, you may find a trace of a single-threaded application to be useful to understand how an execution unfolds over time.
 
@@ -52,34 +52,34 @@ sample sources be used for measuring an execution.
 The basic syntax for profiling an application with
 `hpcrun` is:
 
-> ```
-> hpcrun -t -e event@howoften ... app arg ...
-> ```
+```
+hpcrun -t -e event@howoften ... app arg ...
+```
 
 For example, to profile an application using hardware counter sample sources
 provided by Linux `perf_events` and sample cycles at 300 times/second (the default sampling frequency) and sample every 4,000,000 instructions,
 you would use:
 
-> ```
-> hpcrun -e CYCLES -e INSTRUCTIONS@4000000 app arg ...
-> ```
+```
+hpcrun -e CYCLES -e INSTRUCTIONS@4000000 app arg ...
+```
 
 The units for timer-based sample sources (`CPUTIME` and `REALTIME` are microseconds,
 so to sample an application with tracing every 5,000 microseconds
 (200 times/second), you would use:
 
-> ```
-> hpcrun -t -e CPUTIME@5000 app arg ...
-> ```
+```
+hpcrun -t -e CPUTIME@5000 app arg ...
+```
 
 `hpcrun` stores its raw performance data in a *measurements*
 directory with the program name in the directory name. On systems
 with a batch job scheduler (eg, PBS) the name of the job is appended
 to the directory name.
 
-> ```
-> hpctoolkit-app-measurements[-jobid]
-> ```
+```
+hpctoolkit-app-measurements[-jobid]
+```
 
 It is best to use a different measurements directory for each run.
 So, if you're using `hpcrun` on a local workstation without a job
@@ -91,9 +91,9 @@ For programs that use their own launch script (eg, `mpirun` or
 outside (first) and `hpcrun` on the inside (second) on the command
 line. For example,
 
-> ```
-> mpirun -n 4 hpcrun -e CYCLES mpiapp arg ...
-> ```
+```
+mpirun -n 4 hpcrun -e CYCLES mpiapp arg ...
+```
 
 Note that `hpcrun` is intended for profiling dynamically linked
 *binaries*. It will not work well if used to profile a shell script.
@@ -184,7 +184,7 @@ argument to `hpcrun`.
 
 ## Hardware Counter Event Names
 
-HPCToolkit uses libpfm4(Libpfm4 2008) to translate from an event name string to an event code recognized by the kernel.
+HPCToolkit uses libpfm4 ([Libpfm4 2008](https://perfmon2.sf.net/)) to translate from an event name string to an event code recognized by the kernel.
 An event name is case insensitive and is defined as followed:
 
 ```
@@ -308,9 +308,9 @@ To force HPCToolkit to use PAPI rather than `perf_events` to oversee monitoring 
 (assuming that HPCToolkit has been configured to include support for PAPI),
 one must prefix the event with '`papi::`' as follows:
 
-> ```
-> hpcrun -e papi::CYCLES
-> ```
+```
+hpcrun -e papi::CYCLES
+```
 
 For PAPI presets, there is no need to prefix the event with
 '`papi::`'. For instance it is sufficient to specify `PAPI_TOT_CYC` event
@@ -322,30 +322,30 @@ and `INSTRUCTIONS` using HPCToolkit's `perf_events` measurement substrate:
 To sample an execution 100 times per second (frequency-based sampling) counting `CYCLES`
 and 100 times a second counting `INSTRUCTIONS`:
 
-> ```
-> hpcrun -e CYCLES@f100 -e INSTRUCTIONS@f100 ...
-> ```
+```
+hpcrun -e CYCLES@f100 -e INSTRUCTIONS@f100 ...
+```
 
 To sample an execution every 1,000,000 cycles and every 1,000,000 instructions using period-based sampling:
 
-> ```
-> hpcrun -e CYCLES@1000000 -e INSTRUCTIONS@1000000
-> ```
+```
+hpcrun -e CYCLES@1000000 -e INSTRUCTIONS@1000000
+```
 
 By default, hpcrun uses frequency-based sampling with the rate
 300 samples per second per event type. Hence the following command causes HPCToolkit to
 sample `CYCLES` at 300 samples per second and `INSTRUCTIONS` at 300 samples per second:
 
-> ```
-> hpcrun -e CYCLES -e INSTRUCTIONS ...
-> ```
+```
+hpcrun -e CYCLES -e INSTRUCTIONS ...
+```
 
 One can specify a different default sampling period or frequency using the `-c` option.
 The command below will sample `CYCLES` and `INSTRUCTIONS` at 200 samples per second each:
 
-> ```
-> hpcrun -c f200 -e CYCLES -e INSTRUCTIONS ...
-> ```
+```
+hpcrun -c f200 -e CYCLES -e INSTRUCTIONS ...
+```
 
 #### Notes
 
@@ -353,13 +353,16 @@ The command below will sample `CYCLES` and `INSTRUCTIONS` at 200 samples per sec
   Furthermore, since `hpcrun` generates one hpcrun file for each thread, and an additional hpctrace file if traces is enabled.
   Hence for `e` events and `t` threads, the required number of file descriptors is:
 
-  > `t * e + t` (`+t` if trace is enabled)
+  ```
+  t * e + t (+t if trace is enabled)
+  ```
 
   For instance, if one profiles a multi-threaded program that executes with 500 threads using 4 events,
   then the required number of file descriptors is
 
-  > 500 threads * 4 events + 500 hpcrun files + 500 hpctrace files\
-  > = 3000 file descriptors
+  ```
+  500 threads * 4 events + 500 hpcrun files + 500 hpctrace files = 3000 file descriptors
+  ```
 
   If the number of file descriptors exceeds the number of maximum number of open files, then the program will crash.
   To remedy this issue, one needs to increase the number of maximum number of open files allowed.
@@ -397,15 +400,15 @@ represent quantities synthesized by combining measurements based on multiple nat
 available on a particular processor.
 For instance, in some cases PAPI reports
 total cache misses by measuring and combining data misses and instruction misses.
-PAPI is available from the University of Tennessee at <http://icl.cs.utk.edu/papi>.
+PAPI is available from the University of Tennessee at <https://icl.cs.utk.edu/papi>.
 
 PAPI focuses mostly on in-core CPU events: cycles, cache misses,
 floating point operations, mispredicted branches, etc. For example,
 the following command samples total cycles and L2 cache misses.
 
-> ```
-> hpcrun -e PAPI_TOT_CYC@15000000 -e PAPI_L2_TCM@400000 app arg ...
-> ```
+```
+hpcrun -e PAPI_TOT_CYC@15000000 -e PAPI_L2_TCM@400000 app arg ...
+```
 
 The precise set of PAPI preset and native events is highly system
 dependent. Commonly, there are events for machine cycles, cache
@@ -490,9 +493,9 @@ count FLOPs by using cycles a proxy event with a command line such as
 the following. The period for derived events is ignored and may be
 omitted.
 
-> ```
-> hpcrun -e PAPI_TOT_CYC@6000000 -e PAPI_FP_OPS app arg ...
-> ```
+```
+hpcrun -e PAPI_TOT_CYC@6000000 -e PAPI_FP_OPS app arg ...
+```
 
 Attribution of proxy samples is not as accurate as regular samples.
 The problem, of course, is that the event that triggered the sample
@@ -534,9 +537,9 @@ case, consider using `CPUTIME` instead.
 The following example, which specifies a period of 5000 microseconds will sample
 each thread in `app` at a rate of approximately 200 times per second.
 
-> ```
-> hpcrun -e REALTIME@5000 app arg ...
-> ```
+```
+hpcrun -e REALTIME@5000 app arg ...
+```
 
 do not use more than one timer-based sample source to monitor a program execution.
 When using a sample source such as `CPUTIME` or `REALTIME`,
@@ -560,9 +563,9 @@ than relying on data collection triggered by interrupts.
 To include this source, use the `IO` event (no period).
 For example,
 
-> ```
-> hpcrun -e IO app arg ...
-> ```
+```
+hpcrun -e IO app arg ...
+```
 
 The `IO` source is mainly used to find where your program reads or
 writes large amounts of data. However, it is also useful for tracing
@@ -594,9 +597,9 @@ and not explicitly free it.
 To include this source, use the `MEMLEAK` event (no period).
 For example,
 
-> ```
-> hpcrun -e MEMLEAK app arg ...
-> ```
+```
+hpcrun -e MEMLEAK app arg ...
+```
 
 If a program allocates and frees many small regions, the `MEMLEAK`
 source may result in a high overhead. In this case, you may reduce
@@ -604,9 +607,9 @@ the overhead by using the memleak probability option to record only a
 fraction of the mallocs. For example, to monitor 10% of the mallocs,
 use:
 
-> ```
-> hpcrun -e MEMLEAK --memleak-prob 0.10 app arg ...
-> ```
+```
+hpcrun -e MEMLEAK --memleak-prob 0.10 app arg ...
+```
 
 It might appear that if you monitor only 10% of the program's
 mallocs, then you would have only a 10% chance of finding the leak.
@@ -621,9 +624,9 @@ allocation causing the program to segfault. If this happens, use the
 `hpcrun` debug (`dd`) variable `MEMLEAK_NO_HEADER` as a
 workaround.
 
-> ```
-> hpcrun -e MEMLEAK -dd MEMLEAK_NO_HEADER app arg ...
-> ```
+```
+hpcrun -e MEMLEAK -dd MEMLEAK_NO_HEADER app arg ...
+```
 
 The `MEMLEAK` source works by attaching a header or a footer to
 the application's `malloc`'d regions. Headers are faster but
@@ -645,16 +648,16 @@ This usually is of little interest to an application developer, so HPCToolkit pr
 ![](python-comparison.png)
 
 
-Example of a simple Python application measured without (left) and with (right) Python support enabled via `hpcrun` `-a python`.
+Figure 5.1: Example of a simple Python application measured without (left) and with (right) Python support enabled via `hpcrun` `-a python`.
 The left database has no source code, since sources were not provided for the CPython implementation.
 ```
 
 If HPCToolkit has been compiled with Python support enabled, `hpcrun` is able to replace segments of the C callstacks with the Python code running in those frames.
 To enable this transformation, profile your application the additional `-a python` flag:
 
-> ```
-> hpcrun -a python -e event@howoften python3 app arg ...
-> ```
+```
+hpcrun -a python -e event@howoften python3 app arg ...
+```
 
 As shown in Figure [5.1](#fig:python-support), passing this flag removes the CPython implementation details, replacing it with the much smaller Python callstack.
 When Python calls an external C library, HPCToolkit will report both the name of the Python function object and the C function being called, in this example `sleep` and Glibc's `clock_nanosleep` respectively.
@@ -704,29 +707,25 @@ application but do not record any measurement data. This is what the
 process fraction option (`-f` or `--process-fraction`) does.
 For example, to monitor 10% of the processes, use:
 
-> ```
-> hpcrun -f 0.10 -e event@howoften app arg ...
-> hpcrun -f 1/10 -e event@howoften app arg ...
-> ```
+```
+hpcrun -f 0.10 -e event@howoften app arg ...
+hpcrun -f 1/10 -e event@howoften app arg ...
+```
 
-With this option, each process generates a random number and records
-its measurement data with the given probability. The process fraction
-(probability) may be written as a decimal number (0.10) or as a
-fraction (1/10) between 0 and 1. So, in the above example, all three
-cases would record data for approximately 10% of the processes. Aim
-for a number of processes in the hundreds.
+With this option, each process generates a random number and records its measurement data with the given probability. The process fraction (probability) may be written as a decimal number (0.10) or as a fraction (1/10) between 0 and 1.
+So, in the above example, all three cases would record data for approximately 10% of the processes.
+Aim for a number of processes in the hundreds.
 
-## Starting and Stopping Sampling
+## API to Start and Stop Sampling
 
-HPCToolkit supports an API for the application to start and stop
-sampling. This is useful if you want to profile only a subset of a
-program and ignore the rest. The API supports the following
-functions.
+HPCToolkit supports an API for the application to start and stop sampling.
+This is useful if you want to profile only a subset of a program and ignore the rest.
+The API supports the following functions.
 
-> ```
-> void hpctoolkit_sampling_start(void);
-> void hpctoolkit_sampling_stop(void);
-> ```
+```
+void hpctoolkit_sampling_start(void);
+void hpctoolkit_sampling_stop(void);
+```
 
 For example, suppose that your program has three major phases: it
 reads input from a file, performs some numerical computation on the
@@ -763,17 +762,17 @@ where you want sampling to start and stop. Remember, starting and
 stopping apply process wide. For C/C++, include the following header
 file from the HPCToolkit `include` directory.
 
-> ```
-> #include <hpctoolkit.h>
-> ```
+```
+#include <hpctoolkit.h>
+```
 
 Compile your application with `libhpctoolkit` with `-I` and
 `-L` options for the include and library paths. For example,
 
-> ```
-> gcc -I /path/to/hpctoolkit/include app.c ... \
->     -L /path/to/hpctoolkit/lib/hpctoolkit -lhpctoolkit ...
-> ```
+```
+gcc -I /path/to/hpctoolkit/include app.c ... \
+    -L /path/to/hpctoolkit/lib/hpctoolkit -lhpctoolkit ...
+```
 
 The `libhpctoolkit` library provides weak symbol no-op definitions
 for the start and stop functions. For dynamically linked programs, be
@@ -783,17 +782,17 @@ program won't link).
 To run the program, set the `LD_LIBRARY_PATH` environment
 variable to include the HPCToolkit `lib/hpctoolkit` directory.
 
-> ```
-> export LD_LIBRARY_PATH=/path/to/hpctoolkit/lib/hpctoolkit
-> ```
+```
+export LD_LIBRARY_PATH=/path/to/hpctoolkit/lib/hpctoolkit
+```
 
 Note that sampling is initially turned on until the program turns it
 off. If you want it initially turned off, then use the `-ds` (or
 `--delay-sampling`) option for `hpcrun`.
 
-> ```
-> hpcrun -ds -e event@howoften app arg ...
-> ```
+```
+hpcrun -ds -e event@howoften app arg ...
+```
 
 (sec:env-vars)=
 
@@ -828,11 +827,10 @@ would be convenient for users.
 
 If you are trying to profile a dynamically-linked executable on a Cray that is still using the ALPS job launcher and you see an error like the following
 
-> ```
-> /var/spool/alps/103526/hpcrun: Unable to find HPCTOOLKIT root directory.
-> Please set HPCTOOLKIT to the install prefix, either in this script,
-> or in your environment, and try again.
-> ```
+```
+/var/spool/alps/103526/hpcrun: Unable to find HPCTOOLKIT root directory.
+Please set HPCTOOLKIT to the install prefix, either in this script, or in your environment, and try again.
+```
 
 in your job's error log then read on. Otherwise, skip this section.
 
@@ -851,18 +849,18 @@ a dynamically-linked executable with `hpcrun`:
 ---
 name: cray-alps
 ---
-> ```
-> #!/bin/sh
-> #PBS -l mppwidth=#nodes
-> #PBS -l walltime=00:30:00
-> #PBS -V
->
-> export HPCTOOLKIT=/path/to/hpctoolkit/install/directory
-> export CRAY_ROOTFS=DSL
->
-> cd \$PBS_O_WORKDIR
-> aprun -n #nodes hpcrun -e event@howoften dynamic-app arg ...</code></pre>
-> ```
+```
+#!/bin/sh
+#PBS -l mppwidth=#nodes
+#PBS -l walltime=00:30:00
+#PBS -V
+
+export HPCTOOLKIT=/path/to/hpctoolkit/install/directory
+export CRAY_ROOTFS=DSL
+
+cd \$PBS_O_WORKDIR
+aprun -n #nodes hpcrun -e event@howoften dynamic-app arg ...</code></pre>
+```
 
 A sketch of how to help HPCToolkit find its dynamic libraries when using Cray's ALPS job launcher.
 ````

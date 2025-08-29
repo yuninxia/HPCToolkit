@@ -14,9 +14,8 @@ effective-analysis/effective-analysis.md
 hpcrun/hpcrun.md
 mpi.md
 gpu/gpu.md
-hpcviewer/hpcviewer.md
+markdown/hpcviewer.md
 known-issues.md
 faq.md
 environment-vars.md
-references.md
 ```

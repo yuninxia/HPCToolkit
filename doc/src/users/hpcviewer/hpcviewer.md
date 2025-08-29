@@ -6,7 +6,7 @@ SPDX-License-Identifier: CC-BY-4.0
 
 # Analyzing Performance Data with `hpcviewer`
 
-HPCToolkit provides the `hpcviewer` (Adhianto, Mellor-Crummey, and Tallent 2010; N. R. Tallent et al. 2011) performance presentation tool for interactive examination of performance databases.
+HPCToolkit provides the `hpcviewer` ([Adhianto, Mellor-Crummey, and Tallent 2010](https://dx.doi.org/10.1109/ICPPW.2010.35); [Tallent et al. 2011](https://doi.acm.org/10.1145/1995896.1995908)) performance presentation tool for interactive examination of performance databases.
 `hpcviewer` presents a heterogeneous
 calling context tree that spans both CPU and GPU contexts, annotated
 with measured or derived metrics to help users assess code performance
@@ -666,12 +666,11 @@ For the metric pane, `hpcviewer` has some convenient features:
 Figure 10.15: Logical view of trace call path samples on three dimensions: time, execution context (rank/thread/GPU) and call path depth.
 ```
 
-Trace viewer (N. R. Tallent et al. 2011) is a time-centric user interface for interactive examination of a sample-based time series (hereafter referred to as a trace) view of a program execution.
+Trace viewer ([Tallent et al. 2011](https://doi.acm.org/10.1145/1995896.1995908)) is a time-centric user interface for interactive examination of a sample-based time series (hereafter referred to as a trace) view of a program execution.
 Trace viewer can interactively present a large-scale execution trace without concern for the scale of parallelism it represents.
 
 To collect a trace for a program execution, one must instruct HPCToolkit's measurement system to collect a trace.
 When launching a dynamically-linked executable with `hpcrun`, add the `-t ` flag to enable tracing.
-When launching a statically-linked executable, set the environment variable `HPCRUN_TRACE=1` to enable tracing.
 When collecting a trace, one must also specify a metric to measure. The best way to collect a useful trace is to asynchronously sample the execution with a time-based metric such as `REALTIME`, `CYCLES`, or `CPUTIME`.
 
 As shown in Figure [10.15](#fig:hpctraceviewer-callpath), call path traces consist of data in three dimensions: *profile* (process/thread rank), *time*, and *call path* depth.

@@ -10,10 +10,10 @@ HPCToolkit supports performance measurement and analysis on ARM, x86_64, and IBM
 
 On CPUs, HPCToolkit principally monitors an execution of a multithreaded and/or multiprocess program using asynchronous sampling. When an asynchronous sample interrupts a thread, HPCToolkit unwinds the thread's call stack and attributes the metric value associated with the sample event to the calling context in which the sample was delivered. Asynchronous sampling is typically triggered by the expiration of a Linux timer or reaching a threshold value for a hardware performance counter.
 Sampling has several advantages over instrumentation for measuring program performance: it requires no modification of source code, it avoids potential blind spots due to uninstrumented code, and it has lower overhead.
-HPCToolkit typically adds measurement overhead of only a few percent to an execution for reasonable sampling rates (N. R. Tallent, Mellor-Crummey, and Fagan 2009).
+HPCToolkit typically adds measurement overhead of only a few percent to an execution for reasonable sampling rates ([Tallent, Mellor-Crummey, and Fagan 2009](https://doi.acm.org/10.1145/1542476.1542526)).
 Sampling enables fine-grain measurement and attribution of costs in both serial and parallel programs.
 
-On GPUs, HPCToolkit collects profiles and traces of GPU operations, such as data copies or kernel launches, using vendor-provided libraries, such as NVIDIA's CUPTI, AMD's Rocprofiler-sdk, and Intel's Level Zero. HPCToolkit correlates GPU measurements to application source code by using call stack unwinding to attribute metrics associated with a GPU operation back to the calling context where the operation was initiated.
+On GPUs, HPCToolkit collects profiles and traces of GPU operations, such as data copies or kernel launches, using vendor-provided libraries, such as NVIDIA's [CUPTI](https://docs.nvidia.com/cupti), AMD's [Rocprofiler-sdk](https://rocm.docs.amd.com/projects/rocprofiler-sdk/en/latest/index.html), and Intel's [Level Zero](https://oneapi-src.github.io/level-zero-spec). HPCToolkit correlates GPU measurements to application source code by using call stack unwinding to attribute metrics associated with a GPU operation back to the calling context where the operation was initiated.
 
 For parallel programs, one can use HPCToolkit to measure
 the fraction of time threads are idle, working, or communicating.
@@ -36,10 +36,10 @@ Figure 1.1: A code-centric view of an execution of the University of Chicago's F
 ```
 
 A unique capability of HPCToolkit is its ability to unwind the call stack of a thread executing highly optimized code to attribute time, hardware counter metrics, as well as software metrics (e.g., context switches) to a full calling context.
-Call stack unwinding is often difficult for highly optimized code (N. R. Tallent, Mellor-Crummey, and Fagan 2009). For accurate call stack unwinding, HPCToolkit employs two strategies:
-interpreting compiler-recorded information in DWARF Frame Descriptor Entries (FDEs) and binary analysis
+Call stack unwinding is often difficult for highly optimized code ([Tallent, Mellor-Crummey, and Fagan 2009](https://doi.acm.org/10.1145/1542476.1542526)). For accurate call stack unwinding, HPCToolkit employs two strategies:
+interpreting compiler-recorded information in [DWARF](https://dwarfstd.org) Frame Descriptor Entries (FDEs) and binary analysis
 to compute unwind recipes directly from an application's machine instructions.
-On ARM processors, HPCToolkit uses `libunwind` exclusively. On Power processors, HPCToolkit uses
+On ARM processors, HPCToolkit uses [`libunwind`](https://www.nongnu.org/libunwind) exclusively. On Power processors, HPCToolkit uses
 binary analysis exclusively.
 On x86_64 processors, HPCToolkit employs both strategies in an integrated fashion.
 
@@ -68,9 +68,9 @@ The low overhead of HPCToolkit's sampling-based measurement is particularly impo
 for parallel programs because measurement overhead can distort program behavior.
 
 HPCToolkit is especially good at pinpointing scaling losses in parallel codes, both within multicore nodes and across the nodes in a parallel system.
-Using differential analysis of call path profiles collected on different numbers of threads or processes, one can quantify scalability losses and pinpoint their causes to individual lines of code executed in particular calling contexts (Coarfa et al. 2007).
-We have used this technique to quantify scaling losses in leading science applications across thousands of processor cores on Cray and IBM Blue Gene systems, associate them with individual lines of source code in full calling context (N. R. Tallent et al. 2009; N. R. Tallent, Adhianto, and Mellor-Crummey 2010), and quantify scaling losses in science applications within compute nodes at the loop nest level due to competition for memory bandwidth in multicore processors (N. Tallent et al. 2008).
-We have also developed techniques for efficiently attributing the idleness in one thread to its cause in another thread (N. R. Tallent and Mellor-Crummey 2009; N. R. Tallent, Mellor-Crummey, and Porterfield 2010).
+Using differential analysis of call path profiles collected on different numbers of threads or processes, one can quantify scalability losses and pinpoint their causes to individual lines of code executed in particular calling contexts ([Coarfa et al. 2007](https://doi.acm.org/10.1145/1274971.1274976)).
+We have used this technique to quantify scaling losses in leading science applications across thousands of processor cores on Cray and IBM Blue Gene systems, associate them with individual lines of source code in full calling context ([Tallent, Mellor-Crummey, and Fagan 2009](https://doi.acm.org/10.1145/1542476.1542526); [Tallent, Adhianto, and Mellor-Crummey 2010](https://dx.doi.org/10.1109/SC.2010.47)), and quantify scaling losses in science applications within compute nodes at the loop nest level due to competition for memory bandwidth in multicore processors ([Tallent et al. 2008](https://stacks.iop.org/1742-6596/125/012088)).
+We have also developed techniques for efficiently attributing the idleness in one thread to its cause in another thread ([Tallent, Mellor-Crummey, and Fagan 2009](https://doi.acm.org/10.1145/1542476.1542526); [Tallent, Mellor-Crummey, and Porterfield 2010](https://doi.acm.org/10.1145/1693453.1693489)).
 
 HPCToolkit is deployed on many DOE supercomputers, including
-the El Capitan exacale supercomputer (AMD MI300A APUs) at Lawrence Livermore National Laboratory, the Frontier exascale supercomputer (AMD Trento CPUs + MI250X GPUs) at Oak Ridge National Laboratory, the Aurora exascale supercomputer (Intel Sapphire Rapids CPUs + Intel Max GPUs) at Argonne's Leadership Computing Facility, the Crossroads supercomputer (Intel Sapphire Rapids) at Los Alamos National Laboratory, and the Kestrel HPC platform, which includes both GPU-accelerated nodes (AMD Genoa + NVIDIA H100) and CPU-only nodes (Intel Sapphire Rapids) at the National Renewable Energy Laboratory.
+the [El Capitan](https://asc.llnl.gov/exascale/el-capitan) exacale supercomputer (AMD MI300A APUs) at Lawrence Livermore National Laboratory, the [Frontier](https://www.olcf.ornl.gov/frontier) exascale supercomputer (AMD Trento CPUs + MI250X GPUs) at Oak Ridge National Laboratory, the [Aurora](https://www.anl.gov/aurora) exascale supercomputer (Intel Sapphire Rapids CPUs + Intel Max GPUs) at Argonne's Leadership Computing Facility, the [Crossroads](https://www.lanl.gov/about/mission/advanced-simulation-and-computing/platforms/crossroads) supercomputer (Intel Sapphire Rapids) at Los Alamos National Laboratory, and the [Kestrel](https://www.nrel.gov/hpc/kestrel-computing-system) HPC platform, which includes both GPU-accelerated nodes (AMD Genoa + NVIDIA H100) and CPU-only nodes (Intel Sapphire Rapids) at the National Renewable Energy Laboratory.

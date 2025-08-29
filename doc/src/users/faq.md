@@ -178,7 +178,7 @@ Choosing sampling periods for other events such as cache misses is harder.
 In principle, an architectural expert can easily derive reasonable sampling periods by working backwards from (a) a maximum target sampling frequency and (b) hardware resource saturation points.
 In practice, this may require some experimentation.
 
-See also the `hpcrun` [man page](http://hpctoolkit.org/man/hpcrun.html).
+See also the `hpcrun` [man page](https://hpctoolkit.org/man/hpcrun.html).
 
 ### Why do I see partial unwinds?
 

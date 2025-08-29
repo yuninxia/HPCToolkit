@@ -41,7 +41,7 @@ As a result, a principal focus of work on HPCToolkit has been the design and imp
 For tools to be useful on production applications on large-scale parallel systems, large measurement overhead is unacceptable.
 For measurements to be accurate, performance tools must avoid introducing measurement error.
 
-Both source-level and binary instrumentation can distort application performance through a variety of mechanisms (Mytkowicz et al. 2009).
+Both source-level and binary instrumentation can distort application performance through a variety of mechanisms ([Mytkowicz et al. 2009](https://doi.org/10.1145/2528521.1508275)).
 Frequent calls to small instrumented procedures can lead to considerable measurement overhead.
 Furthermore, source-level instrumentation can distort application performance by interfering with inlining and template optimization.
 To avoid these effects, many instrumentation-based tools intentionally refrain from instrumenting certain procedures.
@@ -53,7 +53,7 @@ A typical example is that source code instrumentation suffers from blind spots w
 To avoid these problems, HPCToolkit eschews instrumentation and favors the use of *asynchronous sampling* to measure and attribute performance metrics.
 During a program execution, sample events are triggered by periodic interrupts induced by an interval timer or overflow of hardware performance counters.
 One can sample metrics that reflect work (e.g., instructions, floating-point operations), consumption of resources (e.g., cycles, bandwidth consumed in the memory hierarchy by data transfers in response to cache misses), or inefficiency (e.g., stall cycles).
-For reasonable sampling frequencies, the overhead and distortion introduced by sampling-based measurement is typically much lower than that introduced by instrumentation (Froyd, Mellor-Crummey, and Fowler 2005).
+For reasonable sampling frequencies, the overhead and distortion introduced by sampling-based measurement is typically much lower than that introduced by instrumentation ([Froyd, Mellor-Crummey, and Fowler 2005](https://doi.acm.org/10.1145/1088149.1088161)).
 
 For all but the most trivially structured programs, it is important to associate the costs incurred by each procedure with the contexts in which the procedure is called.
 Knowing the context in which each cost is incurred is essential for understanding why the code performs as it does.
@@ -63,7 +63,7 @@ Because there are often layered implementations within applications and librarie
 For this reason, HPCToolkit uses call path profiling to attribute costs to the full calling contexts in which they are incurred.
 
 HPCToolkit's `hpcrun` call path profiler uses call stack unwinding to attribute execution costs of optimized executables to the full calling context in which they occur.
-Unlike other tools, to support asynchronous call stack unwinding during execution of optimized code, `hpcrun` uses on-the-fly binary analysis to locate procedure bounds and compute an unwind recipe for each code range within each procedure (N. R. Tallent, Mellor-Crummey, and Fagan 2009).
+Unlike other tools, to support asynchronous call stack unwinding during execution of optimized code, `hpcrun` uses on-the-fly binary analysis to locate procedure bounds and compute an unwind recipe for each code range within each procedure ([Tallent, Mellor-Crummey, and Fagan 2009](https://doi.acm.org/10.1145/1542476.1542526)).
 These analyses enable `hpcrun` to unwind call stacks for optimized code with little or no information other than an application's machine code.
 
 The output of a run with `hpcrun` is a *measurements directory* containing the data, and the information necessary
@@ -80,7 +80,7 @@ run, as well as those for any GPU binaries executed on GPUs during the run.
 To associate measurement data with the static structure of fully-optimized executables,
 we need a mapping between object code and its associated source code structure.[^2]
 HPCToolkit constructs this mapping using binary analysis; we call this process
-*recovering program structure* (N. R. Tallent, Mellor-Crummey, and Fagan 2009).
+*recovering program structure* ([Tallent, Mellor-Crummey, and Fagan 2009](https://doi.acm.org/10.1145/1542476.1542526)).
 
 HPCToolkit focuses its efforts on recovering source files, procedures, inlined functions and templates, as well as
 loop nests as the most important elements of source code structure.
@@ -105,7 +105,7 @@ HPCToolkit's `hpcprof` utility employs multithreading to quickly aggregate perfo
 One uses `hpcprof` by invoking it on the *measurements directory* recorded by `hpcrun` and augmented with program structure information by `hpcstruct`.
 From the measurements and structure, `hpcprof` generates a *database directory* containing performance data presentable by `hpcviewer`.
 
-In most cases `hpcprof` is able to complete the reduction in minutes, however for especially large experiments (e.g. thousands of threads or GPU streams (Anderson, Liu, and Mellor-Crummey 2022)) its multi-node sibling `hpcprof-mpi` may be substantially faster.
+In most cases `hpcprof` is able to complete the reduction in minutes, however for especially large experiments (e.g. thousands of threads or GPU streams ([Anderson, Liu, and Mellor-Crummey 2022](https://doi.org/10.1145/3524059.3532397))) its multi-node sibling `hpcprof-mpi` may be substantially faster.
 `hpcprof-mpi` is an MPI application identical to `hpcprof`, except that employs distributed-memory parallelism in addition to multithreading to aggregate and attribute performance measurements for many CPUs and GPUs.
 In our experience, exploiting 8-10 compute nodes via `hpcprof-mpi` can be as much as 5x faster than `hpcprof` for analyzing performance measurements from thousands of CPUs and GPUs.
 
@@ -113,7 +113,7 @@ In our experience, exploiting 8-10 compute nodes via `hpcprof-mpi` can be as muc
 
 To enable an analyst to rapidly pinpoint and quantify performance bottlenecks, tools must present the performance measurements in a way that engages the analyst, focuses attention on what is important, and automates common analysis subtasks to reduce the mental effort and frustration of sifting through a sea of measurement details.
 
-To enable rapid analysis of an execution's performance bottlenecks, we have carefully designed HPCToolkit's `hpcviewer` graphical user interface. `hpcviewer` provide code-centric profile views (Adhianto, Mellor-Crummey, and Tallent 2010), thread-centric graphing of metrics, and time-centric views of CPU and GPU activity (N. R. Tallent et al. 2011).
+To enable rapid analysis of an execution's performance bottlenecks, we have carefully designed HPCToolkit's `hpcviewer` graphical user interface. `hpcviewer` provide code-centric profile views ([Adhianto, Mellor-Crummey, and Tallent 2010](https://dx.doi.org/10.1109/ICPPW.2010.35)), thread-centric graphing of metrics, and time-centric views of CPU and GPU activity ([Tallent et al. 2011](https://doi.acm.org/10.1145/1995896.1995908)).
 
 `hpcviewer` combines a relatively small set of complementary presentation techniques that, taken together, rapidly focus an analyst's attention on performance bottlenecks rather than on unimportant information.
 To facilitate the goal of rapidly focusing an analyst's attention on performance bottlenecks `hpcviewer`
