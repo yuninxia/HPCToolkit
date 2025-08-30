@@ -116,19 +116,19 @@ Main View is divided into two parts: the top part, which contains *action* and *
 
 The buttons in the action pane are the following:
 
-- **Home** ![image](icons/fullscreen-rectangular-symbolic.svg) : Resetting the view configuration into the original view, i.e., viewing traces for all times and processes.
+- **Home** ![image](icons/fullscreen-rectangular-symbolic.png) : Resetting the view configuration into the original view, i.e., viewing traces for all times and processes.
 
-- **Horizontal zoom in ![image](icons/zoom-in-horizontal.svg) / out** ![image](icons/size-horizontally-symbolic.svg) : Zooming in/out the time dimension of the traces.
+- **Horizontal zoom in ![image](icons/zoom-in-horizontal.png) / out** ![image](icons/size-horizontally-symbolic.png) : Zooming in/out the time dimension of the traces.
 
-- **Vertical zoom in ![image](icons/zoom-in-vertical.svg) / out ![image](icons/size-vertically-symbolic.svg)** : Zooming in/out the process dimension of the traces.
+- **Vertical zoom in ![image](icons/zoom-in-vertical.png) / out ![image](icons/size-vertically-symbolic.png)** : Zooming in/out the process dimension of the traces.
 
-- **Navigation buttons** ![image](icons/arrow4-left-symbolic.svg), ![image](icons/arrow4-right-symbolic.svg), ![image](icons/arrow4-up-symbolic.svg), ![image](icons/arrow4-down-symbolic.svg) : Navigating the trace view to the left, right, up and bottom, respectively. It is also possible to navigate with the arrow keys in the keyboard. Since Main View does not support scroll bars, the only way to navigate is through navigation buttons (or arrow keys).
+- **Navigation buttons** ![image](icons/arrow4-left-symbolic.png), ![image](icons/arrow4-right-symbolic.png), ![image](icons/arrow4-up-symbolic.png), ![image](icons/arrow4-down-symbolic.png) : Navigating the trace view to the left, right, up and bottom, respectively. It is also possible to navigate with the arrow keys in the keyboard. Since Main View does not support scroll bars, the only way to navigate is through navigation buttons (or arrow keys).
 
-- **Undo** ![image](icons/history-undo-symbolic.svg) : Canceling the action of zoom or navigation and returning back to the previous view configuration.
+- **Undo** ![image](icons/history-undo-symbolic.png) : Canceling the action of zoom or navigation and returning back to the previous view configuration.
 
-- **Redo** ![image](icons/history-redo-symbolic.svg) : Redoing of previously undo change of view configuration.
+- **Redo** ![image](icons/history-redo-symbolic.png) : Redoing of previously undo change of view configuration.
 
-- **Save** ![image](icons/bookmark-save.svg) / **Open ![image](icons/bookmark-outline-symbolic.svg) a view configuration** : Saving/loading a saved view configuration.
+- **Save** ![image](icons/bookmark-save.png) / **Open ![image](icons/bookmark-outline-symbolic.png) a view configuration** : Saving/loading a saved view configuration.
   A view configuration file contains information about the process/thread and time ranges shown, the selected depth, and the position of the crosshair.
   It is recommended that the view configuration file be stored in the same directory as the database to ensure that it matches the database since a configuration does not store its associated database. Although it is possible to open a view configuration file associated with a different database, it is not recommended since each database has different time/process dimensions and depth.
 

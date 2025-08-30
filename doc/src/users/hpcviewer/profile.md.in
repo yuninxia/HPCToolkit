@@ -105,8 +105,8 @@ The nature of the entities in the navigation pane's tree structure depends upon 
 The header above the navigation pane contains some controls for the navigation and metric view.
 In Figure [Profile View](#fig:hpcviewer-legend), they are labeled as "navigation control."
 
-- **Flatten** ![image](icons/list-hide-left.svg) /
-  **Unflatten** ![image](icons/list-unhide-left.svg)
+- **Flatten** ![image](icons/list-hide-left.png) /
+  **Unflatten** ![image](icons/list-unhide-left.png)
   (Flat View only):
   Enabling to flatten and unflatten the navigation hierarchy.
   Clicking on the flatten button (the icon that shows a tree node with a slash through it) will replace each top-level scope shown with its children.
@@ -115,40 +115,40 @@ In Figure [Profile View](#fig:hpcviewer-legend), they are labeled as "navigation
   For instance, this can be used to hide procedures in the Flat View so that outer loops can be ranked and compared to one another.
   The inverse of the flatten operation is the unflatten operation, which causes an elided node in the tree to be made visible once again.
 
-- **Zoom-in** ![image](icons/list-hide-above.svg) /
-  **Zoom-out** ![image](icons/list-unhide-above.svg) :
+- **Zoom-in** ![image](icons/list-hide-above.png) /
+  **Zoom-out** ![image](icons/list-unhide-above.png) :
   Depressing the up arrow button will zoom in to show only information for the selected line and its descendants.
   One can zoom out (reversing a prior zoom operation) by depressing the down arrow button.
 
-- **Hot call path** ![image](icons/fire2-symbolic.svg) :
+- **Hot call path** ![image](icons/fire2-symbolic.png) :
   This button automatically reveals and traverses the hot call path rooted at the selected node in the navigation pane with respect to the selected metric column. Let `n` be the node initially selected in the navigation pane.
   A hot path from `n` is traversed by comparing the values of the selected metric for `n` and its children. If one child accounts for `T%` or more (where `T` is the threshold value for a hot call path) of the cost at `n`, then that child becomes `n` and the process repeats recursively.
 
-- **Add derived metric** ![image](icons/column-add.svg) :
+- **Add derived metric** ![image](icons/column-add.png) :
   Create a new metric by specifying a mathematical formula.
   See Section [Derived Metrics](#sec:hpcviewer:derived-metrics) for more details.
 
-- **Hide/show metrics** ![image](icons/eye-open-negative-filled-symbolic.svg) :
+- **Hide/show metrics** ![image](icons/eye-open-negative-filled-symbolic.png) :
   Show or hide metric columns.
   A metric property view will appear, and the user can select which metric columns should be displayed.
 
-- **Resizing metric columns** ![image](icons/column-shrink.svg)/
-  ![image](icons/column-grow.svg) :
+- **Resizing metric columns** ![image](icons/column-shrink.png)/
+  ![image](icons/column-grow.png) :
   Resize the metric columns based on either the width of the data or the width of both of the data and the column's label.
 
-- **Export into a CSV format file** ![image](icons/share-symbolic.svg) :
+- **Export into a CSV format file** ![image](icons/share-symbolic.png) :
   Export the current metric table into a comma separated value (CSV) format file.
   This feature only exports all metrics that are currently shown.
   Metrics not shown in the view (whose scopes are not expanded) will not be exported (we assume these metrics are not significant).
 
-- **Increase font size** ![image](icons/loupe-plus-large-symbolic.svg) /
-  **Decrease font size** ![image](icons/loupe-minus-large-symbolic.svg) :
+- **Increase font size** ![image](icons/loupe-plus-large-symbolic.png) /
+  **Decrease font size** ![image](icons/loupe-minus-large-symbolic.png) :
   Increase or decrease the size of the navigation and metric panes.
 
-- **Show a graph of metric values** ![image](icons/graph2-symbolic.svg) (Top-down view only):
+- **Show a graph of metric values** ![image](icons/graph2-symbolic.png) (Top-down view only):
   Show a graph (a plot, a sorted plot, or a histogram) of metric values associated with the selected node in CCT for all processes or threads (Section [Plot Graphs](#sec:hpcviewer:plots)).
 
-- **Show the metrics of a set of threads** ![image](icons/tab-new-filled-symbolic.svg) (Top-down view only):
+- **Show the metrics of a set of threads** ![image](icons/tab-new-filled-symbolic.png) (Top-down view only):
   Show the CCT and the metrics of a selected threads (Section [Thread View](#sec:thread-level-table)).
 
 #### Context menus
@@ -380,7 +380,7 @@ The vertical axis shows metric values for each execution context.
 Because `hpcviewer` can generate scatter plots for any node in the Top-down View, these graphs are calling-context sensitive.
 
 To create a graph, first select a scope in the Top-down View; in the Figure [Plot graph](#fig:hpcviewer-view-scatterplot), the procedure `gpu_tdhf_apb_j06_pppp_` is selected.
-Then, click the graph button ![image](icons/graph2-symbolic.svg) to show the associated sub-menus.
+Then, click the graph button ![image](icons/graph2-symbolic.png) to show the associated sub-menus.
 At the bottom of the sub-menu is a list of non-empty metrics for the selected scope.
 Each metric contains a sub-menu that lists the three different types of graphs:
 
@@ -416,7 +416,7 @@ In the Profile view, metrics for a GPU operation are attributed to either the ma
 ### Thread View
 
 `hpcviewer` can also displays the metrics of certain execution contexts (threads and/or processes) named **Thread View**.
-To select a set of execution contexts, one needs to use the execution-context selection window by clicking ![image](icons/tab-new-filled-symbolic.svg) button from the [control panel](#sec:control-panel) in the Top-down view.
+To select a set of execution contexts, one needs to use the execution-context selection window by clicking ![image](icons/tab-new-filled-symbolic.png) button from the [control panel](#sec:control-panel) in the Top-down view.
 
 (fig:hpcviewer-dialog-thread-select)=
 
@@ -560,7 +560,7 @@ For the metric pane, `hpcviewer` has some convenient features:
 - **Hiding or showing metric columns**.
   Sometimes, it may be more convenient to suppress the display of metrics that are not of current interest.
   When there are too many metrics to fit on the screen at once, it is often useful to suppress the display of some.
-  The icon ![image](icons/eye-open-negative-filled-symbolic.svg) above the metric pane will bring up the metric property pane on the source pane area.
+  The icon ![image](icons/eye-open-negative-filled-symbolic.png) above the metric pane will bring up the metric property pane on the source pane area.
 
   The pane contains a list of metrics sorted according to their order in HPCToolkit's performance database for the application.
   Each metric column is prefixed by a check box to indicate if the metric should be *displayed* (if checked) or *hidden* (unchecked).
