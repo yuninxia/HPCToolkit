@@ -14,10 +14,10 @@ It assumes an operational installation of HPCToolkit.
 ```{figure-md} fig:hpctoolkit-overview:b
 ![](hpctoolkit-gpu-workflow.png)
 
-Overview of HPCToolkit tool's work flow.
+Figure 3.1: Overview of HPCToolkit tool's work flow.
 ```
 
-HPCToolkit's work flow is summarized in Figure [3.1](#fig:hpctoolkit-overview:b) (on page ) and is organized around four principal capabilities:
+HPCToolkit's work flow is summarized in Figure [3.1](#fig:hpctoolkit-overview:b) and is organized around four principal capabilities:
 
 1. *measurement* of context-sensitive performance metrics while an application executes;
 
@@ -40,62 +40,49 @@ The following subsections explain HPCToolkit's work flow in more detail.
 ### Compiling an Application
 
 For the most detailed attribution of application performance data using HPCToolkit, one should compile so as to include with line map information in the generated object code.
-This usually means compiling with options similar to '`-g -O3`'. Check your compiler's documentation for information about the right set of options to have the compiler record information about inlining and the mapping of machine instructions to source lines. We advise picking options that indicate they will record information that relates machine instructions to source code without compromising optimization. For instance, the Portland Group (PGI) compilers, use `-gopt` in place of `-g` to collect information without interfering with optimization.
+This usually means compiling with options similar to `-g -O3`. Check your compiler's documentation for information about the right set of options to have the compiler record information about inlining and the mapping of machine instructions to source lines.
+We advise picking options that indicate they will record information that relates machine instructions to source code without compromising optimization.
+Additionally, specifying flags that cause a compiler to record mappings of machine instructions to inlined code are particularly useful for performance analysis of codes that employ C++ templates.
 
 While HPCToolkit does not need information about the mapping between machine instructions and source code to function,
 having such information included in the binary code by the compiler can be helpful to users trying to interpret performance measurements.
 Since compilers can usually provide information about line mappings and inlining for fully-optimized code,
 this requirement usually involves a one-time trivial adjustment to the an application's build scripts
-to provide a better experience with tools. Such mapping information enables tools such as HPCToolkit,
-race detectors, and memory analysis tools to attribute information more precisely.
-
-For statically linked executables, such as those often used on Cray supercomputers, the final link step is done with `hpclink`.
+to provide a better experience with tools. Such mapping information enables tools such as HPCToolkit to attribute performance metrics to source code constructs within procedures rather than only at the procedure level.
 
 (chpt:quickstart:tour:measurement)=
 
 ### Measuring Application Performance
 
-Measurement of application performance takes two different forms depending on whether your application is dynamically or statically linked.
+Today, HPCToolkit is designed to measure executions of dynamically-linked applications.
 To monitor a dynamically linked application, simply use `hpcrun` to launch the application.
-To monitor a statically linked application, the data to be collected is specified by environment variables.
-In either case, the application may be sequential, multithreaded or based on MPI.
+An application may be sequential, multithreaded or based on MPI.
 The commands below give examples for an application named `app`.
 
 - Dynamically linked applications:
 
   Simply launch your application with `hpcrun`:
 
-  > `[<mpi-launcher>] hpcrun [hpcrun-options] app [app-arguments]`
+  ```
+  [<mpi-launcher>] hpcrun [hpcrun-options] app [app-arguments]
+  ```
 
   Of course, `<mpi-launcher>` is only needed for MPI programs and is sometimes a program like `mpiexec` or `mpirun`, or a workload manager's utilities such as Slurm's `srun` or IBM's Job Step Manager utility `jsrun`.
 
-- Statically linked applications:
-
-  First, link `hpcrun`'s monitoring code into `app`, using `hpclink`:
-
-  > `hpclink <linker> -o app <linker-arguments>`
-
-  Then monitor `app` by passing `hpcrun` options through environment variables.
-  For instance:
-
-  > ```
-  > export HPCRUN_EVENT_LIST="CYCLES"
-  > [<mpi-launcher>] app [app-arguments]
-  > ```
-
-  `hpclink`'s `--help` option gives a list of environment variables that affect monitoring.
-  See Chapter [6](#chpt:statically-linked-apps) for more information.
-
-Any of these commands will produce a measurements database that contains separate measurement information for each MPI rank and thread in the application.
+hpcrun will produce a measurements database that contains separate measurement information for each MPI rank and thread in the application.
 The database is named according the form:
 
-> `hpctoolkit-app-measurements[-<jobid>]`
+```
+hpctoolkit-app-measurements[-<jobid>]
+```
 
 If the application `app` is run under control of a recognized batch job scheduler (such as Slurm, Cobalt, or IBM's Job Manager), the name of the measurements directory will contain the corresponding job identifier `<jobid>`.
 Currently, the database contains measurements files for each thread that are named using the following templates:
 
-> `app-<mpi-rank>-<thread-id>-<host-id>-<process-id>.<generation-id>.hpcrun`
-> `app-<mpi-rank>-<thread-id>-<host-id>-<process-id>.<generation-id>.hpctrace`
+```
+app-<mpi-rank>-<thread-id>-<host-id>-<process-id>.<generation-id>.hpcrun
+app-<mpi-rank>-<thread-id>-<host-id>-<process-id>.<generation-id>.hpctrace
+```
 
 #### Specifying CPU Sample Sources
 
@@ -107,11 +94,9 @@ For a sample source with event `e` and period `p`, after every `p` instances of 
 
 To configure `hpcrun` with two samples sources, `e1@howoften1` and `e2@howoften2`, use the following options:
 
-> `--event e1@howoften1 --event e2@howoften2`
-
-To use the same sample sources with an `hpclink`-ed application, use a command similar to:
-
-> `export HPCRUN_EVENT_LIST="e1@howoften1 e2@howoften2"`
+```
+--event e1@howoften1 --event e2@howoften2
+```
 
 #### Measuring GPU Computations
 
@@ -127,13 +112,23 @@ One can simply profile and optionally trace computations offloaded onto AMD, Int
 
 Adding a `-t` to `hpcrun`'s command line when profiling GPU computations will trace them as well.
 
-For more information about how to use PC sampling (NVIDIA GPUs only) or binary instrumentation (Intel GPUs) for instruction-level performance measurement of GPU kernels, see Chapter [8](#chpt:gpu).
+To support more intuitive tracing results of GPU-accelerated programs, `hpcrun` also supports a `-tt` option for boosted resolution tracing. Using this flag causes the calling context of CPU threads to be recorded in their traces each time they launch a GPU operation. This option is particularly helpful when tracing codes that launch GPU operations more often than default CPU sampling frequency.
+
+More information about instruction-level performance measurement of GPU kernels is available in a section of this manual that describes support for [Measurement and Analysis of GPU-accelerated Applications](#chpt:gpu).
 
 ### Recovering Program Structure
 
-Typically, `hpcstruct` is launched without any options, with an argument that is a HPCToolkit *measurement directory*.
-`hpcstruct` identifies the application as well as any shared libraries and GPU binaries it invokes.
-It processes each of them and records information its program structure in the *measurements directory*.
+When `hpcrun` measures the performance of an application, it associates performance information with machine code addresses. To relate performance information associated with machine code addresses back to source code locations, HPCToolkit provides a tool `hpcstruct` that analyzes CPU and GPU binaries associated with an execution to *recover program structure*. Program structure for a binary includes information about its source files, procedures, inlined code, loop nests, and statements. Program structure for a binary is recovered by combining source code mapping information recorded by compilers (when apprpropriate compile time arguments, e.g. `-g`, are used) with information about loops that `hpcstruct` gleans from analyzing the control flow between machine instructions in the binary.
+
+Typically, one launches `hpcstruct` without any options and one argument that specifies a HPCToolkit *measurement directory*.
+
+```
+hpcstruct hpctoolkit-app-measurements
+```
+
+From a measurement directory,
+`hpcstruct` identifies the application, any shared libraries it loads, and any GPU binaries that it invokes.
+`hpcstruct` processes each of CPU and GPU binary and records information about its program structure into the *measurements directory*.
 Program structure for a binary includes information about its source files, procedures, inlined code, loop nests, and statements.
 
 When applied to a measurements directory, `hpcstruct` analyzes multiple binaries concurrently by default.
@@ -142,17 +137,19 @@ It analyzes each small binary using a few threads and each large binary using mo
 Although not usually necessary, one can apply `hpcstruct` to recover program structure information for a single CPU or GPU binary.
 To recover static program structure for a single binary `b`, use the command:
 
-> `hpcstruct b`
+```
+hpcstruct b
+```
 
 This command analyzes the binary and saves this information in a file named `b.hpcstruct`.
 
-### Analyzing Measurements & Attributing Them to Source Code
+### Attributing Measurements to Source Code
 
 To analyze HPCToolkit's measurements and attribute them to the application's source code, use `hpcprof`, typically invoked as follows:
 
-> ```
-> hpcprof hpctoolkit-app-measurements
-> ```
+```
+hpcprof hpctoolkit-app-measurements
+```
 
 This command will produce an HPCToolkit performance database with the name `hpctoolkit-app-database`.
 If this database directory already exists, `hpcprof` will form a unique name by appending a random hexadecimal qualifier.
@@ -165,9 +162,9 @@ If this is not wanted (e.g. using sharing a single machine), the thread count ca
 For especially large experiments (applications using thousands of threads and/or GPU streams), the sibling `hpcprof-mpi` may produce results faster by exploiting additional compute nodes[^3].
 Typically `hpcprof-mpi` is invoked as follows, using 8 ranks and compute nodes:
 
-> ```
-> <mpi-launcher> -n 8 hpcprof-mpi hpctoolkit-app-measurements
-> ```
+```
+<mpi-launcher> -n 8 hpcprof-mpi hpctoolkit-app-measurements
+```
 
 Note that additional options may be needed to grant `hpcprof-mpi` access to all threads on each node, check the documentation for your scheduler and MPI implementation for details.
 
@@ -176,10 +173,10 @@ If the source code was moved since or was mounted at a different location than w
 In these cases, the `-R/--replace-path` option may be specified to provide substitute paths based on prefixes.
 For example, if the application was compiled from source at `/home/joe/app/src/` but it is mounted at `/extern/homes/joe/app/src/` when running `hpcprof`, the source files can be made available by invoking `hpcprof` as follows:
 
-> ```
-> hpcprof -R `/home/joe/app/src/=/extern/homes/joe/app/src/' \
->   hpctoolkit-app-measurements
-> ```
+```
+hpcprof -R `/home/joe/app/src/=/extern/homes/joe/app/src/' \
+  hpctoolkit-app-measurements
+```
 
 Note that on systems where MPI applications are restricted to a scratch file system, it is the users responsibility to copy any wanted source files and make them available to `hpcprof`.
 
@@ -189,7 +186,9 @@ To interactively view and analyze an HPCToolkit performance database, use `hpcvi
 `hpcviewer` may be launched from the command line or by double-clicking on its icon on MacOS or Windows.
 The following is an example of launching from a command line:
 
-> `hpcviewer hpctoolkit-app-database`
+```
+hpcviewer hpctoolkit-app-database
+```
 
 Additional help for `hpcviewer` can be found in a help pane available from `hpcviewer`'s *Help* menu.
 
@@ -214,13 +213,12 @@ Command-line help:
   To generate this help message, invoke the tool with `-h` or `--help`.
 
 Man pages:
-: Man pages are available either via the Internet (<http://hpctoolkit.org/documentation.html>) or from a local HPCToolkit installation (`<hpctoolkit-installation>/share/man`).
+: Man pages are available [online](https://hpctoolkit.org/documentation.html) or in a local HPCToolkit installation (`<hpctoolkit-installation>/share/man`).
 
 Manuals:
-: Manuals are available either via the Internet (<http://hpctoolkit.org/documentation.html>) or from a local HPCToolkit installation (`<hpctoolkit-installation>/share/doc/hpctoolkit/documentation.html`).
+: Manuals are available either [online](https://hpctoolkit.org/documentation.html) or from a local HPCToolkit installation (`<hpctoolkit-installation>/share/doc/hpctoolkit/documentation.html`).
 
-Articles and Papers:
-: There are a number of articles and papers that describe various aspects of HPCToolkit's measurement, analysis, attribution and presentation technology.
-  They can be found at <http://hpctoolkit.org/publications.html>.
+Papers:
+: Papers that describe various aspects of HPCToolkit's measurement, analysis, attribution and presentation technology can be found on the HPCToolkit [website](https://hpctoolkit.org/publications.html).
 
 [^3]: We recommend running `hpcprof-mpi` across 8-10 compute nodes. More than this may not improve or may degrade the overall speed of the analysis.

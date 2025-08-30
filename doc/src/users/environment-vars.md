@@ -18,11 +18,7 @@ HPCToolkit's `hpcrun` script to measure the performance of
 dynamically-linked executables, `hpcrun` takes information passed
 to it in command-line arguments and communicates it to HPCToolkit's
 measurement subsystem by appropriately setting environment variables.
-To measure statically-linked executables, one first adds HPCToolkit's
-measurement subsystem to a binary as it is linked by using HPCToolkit's
-`hpclink` script. Prior to launching a statically-linked binary that
-includes HPCToolkit's measurement subsystem, a user
-must manually set environment variables.
+Measurement of statically-linked programs is no longer supported by HPCToolkit.
 
 Section [13.1](#user-env) describes
 environment variables of interest to users. Section [13.3](#system-env)
