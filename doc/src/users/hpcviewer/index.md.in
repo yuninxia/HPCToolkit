@@ -39,6 +39,24 @@ The table below summarizes views supported by `hpcviewer`.
 Note that in the [Profile view](#sec:profile), GPU stream execution contexts are not shown in this view; metrics for a GPU operation are associated with the calling context in the thread that initiated the GPU operation (Section [Thread View](sec:hpcviewer:thread-level)).
 In the [Trace view](sec:trace), GPU streams have their trace lines independently from their host, allowing for the traces between hosts and devices to be separated.
 
+## Downloading
+
+While you can build your own copy of HPCToolkit's `hpcviewer` graphical user interface,
+we recommend downloading a binary release  at <https://hpctoolkit.org/download.html>.
+Pre-built packages are available for Linux (x86_64, aarch64, ppcle), MacOS (aarch64, x86_64), and Windows (x86_64).
+
+```{note}
+Trace views previously provided by HPCToolkit's `hpctraceviewer` interface have been integrated into `hpcviewer` since its 2020.12 release.
+```
+
+
+## Building from Source
+
+Source code for HPCToolkit's `hpcviewer` graphical user interface is available at <https://gitlab.com/hpctoolkit/hpcviewer.git>. Clone a copy with `git`.
+Building `hpcviewer` requires `maven`.
+You can download a copy of `maven` with Spack.
+To build `hpcviewer` on your platform of choice, follow the directions in its `README.md` on Gitlab.
+
 ## Launching
 
 Requirements to launch `hpcviewer`:
