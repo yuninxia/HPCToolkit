@@ -93,9 +93,9 @@ The nature of the entities in the navigation pane's tree structure depends upon 
   Unlike procedure activations in the top-down view, in which call sites are paired with the called procedure, in the bottom-up view, call sites are paired with the calling procedure to allow to attribute the costs of a called procedure to multiple different call sites and callers. The node in this view has the following notation:
 
 > \[`line_number`\] <span class="large-text">«</span> `caller`
-  
+
 >   Where the symbol <span class="large-text">«</span> represents a call by a procedure.
-   
+
 - In the **Flat View**, entities in the navigation tree correspond to source files, procedure call sites (rendered the same way as procedure activations), loops, and source lines.
 
 (sec:control-panel)=
@@ -230,7 +230,7 @@ h () {
 
 Figure [Top-down View](#fig:cct) below shows the top-down representation of the above program where procedure `m` is the main entry program, which then calls two procedures: `f` and `g`.
 Routine `g` can behave as a recursive function depending on the value of the condition branch (lines 3--4).
-In this figure, we use numerical subscripts to distinguish between different instances of the same procedure. 
+In this figure, we use numerical subscripts to distinguish between different instances of the same procedure.
 In contrast, in [Bottom-up View](#fig:metrics-callers) and [Flat View](#fig:metrics-flat), we use alphabetic subscripts.
 We use different labels because there is no natural one-to-one correspondence between the instances in the different views.
 
@@ -393,7 +393,7 @@ Each metric contains a sub-menu that lists the three different types of graphs:
   It divides the range of metric values into a small number of sub-ranges.
   The graph plots the frequency of the metric that falls into a particular sub-range.
 
-Remark that the label of execution context for a mixed programming model program like a hybrid MPI and OpenMP (Figure [Plot graph](#fig:hpcviewer-view-scatterplot)) is 
+Remark that the label of execution context for a mixed programming model program like a hybrid MPI and OpenMP (Figure [Plot graph](#fig:hpcviewer-view-scatterplot)) is
 > `PROCESS . THREAD`
 
 Hence, if the application is a hybrid MPI and OpenMP program, and the execution contexts are 0.0, 0.1, ... 31.0, 31.1 it means MPI process 0 has two threads: thread 0 and thread 1 (similarly with MPI process 31).
@@ -454,8 +454,8 @@ For instance, you may want to hide all nodes associated with OpenMP runtime and 
 For this purpose, `hpcviewer` provides *filtering* to elide nodes that match a filter pattern.
 `hpcviewer` allows users to define multiple filters, and each filter is associated with a glob pattern and a type.
 
-The figures below show examples of applying a filter mode. 
-In these figures, each node is attributed with three boxes: the node label (left), the inclusive cost (middle) and the exclusive cost (right). 
+The figures below show examples of applying a filter mode.
+In these figures, each node is attributed with three boxes: the node label (left), the inclusive cost (middle) and the exclusive cost (right).
 
 (fig:filter-cct)=
 (fig:filter-self)=

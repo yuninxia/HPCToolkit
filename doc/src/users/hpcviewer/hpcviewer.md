@@ -7,10 +7,13 @@ SPDX-License-Identifier: CC-BY-4.0
 # Hpcviewer
 
 ```{include} index.md.in
-```	
+```
+
 ```{include} profile.md.in
-```	
+```
+
 ```{include} trace.md.in
-```	
+```
+
 ```{include} remote.md.in
-```	
+```

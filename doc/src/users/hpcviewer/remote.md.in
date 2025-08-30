@@ -15,7 +15,7 @@ Protecting against unauthorized access was a principal design goal of `hpcviewer
 Several aspects of the design work together to prevent unauthorized access to data on a remote system.
 - Before accessing data on a remote host, a local instance of `hpcviewer` must authenticate with an instance of `hpcserver` running on the remote host using standard mechanisms (e.g. password, ssh keys).
 - Communication between `hpcviewer` and an instance of `hpcserver` occurs over an SSH tunnel.
-This guarantees that all communication between `hpcviewer` and `hpcserver` is encrypted, safeguarding it from unauthorized access or tampering. 
+This guarantees that all communication between `hpcviewer` and `hpcserver` is encrypted, safeguarding it from unauthorized access or tampering.
 - To further safeguard communication, an instance of `hpcserver` launched by an authenticated user uses a UNIX domain socket only accessible to that user when communicating with an instance of `hpcviewer`.
 This prevents access to the socket by other users.
 - `hpcviewer` doesn't save a copy of remote performance data to the local file system, which reduces the risk of unauthorized access to the data.
@@ -53,7 +53,7 @@ To enable remote access to data on a host, one needs to build and install `hpcse
 `install.sh` supports an optional `-f` argument, which forces an installation by skipping Java sanity checks.
 
 ```{tip}
-- Always use the `-j /path/to/java-jdk/root` arguments when installing `hpcserver`. 
+- Always use the `-j /path/to/java-jdk/root` arguments when installing `hpcserver`.
 Just because `java` is on your path doesn't guarantee that it will be on the path of anyone trying to launch an instance of `hpcserver`.
 - When installing `hpcserver`, make sure that the `/path/to/java-jdk/root` is accessible to anyone who will be connecting to the platform with `hpcviewer` to launch an instance of `hpcserver`
 - For the convenience of users, `/path/where/to/install/hpcserver` should be short because remote users will need to type the path into a remote instance of `hpcviewer`. If convenient, `/path/where/to/install/hpcserver` can be `/path/to/hpctoolkit-installation`
@@ -82,17 +82,16 @@ Steps to opening a remote database:
    - **SSH configuration**: use the user's SSH configuration to simplify the connection to a remote host that requires multiple hops or *proxy jump*. Usually the configuration file is located at `$HOME/.ssh/config` on most POSIX platforms.
 
    Once the configuration is set, one needs to click the `OK` button to start the connection.
-   
-3. If the connection succeeds, one has to choose an HPCToolkit database from the **Remote database browser** window. 
+
+3. If the connection succeeds, one has to choose an HPCToolkit database from the **Remote database browser** window.
    The window shows the current remote directory at the top, and the list of its content:
 
    | Remote database browser window |
    | :----------------------------: |
    |![Remote browser](images/hpcviewer-remote-browser.png)|
-   
+
    - ![folder](icons/folder-open-symbolic.svg) icon represents a regular directory, and one can access it via double-click at the icon or the name of the folder.
    - ![container](icons/container3-symbolic.svg) icon represents an HPCToolkit database. Selecting this item will enable the `OK` button.
    - A no icon item represents a regular file.
-   
-   Note: the `OK` button will remain disabled until one selects an HPCToolkit database.
 
+   Note: the `OK` button will remain disabled until one selects an HPCToolkit database.

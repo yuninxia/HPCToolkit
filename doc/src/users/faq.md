@@ -45,7 +45,7 @@ IBM's Spectrum MPI uses a special library `libpami_cudahook.so` to intercept all
 Unfortunately, the mechanism used by Spectrum MPI to do so (wrapping `dlsym`) interferes with performance tools that use `dlopen` and `dlsym`.
 This interference causes measurement of a GPU-accelerated MPI application using HPCToolkit to deadlock when an application uses both Spectrum MPI and CUDA on an NVIDIA GPU while not using `hpcrun`'s `LD_AUDIT` support. `LD_AUDIT` support is typically enabled, although on some platforms (e.g. Aurora), it is not. If `LD_AUDIT` is disabled, it can be enabled using `--enable-auditor`.
 
-If `LD_AUDIT` cannot be used, e.g. because an application uses `dlmopen` which causes `LD_AUDIT` to fail prior to glibc 2.35, 
+If `LD_AUDIT` cannot be used, e.g. because an application uses `dlmopen` which causes `LD_AUDIT` to fail prior to glibc 2.35,
 when launching a program that uses Spectrum MPI with `jsrun`, one can use `--smpiargs="-x PAMI_DISABLE_CUDA_HOOK=1 -disable_gpu_hooks"` to disable the PAMI CUDA hook library.
 These flags cannot be used with the `-gpu` flag.
 
@@ -95,7 +95,7 @@ version of the CUDA kernel driver installed on your system using the `nvidia-smi
 Table 3 *CUDA Application Compatibility Support Matrix* at the following URL <https://docs.nvidia.com/cuda/cuda-toolkit-release-notes>
 specifies what versions of the CUDA kernel driver match each version of CUDA and CUPTI.
 Although the table indicates that some drivers can support newer versions of CUDA than the one that they were designed for,
-in our experience that does not necessarily mean that the driver will support performance measurement of CUDA programs using a newer CUPTI. 
+in our experience that does not necessarily mean that the driver will support performance measurement of CUDA programs using a newer CUPTI.
 We believe that best way to avoid the `CUPTI_ERROR_NOT_INITIALIZED` error is to ensure that
 (1) HPCToolkit is compiled with the version of CUDA that your installed CUDA kernel driver was designed to support, and
 (2) your application uses the version of CUDA that matches the one your kernel driver was designed to support or a compatible older version.
@@ -213,7 +213,7 @@ The most common causes for unusually high overhead are the following:
 - At runtime, `hpcrun` analyzes CPU binaries loaded into an application's address space.
   This analysis occurs when libraries are loaded. Most libraries are loaded at program launch.
   This analysis might take seconds for your program. For short-running programs, this can lead to high overhead.
-  However, time for this analysis is not actually considered part of the execution time measured by `hpcrun`. 
+  However, time for this analysis is not actually considered part of the execution time measured by `hpcrun`.
 
 ### Some of my syscalls return EINTR
 
@@ -255,7 +255,7 @@ measuring performance with HPCToolkit.
 ### Fail to run `hpcviewer`: executable launcher was unable to locate its companion shared library
 
 Although this error mostly incurrs on Windows platform, but it can happen in other environment.
-The cause of this issue is that the permission of one of Eclipse launcher library (org.eclipse.equinox.launcher.*) is too restricted.
+The cause of this issue is that the permission of one of Eclipse launcher library (org.eclipse.equinox.launcher.\*) is too restricted.
 To fix this, set the permission of the library to 0755, and launch again the viewer.
 
 ### Launching `hpcviewer` is very slow on Windows
@@ -411,7 +411,7 @@ If this is the case, the source file `p/f` is resolved to the first instance `p'
 
 For any functions whose source code is not found (such as functions within system libraries), `hpcviewer` will generate a synopsis that shows the presence of the function and its line extents (if known).
 
-Hypothetically, let's say that your HPCToolkit database is missing source code from PetSC and you linked your program against a copy of PetSC provided by a module provided by your system administrators. You can check if that library contains line map information by running `readelf --debug-dump=decodedline`. In the `readelf` output, if you see that the source file paths begin with  `/path/to/petsc`, then you can download a matching version of PetSC to a location of your choosing `/my/path/to/petsc`. Then, you can rerun `hpcprof/mpi` with the `-R` option, which is used to replace path prefixes when searching for source files. In this example, you would use `-R /path/to/petsc=/my/path/to/petsc` to instruct `hpcprof/mpi` to consider all path prefixes of `/path/to/petsc` as `/my/path/to/petsc` so `hpcprof/mpi` will find the copies of source that you downloaded.
+Hypothetically, let's say that your HPCToolkit database is missing source code from PetSC and you linked your program against a copy of PetSC provided by a module provided by your system administrators. You can check if that library contains line map information by running `readelf --debug-dump=decodedline`. In the `readelf` output, if you see that the source file paths begin with `/path/to/petsc`, then you can download a matching version of PetSC to a location of your choosing `/my/path/to/petsc`. Then, you can rerun `hpcprof/mpi` with the `-R` option, which is used to replace path prefixes when searching for source files. In this example, you would use `-R /path/to/petsc=/my/path/to/petsc` to instruct `hpcprof/mpi` to consider all path prefixes of `/path/to/petsc` as `/my/path/to/petsc` so `hpcprof/mpi` will find the copies of source that you downloaded.
 
 ### `hpcviewer`'s reported line numbers do not exactly correspond to what I see in my source code! Why?
 
@@ -457,11 +457,11 @@ The second level is tracing `hpcrun` with a sample source.
 The key difference between the two is that the former uses the `--event NONE` or `HPCRUN_EVENT_LIST="NONE"` option (shown below) whereas the latter does not (which enables the default CPUTIME sample source).
 With this in mind, to collect a debug trace for either of these levels, use commands similar to the following:
 
-  ```
-  [<mpi-launcher>] \
-    hpcrun --monitor-debug --dynamic-debug ALL --event NONE \
-      app [app-arguments]
-  ```
+```
+[<mpi-launcher>] \
+  hpcrun --monitor-debug --dynamic-debug ALL --event NONE \
+    app [app-arguments]
+```
 
 Note that the `*debug*` flags are optional.
 The `--monitor-debug/MONITOR_DEBUG` flag enables `libmonitor` tracing.
@@ -477,11 +477,11 @@ HPCToolkit's measurement subsystem is easiest to debug if you configure and
 build HPCToolkit for debugging when building by Spack or Meson. See the Spack and Meson sections in this manual for how to configure debugging for your build. Note: if configuring HPCToolkit for debugging using Spack, you probably want to install hpctoolkit with the `--keep-stage` option, which instructs Spack not to remove source code (e.g. a copy of HPCToolkit) after compiling it.
 
 One can debug a dynamically-linked applications being measured by
-HPCToolkit's measurement subsystem. For a single-process program, you can use `gdb hpcrun`, set breakpoints inside `hpcrun`'s code where you want them, and then launch the application you are measuring with the gdb `run` command. 
+HPCToolkit's measurement subsystem. For a single-process program, you can use `gdb hpcrun`, set breakpoints inside `hpcrun`'s code where you want them, and then launch the application you are measuring with the gdb `run` command.
 
-:::{important}
+\:::\{important}
 `hpcrun` launches the program it is measuring with `exec`. As a result, in `gdb` before you issue the `run` command again, you will need to use the `gdb` command `exec-file hpcrun` to tell `gdb` that you want to launch `hpcrun` with the `run` command and not the application launched by `hpcrun` using `exec`. If you forget, you will find that none of the breakpoints in `hpcrun` will be encountered and your application will run to completion unmonitored.
-:::
+\:::
 
 Alternatively, you can launch an application directly with `hpcrun` and pass the `--debug` flag on its command line. Then, from a different terminal, you can attach a debugger to the copy of your application which will be spin waiting for you to attach.
 

@@ -87,7 +87,7 @@ while the [Trace view](#fig:hpctraceviewer-stat) figure below shows two addition
 (sec:callview)=
 
 - **Call Stack View** (top tab, right pane):
-  This view shows two things: 
+  This view shows two things:
     - the current call stack depth that defines the hierarchical slice shown in the Trace view, and
     - the actual call stack for the point selected by the Trace view's crosshair.
   To easily coordinate the call stack depth value with the call path, the Call Stack View currently suppresses details such as loop structure and call sites; we may use indentation or other techniques to display this in the future.
@@ -141,7 +141,7 @@ At the top of an execution's Main View pane is information about the data shown 
 
 ## Customizing the Color Map
 
-Trace view allows users to customize the color of a specific procedure or a group of procedures.  
+Trace view allows users to customize the color of a specific procedure or a group of procedures.
 To do that, one can select the `View - Color map` menu, and `Color Map` window will appear as shown below:
 
 (fig:colormap)=
@@ -154,7 +154,7 @@ To do that, one can select the `View - Color map` menu, and `Color Map` window w
 
 To add a new procedure-color map, click the `Add` button and a [Color map](#fig:colormap) window will appear.
 In this window, one can specify the procedure's name or a *glob* pattern of procedure, and then specify the color to be associated by clicking the color button.
-Clicking `OK` will close the window and add the new color map to the global list. 
+Clicking `OK` will close the window and add the new color map to the global list.
 Note that this map is persistent across sessions, and will apply to other databases as well.
 
 
@@ -168,7 +168,7 @@ This will display a filter window that allows to select which execution contexts
 | ![](images/hpctraceviewer-dialog-filter.png) |
 | An example of narrowing the list of execution contexts using both a regular expression and the minimum number of samples criteria |
 
-Similar to [Profile View's thread selection](sec:thread-level-table), one can narrow the list by specifying the name of the execution context on the filter part of the window. 
+Similar to [Profile View's thread selection](sec:thread-level-table), one can narrow the list by specifying the name of the execution context on the filter part of the window.
 In addition, one can also narrow the list based on the minimum number of trace samples (the third column of the table), as shown by the above figure.
 
 ### Filtering Suggestions
@@ -179,5 +179,5 @@ In addition, one can also narrow the list based on the minimum number of trace s
 - Filtering GPU calling context tree nodes: to hide clutter
   - hide individual CCT nodes: e.g. lines that have no source code mapping `library@0x0f450`
   - hide subtrees: e.g., MPI implementation or implementation of CUDA primitives
-- Trace view also provides a context menu by right-clicking on the view to save the current display. 
+- Trace view also provides a context menu by right-clicking on the view to save the current display.
   This context menu is also available on the Depth view and the Summary view.

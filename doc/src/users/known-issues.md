@@ -24,13 +24,11 @@ When using HPCToolkit to collect traces of GPU-accelerated applications on Auror
 ## When monitoring applications that use ROCm using LD_AUDIT in `hpcrun` may cause it to fail to elide OpenMP runtime frames
 
 Description:
+: When an application provides a runtime that supports the OpenMP tools API known as OMPT, normally in the OpenMP runtime frames between user code on call stacks are elided. However, we have observed that when using Glibc's `LD_AUDIT` as part of HPCToolkit's measurement infrastructure in conjunction with ROCm's Rocprofiler and Roctracer, an application's TLS storage is incorrectly reinitialized during HPCToolkit's initialization; this clears some important HPCToolkit state information from thread local variables. As a result, the primary thread is not recognized as an OpenMP thread, which is necessary to elide runtime frames.
 
-: When an application provides a runtime that supports the OpenMP tools API known as OMPT, normally in the OpenMP runtime frames between user code on call stacks are elided. However, we have observed that when using Glibc's `LD_AUDIT` as part of HPCToolkit's measurement infrastructure in conjunction with  ROCm's Rocprofiler and Roctracer, an application's TLS storage is incorrectly reinitialized during HPCToolkit's initialization; this clears some important HPCToolkit state information from thread local variables. As a result, the primary thread is not recognized as an OpenMP thread, which is necessary to elide runtime frames.
-
-This bug was reported to Red Hat (https://sourceware.org/bugzilla/show_bug.cgi?id=31717) and fixed in Glibc 2.41, which is considerably newer than the Glibc on almost all installed systems. 
+This bug was reported to Red Hat (https://sourceware.org/bugzilla/show_bug.cgi?id=31717) and fixed in Glibc 2.41, which is considerably newer than the Glibc on almost all installed systems.
 
 Workaround:
-
 : Use the `--disable-auditor` option to `hpcrun`.
 
 ## When using Intel GPUs, `hpcrun` may report that substantial time is spent in a partial call path consisting of only an unknown procedure
