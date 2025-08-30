@@ -18,4 +18,5 @@ hpcviewer/hpcviewer.md
 known-issues.md
 faq.md
 environment-vars.md
+help.md
 ```
