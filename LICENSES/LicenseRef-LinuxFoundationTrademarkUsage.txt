@@ -1,0 +1,5 @@
+The content this statement is applied to contains one or more Linux Foundation
+trademark(s) and is subject to the Linux Foundation's Trademark Usage guidelines,
+available online at
+
+    https://www.linuxfoundation.org/legal/trademark-usage.

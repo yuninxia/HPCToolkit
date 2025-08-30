@@ -193,7 +193,7 @@ However, if the loss of scalability attributed to a function invocation's inclus
 
 Given CCTs for an ensemble of executions, the next step to analyzing the scalability of their performance is to clearly define our expectations.
 Next, we describe performance expectations for weak scaling and intuitive metrics that represent how much performance deviates from our expectations.
-More information about our scalability analysis technique can be found elsewhere (Coarfa et al. 2007; N. R. Tallent et al. 2009).
+More information about our scalability analysis technique can be found elsewhere ([Coarfa et al. 2007](https://doi.acm.org/10.1145/1274971.1274976); [Tallent et al. 2009](https://doi.acm.org/10.1145/1654059.1654111)).
 
 ```{figure-md} fig:scaling-loss
 ![](flash-scalability.png)

@@ -1,0 +1,97 @@
+<!--
+SPDX-FileCopyrightText: Contributors to the HPCToolkit Project
+
+SPDX-License-Identifier: CC-BY-4.0
+-->
+
+(sec:remote)=
+
+# Accessing Remote Databases
+
+`hpcviewer` can open performance databases located on remote hosts. Access to performance data on a remote host is supported by running a utility known as `hpcserver` on the remote host to communicate with an instance of `hpcviewer` running elsewhere.
+With the help of an instance of `hpcserver`, a user running `hpcviewer` can interact with a remote database in real-time, viewing and analyzing performance metrics.
+
+Protecting against unauthorized access was a principal design goal of `hpcviewer`'s capability for remote access to performance data.
+Several aspects of the design work together to prevent unauthorized access to data on a remote system.
+- Before accessing data on a remote host, a local instance of `hpcviewer` must authenticate with an instance of `hpcserver` running on the remote host using standard mechanisms (e.g. password, ssh keys).
+- Communication between `hpcviewer` and an instance of `hpcserver` occurs over an SSH tunnel.
+This guarantees that all communication between `hpcviewer` and `hpcserver` is encrypted, safeguarding it from unauthorized access or tampering.
+- To further safeguard communication, an instance of `hpcserver` launched by an authenticated user uses a UNIX domain socket only accessible to that user when communicating with an instance of `hpcviewer`.
+This prevents access to the socket by other users.
+- `hpcviewer` doesn't save a copy of remote performance data to the local file system, which reduces the risk of unauthorized access to the data.
+
+To enable remote access to data on a host, one needs to build and install `hpcserver` on the host, as described in the next section.
+
+## Building and Installing `hpcserver`
+
+`hpcserver` supports secure and efficient communication between a server containing an HPCToolkit database and an instance of `hpcviewer` running elsewhere. `hpcserver` is written entirely in Java and is designed for cross-platform compatibility. Below are the requirements and instructions for building and installing `hpcserver`.
+
+**Requirements**:
+
+- Java 17 or newer
+- Maven 3.8.4 or newer
+
+**Build and install**:
+
+1. Checkout the `main` branch of `hpcserver`:
+
+   ```
+   git clone https://gitlab.com/hpctoolkit/hpcserver
+   git checkout main
+   ```
+
+2. Build using Maven
+
+   ```
+   mvn clean package
+   ```
+
+3. Install to a directory with the `install.sh` script
+   ```
+   ./scripts/install.sh -j /path/to/java-jdk/root /path/where/to/install/hpcserver
+   ```
+`install.sh` supports an optional `-f` argument, which forces an installation by skipping Java sanity checks.
+
+```{tip}
+- Always use the `-j /path/to/java-jdk/root` arguments when installing `hpcserver`.
+Just because `java` is on your path doesn't guarantee that it will be on the path of anyone trying to launch an instance of `hpcserver`.
+- When installing `hpcserver`, make sure that the `/path/to/java-jdk/root` is accessible to anyone who will be connecting to the platform with `hpcviewer` to launch an instance of `hpcserver`
+- For the convenience of users, `/path/where/to/install/hpcserver` should be short because remote users will need to type the path into a remote instance of `hpcviewer`. If convenient, `/path/where/to/install/hpcserver` can be `/path/to/hpctoolkit-installation`
+```
+
+## Opening a Remote Database
+
+Steps to opening a remote database:
+
+1. Click the menu `File` - `Open remote database`
+
+2. On **Remote connection** window, type the required fields:
+
+   | Remote connection window |
+   | :----------------------: |
+   |![Remote setup](images/hpcviewer-remote-setup.png)|
+
+   - **Hostname/IP address**: the name of the remote host where `hpcserver` is installed
+   - **Username**: the username at the remote host
+   - **Remote installation directory**: the absolute path of `hpcserver` installation. In the above case, it's `/path/hpctoolkit`
+
+   To facilitate the connection, `hpcviewer` allows to connect via three options:
+   - **Use private key**: use SSH private key whenever possible. This is the recommended way to avoid typing the password all the time.
+   - **Use identity**: use SSH identity. This is an experimental feature to connect via user's SSH identity.
+   - **Use password**: use a password to connect. One can check this option if using a private key is problematic.
+   - **SSH configuration**: use the user's SSH configuration to simplify the connection to a remote host that requires multiple hops or *proxy jump*. Usually the configuration file is located at `$HOME/.ssh/config` on most POSIX platforms.
+
+   Once the configuration is set, one needs to click the `OK` button to start the connection.
+
+3. If the connection succeeds, one has to choose an HPCToolkit database from the **Remote database browser** window.
+   The window shows the current remote directory at the top, and the list of its content:
+
+   | Remote database browser window |
+   | :----------------------------: |
+   |![Remote browser](images/hpcviewer-remote-browser.png)|
+
+   - ![folder](icons/folder-open-symbolic.png) icon represents a regular directory, and one can access it via double-click at the icon or the name of the folder.
+   - ![container](icons/container3-symbolic.png) icon represents an HPCToolkit database. Selecting this item will enable the `OK` button.
+   - A no icon item represents a regular file.
+
+   Note: the `OK` button will remain disabled until one selects an HPCToolkit database.
