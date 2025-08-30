@@ -21,29 +21,13 @@ In CUDA 13.0, NVIDIA removed a deprecated API used by HPCToolkit for PC sampling
 
 When using HPCToolkit to collect traces of GPU-accelerated applications on Aurora, we have frequently observed non-monotonic timestamp values associated with GPU operations launched with Level Zero. When this happens, it causes GPU operations to be reported in a trace at a time a few minutes in the past. We have commonly seen this in executions longer than six minutes or so. For short executions, our advice is to simply measure again and hope that the issue doesn't occur during the execution of your program. For long-running programs, there may not be a way to avoid this problem. This issue is a priority to resolve.
 
-## Inaccurate attribution of performance information can occur on Sapphire Rapids processors with HPCToolkit
-
-Description:
-: HPCToolkit depends upon the Dyninst binary analysis framework. Prior to Dyninst version 13.0, Dyninst stops its binary analysis of functions whenever it sees an a bit pattern that it doesn't recognize as a machine instruction. Unfortunately, Dyninst currently lacks support for decoding the AMX (advanced matrix extension) instructions supported by Sapphire Rapids. Prior to version 13.0, Dyninst will stop analysis of machine code in a function if it encounters an AMX instruction. This shortcoming in Dyninst can cause `hpcstruct` to fail to fully recover program structure for functions, leading to inaccurate attribution of program performance by HPCToolkit.
-
-Workaround:
-: Building HPCToolkit atop Dyninst 13.0 resolves the issue.
-
-## We observed bad generated code for Dyninst using gcc 11.2.0 on Aurora
-
-Description:
-: On the Aurora supercomputer, we observed that hpcstruct crashed with a segmentation fault when it and its Dyninst dependence were compiled with gcc 11.2.0. Debugging showed that when a class in Dyninst called a function implemented by its base class, the wrong `this` pointer value was passed to the function, causing a segmentation fault.
-
-Workaround:
-: Recompiling HPCToolkit and Dyninst with gcc 12.2.0 eliminated the problem.
-
-## When monitoring applications that use ROCm 6.0.0, using LD_AUDIT in `hpcrun` may cause it to fail to elide OpenMP runtime frames
+## When monitoring applications that use ROCm using LD_AUDIT in `hpcrun` may cause it to fail to elide OpenMP runtime frames
 
 Description:
 
-: When an application provides a runtime that supports the OpenMP tools API known as OMPT, normally in the OpenMP runtime frames between user code on call stacks are elided. However, have observed that when using Glibc's `LD_AUDIT` as part of HPCToolkit's measurement infrastructure and using Rocm 6.0.0, an application's TLS storage may be reinitialized during HPCToolkit's initialization; this clears some important HPCToolkit state information from thread local variables. As a result, the primary thread is not recognized as an OpenMP thread, which is necessary to elide runtime frames.
+: When an application provides a runtime that supports the OpenMP tools API known as OMPT, normally in the OpenMP runtime frames between user code on call stacks are elided. However, we have observed that when using Glibc's `LD_AUDIT` as part of HPCToolkit's measurement infrastructure in conjunction with  ROCm's Rocprofiler and Roctracer, an application's TLS storage is incorrectly reinitialized during HPCToolkit's initialization; this clears some important HPCToolkit state information from thread local variables. As a result, the primary thread is not recognized as an OpenMP thread, which is necessary to elide runtime frames.
 
-  The root cause of the problem is a bug in Glibc's `LD_AUDIT`. This is believed to affect all versions of Glibc. However, we have only observed this problem when using ROCm 6.0.0.
+This bug was reported to Red Hat (https://sourceware.org/bugzilla/show_bug.cgi?id=31717) and fixed in Glibc 2.41, which is considerably newer than the Glibc on almost all installed systems. 
 
 Workaround:
 
@@ -71,7 +55,7 @@ Development Plan:
 ## `hpcrun` may fail to measure a program execution on a CPU with hardware performance counters
 
 Description:
-: We observed a problem using Linux `perf_events` to measure CPU performance using hardware performance counters on an `x86_64` cluster at Sandia. An investigation determined that the cluster was running Sandia's LDMS (Lightweight Distributed Metric Service)---a low-overhead, low-latency framework for collecting, transferring, and storing metric data on a large distributed computer system. On this cluster, the LDMS daemon had been configured to use the `syspapi_sampler` (<https://github.com/ovis-hpc/ovis/blob/OVIS-4/ldms/src/sampler/syspapi/syspapi_sampler.c>), which uses the Linux `perf_events` subsystem to measure hardware counters at the node level. At present, the LDMS `syspapi_sampler`'s use of the Linux `perf_events` subsystem for data collection at the node level conflicts with native use of use the Linux `perf_events` subsystem by HPCToolkit for process-level measurement.[^17]
+: We observed a problem using Linux `perf_events` to measure CPU performance using hardware performance counters on an `x86_64` cluster at Sandia. An investigation determined that the cluster was running Sandia's LDMS (Lightweight Distributed Metric Service)---a low-overhead, low-latency framework for collecting, transferring, and storing metric data on a large distributed computer system. On this cluster, the LDMS daemon had been configured to use the `syspapi_sampler` (<https://github.com/ovis-hpc/ovis/blob/OVIS-4/ldms/src/sampler/syspapi/syspapi_sampler.c>), which uses the Linux `perf_events` subsystem to measure hardware counters at the node level. At present, the LDMS `syspapi_sampler`'s use of the Linux `perf_events` subsystem for data collection at the node level conflicts with native use of use the Linux `perf_events` subsystem by HPCToolkit for process-level measurement.
 
 Workaround:
 : Surprisingly, measurement using HPCToolkit's PAPI interface atop Linux `perf_events` works even though using HPCToolkit directly atop Linux `perf_events` yields no measurement data. For instance, rather than measuring `cycles` using Linux `perf_events` directly with `-e cycles`, one can measure cycles through HPCToolkit's PAPI measurement subsystem using `-e PAPI_TOT_CYC`. Of course, one can configure PAPI to measure other hardware events, such as graduated instructions and cache misses.
@@ -82,7 +66,7 @@ Development Plan:
 ## hpcrun may associate several profiles and traces with rank 0, thread 0
 
 Description:
-: On Cray systems, we have observed that `hpcrun` associates several profiles and traces with rank 0, thread 0. This results from the fact that the Cray PMI daemon gets forked from the application in a constructor and there is no exec. Initially, each process gets tagged with rank 0, thread 0 until the real rank and thread is determined later in the execution. That determination never happens for the PMI daemon.
+: On Cray systems, we have observed that `hpcrun` associates several profiles and traces with rank 0, thread 0. This results from the fact that a PMI daemon gets forked from the application in a constructor and there is no exec. Initially, each process gets tagged with rank 0, thread 0 until the real rank and thread is determined later in the execution. That determination never happens for the PMI daemon.
 
 Workaround:
 : In our experience, the hpcrun files in the measurement for the daemon tagged with rank 0 thread 0 are very small. In experiments we ran, they were about 2K. You can remove these profiles and their matching trace files before processing a measurement database with `hpcprof`. The correspondence between a profile and trace can be determined because they only differ in their suffix (hpcrun or hpctrace).
@@ -105,11 +89,15 @@ Description:
 
 : When analyzing a GPU-accelerated application that employs NVIDIA GPUs, HPCToolkit estimates percent GPU theoretical occupancy as the ratio of active GPU threads divided by the maximum number of GPU threads available. In multi-threaded or multi-rank programs, HPCToolkit reports GPU theoretical occupancy with the label
 
-  > Sum over rank/thread of exclusive 'GPU kernel: theoretical occupancy (FGP_ACT / FGP_MAX)'
+  ```
+  Sum over rank/thread of exclusive 'GPU kernel: theoretical occupancy (FGP_ACT / FGP_MAX)'
+  ```
 
   rather than its correct label
 
-  > GPU kernel: theoretical occupancy (FGP_ACT / FGP_MAX)
+  ```
+  GPU kernel: theoretical occupancy (FGP_ACT / FGP_MAX)
+  ```
 
   The metric is computed correctly by summing the fine-grain parallelism used in each kernel launch across all threads and ranks and dividing it by the sum of the maximum fine-grain parallelism available to each kernel launch across all threads and ranks, and presenting the value as a percent.
 
@@ -124,44 +112,3 @@ Workaround:
 Development Plan:
 
 : Add additional support to `hpcrun` and `hpcprof` to understand how derived metrics are computed and avoid spoiling their labels.
-
-## Deadlock when using Darshan
-
-Affected architectures:
-
-: `x86_64` and ARM
-
-Description:
-
-: Darshan is a library for monitoring POSIX I/O. When using asynchronous sampling on the CPU to monitor a program that is being monitored with Darshan, your program may deadlock.
-
-Explanation:
-
-: Darshan hijacks calls to `open`.
-  HPCToolkit uses the `libunwind` library.
-  Under certain circumstances, `libunwind` uses `open` to inspect an application's executable or one of the shared libraries it uses to look for unwinding information recorded by the compiler.
-  The following sequence of actions leads to a problem:
-
-  1. A user application calls `malloc` and acquires a mutex lock on an allocator data structure.
-
-  1. HPCToolkit's signal handler is invoked to record an asynchronous sample.
-
-  1. `libunwind` is invoked to obtain the calling context for the sample.
-
-  1. `libunwind` calls `open` to look for
-     compiler-based unwind information.
-
-  1. A Darshan wrapper for `open` executes in HPCToolkit's signal handler.
-
-  1. The Darshan wrapper for `open` may try to allocate data to record statistics for the application's calls to `open`, deadlocking because a non-reentrant allocator lock is already held by this thread.
-
-Workaround:
-
-: Unload the Darshan module before running a dynamically-linked application.
-
-Development Plan:
-
-: Ensure that `libunwind`'s calls to `open` are never intercepted by Darshan.
-
-[^17]: We observed the same conflict between the LDMS `syspapi_sampler` and the Linux `perf` command-line tool. We expect that the `syspapi_sampler`
-    conflicts with other process-level tools that use the Linux `perf_events` subsystem to measure events using hardware counters.

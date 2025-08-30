@@ -452,17 +452,18 @@ If there is more than one execution context, the metric value is the sum of the 
 Occasionally, It is useful to omit uninterested nodes of the tree to enable to focus on important parts.
 For instance, you may want to hide all nodes associated with OpenMP runtime and just show all nodes and metrics from the application.
 For this purpose, `hpcviewer` provides *filtering* to elide nodes that match a filter pattern.
-`hpcviewer` allows users to define multiple filters, and each filter is associated with a glob pattern[^16] and a type.
+`hpcviewer` allows users to define multiple filters, and each filter is associated with a glob pattern and a type.
 
 The figures below show examples of applying a filter mode. 
 In these figures, each node is attributed with three boxes: the node label (left), the inclusive cost (middle) and the exclusive cost (right). 
 
 (fig:filter-cct)=
+(fig:filter-self)=
 
 | Original CCT | Filtering with "self only" mode |
 | :---------------: | :--------------------: |
 |![Original tree](images/hpcviewer-filter-cct.png)|![Filter self](images/hpcviewer-filter-self.png)|
-| The original top-down tree (or CCT) without any filters. | (fig:filter-self)= The result of applying *self only* filter on node `C` from CCT in Figure [Original CCT](fig:filter-cct). Node `C` is elided and its children (nodes `D` and `E`) are augmented to the parent of node `C`. The yellow color shows the new exclusive cost of node `A`.|
+| The original top-down tree (or CCT) without any filters. |  The result of applying *self only* filter on node `C` from CCT in Figure [Original CCT](fig:filter-cct). Node `C` is elided and its children (nodes `D` and `E`) are augmented to the parent of node `C`. The yellow color shows the new exclusive cost of node `A`.|
 
 There are three types of filter: "*self only*" to omit matched nodes,
 "*descendants only*" to exclude only the subtree of the matched nodes, and "*self and descendants*" to
@@ -488,11 +489,12 @@ remove matched nodes and its descendants.
   The total of the exclusive cost of the elided nodes is augmented to the exclusive cost of node `A`.
 
 
+(fig:filter-selfchildren)=
+(fig:filter-children)=
 
 | Filtering with "descendants only" mode | Filtering with "self and descendants" mode |
 | :-------------------------------: | :----------------------------------------: |
-|(fig:filter-children)=
-![Filter descendants](images/hpcviewer-filter-children.png) |![Filter self and descendants](images/hpcviewer-filter-self_children.png)(fig:filter-selfchildren)= |
+|![Filter descendants](images/hpcviewer-filter-children.png) |![Filter self and descendants](images/hpcviewer-filter-self_children.png) |
 |The result of applying *Descendants only* filter on node `C` from CCT in Figure [Original CCT](fig:filter-cct). All the children of node `C` (nodes `D` and `E`) are elided, and the total of their exclusive cost is added to node `C`. | The result of applying *self and descendants* filter on node `C` from CCT in Figure [Original CCT](fig:filter-cct). Nodes `C` and all the descendants are elided, and their exclusive cost is augmented to node `A`, which is the parent of node `C`.|
 
 
