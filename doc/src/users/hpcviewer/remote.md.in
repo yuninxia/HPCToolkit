@@ -90,8 +90,8 @@ Steps to opening a remote database:
    | :----------------------------: |
    |![Remote browser](images/hpcviewer-remote-browser.png)|
 
-   - ![folder](icons/folder-open-symbolic.svg) icon represents a regular directory, and one can access it via double-click at the icon or the name of the folder.
-   - ![container](icons/container3-symbolic.svg) icon represents an HPCToolkit database. Selecting this item will enable the `OK` button.
+   - ![folder](icons/folder-open-symbolic.png) icon represents a regular directory, and one can access it via double-click at the icon or the name of the folder.
+   - ![container](icons/container3-symbolic.png) icon represents an HPCToolkit database. Selecting this item will enable the `OK` button.
    - A no icon item represents a regular file.
 
    Note: the `OK` button will remain disabled until one selects an HPCToolkit database.
