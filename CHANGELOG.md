@@ -10,6 +10,43 @@ All notable changes and releases to this project will be documented in this file
 
 Recent releases are formatted loosely based on [Common Changelog](https://common-changelog.org/), a more restrictive subset of [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [2025.0.0] - 2025-08-26
+
+### Added
+
+- hpcrun now accepts "gpu=cuda" and "gpu=rocm" options ([!1272](https://gitlab.com/hpctoolkit/hpctoolkit/-/merge_requests/1272)) (John Mellor-Crummey)
+- hpcrun: Tests have been added for `gpu=cuda` and `gpu=rocm` syntax ([!1277](https://gitlab.com/hpctoolkit/hpctoolkit/-/merge_requests/1277)) (Jonathon Anderson)
+- hpcrun: add ompt placeholders for implicit and explicit tasks
+- hpcrun: add <ompt work> placeholder
+
+### Changed
+
+- Create a new HPCToolkit user manual using Sphinx book style. Update content. (Jonathon Anderson and John Mellor-Crummey)
+- hpcrun now wraps `open` and `open64` to suppress interrupts ([!1271](https://gitlab.com/hpctoolkit/hpctoolkit/-/merge_requests/1271)) (John Mellor-Crummey)
+- Tracing of ompt callpaths with `-tt` has been adjusted ([!1264](https://gitlab.com/hpctoolkit/hpctoolkit/-/merge_requests/1264)) (John Mellor-Crummey)
+- hpcrun no longer allocates `thread_data` for OpenCL threads ([!1266](https://gitlab.com/hpctoolkit/hpctoolkit/-/merge_requests/1266)) (John Mellor-Crummey)
+- hpcrun's code to ignore threads created by OpenCL modules has been fixed ([!1265](https://gitlab.com/hpctoolkit/hpctoolkit/-/merge_requests/1265)) (John Mellor-Crummey)
+- hpcrun's timestamp on the final `<no activity>` event has been fixed ([!1279](https://gitlab.com/hpctoolkit/hpctoolkit/-/merge_requests/1279)) (John Mellor-Crummey)
+- The default CUDA architecture is now used for test binaries ([!1273](https://gitlab.com/hpctoolkit/hpctoolkit/-/merge_requests/1273)) (Jonathon Anderson)
+- The hpcrun CUDA and CUPTI error printing has been improved ([!1274](https://gitlab.com/hpctoolkit/hpctoolkit/-/merge_requests/1274)) (John Mellor-Crummey)
+- GTPin wrap has been updated to 4.5.0 ([!1275](https://gitlab.com/hpctoolkit/hpctoolkit/-/merge_requests/1275)) (Jonathon Anderson)
+- Meson is now the only manual way to build HPCToolkit (Jonathon Anderson)
+- Replace TLS \_\_thread variables in hpcrun with pthread get/specific ([!1221](https://gitlab.com/hpctoolkit/hpctoolkit/-/merge_requests/1221) (Mark Krentel)
+- hpcrun: remove level0_module_handle_map ([!1261](https://gitlab.com/hpctoolkit/hpctoolkit/-/merge_requests/1261) (John Mellor-Crummey)
+- hpcrun: remove level0-kernel-module-map ([!1257](https://gitlab.com/hpctoolkit/hpctoolkit/-/merge_requests/1257) (John Mellor-Crummey)
+
+### Fixed
+
+- Add timeout to level0 sync loop ([!1241](https://gitlab.com/hpctoolkit/hpctoolkit/-/merge_requests/1241) (Jonathon Anderson)
+- splay-tree.h: fix bug in insert; generalize key comparisons ([!1256](https://gitlab.com/hpctoolkit/hpctoolkit/-/merge_requests/1256) (John Mellor-Crummey)
+- hpcrun: fix speculative xed branch decoding failure ([!1243](https://gitlab.com/hpctoolkit/hpctoolkit/-/merge_requests/1243) (John Mellor-Crummey)
+- Pthread keys are not safe with multiple namespaces. Implement pthread keys for use in auditor namespace. (Jonathon Anderson)
+- Compatibility with C++20 has been fixed ([!1267](https://gitlab.com/hpctoolkit/hpctoolkit/-/merge_requests/1267)) (Jonathon Anderson)
+
+### Removed
+
+- The `spack` test jobs from CI have been removed ([!1270](https://gitlab.com/hpctoolkit/hpctoolkit/-/merge_requests/1270)) (Jonathon Anderson)
+
 ## [2024.01.1] - 2024-03-28
 
 ### Changed
