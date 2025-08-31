@@ -45,7 +45,6 @@ Recent releases are formatted loosely based on [Common Changelog](https://common
 
 - The `spack` test jobs from CI have been removed ([!1270](https://gitlab.com/hpctoolkit/hpctoolkit/-/merge_requests/1270)) (Jonathon Anderson)
 
-
 ## [2024.01.1] - 2024-03-28
 
 ### Changed
