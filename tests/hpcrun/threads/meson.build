@@ -34,6 +34,7 @@ foreach _threadmodel, _tstexe : _threadmodels
     suite: 'hpcrun',
     depends: hpcrun_test_depends,
     should_fail: _should_fail,
+    timeout: 90,  # Multithreaded tests may need extra time
   )
   test(
     f'Threads are tracked for @_threadmodel@ w/o auditor',
@@ -42,5 +43,6 @@ foreach _threadmodel, _tstexe : _threadmodels
     suite: 'hpcrun',
     depends: hpcrun_test_depends,
     should_fail: _should_fail,
+    timeout: 90,  # Multithreaded tests may need extra time
   )
 endforeach

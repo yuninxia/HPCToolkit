@@ -14,6 +14,7 @@ test(
   args: [hpctesttool, hpcrun, _example_tstexe],
   suite: 'hpcrun',
   depends: hpcrun_test_depends,
+  timeout: 60,  # Multithreaded tests may need extra time
 )
 test(
   'Pthread-blame event measures on @0@ w/o auditor'.format(_example_tstexe.name()),
@@ -21,4 +22,5 @@ test(
   args: [hpctesttool, hpcrun, _example_tstexe],
   suite: 'hpcrun',
   depends: hpcrun_test_depends,
+  timeout: 60,  # Multithreaded tests may need extra time
 )

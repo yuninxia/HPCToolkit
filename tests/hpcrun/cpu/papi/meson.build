@@ -14,4 +14,5 @@ test(
   args: [papi_check, hpcrun, simple_tstexe],
   suite: 'hpcrun',
   depends: hpcrun_test_depends,
+  timeout: 0,  # Signal delivery is very slow on some systems
 )

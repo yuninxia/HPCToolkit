@@ -1,0 +1,7 @@
+# SPDX-FileCopyrightText: Contributors to the HPCToolkit Project
+#
+# SPDX-License-Identifier: Apache-2.0
+
+Sphinx>=6,<9
+myst-parser>=3,<5
+sphinx-book-theme>=1,<2
