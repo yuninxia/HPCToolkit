@@ -454,7 +454,6 @@ if opencl_dep.found()
     'gpu/api/opencl/intel/maps/kernel-context-map.c',
     'gpu/api/opencl/intel/maps/kernel-param-map.c',
     'gpu/api/opencl/intel/maps/queue-context-map.c',
-    'gpu/api/opencl/intel/optimization-check.c',
     'gpu/api/opencl/opencl-activity-translate.c',
     'gpu/api/opencl/opencl-api.c',
     'gpu/api/opencl/opencl-context-map.c',

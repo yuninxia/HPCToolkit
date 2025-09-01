@@ -108,14 +108,6 @@ get_numeric_hash_id_for_string
 );
 
 
-
-void
-opencl_optimization_check_enable
-(
- void
-);
-
-
 void
 opencl_blame_shifting_enable
 (
