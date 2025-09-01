@@ -69,11 +69,6 @@ typedef enum gpu_placeholder_type_t {
 typedef uint32_t gpu_op_placeholder_flags_t;
 
 
-typedef struct gpu_op_ccts_t {
-  cct_node_t *ccts[gpu_placeholder_type_count];
-} gpu_op_ccts_t;
-
-
 
 //******************************************************************************
 // public data
@@ -91,42 +86,6 @@ extern gpu_op_placeholder_flags_t gpu_op_placeholder_flags_none;
 ip_normalized_t
 gpu_op_placeholder_ip
 (
- gpu_placeholder_type_t type
-);
-
-
-// this function implements bulk insertion. ccts for all placeholders
-// with flags set will be inserted as children of api_node. ccts for
-// all placeholders whose flags are 0 will be initialized to null.
-void
-gpu_op_ccts_insert
-(
- cct_node_t *api_node,
- gpu_op_ccts_t *gpu_op_ccts,
- gpu_op_placeholder_flags_t flags
-);
-
-
-cct_node_t *
-gpu_op_ccts_get
-(
- gpu_op_ccts_t *gpu_op_ccts,
- gpu_placeholder_type_t type
-);
-
-
-void
-gpu_op_placeholder_flags_set
-(
- gpu_op_placeholder_flags_t *flags,
- gpu_placeholder_type_t type
-);
-
-
-bool
-gpu_op_placeholder_flags_is_set
-(
- gpu_op_placeholder_flags_t flags,
  gpu_placeholder_type_t type
 );
 

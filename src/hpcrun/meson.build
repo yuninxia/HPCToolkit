@@ -364,11 +364,6 @@ if papi_dep.found()
     srcs += files('sample-sources/papi.c')
   endif
 
-  srcs += files(
-    'gpu/api/opencl/intel/papi/papi-kernel-map.c',
-    'gpu/api/opencl/intel/papi/papi-metric-collector.c',
-  )
-
   if false  # get_option('papi_cupti')  # --enable-papi-c-cupti
     srcs += files('sample-sources/papi-c-cupti.c')
   endif
@@ -448,11 +443,6 @@ endif
 if opencl_dep.found()
   srcs += files(
     'foil/opencl.c',
-    'gpu/api/opencl/intel/maps/buffer-map.c',
-    'gpu/api/opencl/intel/maps/device-map.c',
-    'gpu/api/opencl/intel/maps/kernel-context-map.c',
-    'gpu/api/opencl/intel/maps/kernel-param-map.c',
-    'gpu/api/opencl/intel/maps/queue-context-map.c',
     'gpu/api/opencl/opencl-activity-translate.c',
     'gpu/api/opencl/opencl-api.c',
     'gpu/api/opencl/opencl-context-map.c',
@@ -462,7 +452,6 @@ if opencl_dep.found()
     'gpu/api/opencl/opencl-queue-map.c',
     'gpu/blame-shifting/blame-kernel-cleanup-map.c',
     'gpu/blame-shifting/blame.c',
-    'gpu/blame-shifting/opencl/opencl-blame.c',
     'sample-sources/opencl.c',
   )
 endif

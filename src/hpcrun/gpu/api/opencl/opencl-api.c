@@ -43,9 +43,7 @@
 #ifdef ENABLE_GTPIN
 #include "../intel/gtpin/gtpin-instrumentation.h"
 #endif
-#include "intel/papi/papi-metric-collector.h"
 #include "../../../messages/messages.h"
-#include "../../blame-shifting/opencl/opencl-blame.h"
 #include "../../../files.h"
 #include "../../../utilities/hpcrun-nanotime.h"
 #include "../../../../common/lean/crypto-hash.h"
@@ -121,8 +119,6 @@ static spinlock_t opencl_h2d_lock = SPINLOCK_UNLOCKED;
 #ifdef ENABLE_GTPIN
 static bool gtpin_instrumentation = false;
 #endif
-
-static bool ENABLE_BLAME_SHIFTING = false;
 
 
 //******************************************************************************
@@ -551,16 +547,6 @@ opencl_wait_for_all_pending_operations
 }
 
 
-static bool
-is_opencl_blame_shifting_enabled
-(
- void
-)
-{
-  return (ENABLE_BLAME_SHIFTING == true);
-}
-
-
 
 //******************************************************************************
 // interface operations
@@ -672,12 +658,8 @@ opencl_activity_completion_callback
     opencl_activity_process(event, cb_data, cb_data->dispatch);
   }
 
-  if (is_opencl_blame_shifting_enabled() && cb_data->kind == GPU_ACTIVITY_KERNEL && event_command_exec_status == CL_COMPLETE) {
-                opencl_kernel_epilogue(event, cb_data->dispatch);
-        }
-
-        if (cb_data->internal_event) {
-          f_clReleaseEvent(event, cb_data->dispatch);
+  if (cb_data->internal_event) {
+    f_clReleaseEvent(event, cb_data->dispatch);
   }
 
   // Finish operations
@@ -822,10 +804,6 @@ hpcrun_clCreateCommandQueue
   uint32_t context_id = opencl_cl_context_map_update((uint64_t)context);
   opencl_cl_queue_map_update((uint64_t)queue, context_id);
 
-  if(is_opencl_blame_shifting_enabled()) {
-    opencl_queue_prologue(queue);
-  }
-
   return queue;
 }
 
@@ -887,10 +865,6 @@ hpcrun_clCreateCommandQueueWithProperties
 
   uint32_t context_id = opencl_cl_context_map_update((uint64_t)context);
   opencl_cl_queue_map_update((uint64_t)queue, context_id);
-
-  if(is_opencl_blame_shifting_enabled()) {
-    opencl_queue_prologue(queue);
-  }
 
   return queue;
 }
@@ -955,10 +929,6 @@ hpcrun_clEnqueueNDRangeKernel
                                 num_events_in_wait_list, event_wait_list, eventp, dispatch);
 
   opencl_subscriber_callback(kernel_info);
-
-  if(is_opencl_blame_shifting_enabled()) {
-    opencl_kernel_prologue(*eventp, module_id, dispatch);
-  }
 
   ETMSG(OPENCL, "Registering callback for kind: Kernel. "
                 "Correlation id: %"PRIu64 "", kernel_info->details.correlation_id);
@@ -1194,27 +1164,9 @@ hpcrun_clWaitForEvents
 )
 {
   ETMSG(OPENCL, "clWaitForEvents called");
-  cl_command_queue *queues;
-  queues = (cl_command_queue*)malloc(num_events*sizeof(cl_command_queue));
-
-  if(is_opencl_blame_shifting_enabled()) {
-    for (int i = 0; i < num_events; i++) {
-      size_t queue_size;
-      f_clGetEventInfo(event_list[i], CL_EVENT_COMMAND_QUEUE, 0, NULL, &queue_size, dispatch);
-      char queue_data[queue_size];
-      f_clGetEventInfo(event_list[i], CL_EVENT_COMMAND_QUEUE, queue_size, queue_data, NULL, dispatch);
-      queues[i] = *(cl_command_queue*)queue_data;
-      opencl_sync_prologue(queues[i]);
-    }
-  }
 
   cl_int status = f_clWaitForEvents(num_events, event_list, dispatch);
 
-  if(is_opencl_blame_shifting_enabled()) {
-    for (int i = 0; i < num_events; i++) {
-      opencl_sync_epilogue(queues[i], (uint16_t)num_events, dispatch);
-    }
-  }
   return status;
 }
 
@@ -1257,10 +1209,6 @@ hpcrun_clReleaseCommandQueue
   ETMSG(OPENCL, "clReleaseCommandQueue called");
   cl_int status = f_clReleaseCommandQueue(command_queue, dispatch);
 
-  if (is_opencl_blame_shifting_enabled() && status == CL_SUCCESS) {
-    opencl_queue_epilogue(command_queue);
-  }
-
   return status;
 }
 
@@ -1293,56 +1241,10 @@ hpcrun_clFinish
 )
 {
   ETMSG(OPENCL, "clFinish called");
-  // on the assumption that clFinish is synchronous, we have sandwiched it with calls to sync_prologue and sync_epilogue
-  if(is_opencl_blame_shifting_enabled()) {
-    opencl_sync_prologue(command_queue);
-  }
+
   cl_int status = f_clFinish(command_queue, dispatch);
-  if(is_opencl_blame_shifting_enabled()) {
-    opencl_sync_epilogue(command_queue, 1, dispatch);
-  }
+
   return status;
-}
-
-
-void
-opencl_blame_shifting_enable
-(
- void
-)
-{
-  ENABLE_BLAME_SHIFTING = true;
-        ETMSG(OPENCL, "Opencl Blame-Shifting enabled");
-}
-
-
-cct_node_t*
-place_cct_under_opencl_kernel
-(
-  uint32_t kernel_module_id
-)
-{
-  cct_node_t *api_node = gpu_application_thread_correlation_callback(0);
-  gpu_op_placeholder_flags_t gpu_op_placeholder_flags = 0;
-  gpu_op_placeholder_flags_set(&gpu_op_placeholder_flags,
-          gpu_placeholder_type_kernel);
-  gpu_placeholder_type_t placeholder_type = gpu_placeholder_type_kernel;
-  gpu_op_ccts_t gpu_op_ccts;
-
-  hpcrun_safe_enter();
-  gpu_op_ccts_insert(api_node, &gpu_op_ccts, gpu_op_placeholder_flags);
-  cct_node_t *cct_ph = gpu_op_ccts_get(&gpu_op_ccts, placeholder_type);
-  hpcrun_safe_exit();
-
-  if (hpcrun_cct_children(cct_ph) == NULL) {
-    ip_normalized_t kernel_ip;
-    kernel_ip.lm_id = (uint16_t) kernel_module_id;
-    kernel_ip.lm_ip = 0;  // offset=0
-    cct_node_t *kernel_cct =
-      hpcrun_cct_insert_ip_norm(cct_ph, kernel_ip, true);
-    hpcrun_cct_retain(kernel_cct);
-  }
-  return cct_ph;
 }
 
 

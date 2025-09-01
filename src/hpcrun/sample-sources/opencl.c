@@ -23,7 +23,7 @@
 #include "../gpu/trace/gpu-trace-api.h"
 #include "../gpu/api/opencl/opencl-api.h"
 #include "../gpu/blame-shifting/blame.h"
-#include "../gpu/api/opencl/intel/papi/papi-metric-collector.h"
+// #include "../gpu/api/opencl/intel/papi/papi-metric-collector.h"
 #include "../thread_data.h"
 #include "../trace.h"
 
