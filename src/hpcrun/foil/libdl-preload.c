@@ -10,7 +10,9 @@
 
 #define _GNU_SOURCE
 
-
+#include "../audit/audit-api.h"
+#include "../hpcrun-sonames.h"
+#include "common.h"
 
 #include <dlfcn.h>
 #include <elf.h>
@@ -23,11 +25,6 @@
 #include <sys/auxv.h>
 #include <sys/wait.h>
 #include <unistd.h>
-
-#include "../audit/audit-api.h"
-#include "../hpcrun-sonames.h"
-#include "common.h"
-
 
 static bool verbose = false;
 static const char* vdso_path = NULL;
