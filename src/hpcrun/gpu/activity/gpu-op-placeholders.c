@@ -46,24 +46,6 @@ gpu_op_placeholder_flags_t gpu_op_placeholder_flags_all =
   SET_LOW_N_BITS(gpu_placeholder_type_count, gpu_op_placeholder_flags_t);
 
 
-//******************************************************************************
-// private operations
-//******************************************************************************
-
-// debugging support
-bool
-gpu_op_ccts_empty
-(
- gpu_op_ccts_t *gpu_op_ccts
-)
-{
-  int i;
-  for (i = 0; i < gpu_placeholder_type_count; i++) {
-    if (gpu_op_ccts->ccts[i] != NULL) return false;
-  }
-  return true;
-}
-
 
 
 //******************************************************************************
@@ -98,60 +80,6 @@ gpu_op_placeholder_ip
   }
   assert(false && "Invalid GPU placeholder type!");
   hpcrun_terminate();
-}
-
-
-cct_node_t *
-gpu_op_ccts_get
-(
- gpu_op_ccts_t *gpu_op_ccts,
- gpu_placeholder_type_t type
-)
-{
-  return gpu_op_ccts->ccts[type];
-}
-
-
-void
-gpu_op_ccts_insert
-(
- cct_node_t *api_node,
- gpu_op_ccts_t *gpu_op_ccts,
- gpu_op_placeholder_flags_t flags
-)
-{
-  int i;
-  for (i = 0; i < gpu_placeholder_type_count; i++) {
-    cct_node_t *node = NULL;
-
-    if (flags & (1 << i)) {
-      node = hpcrun_cct_insert_ip_norm(api_node, gpu_op_placeholder_ip(i), true);
-    }
-
-    gpu_op_ccts->ccts[i] = node;
-  }
-}
-
-
-void
-gpu_op_placeholder_flags_set
-(
- gpu_op_placeholder_flags_t *flags,
- gpu_placeholder_type_t type
-)
-{
-  *flags |= (1 << type);
-}
-
-
-bool
-gpu_op_placeholder_flags_is_set
-(
- gpu_op_placeholder_flags_t flags,
- gpu_placeholder_type_t type
-)
-{
-  return (flags & (1 << type)) ? true : false;
 }
 
 
