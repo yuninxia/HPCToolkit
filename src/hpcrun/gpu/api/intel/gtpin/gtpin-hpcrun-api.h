@@ -77,8 +77,6 @@ typedef struct gtpin_hpcrun_api_t {
 
   uint64_t (*hpcrun_nanotime)(void);
 
-  cct_node_t *(*gpu_op_ccts_get)(gpu_op_ccts_t *, gpu_placeholder_type_t);
-
   int (*crypto_compute_hash_string)(const void *, size_t, char *, unsigned int);
 
 } gtpin_hpcrun_api_t;
