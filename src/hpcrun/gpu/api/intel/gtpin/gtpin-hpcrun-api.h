@@ -33,7 +33,6 @@
 #include "../../../activity/gpu-activity-channel.h"
 #include "../../common/gpu-binary.h"
 #include "../../../gpu-monitoring-thread-api.h"
-#include "../../../operation/gpu-operation-multiplexer.h"
 #include "../../../../utilities/hpcrun-nanotime.h"
 #include "../../../gpu-metrics.h"
 
