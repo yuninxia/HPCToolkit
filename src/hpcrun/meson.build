@@ -96,7 +96,6 @@ srcs = files(
   'gpu/activity/gpu-activity-send.c',
   'gpu/activity/gpu-activity.c',
   'gpu/activity/gpu-event-id-map.c',
-  'gpu/activity/gpu-op-ccts-map.c',
   'gpu/activity/gpu-op-placeholders.c',
   'gpu/api/common/gpu-binary.c',
   'gpu/api/common/gpu-cct.c',

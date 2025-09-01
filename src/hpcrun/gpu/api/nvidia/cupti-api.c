@@ -138,7 +138,6 @@ flush_alarm_handler(int sig, siginfo_t* siginfo, void* context)
 #include "../common/gpu-binary.h"
 #include "../../gpu-monitoring-thread-api.h"
 #include "../../activity/gpu-op-placeholders.h"
-#include "../../activity/gpu-op-ccts-map.h"
 #include "../../activity/gpu-activity-channel.h"
 
 #include "../common/gpu-cct.h"
