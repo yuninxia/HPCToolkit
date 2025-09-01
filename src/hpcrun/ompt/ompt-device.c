@@ -42,7 +42,6 @@
 #include "../gpu/activity/gpu-activity-channel.h"
 #include "../gpu/activity/gpu-op-placeholders.h"
 #include "../gpu/trace/gpu-trace-api.h"
-#include "../gpu/activity/gpu-op-ccts-map.h"
 
 #include "../gpu/api/common/gpu-binary.h"
 #include "../gpu/api/common/gpu-cid-map.h"

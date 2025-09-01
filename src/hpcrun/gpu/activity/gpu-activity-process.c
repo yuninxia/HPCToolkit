@@ -22,7 +22,6 @@
 #include "../../hpcrun_stats.h"
 #include "../../messages/messages.h"
 
-#include "gpu-op-ccts-map.h"
 #include "../trace/gpu-trace-api.h"
 #include "../trace/gpu-trace-item.h"
 #include "../api/common/gpu-cid-map.h"
@@ -30,6 +29,7 @@
 #include "gpu-activity.h"
 #include "gpu-activity-process.h"
 #include "gpu-event-id-map.h"
+#include "gpu-op-placeholders.h"
 
 
 //******************************************************************************
