@@ -74,7 +74,6 @@ static gtpin_hpcrun_api_t gtpin_hpcrun_api = {
   .gpu_activity_channel_get_local = gpu_activity_channel_get_local,
   .attribute_instruction_metrics = attribute_instruction_metrics,
   .crypto_compute_hash_string = crypto_compute_hash_string,
-  .gpu_op_ccts_get = gpu_op_ccts_get,
   .gpu_binary_loadmap_insert = gpu_binary_loadmap_insert,
   .gpu_binary_store = gpu_binary_store,
   .hpcrun_cct_insert_ip_norm = hpcrun_cct_insert_ip_norm,
