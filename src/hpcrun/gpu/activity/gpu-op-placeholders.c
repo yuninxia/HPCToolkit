@@ -153,3 +153,22 @@ gpu_op_placeholder_flags_is_set
 {
   return (flags & (1 << type)) ? true : false;
 }
+
+
+cct_node_t *
+get_placeholder_node
+(
+  uint64_t correlation_id,
+  gpu_placeholder_type_t pht,
+  ip_normalized_t *kernel_ip
+)
+{
+  gpu_cid_map_info_t *info = gpu_cid_map_find(correlation_id);
+  assert(info);
+
+  cct_node_t *ph = hpcrun_cct_insert_ip_norm(info->node, gpu_op_placeholder_ip(pht), true);
+
+  *kernel_ip = info->kernel_ip;
+
+  return ph;
+}

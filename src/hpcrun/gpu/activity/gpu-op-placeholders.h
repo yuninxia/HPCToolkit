@@ -23,6 +23,8 @@
 
 #include "../../utilities/ip-normalized.h"
 #include "../../cct/cct.h"
+#include "../api/common/gpu-cid-map.h"
+
 
 
 //******************************************************************************
@@ -129,5 +131,12 @@ gpu_op_placeholder_flags_is_set
 );
 
 
+cct_node_t *
+get_placeholder_node
+(
+  uint64_t correlation_id,
+  gpu_placeholder_type_t pht,
+  ip_normalized_t *kernel_ip
+);
 
 #endif
