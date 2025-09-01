@@ -64,7 +64,7 @@
 #include "opencl-queue-map.h"
 #include "opencl-context-map.h"
 #include "opencl-kernel-loadmap-map.h"
-#include "intel/optimization-check.h"
+
 
 #include <CL/cl.h>
 
@@ -122,8 +122,6 @@ static spinlock_t opencl_h2d_lock = SPINLOCK_UNLOCKED;
 static bool gtpin_instrumentation = false;
 #endif
 
-static bool optimization_check = false;
-static atomic_uint total_num_devices = 0;
 static bool ENABLE_BLAME_SHIFTING = false;
 
 
@@ -637,10 +635,8 @@ opencl_subscriber_callback
 
   hpcrun_safe_exit();
 
-  ip_normalized_t kernel_ip = ip_normalized_NULL;
-  if (obj->kind == GPU_ACTIVITY_KERNEL) {
-    kernel_ip = obj->details.kernel_ip;
-  }
+  ip_normalized_t kernel_ip = (obj->kind == GPU_ACTIVITY_KERNEL) ?
+    obj->details.kernel_ip : ip_normalized_NULL;
 
   gpu_application_thread_process_activities();
 
@@ -803,24 +799,7 @@ hpcrun_clCreateContext
 {
   ETMSG(OPENCL, "inside clCreateContext wrapper");
   cl_context context = f_clCreateContext(properties, num_devices, devices, pfn_notify, user_data, errcode_ret, dispatch);
-  if (optimization_check && *errcode_ret == CL_SUCCESS) {
-    recordDeviceCount(num_devices, devices);
 
-    cl_uint platformCount;
-    cl_platform_id* platforms;
-    cl_uint platformDeviceCount;
-    unsigned int num_devices = 0;
-
-    f_clGetPlatformIDs(0, NULL, &platformCount, dispatch);
-    platforms = (cl_platform_id*) malloc(sizeof(cl_platform_id) * platformCount);
-    f_clGetPlatformIDs(platformCount, platforms, NULL, dispatch);
-
-    for (int i = 0; i < platformCount; i++) {
-      f_clGetDeviceIDs(platforms[i], CL_DEVICE_TYPE_ALL, 0, NULL, &platformDeviceCount, dispatch);
-      num_devices += platformDeviceCount;
-    }
-    atomic_store_explicit(&total_num_devices, num_devices, memory_order_release);
-  }
   return context;
 }
 
@@ -840,19 +819,13 @@ hpcrun_clCreateCommandQueue
 
   cl_command_queue queue = f_clCreateCommandQueue(context, device, properties,errcode_ret, dispatch);
 
-  if (optimization_check && *errcode_ret == CL_SUCCESS) {
-    isQueueInInOrderExecutionMode(&properties);
-  }
-
   uint32_t context_id = opencl_cl_context_map_update((uint64_t)context);
   opencl_cl_queue_map_update((uint64_t)queue, context_id);
-  if (optimization_check && *errcode_ret == CL_SUCCESS) {
-    recordQueueContext(queue, context);
+
+  if(is_opencl_blame_shifting_enabled()) {
+    opencl_queue_prologue(queue);
   }
 
-        if(is_opencl_blame_shifting_enabled()) {
-                opencl_queue_prologue(queue);
-        }
   return queue;
 }
 
@@ -907,10 +880,6 @@ hpcrun_clCreateCommandQueueWithProperties
   }
   cl_command_queue queue = f_clCreateCommandQueueWithProperties(context, device, queue_properties, errcode_ret, dispatch);
 
-  if (optimization_check && *errcode_ret == CL_SUCCESS) {
-    isQueueInInOrderExecutionMode(properties);
-  }
-
   if (queue_properties != NULL) {
     // The property is created by us
     free(queue_properties);
@@ -918,17 +887,11 @@ hpcrun_clCreateCommandQueueWithProperties
 
   uint32_t context_id = opencl_cl_context_map_update((uint64_t)context);
   opencl_cl_queue_map_update((uint64_t)queue, context_id);
-  if (optimization_check && *errcode_ret == CL_SUCCESS) {
-    recordQueueContext(queue, context);
+
+  if(is_opencl_blame_shifting_enabled()) {
+    opencl_queue_prologue(queue);
   }
 
-        if(is_opencl_blame_shifting_enabled()) {
-                opencl_queue_prologue(queue);
-        }
-
-  if (optimization_check && *errcode_ret == CL_SUCCESS) {
-    recordQueueContext(queue, context);
-  }
   return queue;
 }
 
@@ -990,16 +953,12 @@ hpcrun_clEnqueueNDRangeKernel
   cl_int return_status = f_clEnqueueNDRangeKernel(command_queue, ocl_kernel, work_dim,
                                 global_work_offset, global_work_size, local_work_size,
                                 num_events_in_wait_list, event_wait_list, eventp, dispatch);
-  if (optimization_check && return_status == CL_SUCCESS) {
-    isKernelSubmittedToMultipleQueues(ocl_kernel, command_queue);
-    areKernelParamsAliased(ocl_kernel, module_id);
-  }
 
   opencl_subscriber_callback(kernel_info);
 
-        if(is_opencl_blame_shifting_enabled()) {
-                opencl_kernel_prologue(*eventp, module_id, dispatch);
-        }
+  if(is_opencl_blame_shifting_enabled()) {
+    opencl_kernel_prologue(*eventp, module_id, dispatch);
+  }
 
   ETMSG(OPENCL, "Registering callback for kind: Kernel. "
                 "Correlation id: %"PRIu64 "", kernel_info->details.correlation_id);
@@ -1036,10 +995,6 @@ hpcrun_clEnqueueTask
 
   cl_int return_status = f_clEnqueueTask(command_queue, kernel,
                                 num_events_in_wait_list, event_wait_list, eventp, dispatch);
-  if (optimization_check && return_status == CL_SUCCESS) {
-    isKernelSubmittedToMultipleQueues(kernel, command_queue);
-    areKernelParamsAliased(kernel, module_id);
-  }
 
   ETMSG(OPENCL, "Registering callback for kind: Kernel. "
                 "Correlation id: %"PRIu64 "", kernel_info->details.correlation_id);
@@ -1077,14 +1032,10 @@ hpcrun_clEnqueueReadBuffer
 
   cl_int return_status = f_clEnqueueReadBuffer(command_queue, buffer, blocking_read, offset,
        cb, ptr, num_events_in_wait_list, event_wait_list, eventp, dispatch);
-  if (optimization_check && return_status == CL_SUCCESS) {
-    recordD2HCall(buffer);
-  }
 
   ETMSG(OPENCL, "Registering callback for kind MEMCPY, type: D2H. "
                 "Correlation id: %"PRIu64 "", cpy_info->details.correlation_id);
-  ETMSG(OPENCL, "%d(bytes) of data being transferred from device to host",
-        (long)cb);
+  ETMSG(OPENCL, "%d(bytes) of data being transferred from device to host", (long)cb);
 
 
   f_clSetEventCallback(*eventp, CL_COMPLETE, &opencl_activity_completion_callback, cpy_info, dispatch);
@@ -1119,9 +1070,6 @@ hpcrun_clEnqueueWriteBuffer
 
   cl_int return_status = f_clEnqueueWriteBuffer(command_queue, buffer, blocking_write, offset, cb, ptr,
                           num_events_in_wait_list, event_wait_list, eventp, dispatch);
-  if (optimization_check && return_status == CL_SUCCESS) {
-    recordH2DCall(buffer);
-  }
 
   ETMSG(OPENCL, "Registering callback for kind MEMCPY, type: H2D. "
                 "Correlation id: %"PRIu64 "", cpy_info->details.correlation_id);
@@ -1232,9 +1180,7 @@ hpcrun_clSetKernelArg
 )
 {
   cl_int status = f_clSetKernelArg(kernel, arg_index, arg_size, arg_value, dispatch);
-  if (optimization_check && status == CL_SUCCESS) {
-    recordKernelParams(kernel, arg_value, arg_size);
-  }
+
   return status;
 }
 
@@ -1281,10 +1227,8 @@ hpcrun_clReleaseMemObject
 )
 {
   cl_int status = f_clReleaseMemObject(mem, dispatch);
-  if (optimization_check && status == CL_SUCCESS) {
-    clearBufferEntry(mem);
-  }
-        return status;
+
+  return status;
 }
 
 
@@ -1298,10 +1242,7 @@ hpcrun_clReleaseKernel
   ETMSG(OPENCL, "clReleaseKernel called for kernel: %"PRIu64 "", (uint64_t)kernel);
 
   cl_int status = f_clReleaseKernel(kernel, dispatch);
-  if (optimization_check && status == CL_SUCCESS) {
-    clearKernelQueues(kernel);
-    clearKernelParams(kernel);
-  }
+
   return status;
 }
 
@@ -1316,12 +1257,10 @@ hpcrun_clReleaseCommandQueue
   ETMSG(OPENCL, "clReleaseCommandQueue called");
   cl_int status = f_clReleaseCommandQueue(command_queue, dispatch);
 
-  if (optimization_check && status == CL_SUCCESS) {
-    clearQueueContext(command_queue);
-  }
   if (is_opencl_blame_shifting_enabled() && status == CL_SUCCESS) {
     opencl_queue_epilogue(command_queue);
   }
+
   return status;
 }
 
@@ -1363,18 +1302,6 @@ hpcrun_clFinish
     opencl_sync_epilogue(command_queue, 1, dispatch);
   }
   return status;
-}
-
-
-
-void
-opencl_optimization_check_enable
-(
- void
-)
-{
-  optimization_check = true;
-  ETMSG(OPENCL, "Intel optimization check enabled");
 }
 
 
@@ -1443,13 +1370,6 @@ opencl_api_process_finalize
  int how
 )
 {
-  if (optimization_check) { // is this the right to do final optimization checks
-    // we cannot get cct nodes using gpu_application_thread_correlation_callback inside fini-thread callback
-    // monitor_block_shootdown() inside libmonitor blocks this call
-    isSingleDeviceUsed();
-    areAllDevicesUsed(atomic_load_explicit(&total_num_devices, memory_order_acquire));
-  }
-
   // even if this is not normal exit, gpu-trace-fini will behave as if it is a normal exit
   gpu_trace_fini(NULL, MONITOR_EXIT_NORMAL);
 }
