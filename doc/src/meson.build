@@ -57,6 +57,7 @@ sphinx_env = {
   'CONF_VERSION': meson.project_version(),
   'CONF_INSTALL_PREFIX': get_option('prefix') / docdir,
   'CONF_HTML_BASEURL': get_option('docs_host_url'),
+  'CONF_VERSIONS_URL': get_option('docs_versions_url'),
   'CONF_HAS_PDF': latexmk.found() ? 'true' : '',
 }
 
@@ -75,6 +76,22 @@ meson.add_install_script(
   docdir,
   dry_run: true,
   install_tag: 'docs',
+)
+
+# The HTML site can optionally have a version switcher. While we can't generate the
+# entire set of versions reliably, we provide the JSON object for this version.
+configure_file(
+  output: '_version.json',
+  input: '_version.json.in',
+  configuration: {
+    'VERSION': meson.project_version(),
+    'URL': get_option('docs_host_url') != '' ? get_option('docs_host_url') : 'file://' + (get_option(
+      'prefix',
+    ) / docdir),
+  },
+  install: true,
+  install_tag: 'docs',
+  install_dir: docdir,
 )
 
 # For offline reading, the recommended format is EPUB. This is essentially the HTML

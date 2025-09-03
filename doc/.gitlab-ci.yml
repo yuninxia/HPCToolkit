@@ -15,7 +15,13 @@ pages:
       variables:
         PAGES_PATH_PREFIX: ''
         PAGES_EXPIRE_IN: never
-        ENVIRONMENT_NAME: production
+        ENVIRONMENT_NAME: main
+    # Release tags go to permanent deployments prefixed by the release tag
+    - if: $CI_COMMIT_REF_PROTECTED == "true" && $CI_COMMIT_TAG
+      variables:
+        PAGES_PATH_PREFIX: $CI_COMMIT_TAG
+        PAGES_EXPIRE_IN: never
+        ENVIRONMENT_NAME: release/$CI_COMMIT_TAG
     # MRs go to a temporary parallel deployment named by the IID
     - if: $CI_PIPELINE_SOURCE == "merge_request_event"
       variables:
@@ -28,13 +34,17 @@ pages:
       paths:
         - subprojects/packagecache
   script:
+    - default_pages_url="${CI_PAGES_URL%${PAGES_PATH_PREFIX}/}"
+    - default_pages_url="${default_pages_url%/${PAGES_PATH_PREFIX}}"
     - >-
       meson setup
       -Dmanual=enabled -Dmanual_pdf=enabled -Ddatadir="$CI_PROJECT_DIR"/install
       -Ddocs_host_url="$CI_PAGES_URL"
+      -Ddocs_versions_url="${default_pages_url}/_versions.json"
       builddir/
     - meson compile -C builddir/ docs
     - meson install -C builddir/ --no-rebuild --tags docs
+    - ./doc/ci_versions.py "$default_pages_url" install/doc/hpctoolkit/_version.json install/doc/hpctoolkit/_versions.json
     - echo "Deployed to $CI_PAGES_URL"
   pages:
     publish: install/doc/hpctoolkit/

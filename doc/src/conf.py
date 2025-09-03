@@ -54,11 +54,19 @@ myst_enable_extensions = [
 # Configuration for the HTML output
 html_theme = "sphinx_book_theme"
 html_title = "HPCToolkit"
-html_logo = "_static/hpctoolkit-wordmark.png"
+html_logo = "branding/hpctoolkit-wordmark.png"
 html_baseurl = os.environ.get("CONF_HTML_BASEURL") or path_to_url(
     PurePath(os.environ["CONF_INSTALL_PREFIX"])
 )
-html_theme_options = {
+html_sidebars = {
+    "**": [
+        "navbar-logo",
+        "icon-links",
+        "search-button-field",
+        "sbt-sidebar-nav",
+    ]
+}
+html_theme_options: dict = {
     "icon_links": [
         {
             "name": "Download as EPUB",
@@ -70,7 +78,7 @@ html_theme_options = {
 }
 
 if os.environ["CONF_HAS_PDF"] == "true":
-    html_theme_options["icon_links"].append(
+    html_theme_options["icon_links"].append(  # type: ignore
         {
             "name": "Download as PDF",
             "url": abs_url(html_baseurl, project.lower() + ".pdf"),
@@ -78,6 +86,14 @@ if os.environ["CONF_HAS_PDF"] == "true":
             "icon": "fa-regular fa-file-pdf",
         }
     )
+
+if os.environ["CONF_VERSIONS_URL"]:
+    html_theme_options["switcher"] = {
+        "version_match": release,
+        "json_url": os.environ["CONF_VERSIONS_URL"],
+    }
+    html_theme_options["show_version_warning_banner"] = True
+    html_sidebars["**"].append("version-switcher")
 
 
 # Configuration for the EPUB output
