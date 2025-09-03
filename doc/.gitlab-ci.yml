@@ -1,0 +1,46 @@
+# SPDX-FileCopyrightText: Contributors to the HPCToolkit Project
+#
+# SPDX-License-Identifier: Apache-2.0
+
+# Generate the documentation and host on GitLab Pages.
+# This site includes the EPUB and PDF alternative formats.
+pages:
+  stage: artifacts
+  image: registry.gitlab.com/hpctoolkit/rtt-images:1.0.0-aio
+  needs: []
+  tags: [saas-linux-medium-amd64]
+  rules:
+    # The default branch deploys to the permanent no-prefix deployment
+    - if: $CI_COMMIT_REF_PROTECTED == "true" && $CI_COMMIT_BRANCH == $CI_DEFAULT_BRANCH
+      variables:
+        PAGES_PATH_PREFIX: ''
+        PAGES_EXPIRE_IN: never
+        ENVIRONMENT_NAME: production
+    # MRs go to a temporary parallel deployment named by the IID
+    - if: $CI_PIPELINE_SOURCE == "merge_request_event"
+      variables:
+        PAGES_PATH_PREFIX: "mr-${CI_MERGE_REQUEST_IID}"
+        PAGES_EXPIRE_IN: 24 hours  # default
+        ENVIRONMENT_NAME: "review/mr-${CI_MERGE_REQUEST_IID}"
+  cache:
+    - key: meson-packagecache
+      when: always
+      paths:
+        - subprojects/packagecache
+  script:
+    - >-
+      meson setup
+      -Dmanual=enabled -Dmanual_pdf=enabled -Ddatadir="$CI_PROJECT_DIR"/install
+      -Ddocs_host_url="$CI_PAGES_URL"
+      builddir/
+    - meson compile -C builddir/ docs
+    - meson install -C builddir/ --no-rebuild --tags docs
+    - echo "Deployed to $CI_PAGES_URL"
+  pages:
+    publish: install/doc/hpctoolkit/
+    path_prefix: $PAGES_PATH_PREFIX
+    expire_in: $PAGES_EXPIRE_IN
+  environment:
+    name: $ENVIRONMENT_NAME
+    url: $CI_PAGES_URL
+    auto_stop_in: $PAGES_EXPIRE_IN
