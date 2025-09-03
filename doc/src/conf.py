@@ -75,6 +75,12 @@ html_theme_options: dict = {
             "icon": "fa-solid fa-book",
         },
     ],
+    "repository_url": "https://gitlab.com/hpctoolkit/hpctoolkit",
+    "repository_branch": "develop",
+    "path_to_docs": "doc/src/",
+    "use_edit_page_button": True,
+    "use_source_button": True,
+    "use_issues_button": True,
 }
 
 if os.environ["CONF_HAS_PDF"] == "true":
