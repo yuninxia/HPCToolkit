@@ -116,3 +116,15 @@ if not is_disabler(docs_pdf)
   docs_all += docs_pdf
 endif
 alias_target('docs', docs_all)
+
+# Helper target to serve the built docs over HTTP for development
+run_target(
+  'docs-serve',
+  command: [
+    native_python,
+    files('serve.py'),
+    meson.current_build_dir(),
+    get_option('prefix') / docdir,
+  ],
+  depends: docs_all,
+)
