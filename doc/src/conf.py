@@ -58,6 +58,7 @@ html_logo = "branding/hpctoolkit-wordmark.png"
 html_baseurl = os.environ.get("CONF_HTML_BASEURL") or path_to_url(
     PurePath(os.environ["CONF_INSTALL_PREFIX"])
 )
+html_static_path = ["branding/hpcviewer.svg"]
 html_sidebars = {
     "**": [
         "navbar-logo",
@@ -68,6 +69,12 @@ html_sidebars = {
 }
 html_theme_options: dict = {
     "icon_links": [
+        {
+            "name": "HPCViewer",
+            "url": abs_url(html_baseurl, "users/hpcviewer/hpcviewer.html"),
+            "type": "local",
+            "icon": "_static/hpcviewer.svg",
+        },
         {
             "name": "Download as EPUB",
             "url": abs_url(html_baseurl, project.lower() + ".epub"),
