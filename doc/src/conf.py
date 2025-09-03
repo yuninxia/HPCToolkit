@@ -2,33 +2,83 @@
 #
 # SPDX-License-Identifier: Apache-2.0
 
-# pylint: disable=invalid-name,missing-module-docstring
+# pylint: disable=fixme,invalid-name
 
-import os.path
-import sys
+"Sphinx configuration for this documentation tree"
 
-# Basic project configuration
+import os
+from pathlib import PurePath
+
+
+def path_to_url(path: PurePath) -> str:
+    "Convert a Path into a suitable URL for HTML purposes"
+    return ("/" if path.is_absolute() else "") + "/".join(path.parts[1:])
+
+
+def abs_url(base: str, path: str) -> str:
+    "Generate the absolute URL given the base"
+    path = path.lstrip("/")
+    if base and not base.endswith("/"):
+        return f"{base}/{path}"
+    return (base or "/") + path
+
+
+# Project settings
+project = "HPCToolkit"
+assert project.lower() == os.environ["CONF_PROJECT_NAME"]
 project_copyright = "HPCToolkit Project a Series of LF Projects, LLC"
+author = f"The {project} Developers"
+release = os.environ["CONF_VERSION"]
+version = release
 
-# Sphinx configuration options
+
+suppress_warnings = [
+    # FIXME: The EPUB builder tries to include ALL files in the build directory, not just
+    # the ones produced by Sphinx. This tends to cause warnings when the files aren't of a
+    # supported MIME type. For now, ignore this kind of warning entirely.
+    "epub.unknown_project_files",
+]
+
+
+# Configuration for the sources, which are primarily written in MyST
 language = "en"
-nitpicky = True
 master_doc = "index"
-
-html_title = "HPCToolkit"
-html_logo = "_static/hpctoolkit-wordmark.png"
-
-# Enable extensions. Custom extensions are under _ext/
-sys.path.insert(0, os.path.abspath("./_ext"))
-extensions = ["myst_parser", "sphinx_depfile"]
-needs_extensions = {"myst_parser": "0.16"}
-
-# Configuration for the (primary) HTML output.
-html_theme = "sphinx_book_theme"
-
-# Configuration for MyST, the Markdown parser for Sphinx.
+extensions = ["myst_parser"]
 myst_enable_extensions = [
     "deflist",
     "replacements",
     "smartquotes",
 ]
+
+
+# Configuration for the HTML output
+html_theme = "sphinx_book_theme"
+html_title = "HPCToolkit"
+html_logo = "_static/hpctoolkit-wordmark.png"
+html_baseurl = os.environ.get("CONF_HTML_BASEURL") or path_to_url(
+    PurePath(os.environ["CONF_INSTALL_PREFIX"])
+)
+html_theme_options = {
+    "icon_links": [
+        {
+            "name": "Download as EPUB",
+            "url": abs_url(html_baseurl, project.lower() + ".epub"),
+            "type": "fontawesome",
+            "icon": "fa-solid fa-book",
+        },
+    ],
+}
+
+if os.environ["CONF_HAS_PDF"] == "true":
+    html_theme_options["icon_links"].append(
+        {
+            "name": "Download as PDF",
+            "url": abs_url(html_baseurl, project.lower() + ".pdf"),
+            "type": "fontawesome",
+            "icon": "fa-regular fa-file-pdf",
+        }
+    )
+
+
+# Configuration for the EPUB output
+epub_basename = project.lower()

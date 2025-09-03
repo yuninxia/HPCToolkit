@@ -43,82 +43,76 @@ if is_disabler(sphinx) and manual_f.enabled()
   error('Sphinx is required for manual generation, but was not found nor installed')
 endif
 
-_project_name = 'HPCToolkit'
-assert(_project_name.to_lower() == meson.project_name())
-
-_sphinx_args = [
-  '-q',
-  '-E',
-  '-W',
-  '--keep-going',
-  '-d',
-  '@PRIVATE_DIR@/.doctrees',
-  '-Dproject=@0@'.format(_project_name),
-  '-Dauthor=The @0@ Developers'.format(_project_name),
-  '-Dversion=@0@'.format(meson.project_version()),
-  '-Drelease=@0@'.format(meson.project_version()),
-  '-Ddepfile=@DEPFILE@',
-  '@CURRENT_SOURCE_DIR@',
-]
-_sphinx_depends = files('conf.py')
-
-# The main documentation is generated as a static HTML webpage.
-custom_target(
-  output: 'html',
-  depfile: 'html.d',
-  command: [sphinx, '-bhtml', _sphinx_args, '@OUTPUT@'],
-  depend_files: _sphinx_depends,
-  install: true,
-  install_dir: docdir,
-  install_tag: 'docs',
-)
-
-# An alternative format is EPUB, which is (essentially) a zip file containing HTML.
-# This format may be slightly nicer to copy across machines when necessary.
-custom_target(
-  output: '@0@.epub'.format(meson.project_name()),
-  depfile: '@0@.epub.d'.format(meson.project_name()),
-  command: [
-    native_python,
-    files('sphinx-singlefile.py'),
-    '@PRIVATE_DIR@/build',
-    f'@_project_name@.epub',
-    '@OUTPUT@',
-    sphinx,
-    '-bepub',
-    _sphinx_args,
-  ],
-  depend_files: _sphinx_depends,
-  install: true,
-  install_dir: docdir,
-  install_tag: 'docs',
-)
-
-# A more common format for offline documentation is PDF, but this requires a fairly complete
-# Latex installation, so it has a separate option and is disabled by default.
+# PDF generation requires Latexmk
 latexmk = find_program(
   'latexmk',
   native: true,
   required: get_option('manual_pdf'),
   disabler: true,
 )
-custom_target(
-  output: '@0@.pdf'.format(meson.project_name()),
-  depfile: '@0@.pdf.d'.format(meson.project_name()),
-  command: [
-    native_python,
-    files('sphinx-pdf.py'),
-    '@PRIVATE_DIR@/build',
-    '@0@.pdf'.format(_project_name.to_lower()),
-    '@OUTPUT@',
-    latexmk,
-    '@0@.tex'.format(_project_name.to_lower()),
-    sphinx,
-    '-blatex',
-    _sphinx_args,
-  ],
-  depend_files: _sphinx_depends,
-  install: true,
-  install_dir: docdir,
+
+sphinx_args = ['-q', '-W', '--keep-going', '--jobs=auto', '@CURRENT_SOURCE_DIR@']
+sphinx_env = {
+  'CONF_PROJECT_NAME': meson.project_name(),
+  'CONF_VERSION': meson.project_version(),
+  'CONF_INSTALL_PREFIX': get_option('prefix') / docdir,
+  'CONF_HTML_BASEURL': get_option('docs_host_url'),
+  'CONF_HAS_PDF': latexmk.found() ? 'true' : '',
+}
+
+# The main documentation output is static, multi-file HTML
+docs_html = custom_target(
+  output: 'index.html',
+  command: [sphinx, '-bhtml', sphinx_args, '@OUTDIR@'],
+  env: sphinx_env,
+  console: true,
+  build_always_stale: true,
+)
+meson.add_install_script(
+  native_python,
+  files('install_html.py'),
+  docs_html,
+  docdir,
+  dry_run: true,
   install_tag: 'docs',
 )
+
+# For offline reading, the recommended format is EPUB. This is essentially the HTML
+# site repackaged as a single file.
+docs_epub = custom_target(
+  output: '@0@.epub'.format(meson.project_name().to_lower()),
+  command: [sphinx, '-bepub', sphinx_args, '@OUTDIR@'],
+  env: sphinx_env,
+  console: true,
+  build_always_stale: true,
+  install: true,
+  install_tag: 'docs',
+  install_dir: docdir,
+)
+
+# For offline reading, a very common format is PDF. Sphinx doesn't support PDF output
+# directly, instead it can generate Latex which can be rendered as a PDF.
+docs_latex = custom_target(
+  output: '@0@.tex'.format(meson.project_name().to_lower()),
+  command: [sphinx, '-blatex', sphinx_args, '@OUTDIR@'],
+  env: sphinx_env,
+  console: true,
+  build_always_stale: true,
+)
+docs_pdf = custom_target(
+  output: '@0@.pdf'.format(meson.project_name().to_lower()),
+  input: docs_latex,
+  command: [latexmk, '-cd', '-pdf', '-dvi-', '-ps-', '@INPUT@'],
+  console: true,
+  build_always_stale: true,
+  install: true,
+  install_tag: 'docs',
+  install_dir: docdir,
+)
+
+# Helper target to build all the documentation at once
+docs_all = [docs_html, docs_epub]
+if not is_disabler(docs_pdf)
+  docs_all += docs_pdf
+endif
+alias_target('docs', docs_all)
