@@ -7,8 +7,10 @@
 "A Meson install script to install a Sphinx HTML build"
 
 import argparse
+import gzip
 import os
 import shutil
+import tempfile
 import typing
 from pathlib import Path
 
@@ -44,14 +46,36 @@ def tree_filter(root: Path):
     return ignore
 
 
+def maybe_compress_gzip(
+    src: Path, dst: Path, *, quiet: bool = False, max_ratio: float = 0.95
+) -> None:
+    "Compress the given file using gzip, if the size decreases as a result"
+    with tempfile.SpooledTemporaryFile(1024 * 1024) as temp:
+        with gzip.GzipFile(filename=src.name, fileobj=temp, mode="w") as tempgzip:
+            with src.open("rb") as f:
+                original_size = os.fstat(f.fileno()).st_size
+                shutil.copyfileobj(f, tempgzip)
+        ratio = temp.tell() / original_size
+        if ratio > max_ratio:
+            # Didn't compress enough, just skip
+            return
+        if not quiet:
+            print(f"Installing {src} (compressed to {ratio*100:.1f}%) -> {dst}")
+        temp.seek(0)
+        with dst.open("wb") as f:
+            shutil.copyfileobj(temp, f)
+
+
 def copier(*, quiet: bool = False, dry_run: bool = True):
     "Create a copy function that can print and/or dry-run the install process"
 
     def copy(src, dst, **kwargs):
+        src, dst = Path(src), Path(dst)
         if not quiet:
             print(f"Installing {src} to {dst}")
         if not dry_run:
             shutil.copy2(src, dst, **kwargs)
+            maybe_compress_gzip(src, dst.with_suffix(dst.suffix + ".gz"), quiet=quiet)
 
     return copy
 
