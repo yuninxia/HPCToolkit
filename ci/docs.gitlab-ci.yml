@@ -5,7 +5,7 @@
 # Generate just the documentation, and expose all the possible formats as artifacts.
 documentation:
   stage: artifacts
-  image: registry.gitlab.com/hpctoolkit/rtt-images:1.0.0-aio
+  image: registry.gitlab.com/hpctoolkit/rtt-images:1.0.0-aio@sha256:aed3071b8690dbdf3e2b4fec2071b47680c0be171e1a5613e43f425b55b67c2c
   needs: []
   tags: [saas-linux-small-amd64]
   script:
@@ -30,7 +30,7 @@ documentation:
 # See https://gitlab.com/gitlab-org/gitlab/-/issues/422145 and https://gitlab.com/groups/gitlab-org/-/epics/10914.
 pages:
   stage: deploy
-  image: docker.io/alpine
+  image: docker.io/alpine@sha256:4bcff63911fcb4448bd4fdacec207030997caf25e9bea4045fa6c8c44de311d1
   needs: [documentation]
   rules:
     - if: >-
