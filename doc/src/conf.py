@@ -54,7 +54,8 @@ myst_enable_extensions = [
 # Configuration for the HTML output
 html_theme = "sphinx_book_theme"
 html_title = "HPCToolkit"
-html_logo = "branding/hpctoolkit-wordmark.png"
+html_logo = "branding/logo.svg"
+html_favicon = "branding/favicon.svg"
 html_baseurl = os.environ.get("CONF_HTML_BASEURL") or path_to_url(
     PurePath(os.environ["CONF_INSTALL_PREFIX"])
 )
