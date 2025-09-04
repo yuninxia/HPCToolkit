@@ -3,11 +3,11 @@ directory = libpfm-4.13.0
 source_url = https://sourceforge.net/projects/perfmon2/files/libpfm4/libpfm-4.13.0.tar.gz/download
 source_filename = libpfm-4.13.0.tar.gz
 source_hash = d18b97764c755528c1051d376e33545d0eb60c6ebf85680436813fa5b04cc3d1
-patch_filename = libpfm_4.13.0-1_patch.zip
-patch_url = https://wrapdb.mesonbuild.com/v2/libpfm_4.13.0-1/get_patch
-patch_hash = d17eb11e9cfb9eb0b85eae7491ed92cfb8b4065a0c5d5d641fb3fd87e300c869
-source_fallback_url = https://github.com/mesonbuild/wrapdb/releases/download/libpfm_4.13.0-1/libpfm-4.13.0.tar.gz
-wrapdb_version = 4.13.0-1
+patch_filename = libpfm_4.13.0-2_patch.zip
+patch_url = https://wrapdb.mesonbuild.com/v2/libpfm_4.13.0-2/get_patch
+patch_hash = a2e6b0bf8d2d3cfb478cb2ca9632f95f5fe74c81594f48c4ab1054604debb346
+source_fallback_url = https://github.com/mesonbuild/wrapdb/releases/download/libpfm_4.13.0-2/libpfm-4.13.0.tar.gz
+wrapdb_version = 4.13.0-2
 
 [provide]
 libpfm = libpfm_dep
