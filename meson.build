@@ -893,10 +893,6 @@ _gtpin_f = get_option('gtpin').require(
   level0_dep.found(),
   error_message: 'gtpin is only available with level0',
 )
-igc_dep = dependency('igc-opencl', required: _gtpin_f, include_type: 'system')
-if igc_dep.found()
-  add_project_arguments('-DENABLE_IGC', language: ['c', 'cpp'])
-endif
 iga_dep = dependency(
   'IGA',
   method: 'cmake',
@@ -904,6 +900,9 @@ iga_dep = dependency(
   required: _gtpin_f,
   include_type: 'system',
 )
+if iga_dep.found()
+  add_project_arguments('-DENABLE_IGA', language: ['c', 'cpp'])
+endif
 
 # GTPin is a snowflake of a case, it only comes in a binary tarball with non-standard names for
 # all the paths like `Include` and `Lib`. This means we can't use CMake to find it, the user

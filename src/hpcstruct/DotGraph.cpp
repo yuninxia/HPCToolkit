@@ -44,9 +44,9 @@
 
 #include "gpu/CudaCFG.hpp"
 
-#ifdef ENABLE_IGC
+#ifdef ENABLE_IGA
 #include "intel/GPUCFG_Intel.hpp"
-#endif // ENABLE_IGC
+#endif // ENABLE_IGA
 
 #ifdef ENABLE_OPENMP
 #include <omp.h>
@@ -277,11 +277,11 @@ main(int argc, char **argv)
     CodeObject *code_obj = NULL;
 
     if (intel_file) { // don't run parseapi on intel binary
-      #ifdef ENABLE_IGC
+      #ifdef ENABLE_IGA
       // this thread count for performing backward slicing has been selected after some manual runs of hpcstruct
       int threads = 5;
       parsable = buildIntelGPUCFG("./", elfFile, symtab, true, false, threads, &code_src, &code_obj);
-      #endif // ENABLE_IGC
+      #endif // ENABLE_IGA
     } else {
       if (cuda_file) { // don't run parseapi on cuda binary
 #ifdef OPT_HAVE_CUDA
