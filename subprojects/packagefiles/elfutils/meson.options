@@ -1,0 +1,42 @@
+# SPDX-FileCopyrightText: Contributors to the HPCToolkit Project
+#
+# SPDX-License-Identifier: MIT
+
+option(
+  'thread_safety',
+  type: 'boolean',
+  value: false,
+  description: 'enable thread safety for libraries EXPERIMENTAL',
+)
+
+option(
+  'bz2',
+  type: 'feature',
+  value: 'auto',
+  description: 'Support bzip2-compressed sections',
+)
+option(
+  'xz',
+  type: 'feature',
+  value: 'auto',
+  description: 'Support xz-compressed sections',
+)
+option(
+  'zstd',
+  type: 'feature',
+  value: 'auto',
+  description: 'Support zstd-compressed sections',
+)
+option(
+  'zstd_compress',
+  type: 'feature',
+  value: 'auto',
+  description: 'Support compressing sections with zstd',
+)
+
+option(
+  'demangler',
+  type: 'feature',
+  value: 'enabled',
+  description: 'libstdc++ demangle support',
+)

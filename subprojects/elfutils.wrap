@@ -1,13 +1,13 @@
+# SPDX-FileCopyrightText: Contributors to the HPCToolkit Project
+#
+# SPDX-License-Identifier: CC0-1.0
+
 [wrap-file]
 directory = elfutils-0.190
 source_url = https://sourceware.org/elfutils/ftp/0.190/elfutils-0.190.tar.bz2
 source_filename = elfutils-0.190.tar.bz2
 source_hash = 8e00a3a9b5f04bc1dc273ae86281d2d26ed412020b391ffcc23198f10231d692
-patch_filename = elfutils-0.190-1-rc.0_patch.zip
-patch_url = https://gitlab.com/api/v4/projects/52719331/packages/generic/elfutils/0.190-1-rc.0/elfutils-0.190-1-rc.0_patch.zip
-patch_hash = 68d2417cb905cc97fe41a990d628f628f6d0e84260ab6cbf9b9af8b8c9278f0a
-source_fallback_url = https://gitlab.com/api/v4/projects/52719331/packages/generic/elfutils/0.190-1-rc.0/elfutils-0.190.tar.bz2
-wrapdb_version = 0.190-1-rc.0
+patch_directory = elfutils
 
 [provide]
 dependency_names = libelf, libdw
