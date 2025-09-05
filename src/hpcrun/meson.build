@@ -575,6 +575,7 @@ preload_rawlib = shared_library(
   gnu_symbol_visibility: 'hidden',
   implicit_include_directories: false,
   dependencies: [dl_dep, threads_dep],
+  link_language: 'c',
 )
 preload_lib_soname = fs.name(preload_rawlib.full_path()).replace('_UNSANITIZED', '')
 preload_lib = custom_target(
@@ -595,6 +596,7 @@ preload_libc_io_rawlib = shared_library(
   gnu_symbol_visibility: 'hidden',
   implicit_include_directories: false,
   dependencies: [dl_dep, threads_dep],
+  link_language: 'c',
 )
 preload_libc_io_lib_soname = fs.name(preload_libc_io_rawlib.full_path()).replace(
   '_UNSANITIZED',
@@ -617,6 +619,7 @@ preload_libc_alloc_rawlib = shared_library(
   gnu_symbol_visibility: 'hidden',
   implicit_include_directories: false,
   dependencies: [dl_dep, threads_dep],
+  link_language: 'c',
 )
 preload_libc_alloc_lib_soname = fs.name(preload_libc_alloc_rawlib.full_path()).replace(
   '_UNSANITIZED',
@@ -639,6 +642,7 @@ preload_libc_sync_rawlib = shared_library(
   gnu_symbol_visibility: 'hidden',
   implicit_include_directories: false,
   dependencies: [dl_dep, threads_dep],
+  link_language: 'c',
 )
 preload_libc_sync_lib_soname = fs.name(preload_libc_sync_rawlib.full_path()).replace(
   '_UNSANITIZED',
@@ -708,6 +712,7 @@ preload_gprof_rawlib = shared_library(
   'foil/gprof-preload.c',
   gnu_symbol_visibility: 'hidden',
   implicit_include_directories: false,
+  link_language: 'c',
 )
 preload_gprof_lib_soname = fs.name(preload_gprof_rawlib.full_path()).replace(
   '_UNSANITIZED',
@@ -730,6 +735,7 @@ preload_ga_rawlib = shared_library(
   gnu_symbol_visibility: 'hidden',
   implicit_include_directories: false,
   dependencies: [dl_dep, threads_dep],
+  link_language: 'c',
 )
 preload_ga_lib_soname = fs.name(preload_ga_rawlib.full_path()).replace(
   '_UNSANITIZED',
@@ -775,6 +781,7 @@ if opencl_dep.found()
     gnu_symbol_visibility: 'hidden',
     implicit_include_directories: false,
     dependencies: [dl_dep, threads_dep, opencl_dep],
+    link_language: 'c',
   )
   preload_opencl_lib_soname = fs.name(preload_opencl_rawlib.full_path()).replace(
     '_UNSANITIZED',
@@ -800,6 +807,7 @@ if level0_dep.found()
     gnu_symbol_visibility: 'hidden',
     implicit_include_directories: false,
     dependencies: [dl_dep, threads_dep, level0_dep],
+    link_language: 'c',
   )
   preload_level0_lib_soname = fs.name(preload_level0_rawlib.full_path()).replace(
     '_UNSANITIZED',
