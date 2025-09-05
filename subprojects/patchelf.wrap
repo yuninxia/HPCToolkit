@@ -1,0 +1,13 @@
+# SPDX-FileCopyrightText: Contributors to the HPCToolkit Project
+#
+# SPDX-License-Identifier: CC0-1.0
+
+[wrap-file]
+directory = patchelf-0.18.0
+source_url = https://github.com/NixOS/patchelf/archive/refs/tags/0.18.0.tar.gz
+source_filename = patchelf-0.18.0.tar.gz
+source_hash = 1451d01ee3a21100340aed867d0b799f46f0b1749680028d38c3f5d0128fb8a7
+patch_directory = patchelf
+
+[provide]
+program_names = patchelf
