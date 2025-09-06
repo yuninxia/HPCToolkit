@@ -9,12 +9,12 @@ include:
 ubuntu22.04 ppc64le:
   extends: .individual test job
   needs: []
-  image: registry.gitlab.com/hpctoolkit/rtt-images:1.0.0-ubuntu22.04
+  image: registry.gitlab.com/hpctoolkit/rtt-images:1.0.0-ubuntu22.04@sha256:86b36864e3b6ff0893c26df391928854bbc202ddd8f283d727276091dd182e60
   tags: [rice-linux-medium-ppc64le]
 ubuntu24.04 ppc64le:
   extends: .individual test job
   needs: []
-  image: registry.gitlab.com/hpctoolkit/rtt-images:1.0.0-ubuntu24.04
+  image: registry.gitlab.com/hpctoolkit/rtt-images:1.0.0-ubuntu24.04@sha256:cbfd9374a67442b42f619da129ae47352383a6e1c6312c0f1e9511984f0f6f6b
   tags: [rice-linux-medium-ppc64le]
   variables:
     # FIXME: For unknown reasons, the Python support doesn't work in this version of Python.
@@ -23,7 +23,7 @@ ubuntu24.04 ppc64le:
 rhel9 ppc64le:
   extends: .individual test job
   needs: []
-  image: registry.gitlab.com/hpctoolkit/rtt-images:1.0.0-rhel9
+  image: registry.gitlab.com/hpctoolkit/rtt-images:1.0.0-rhel9@sha256:df04f89eb8e6c9f02eacdf67f4e31bb7d84be83dde69e28e3949d8a6969efb97
   tags: [rice-linux-medium-ppc64le]
   variables:
     # FIXME: This particular combination of PAPI et al. seems to cause hpcrun to hang, always.
@@ -44,7 +44,7 @@ rhel9 ppc64le:
 dev cuda amd64:
   extends: .individual test job cuda
   needs: []
-  image: registry.gitlab.com/hpctoolkit/rtt-images:1.0.0-aio
+  image: registry.gitlab.com/hpctoolkit/rtt-images:1.0.0-aio@sha256:aed3071b8690dbdf3e2b4fec2071b47680c0be171e1a5613e43f425b55b67c2c
   variables:
     # These variables must be set for compatibility with legacy (non-CDI) nvidia-container-toolkit
     NVIDIA_VISIBLE_DEVICES: all
@@ -56,23 +56,23 @@ dev cuda amd64:
 cuda12.0 amd64:
   extends: .individual test job cuda
   needs: []
-  image: registry.gitlab.com/hpctoolkit/rtt-images:1.0.0-cuda12.0
+  image: registry.gitlab.com/hpctoolkit/rtt-images:1.0.0-cuda12.0@sha256:4fdf8c1abbbd3d6971b02ea455a607e57a7ecdad765100ffe5eab2d6c2e3c8c9
 cuda12.1 amd64:
   extends: .individual test job cuda
   needs: []
-  image: registry.gitlab.com/hpctoolkit/rtt-images:1.0.0-cuda12.1
+  image: registry.gitlab.com/hpctoolkit/rtt-images:1.0.0-cuda12.1@sha256:2d31cbde10972cbc1cec4f446fcf2b4deae784023c9c142613af06716013f046
 cuda12.2 amd64:
   extends: .individual test job cuda
   needs: []
-  image: registry.gitlab.com/hpctoolkit/rtt-images:1.0.0-cuda12.2
+  image: registry.gitlab.com/hpctoolkit/rtt-images:1.0.0-cuda12.2@sha256:fd00a225efd6dfdac62dcf5dbd62ee30bc5893262a4c4b479684aacf9f77c875
 cuda12.4 amd64:
   extends: .individual test job cuda
   needs: []
-  image: registry.gitlab.com/hpctoolkit/rtt-images:1.0.0-cuda12.4
+  image: registry.gitlab.com/hpctoolkit/rtt-images:1.0.0-cuda12.4@sha256:7cc5dbff367dba6f9187b0759785fa7a4e72108dfdd7872a4b83aeaae7555d6c
 cuda12.5 amd64:
   extends: .individual test job cuda
   needs: []
-  image: registry.gitlab.com/hpctoolkit/rtt-images:1.0.0-cuda12.5
+  image: registry.gitlab.com/hpctoolkit/rtt-images:1.0.0-cuda12.5@sha256:2aa0499fff7f72a0b017f52de8bbc6e3bab8049e842e68fd0c82a48fa24b452f
 
 .individual test job rocm:
   extends: .individual test job
@@ -84,32 +84,32 @@ cuda12.5 amd64:
 dev rocm amd64:
   extends: .individual test job rocm
   needs: []
-  image: registry.gitlab.com/hpctoolkit/rtt-images:1.0.0-aio
+  image: registry.gitlab.com/hpctoolkit/rtt-images:1.0.0-aio@sha256:aed3071b8690dbdf3e2b4fec2071b47680c0be171e1a5613e43f425b55b67c2c
 rocm5.3 amd64:
   extends: .individual test job rocm
   needs: []
-  image: registry.gitlab.com/hpctoolkit/rtt-images:1.0.0-rocm5.3
+  image: registry.gitlab.com/hpctoolkit/rtt-images:1.0.0-rocm5.3@sha256:46c50313e82ef0f2dfb1930e55c4cec6bfb71752314936139cd3ec715b3a2b7a
 rocm5.4 amd64:
   extends: .individual test job rocm
   needs: []
-  image: registry.gitlab.com/hpctoolkit/rtt-images:1.0.0-rocm5.4
+  image: registry.gitlab.com/hpctoolkit/rtt-images:1.0.0-rocm5.4@sha256:34d21de2ead0d2d2d9acdba8e7bfcfbe797c7c5d247b0a4ffc0c14b59dcd7915
 rocm5.5 amd64:
   extends: .individual test job rocm
   needs: []
-  image: registry.gitlab.com/hpctoolkit/rtt-images:1.0.0-rocm5.5
+  image: registry.gitlab.com/hpctoolkit/rtt-images:1.0.0-rocm5.5@sha256:5738a0cf4d7b6672e6e34c99f72687c4b4e27f217f540ecf93fb0ca401a837a1
 rocm5.6 amd64:
   extends: .individual test job rocm
   needs: []
-  image: registry.gitlab.com/hpctoolkit/rtt-images:1.0.0-rocm5.6
+  image: registry.gitlab.com/hpctoolkit/rtt-images:1.0.0-rocm5.6@sha256:4f1767d68820076bf45e85267bfb8ce4e1c3ce738e646c3c069a039955735af0
 rocm5.7 amd64:
   extends: .individual test job rocm
   needs: []
-  image: registry.gitlab.com/hpctoolkit/rtt-images:1.0.0-rocm5.7
+  image: registry.gitlab.com/hpctoolkit/rtt-images:1.0.0-rocm5.7@sha256:73c4ff5959d5acdb3bb6bdde8b07177ded3ed949983a9d05d844856874ac3c8d
 rocm6.0 amd64:
   extends: .individual test job rocm
   needs: []
-  image: registry.gitlab.com/hpctoolkit/rtt-images:1.0.0-rocm6.0
+  image: registry.gitlab.com/hpctoolkit/rtt-images:1.0.0-rocm6.0@sha256:69d033d5b82d7d207a68431968ba2c81a6a0f76811e7119e1f25ea0240d3315e
 rocm6.1 amd64:
   extends: .individual test job rocm
   needs: []
-  image: registry.gitlab.com/hpctoolkit/rtt-images:1.0.0-rocm6.1
+  image: registry.gitlab.com/hpctoolkit/rtt-images:1.0.0-rocm6.1@sha256:f2acf840fcfd4ba867cc9b0beb951a33e1c5da2a462bb086e44ed4bd2bab2bc6
