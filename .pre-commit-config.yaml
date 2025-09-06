@@ -239,6 +239,7 @@ repos:
         doc/dtd/mathml/.*\.ent |    # MathML follows LaTeX's habit of funny names for math symbols
         subprojects/valgrind-headers/.*/[^/]+\.h |    # External Valgrind headers
         .*\.svg |  # Images
+        subprojects/packagefiles/elfutils/libcpu/.*\.mnemonics |    # Lists of weird ISA symbols
       )$
 
 - repo: https://github.com/Yelp/detect-secrets

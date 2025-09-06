@@ -1,0 +1,79 @@
+# SPDX-FileCopyrightText: Contributors to the HPCToolkit Project
+#
+# SPDX-License-Identifier: MIT
+
+# Options for general library features
+option(
+  'messages',
+  type: 'boolean',
+  value: false,
+  description: 'Enable XED debug messages',
+)
+
+# Options for ISA support
+option('avx', type: 'boolean', value: true)
+option('avx512', type: 'boolean', value: true)
+option('ivb', type: 'boolean', value: true)
+option('hsw', type: 'boolean', value: true)
+option('mpx', type: 'boolean', value: true)
+option('cet', type: 'boolean', value: true)
+option('knl', type: 'boolean', value: true)
+option('knm', type: 'boolean', value: true)
+option('skl', type: 'boolean', value: true)
+option('skx', type: 'boolean', value: true)
+option('clx', type: 'boolean', value: true)
+option('cpx', type: 'boolean', value: true)
+option('cnl', type: 'boolean', value: true)
+option('icl', type: 'boolean', value: true)
+option('tgl', type: 'boolean', value: true)
+option('adl', type: 'boolean', value: true)
+option('spr', type: 'boolean', value: true)
+option('future', type: 'boolean', value: true)
+
+option('bdw', type: 'boolean', value: true)  # ??? Not a CLI option to ./mfile.py
+
+option('amd_enabled', type: 'boolean', value: true, description: 'Support AMD ISA')
+option('via_enabled', type: 'boolean', value: true, description: 'Support VIA ISA')
+option('lakefield', type: 'boolean', value: true, description: 'Support lakefield ISA')
+option('gnr', type: 'boolean', value: true, description: 'Support Granite Rapids ISA')
+option('srf', type: 'boolean', value: true, description: 'Support Sierra Forest ISA')
+option('cwf', type: 'boolean', value: true, description: 'Support Clearwater Forest ISA')
+option('ptl', type: 'boolean', value: true, description: 'Support Panther Lake ISA')
+option('emr', type: 'boolean', value: true, description: 'Support Emerald Rapids ISA')
+option('arl', type: 'boolean', value: true, description: 'Support Arrow Lake ISA')
+option('lnl', type: 'boolean', value: true, description: 'Support Lunar Lake ISA')
+
+# Detailed options for the encoder and decoder
+option(
+  'limit_strings',
+  type: 'boolean',
+  value: false,
+  description: 'Remove some strings to save space',
+)
+option('encoder', type: 'boolean', value: true, description: 'Enable the encoder API')
+option('decoder', type: 'boolean', value: true, description: 'Enable the decoder API')
+option(
+  'compress_operands',
+  type: 'boolean',
+  value: false,
+  description: 'Use bit-fields to compress operand storage',
+)
+option(
+  'add_orphan_inst_to_future_chip',
+  type: 'boolean',
+  value: false,
+  description: 'Add orphan ISA-sets to the future chip',
+)
+
+# option('elf_dwarf', type: 'feature', description: 'Use libelf and libdwarf')
+
+# option('enc2', type: 'boolean', value: false, description: 'Enable the enc2 fast encoder')
+# option('enc2_test', type: 'boolean', value: false, description: 'Enable tests for the enc2 fast encoder')
+# option('enc2_test_checked', type: 'boolean', value: false, description: 'Enable tests for the checked interface of the enc2 fast encoder')
+
+option(
+  'encoder_chip',
+  type: 'string',
+  value: 'ALL',
+  description: 'Specific chip to enable encoding for',
+)
