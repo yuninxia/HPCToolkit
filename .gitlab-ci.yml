@@ -76,3 +76,28 @@ include:
     rules: *hpctoolkit_gitlab_com
   - local: ci/docs.gitlab-ci.yml
     rules: *gitlab_com
+
+ci performance report:
+  stage: .post
+  # Delay this job slightly to allow the data to settle first
+  when: delayed
+  start_in: 3 minutes
+  image:
+    name: docker.io/python:3.13.7-alpine
+    entrypoint: [""]
+  dependencies: []
+  script:
+  - |-
+    gitlab_discount=none
+    if [ "$CI_SERVER_FQDN" = "gitlab.com" ]; then
+      if [ "$CI_PROJECT_ID" = "38709409" ]; then
+        gitlab_discount=oss
+      else
+        gitlab_discount=oss-fork
+      fi
+    fi
+  - >-
+    ./ci/perf_report.py
+    --gitlab-discount="$gitlab_discount"
+    --exclude="$CI_JOB_ID"
+    "$CI_SERVER_URL" "$CI_PROJECT_ID" "$CI_PIPELINE_ID"
