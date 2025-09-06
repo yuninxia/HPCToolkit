@@ -159,6 +159,11 @@ Thanks for your efforts to improve HPCToolkit, and welcome to the community of C
 
 1. (If you haven't already,) [create a fork of the repository](https://gitlab.com/hpctoolkit/hpctoolkit/-/forks/new). This provides a place to store and share your changes.
 
+1. For new features, update the User's Manual (`doc/src/users/`) to include your new features. This is what makes your changes usable by others.
+
+   > [!note]
+   > The `meson compile docs` target builds just the documentation. `meson compile docs-serve` starts a local HTTP server to view this rendered documentation.
+
 1. `git push` your changes to your new fork. Name your Git branch something related to the goal of your changes.
 
 1. [Create an MR](https://gitlab.com/hpctoolkit/hpctoolkit/-/merge_requests/new) for your changes. Feel free to mark it as a `Draft:` if you are still finalizing the details.
@@ -184,11 +189,6 @@ Thanks for your efforts to improve HPCToolkit, and welcome to the community of C
 1. When possible, add a test that your changes are working as intended. Even simple "doesn't crash" tests find plenty of bugs.
 
 1. Run the tests (`meson test`) at least once before submitting. The CI runs all the tests and will fail if any of them fail unexpectedly (or pass unexpectedly).
-
-1. Update the User's Manual (`doc/src/`) with your new changes. This is what makes your changes usable by others.
-
-   > [!note]
-   > If you enabled the Manual (`-Dmanual=enabled`) your changes will be visible in your build directory under `doc/src/html/**.html` after you build.
 
 1. Before you submit, consider squashing your changes into a small set of Git commits with clear commit messages. This makes tools like `git blame` and `git bisect` more effective, and overall makes the history easier to search later.
 
