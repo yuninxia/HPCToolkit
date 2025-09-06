@@ -1,0 +1,17 @@
+# SPDX-FileCopyrightText: Contributors to the HPCToolkit Project
+#
+# SPDX-License-Identifier: MIT
+
+option('coredump', type: 'feature', value: 'auto')
+option('ptrace', type: 'feature', value: 'auto')
+option('cxx_exceptions', type: 'feature', value: 'auto')
+option('debug_frame', type: 'feature', value: 'auto')
+
+option('weak_backtrace', type: 'boolean', value: true)
+option('unwind_header', type: 'boolean', value: true)
+option('per_thread_cache', type: 'boolean', value: false)
+option('block_signals', type: 'boolean', value: false)
+option('conservative_checks', type: 'boolean', value: false)
+
+option('minidebuginfo', type: 'feature', value: 'auto')
+option('zlibdebuginfo', type: 'feature', value: 'auto')
