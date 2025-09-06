@@ -6,7 +6,7 @@ project(
   'hpctoolkit',
   'c',
   'cpp',
-  version: '2024.01.99-next',
+  version: '2025.1.0-alpha',
   meson_version: '>=1.1.0',
   license: 'Apache-2.0',
   default_options: [
