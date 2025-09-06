@@ -12,7 +12,7 @@ This chapter describes how to build HPCToolkit from source using [Meson](https:/
 
 Install:
 
-- `meson` >=1.3.2 and a working C/C++ compiler (GCC, Clang, etc.)
+- `meson` >=1.6.0 and a working C/C++ compiler (GCC, Clang, etc.)
 - [Boost](https://www.boost.org/) >=1.71.0
 - `make`, `awk`, and `sed` for `hpcstruct` measurement directory support (see [#704](https://gitlab.com/hpctoolkit/hpctoolkit/-/issues/704)).
 - (Optional but highly recommended:) [ccache](https://ccache.dev/)
@@ -117,14 +117,14 @@ For Debian Sid/Ubuntu 23.10:
 
 ```bash
 sudo apt-get install git build-essential ccache ninja-build meson cmake pkg-config python3-venv libboost-all-dev libbz2-dev libtbb-dev libelf-dev libdw-dev libunwind-dev libxerces-c-dev libiberty-dev libyaml-cpp-dev libpfm4-dev libxxhash-dev zlib1g-dev
-pipx install 'meson>=1.3.2'  # Optional but recommended
+pipx install 'meson>=1.6.0'
 ```
 
 For older versions:
 
 ```bash
 sudo apt-get install git build-essential ccache ninja-build cmake pkg-config pipx python3 python3-pip python3-venv libboost-all-dev libbz2-dev libtbb-dev libelf-dev libdw-dev libunwind-dev libxerces-c-dev libiberty-dev libyaml-cpp-dev libpfm4-dev libxxhash-dev zlib1g-dev
-pipx install 'meson>=1.3.2'
+pipx install 'meson>=1.6.0'
 ```
 
 Note that some dependencies may be [built from wraps](#wraps-no-root-required) by default, either because they aren't packaged in Debian/Ubuntu (e.g. Dyninst) or because the version is too old.
@@ -148,21 +148,21 @@ For RHEL 8:
 ```bash
 sudo dnf install git gcc gcc-c++ ccache ninja-build cmake pkg-config python39 python39-pip boost-devel bzip2-devel tbb-devel elfutils-devel xerces-c-devel binutils-devel yaml-cpp-devel libpfm-devel xxhash-devel zlib-devel
 python3.9 -m pip install pipx
-pipx install 'meson>=1.3.2'
+pipx install 'meson>=1.6.0'
 ```
 
 For RHEL 9:
 
 ```bash
 sudo dnf install git gcc gcc-c++ ccache ninja-build cmake pkg-config python3 pipx boost-devel bzip2-devel tbb-devel elfutils-devel xerces-c-devel binutils-devel yaml-cpp-devel libpfm-devel libunwind-devel xxhash-devel zlib-devel
-pipx install 'meson>=1.3.2'
+pipx install 'meson>=1.6.0'
 ```
 
 For Fedora:
 
 ```bash
 sudo dnf install git gcc gcc-c++ ccache ninja-build cmake pkg-config python3 meson pipx boost-devel bzip2-devel tbb-devel elfutils-devel xerces-c-devel binutils-devel yaml-cpp-devel libpfm-devel libunwind-devel xxhash-devel zlib-devel
-pipx install 'meson>=1.3.2'  # Optional but recommended
+pipx install 'meson>=1.6.0'  # Optional but recommended
 ```
 
 Note that some dependencies may be [built from wraps](#wraps-no-root-required) by default, either because they aren't packaged in Fedora/RHEL (e.g. Xed) or because the version is too old.
@@ -183,7 +183,7 @@ Additional packages can be installed for optional features:
 ```bash
 sudo zypper install git gcc12 gcc12-c++ ccache ninja-build cmake pkg-config python311 python311-pip libboost_atomic-devel libboost_chrono-devel libboost_date_time-devel libboost_filesystem-devel libboost_graph-devel libboost_system-devel libboost_thread-devel libboost_timer-devel libbz2-devel tbb-devel libxerces-c-devel binutils-devel yaml-cpp-devel libpfm-devel xxhash-devel zlib-devel
 python3.11 -m pip install pipx
-pipx install 'meson>=1.3.2'
+pipx install 'meson>=1.6.0'
 ```
 
 Note that some dependencies may be [built from wraps](#wraps-no-root-required) by default, either because they aren't packaged in SUSE Leap (e.g. Xed) or because the version is too old.

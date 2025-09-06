@@ -7,7 +7,7 @@ project(
   'c',
   'cpp',
   version: '2025.1.0-alpha',
-  meson_version: '>=1.1.0',
+  meson_version: '>=1.6.0',
   license: 'Apache-2.0',
   default_options: [
     'buildtype=debugoptimized',
@@ -100,24 +100,7 @@ libunwind_dep = dependency(
   default_options: ['minidebuginfo=enabled', 'zlibdebuginfo=enabled'],
   include_type: 'system',
 )
-_xerces_c_ver = '>=3.2.2'
-if meson.version().version_compare('>=1.4.0')
-  xerces_dep = dependency('xerces-c', version: _xerces_c_ver, include_type: 'system')
-else
-  xerces_dep = dependency('xerces-c', include_type: 'system')
-  if xerces_dep.type_name() != 'internal'
-    if not xerces_dep.version().version_compare(_xerces_c_ver)
-      message(
-        'Dependency @0@ found @1@ but need: \'@2@\''.format(
-          xerces_dep.name(),
-          xerces_dep.version(),
-          _xerces_c_ver,
-        ),
-      )
-      xerces_dep = dependency('xerces-c', method: 'system', include_type: 'system')      # Force fallback to wrap
-    endif
-  endif
-endif
+xerces_dep = dependency('xerces-c', version: '>=3.2.2', include_type: 'system')
 lzma_dep = dependency('liblzma', version: '>=5.2.0', include_type: 'system')
 xxhash_dep = dependency('libxxhash', version: '>=0.8.1', include_type: 'system')
 tbb_malloc_dep = dependency(
@@ -126,29 +109,7 @@ tbb_malloc_dep = dependency(
   components: ['tbb', 'tbbmalloc'],
   include_type: 'system',
 )
-if meson.version().version_compare('<1.6.0') and tbb_malloc_dep.type_name() == 'internal'
-  warning(
-    'The TBB wrap causes link failures on older Meson versions, please use Meson 1.6.x or newer',
-  )
-endif
-_yaml_cpp_ver = '>=0.6.2'
-if meson.version().version_compare('>=1.4.0')
-  yaml_cpp_dep = dependency('yaml-cpp', version: _yaml_cpp_ver, include_type: 'system')
-else
-  yaml_cpp_dep = dependency('yaml-cpp', include_type: 'system')
-  if yaml_cpp_dep.type_name() != 'internal'
-    if not yaml_cpp_dep.version().version_compare(_yaml_cpp_ver)
-      message(
-        'Dependency @0@ found @1@ but need: \'@2@\''.format(
-          yaml_cpp_dep.name(),
-          yaml_cpp_dep.version(),
-          _yaml_cpp_ver,
-        ),
-      )
-      yaml_cpp_dep = dependency('yaml-cpp', method: 'system', include_type: 'system')      # Force fallback to wrap
-    endif
-  endif
-endif
+yaml_cpp_dep = dependency('yaml-cpp', version: '>=0.6.2', include_type: 'system')
 papi_dep = dependency(
   'papi',
   required: get_option('papi'),
@@ -431,72 +392,29 @@ rst2man = find_program('rst2man', 'rst2man.py', required: get_option('manpages')
 
 
 # Find MPI.
-mpi_sanity_src = files('meson/sanity.mpi.cpp')
-if meson.version().version_compare('>=1.6.0')
-  mpi_dep = dependency('MPI', language: 'cpp', required: get_option('hpcprof_mpi'))
+mpi_dep = dependency('MPI', language: 'cpp', required: get_option('hpcprof_mpi'))
 
-  # Meson 1.6.0 is affected by a bug where, if the above is an optional dependency
-  # (i.e. -Dhpcprof_mpi=auto) then the resulting dependency won't actually work.
-  # If it was found, do a compile check and then re-run dependency() if needed.
-  # See https://github.com/mesonbuild/meson/issues/13810.
-  if mpi_dep.found() and not cpp.links(mpi_sanity_src, dependencies: mpi_dep)
-    mpi_dep = dependency('MPI', language: 'c')    # NB: Different language to dodge cache
-  endif
+# Meson 1.6.0 is affected by a bug where, if the above is an optional dependency
+# (i.e. -Dhpcprof_mpi=auto) then the resulting dependency won't actually work.
+# If it was found, do a compile check and then re-run dependency() if needed.
+# See https://github.com/mesonbuild/meson/issues/13810.
+if mpi_dep.found() and not cpp.links(
+  files('meson/sanity.mpi.cpp'),
+  dependencies: mpi_dep,
+)
+  mpi_dep = dependency('MPI', language: 'c')  # NB: Different language to dodge cache
+endif
 
-  # MPICH tends to mix compile-time and linker-time arguments, despite having two
-  # different flags to fetch each. Some compilers (Clang) generate a warning when this
-  # happens. Disable these warnings when the MPI dependency is linked in.
-  if mpi_dep.found()
-    mpi_dep = declare_dependency(
-      dependencies: mpi_dep,
-      version: mpi_dep.version(),
-      compile_args: cc.get_supported_arguments('-Wno-unused-command-line-argument'),
-      link_args: cc.get_supported_arguments('-Wno-unused-command-line-argument'),
-    )
-  endif
-elif get_option('hpcprof_mpi').allowed()
-  # In versions before 1.6.0 the upstream support was quirky and often failed, so we
-  # have hacky fallbacks to try and find the support even when Meson can't.
-  warning(
-    'MPI support for Meson <1.6.0 is quirky and deprecated. Please update your Meson.',
+# MPICH tends to mix compile-time and linker-time arguments, despite having two
+# different flags to fetch each. Some compilers (Clang) generate a warning when this
+# happens. Disable these warnings when the MPI dependency is linked in.
+if mpi_dep.found()
+  mpi_dep = declare_dependency(
+    dependencies: mpi_dep,
+    version: mpi_dep.version(),
+    compile_args: cc.get_supported_arguments('-Wno-unused-command-line-argument'),
+    link_args: cc.get_supported_arguments('-Wno-unused-command-line-argument'),
   )
-  mpi_dep = dependency('MPI', language: 'cpp', required: false)
-
-  # Meson currently only properly supports OpenMPI. Search for other implementations via pkg-config.
-  if not mpi_dep.found()
-    mpi_dep = dependency('mpich-cxx', 'mvapich2', method: 'pkg-config', required: false)
-  endif
-
-  # Use a custom Python script to decode the MPI compiler's various flags
-  if not mpi_dep.found()
-    _mpicxx = find_program('mpicxx', 'mpic++', required: false)
-    if _mpicxx.found()
-      _decoded_mpi = run_command(
-        python,
-        files('meson/decode-mpi'),
-        '--machine-readable',
-        _mpicxx,
-        check: false,
-        capture: true,
-      )
-      if _decoded_mpi.returncode() == 0 and _decoded_mpi.stdout() != ''
-        _mpi_parts = _decoded_mpi.stdout().split('\0\0')
-        mpi_dep = declare_dependency(
-          compile_args: _mpi_parts[0].split('\0'),
-          link_args: _mpi_parts[1].split('\0'),
-        )
-
-        # Sanity check that the flags we get from the script do in fact work like they should.
-        cpp.links(mpi_sanity_src, dependencies: mpi_dep, required: true)
-      endif
-    endif
-  endif
-
-  if not mpi_dep.found() and get_option('hpcprof_mpi').enabled()
-    error('hpcprof_mpi=enabled but unable to find MPI')
-  endif
-else
-  mpi_dep = dependency('', required: false)
 endif
 
 
@@ -861,7 +779,6 @@ level0_dep = dependency(
 if level0_dep.found()
   add_project_arguments('-DUSE_LEVEL0', '-DHPCRUN_SS_LEVEL0', language: ['c', 'cpp'])
   level0_api_prefix = '#include <ze_api.h>'
-  # NOTE: compiler.has_define needs Meson >=1.3.0
   if not cc.has_define(
     'ZE_API_VERSION_CURRENT_M',
     prefix: level0_api_prefix,
