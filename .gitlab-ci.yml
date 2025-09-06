@@ -24,7 +24,6 @@ stages:
   - code quality
   - pre-deploy checks
   - artifacts
-  - deploy
 
 variables:
   # Most jobs require the submodules, those that don't will override this
@@ -74,7 +73,7 @@ include:
     rules: *hpctoolkit_gitlab_com
   - local: ci/lint.gitlab-ci.yml
     rules: *hpctoolkit_gitlab_com
-  - local: ci/docs.gitlab-ci.yml
+  - local: doc/.gitlab-ci.yml
     rules: *gitlab_com
 
 ci performance report:
