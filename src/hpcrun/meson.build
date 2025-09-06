@@ -542,6 +542,12 @@ main_hpcrun_lib = shared_library(
 hpcrun_sonames.set_quoted('HPCRUN_SO', fs.name(main_hpcrun_lib.full_path()))
 libs += main_hpcrun_lib
 
+# Some of the libraries defined below are designed to be loaded into the application
+# using LD_PRELOAD. These libraries must not have RPATH or RUNPATH attributes, which may
+# alter and conflict with the library search path of the application. We use patchelf to
+# remove these attributes during the build.
+patchelf = find_program('patchelf', version: '>=0.11', native: true)
+
 # Libraries needed to support the "audit" interface for collecting loaded libraries
 audit_lib = shared_library(
   'hpcrun_audit',
@@ -559,8 +565,8 @@ hpcrun_sonames.set_quoted('HPCRUN_AUDIT_SO', fs.name(audit_lib.full_path()))
 libs += audit_lib
 
 # Symbol interceptions are handled via this LD_PRELOAD'd foil
-preload_lib = shared_library(
-  'hpcrun_preload',
+preload_rawlib = shared_library(
+  'hpcrun_preload_UNSANITIZED',
   'foil/common-preload.c',
   'foil/client-preload.c',
   'foil/libc-preload.c',
@@ -569,112 +575,180 @@ preload_lib = shared_library(
   gnu_symbol_visibility: 'hidden',
   implicit_include_directories: false,
   dependencies: [dl_dep, threads_dep],
-  install: true,
+  link_language: 'c',
 )
-hpcrun_sonames.set_quoted('HPCRUN_PRELOAD_SO', fs.name(preload_lib.full_path()))
+preload_lib_soname = fs.name(preload_rawlib.full_path()).replace('_UNSANITIZED', '')
+preload_lib = custom_target(
+  input: preload_rawlib,
+  output: preload_lib_soname,
+  command: [patchelf, '--remove-rpath', '--output', '@OUTPUT@', '@INPUT@'],
+  install: true,
+  install_dir: get_option('libdir'),
+)
+hpcrun_sonames.set_quoted('HPCRUN_PRELOAD_SO', preload_lib_soname)
 libs += preload_lib
 
 # Optional symbol interception LD_PRELOAD'd foils for Glibc
-preload_libc_io_lib = shared_library(
-  'hpcrun_preload_libc_io',
+preload_libc_io_rawlib = shared_library(
+  'hpcrun_preload_libc_io_UNSANITIZED',
   'foil/common-preload.c',
   'foil/libc-io-preload.c',
   gnu_symbol_visibility: 'hidden',
   implicit_include_directories: false,
   dependencies: [dl_dep, threads_dep],
+  link_language: 'c',
+)
+preload_libc_io_lib_soname = fs.name(preload_libc_io_rawlib.full_path()).replace(
+  '_UNSANITIZED',
+  '',
+)
+preload_libc_io_lib = custom_target(
+  input: preload_libc_io_rawlib,
+  output: preload_libc_io_lib_soname,
+  command: [patchelf, '--remove-rpath', '--output', '@OUTPUT@', '@INPUT@'],
   install: true,
+  install_dir: get_option('libdir'),
 )
-hpcrun_sonames.set_quoted(
-  'HPCRUN_PRELOAD_LIBC_IO_SO',
-  fs.name(preload_libc_io_lib.full_path()),
-)
+hpcrun_sonames.set_quoted('HPCRUN_PRELOAD_LIBC_IO_SO', preload_libc_io_lib_soname)
 libs += preload_libc_io_lib
 
-preload_libc_alloc_lib = shared_library(
-  'hpcrun_preload_libc_alloc',
+preload_libc_alloc_rawlib = shared_library(
+  'hpcrun_preload_libc_alloc_UNSANITIZED',
   'foil/common-preload.c',
   'foil/libc-alloc-preload.c',
   gnu_symbol_visibility: 'hidden',
   implicit_include_directories: false,
   dependencies: [dl_dep, threads_dep],
+  link_language: 'c',
+)
+preload_libc_alloc_lib_soname = fs.name(preload_libc_alloc_rawlib.full_path()).replace(
+  '_UNSANITIZED',
+  '',
+)
+preload_libc_alloc_lib = custom_target(
+  input: preload_libc_alloc_rawlib,
+  output: preload_libc_alloc_lib_soname,
+  command: [patchelf, '--remove-rpath', '--output', '@OUTPUT@', '@INPUT@'],
   install: true,
+  install_dir: get_option('libdir'),
 )
-hpcrun_sonames.set_quoted(
-  'HPCRUN_PRELOAD_LIBC_ALLOC_SO',
-  fs.name(preload_libc_alloc_lib.full_path()),
-)
+hpcrun_sonames.set_quoted('HPCRUN_PRELOAD_LIBC_ALLOC_SO', preload_libc_alloc_lib_soname)
 libs += preload_libc_alloc_lib
 
-preload_libc_sync_lib = shared_library(
-  'hpcrun_preload_libc_sync',
+preload_libc_sync_rawlib = shared_library(
+  'hpcrun_preload_libc_sync_UNSANITIZED',
   'foil/common-preload.c',
   'foil/libc-sync-preload.c',
   gnu_symbol_visibility: 'hidden',
   implicit_include_directories: false,
   dependencies: [dl_dep, threads_dep],
+  link_language: 'c',
+)
+preload_libc_sync_lib_soname = fs.name(preload_libc_sync_rawlib.full_path()).replace(
+  '_UNSANITIZED',
+  '',
+)
+preload_libc_sync_lib = custom_target(
+  input: preload_libc_sync_rawlib,
+  output: preload_libc_sync_lib_soname,
+  command: [patchelf, '--remove-rpath', '--output', '@OUTPUT@', '@INPUT@'],
   install: true,
+  install_dir: get_option('libdir'),
 )
-hpcrun_sonames.set_quoted(
-  'HPCRUN_PRELOAD_LIBC_SYNC_SO',
-  fs.name(preload_libc_sync_lib.full_path()),
-)
+hpcrun_sonames.set_quoted('HPCRUN_PRELOAD_LIBC_SYNC_SO', preload_libc_sync_lib_soname)
 libs += preload_libc_sync_lib
 
 # Optional symbol interception LD_PRELOAD'd foils for libdl
-preload_libdl_lib = shared_library(
-  'hpcrun_preload_libdl',
+preload_libdl_rawlib = shared_library(
+  'hpcrun_preload_libdl_UNSANITIZED',
   'foil/libdl-preload.c',
   gnu_symbol_visibility: 'hidden',
   implicit_include_directories: false,
   dependencies: [dl_dep, threads_dep],
   link_language: 'c',
+)
+preload_libdl_lib_soname = fs.name(preload_libdl_rawlib.full_path()).replace(
+  '_UNSANITIZED',
+  '',
+)
+preload_libdl_lib = custom_target(
+  input: preload_libdl_rawlib,
+  output: preload_libdl_lib_soname,
+  command: [patchelf, '--remove-rpath', '--output', '@OUTPUT@', '@INPUT@'],
   install: true,
+  install_dir: get_option('libdir'),
 )
-hpcrun_sonames.set_quoted(
-  'HPCRUN_PRELOAD_LIBDL_SO',
-  fs.name(preload_libdl_lib.full_path()),
-)
+hpcrun_sonames.set_quoted('HPCRUN_PRELOAD_LIBDL_SO', preload_libdl_lib_soname)
 libs += preload_libdl_lib
 
-preload_libdl_dlmopen_lib = shared_library(
-  'hpcrun_preload_libdl_dlmopen',
+preload_libdl_dlmopen_rawlib = shared_library(
+  'hpcrun_preload_libdl_dlmopen_UNSANITIZED',
   'foil/libdl-dlmopen-preload.c',
   gnu_symbol_visibility: 'hidden',
   implicit_include_directories: false,
   dependencies: [dl_dep],
   link_language: 'c',
+)
+preload_libdl_dlmopen_lib_soname = fs.name(preload_libdl_dlmopen_rawlib.full_path()).replace(
+  '_UNSANITIZED',
+  '',
+)
+preload_libdl_dlmopen_lib = custom_target(
+  input: preload_libdl_dlmopen_rawlib,
+  output: preload_libdl_dlmopen_lib_soname,
+  command: [patchelf, '--remove-rpath', '--output', '@OUTPUT@', '@INPUT@'],
   install: true,
+  install_dir: get_option('libdir'),
 )
 hpcrun_sonames.set_quoted(
   'HPCRUN_PRELOAD_LIBDL_DLMOPEN_SO',
-  fs.name(preload_libdl_dlmopen_lib.full_path()),
+  preload_libdl_dlmopen_lib_soname,
 )
 libs += preload_libdl_dlmopen_lib
 
 # Optional symbol interception LD_PRELOAD'd foils for smaller features
-preload_gprof_lib = shared_library(
-  'hpcrun_preload_gprof',
+preload_gprof_rawlib = shared_library(
+  'hpcrun_preload_gprof_UNSANITIZED',
   'foil/gprof-preload.c',
   gnu_symbol_visibility: 'hidden',
   implicit_include_directories: false,
+  link_language: 'c',
+)
+preload_gprof_lib_soname = fs.name(preload_gprof_rawlib.full_path()).replace(
+  '_UNSANITIZED',
+  '',
+)
+preload_gprof_lib = custom_target(
+  input: preload_gprof_rawlib,
+  output: preload_gprof_lib_soname,
+  command: [patchelf, '--remove-rpath', '--output', '@OUTPUT@', '@INPUT@'],
   install: true,
+  install_dir: get_option('libdir'),
 )
-hpcrun_sonames.set_quoted(
-  'HPCRUN_PRELOAD_GPROF_SO',
-  fs.name(preload_gprof_lib.full_path()),
-)
+hpcrun_sonames.set_quoted('HPCRUN_PRELOAD_GPROF_SO', preload_gprof_lib_soname)
 libs += preload_gprof_lib
 
-preload_ga_lib = shared_library(
-  'hpcrun_preload_ga',
+preload_ga_rawlib = shared_library(
+  'hpcrun_preload_ga_UNSANITIZED',
   'foil/common-preload.c',
   'foil/ga-preload.c',
   gnu_symbol_visibility: 'hidden',
   implicit_include_directories: false,
   dependencies: [dl_dep, threads_dep],
-  install: true,
+  link_language: 'c',
 )
-hpcrun_sonames.set_quoted('HPCRUN_PRELOAD_GA_SO', fs.name(preload_ga_lib.full_path()))
+preload_ga_lib_soname = fs.name(preload_ga_rawlib.full_path()).replace(
+  '_UNSANITIZED',
+  '',
+)
+preload_ga_lib = custom_target(
+  input: preload_ga_rawlib,
+  output: preload_ga_lib_soname,
+  command: [patchelf, '--remove-rpath', '--output', '@OUTPUT@', '@INPUT@'],
+  install: true,
+  install_dir: get_option('libdir'),
+)
+hpcrun_sonames.set_quoted('HPCRUN_PRELOAD_GA_SO', preload_ga_lib_soname)
 libs += preload_ga_lib
 
 # Symbols needed for integration with ROCProfiler etc. are defined by this foil
@@ -700,37 +774,53 @@ endif
 
 # Optional symbol interception LD_PRELOAD'd foil for OpenCL
 if opencl_dep.found()
-  preload_opencl_lib = shared_library(
-    'hpcrun_preload_opencl',
+  preload_opencl_rawlib = shared_library(
+    'hpcrun_preload_opencl_UNSANITIZED',
     'foil/common-preload.c',
     'foil/opencl-preload.c',
     gnu_symbol_visibility: 'hidden',
     implicit_include_directories: false,
     dependencies: [dl_dep, threads_dep, opencl_dep],
+    link_language: 'c',
+  )
+  preload_opencl_lib_soname = fs.name(preload_opencl_rawlib.full_path()).replace(
+    '_UNSANITIZED',
+    '',
+  )
+  preload_opencl_lib = custom_target(
+    input: preload_opencl_rawlib,
+    output: preload_opencl_lib_soname,
+    command: [patchelf, '--remove-rpath', '--output', '@OUTPUT@', '@INPUT@'],
     install: true,
+    install_dir: get_option('libdir'),
   )
-  hpcrun_sonames.set_quoted(
-    'HPCRUN_PRELOAD_OPENCL_SO',
-    fs.name(preload_opencl_lib.full_path()),
-  )
+  hpcrun_sonames.set_quoted('HPCRUN_PRELOAD_OPENCL_SO', preload_opencl_lib_soname)
   libs += preload_opencl_lib
 endif
 
 # Optional symbol interception LD_PRELOAD'd foil for Level Zero
 if level0_dep.found()
-  preload_level0_lib = shared_library(
-    'hpcrun_preload_level0',
+  preload_level0_rawlib = shared_library(
+    'hpcrun_preload_level0_UNSANITIZED',
     'foil/common-preload.c',
     'foil/level0-preload.c',
     gnu_symbol_visibility: 'hidden',
     implicit_include_directories: false,
     dependencies: [dl_dep, threads_dep, level0_dep],
+    link_language: 'c',
+  )
+  preload_level0_lib_soname = fs.name(preload_level0_rawlib.full_path()).replace(
+    '_UNSANITIZED',
+    '',
+  )
+  preload_level0_lib = custom_target(
+    input: preload_level0_rawlib,
+    output: preload_level0_lib_soname,
+    command: [patchelf, '--remove-rpath', '--output', '@OUTPUT@', '@INPUT@'],
     install: true,
+    install_dir: get_option('libdir'),
   )
-  hpcrun_sonames.set_quoted(
-    'HPCRUN_PRELOAD_LEVEL0_SO',
-    fs.name(preload_level0_lib.full_path()),
-  )
+  hpcrun_sonames.set_quoted('HPCRUN_PRELOAD_LEVEL0_SO', preload_level0_lib_soname)
   libs += preload_level0_lib
 endif
 
