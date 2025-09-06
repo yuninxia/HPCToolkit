@@ -7,7 +7,7 @@ project(
   'c',
   'cpp',
   version: '2025.0.0',
-  meson_version: '>=1.1.0',
+  meson_version: '>=1.3.2',
   license: 'Apache-2.0',
   default_options: [
     'buildtype=debugoptimized',
