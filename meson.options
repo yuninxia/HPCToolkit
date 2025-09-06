@@ -74,3 +74,16 @@ option(
   value: '',
   description: 'Full path to the metrics.xml file shipped by ROCprofiler',
 )
+
+option(
+  'docs_host_url',
+  type: 'string',
+  value: '',
+  description: 'Canonical URL where the manual will be hosted externally',
+)
+option(
+  'docs_versions_url',
+  type: 'string',
+  value: '',
+  description: 'URL of a JSON file listing remote versions of the documentation',
+)

@@ -12,9 +12,14 @@ find_library(Xed_LIBRARY
   NAMES xed)
 
 if(Xed_INCLUDE_DIR)
-  file(READ "${Xed_INCLUDE_DIR}/xed-build-defines.h" header)
-  string(REGEX MATCH "#[ \t]*define XED_VERSION[ \t]+\"v[0-9.]+\"" macro "${header}")
-  string(REGEX MATCH "[0-9.]+" Xed_VERSION "${macro}")
+  find_file(Xed_BUILD_DEFINES_H
+    NAMES xed/xed-build-defines.h xed-build-defines.h
+    HINTS "${Xed_INCLUDE_DIR}")
+  if(Xed_BUILD_DEFINES_H)
+    file(READ "${Xed_BUILD_DEFINES_H}" header)
+    string(REGEX MATCH "#[ \t]*define XED_VERSION[ \t]+\"v[0-9.]+\"" macro "${header}")
+    string(REGEX MATCH "[0-9.]+" Xed_VERSION "${macro}")
+  endif()
 endif()
 
 include(FindPackageHandleStandardArgs)

@@ -41,6 +41,9 @@ repos:
   # Blacken all Python code
   - id: black
     args: ['--target-version=py38']
+    exclude: &newpy_files '^ci/perf_report\.py$'
+  - id: black
+    files: *newpy_files
 
 - repo: https://github.com/PyCQA/isort
   rev: 5.13.2
@@ -168,6 +171,7 @@ repos:
     - --parse-comments
     - --violations
     - -vvv
+    exclude: *newpy_files
 
 - repo: https://github.com/jendrikseipp/vulture
   rev: v2.12
@@ -239,6 +243,7 @@ repos:
         doc/dtd/mathml/.*\.ent |    # MathML follows LaTeX's habit of funny names for math symbols
         subprojects/valgrind-headers/.*/[^/]+\.h |    # External Valgrind headers
         .*\.svg |  # Images
+        subprojects/packagefiles/elfutils/libcpu/.*\.mnemonics |    # Lists of weird ISA symbols
       )$
 
 - repo: https://github.com/Yelp/detect-secrets
