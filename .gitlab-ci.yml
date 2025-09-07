@@ -18,6 +18,7 @@ workflow:
     - when: always
 
 stages:
+  - verify
   - individual tests
   - semi-fresh tests
   - configuration tests
@@ -60,6 +61,7 @@ default:
         || exit 68
 
 include:
+  - local: ci/verify.gitlab-ci.yml
   - local: ci/tests/gitlab.gitlab-ci.yml
     rules: &gitlab_com
       - if: $CI_SERVER_FQDN == "gitlab.com"

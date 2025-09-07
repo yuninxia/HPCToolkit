@@ -18,6 +18,7 @@
 #     {# of repeats} > log(1 - {confidence}) / log({min prob of success})
 # So a 99% confidence of 90% success rate requires a --repeat of at least 44.
 .test job:
+  extends: .needs verify
   interruptible: true
   cache:
     - key: meson-packagecache
@@ -127,11 +128,3 @@
   tags: [saas-linux-medium-amd64]
   variables:
     SETUP_ARGS: --wrap-mode=forcefallback
-
-# Non-default option checks. There are a small number of options that users/packagers can
-# configure to their whims. These tests check that changing them from the defaults doesn't
-# break anything along the way.
-.option test job:
-  extends: .test job
-  stage: configuration tests
-  tags: [saas-linux-medium-amd64]

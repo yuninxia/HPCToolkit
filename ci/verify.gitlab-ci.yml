@@ -1,0 +1,100 @@
+# SPDX-FileCopyrightText: Contributors to the HPCToolkit Project
+#
+# SPDX-License-Identifier: Apache-2.0
+
+include:
+  - component: gitlab.com/blue42u/ci.pre-commit/lite@0.2.0
+    inputs:
+      job_stage: verify
+    rules:
+      - if: &on_gitlab $CI_SERVER_FQDN == "gitlab.com"
+
+# Run clang-format 18.x across the repository, via the Meson convenience target.
+clang-format:
+  stage: verify
+  needs: []
+  rules:
+    - if: *on_gitlab
+  image: registry.gitlab.com/hpctoolkit/rtt-images:1.0.0-ubuntu24.04@sha256:cbfd9374a67442b42f619da129ae47352383a6e1c6312c0f1e9511984f0f6f6b
+  script:
+    - meson setup --backend=ninja builddir
+    - if ninja -C builddir/ clang-format-check; then exit 0; fi
+    - ninja -C builddir/ clang-format
+    - git diff --full-index > clang-format.patch
+    - echo "To fix these errors, apply the clang-format.patch exposed as an artifact from this job."
+    - exit 1
+  artifacts:
+    paths:
+      - clang-format.patch
+    when: always
+    expire_in: 5 days
+
+# Confirm that a number of different options don't break the build. This is meant to be a fast check before
+# moving on to full, actual builds.
+"meson setup: [ubuntu22.04]":
+  stage: verify
+  needs: []
+  rules:
+    - if: *on_gitlab
+  image: registry.gitlab.com/hpctoolkit/rtt-images:1.0.0-ubuntu22.04@sha256:86b36864e3b6ff0893c26df391928854bbc202ddd8f283d727276091dd182e60
+  cache:
+    - key: meson-packagecache
+      when: always
+      paths:
+        - subprojects/packagecache/
+  script:
+    - meson setup builddir/
+    - meson setup -Dvalgrind_annotations=true builddir/ --reconfigure
+    - meson setup -Dpapi=disabled builddir/ --reconfigure
+    - meson setup -Dpython=disabled builddir/ --reconfigure
+    - meson setup -Dopencl=disabled builddir/ --reconfigure
+    - meson setup -Dtests=disabled builddir/ --reconfigure
+    - meson setup -Dtests=enabled builddir/ --reconfigure
+    - meson setup -Dmanpages=disabled builddir/ --reconfigure
+    - meson setup -Dhpcprof_mpi=disabled builddir/ --reconfigure
+"meson setup: [cuda]":
+  extends: "meson setup: [ubuntu22.04]"
+  image: registry.gitlab.com/hpctoolkit/rtt-images:1.0.0-cuda12.5@sha256:2aa0499fff7f72a0b017f52de8bbc6e3bab8049e842e68fd0c82a48fa24b452f
+  script:
+    - meson setup -Dcuda=enabled builddir/
+    - meson setup -Dtests=disabled builddir/ --reconfigure
+    - meson setup -Dtests=enabled -Dcuda=disabled builddir/ --reconfigure
+"meson setup: [rocm]":
+  extends: "meson setup: [ubuntu22.04]"
+  image: registry.gitlab.com/hpctoolkit/rtt-images:1.0.0-aio@sha256:aed3071b8690dbdf3e2b4fec2071b47680c0be171e1a5613e43f425b55b67c2c
+  script:
+    - meson setup -Drocm=enabled builddir/
+    - meson setup -Dtests=disabled builddir/ --reconfigure
+    - meson setup -Dtests=enabled -Drocm=disabled builddir/ --reconfigure
+"meson setup: [intel]":
+  extends: "meson setup: [ubuntu22.04]"
+  rules:
+    - if: &on_gitlab $CI_SERVER_FQDN == "gitlab.com"
+  tags: [saas-linux-medium-amd64]
+  image: registry.gitlab.com/hpctoolkit/rtt-images:1.0.0-intel@sha256:b0e20bc8b8f13d07d9d451e5b0216422b8d9610809ebabc1939af79f5384ae5f
+  script:
+    - meson setup -Dlevel0=enabled -Dgtpin=enabled builddir/
+    - meson setup -Dtests=disabled builddir/ --reconfigure
+    - meson setup -Dtests=enabled -Dgtpin=disabled builddir/ --reconfigure
+    - meson setup -Dlevel0=disabled builddir/ --reconfigure
+
+.needs verify:
+  needs:
+    - job: pre-commit
+      artifacts: false
+      optional: true
+    - job: clang-format
+      artifacts: false
+      optional: true
+    - job: "meson setup: [ubuntu22.04]"
+      artifacts: false
+      optional: true
+    - job: "meson setup: [cuda]"
+      artifacts: false
+      optional: true
+    - job: "meson setup: [rocm]"
+      artifacts: false
+      optional: true
+    - job: "meson setup: [intel]"
+      artifacts: false
+      optional: true

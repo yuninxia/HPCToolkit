@@ -10,7 +10,6 @@ include:
 # break any tests. For example, an uncaught change to the output format.
 semifresh none cpu:
   extends: .semifresh test job
-  needs: []
   image: registry.gitlab.com/hpctoolkit/rtt-images:1.0.0-ubuntu20.04@sha256:f427089fb14418968cafa7473c282e0287725ccee8ceca2cd10d506c138a5298
   tags: [saas-linux-medium-amd64]
   variables:
@@ -18,7 +17,6 @@ semifresh none cpu:
 
 semifresh nvidia sw-cuda:
   extends: .semifresh test job
-  needs: []
   image: registry.gitlab.com/hpctoolkit/rtt-images:1.0.0-cuda12.5@sha256:2aa0499fff7f72a0b017f52de8bbc6e3bab8049e842e68fd0c82a48fa24b452f
   tags: [saas-linux-medium-amd64-gpu-standard]
   before_script:
@@ -33,7 +31,6 @@ semifresh nvidia sw-cuda:
 
 semifresh amd:
   extends: .semifresh test job
-  needs: []
   image: registry.gitlab.com/hpctoolkit/rtt-images:1.0.0-aio@sha256:aed3071b8690dbdf3e2b4fec2071b47680c0be171e1a5613e43f425b55b67c2c
   tags: [rice-linux-large-amd64-gpu-amd]
   variables:
