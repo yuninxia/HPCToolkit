@@ -24,12 +24,13 @@
 #include <stdexcept>
 #endif
 
-#if defined(HPCTOOLKIT_STDSHIM_STD_HAS_shared_mutex) || defined(HPCTOOLKIT_STDSHIM_STD_HAS_shared_timed_mutex)
+#if defined(HPCTOOLKIT_STDSHIM_STD_HAS_shared_mutex) ||                                \
+    defined(HPCTOOLKIT_STDSHIM_STD_HAS_shared_timed_mutex)
 #include <shared_mutex>
 #else
 #include <atomic>
-#include <mutex>
 #include <condition_variable>
+#include <mutex>
 #endif
 
 namespace hpctoolkit::stdshim {
@@ -42,7 +43,7 @@ namespace detail {
 // if neither are available (since Boost's implementation isn't great).
 #ifdef HPCTOOLKIT_STDSHIM_STD_HAS_shared_mutex
 using shared_mutex = std::shared_mutex;
-#else  // HPCTOOLKIT_STDSHIM_STD_HAS_shared_mutex
+#else // HPCTOOLKIT_STDSHIM_STD_HAS_shared_mutex
 class shared_mutex {
 public:
   shared_mutex();
@@ -55,6 +56,7 @@ public:
   void lock_shared();
   bool try_lock_shared();
   void unlock_shared();
+
 private:
   std::atomic<unsigned int> incoming;
   std::atomic<unsigned int> outgoing;
@@ -71,7 +73,7 @@ private:
 };
 #endif
 
-}  // namespace detail
+} // namespace detail
 
 // In any event, whatever choice of shared_mutex above has to be wrapped for
 // adding Valgrind annotations. Because Helgrind is missing the r->w->r h-b arcs
@@ -88,6 +90,7 @@ public:
   void lock_shared();
   bool try_lock_shared();
   void unlock_shared();
+
 private:
   detail::shared_mutex real;
   // These two variables are used for tracking the lock's state with Helgrind
@@ -95,7 +98,6 @@ private:
   char arc_wr;
 };
 
+} // namespace hpctoolkit::stdshim
 
-}  // namespace hpctoolkit::stdshim
-
-#endif  // HPCTOOLKIT_STDSHIM_SHARED_MUTEX_H
+#endif // HPCTOOLKIT_STDSHIM_SHARED_MUTEX_H

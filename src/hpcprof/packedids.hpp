@@ -7,8 +7,8 @@
 #ifndef HPCTOOLKIT_PROFILE_PACKEDIDS_H
 #define HPCTOOLKIT_PROFILE_PACKEDIDS_H
 
-#include "sink.hpp"
 #include "finalizer.hpp"
+#include "sink.hpp"
 #include "sources/packed.hpp"
 
 namespace hpctoolkit {
@@ -54,10 +54,13 @@ private:
 
   std::once_flag once;
   unsigned int globalid;
-  std::unordered_map<unsigned int, std::pair<std::uint8_t, std::unordered_map<std::uint64_t, unsigned int>>> idmap;
+  std::unordered_map<
+      unsigned int,
+      std::pair<std::uint8_t, std::unordered_map<std::uint64_t, unsigned int>>>
+      idmap;
   std::unordered_map<std::string, unsigned int> metmap;
 };
 
-}
+} // namespace hpctoolkit
 
-#endif  // HPCTOOLKIT_PROFILE_PACKEDIDS_H
+#endif // HPCTOOLKIT_PROFILE_PACKEDIDS_H

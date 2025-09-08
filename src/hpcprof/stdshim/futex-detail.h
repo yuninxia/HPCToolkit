@@ -22,8 +22,8 @@ void hpctoolkit_futex_notify_all(uint32_t*);
 void hpctoolkit_futex_notify_all_v(volatile uint32_t*);
 
 #ifdef __cplusplus
-}  // extern "C"
-}  // namespace hpctoolkit::stdshim::detail
+} // extern "C"
+} // namespace hpctoolkit::stdshim::detail
 #endif
 
-#endif  // HPCTOOLKIT_STDSHIM_FUTEX_DETAIL_H
+#endif // HPCTOOLKIT_STDSHIM_FUTEX_DETAIL_H

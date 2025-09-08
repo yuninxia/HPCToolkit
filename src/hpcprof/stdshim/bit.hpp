@@ -30,24 +30,23 @@ namespace hpctoolkit::stdshim {
 // using std::bit_floor;
 // using std::bit_width;
 using std::rotl;
-using std::rotl;
 // using std::countl_zero;
 // using std::countl_one;
 // using std::countr_zero;
 // using std::countr_one;
 // using std::popcount;
-}
+} // namespace hpctoolkit::stdshim
 
-#else  // HPCTOOLKIT_STDSHIM_STD_HAS_bit
+#else // HPCTOOLKIT_STDSHIM_STD_HAS_bit
 
 #include <limits>
 
 namespace hpctoolkit::stdshim {
 
 /// Circular-rotate left by the given number of bits
-template<class T>
-[[nodiscard]] constexpr
-std::enable_if_t<std::is_integral_v<T> && !std::is_signed_v<T>, T>
+template <class T>
+[[nodiscard]] constexpr std::enable_if_t<std::is_integral_v<T> && !std::is_signed_v<T>,
+                                         T>
 rotl(T v, int b) {
   constexpr auto nbits = std::numeric_limits<T>::digits;
   if constexpr ((nbits & (nbits - 1)) == 0) {
@@ -58,18 +57,18 @@ rotl(T v, int b) {
   }
   // Standards-compliant slow path
   const int m_b = b % nbits;
-  if(m_b == 0) {
+  if (m_b == 0) {
     return v;
   } else if (m_b > 0) {
     return (v << m_b) | (v >> ((nbits - m_b) % nbits));
   }
-  return (v >> -m_b) | (v << ((nbits + m_b) % nbits));  // rotr(v, -b)
+  return (v >> -m_b) | (v << ((nbits + m_b) % nbits)); // rotr(v, -b)
 }
 
 /// Circular-rotate right by the given number of bits
-template<class T>
-[[nodiscard]] constexpr
-std::enable_if_t<std::is_integral_v<T> && !std::is_signed_v<T>, T>
+template <class T>
+[[nodiscard]] constexpr std::enable_if_t<std::is_integral_v<T> && !std::is_signed_v<T>,
+                                         T>
 rotr(T v, int b) {
   constexpr auto nbits = std::numeric_limits<T>::digits;
   if constexpr ((nbits & (nbits - 1)) == 0) {
@@ -80,16 +79,16 @@ rotr(T v, int b) {
   }
   // Standards-compliant slow path
   const int m_b = b % nbits;
-  if(m_b == 0) {
+  if (m_b == 0) {
     return v;
   } else if (m_b > 0) {
     return (v >> m_b) | (v << ((nbits - m_b) % nbits));
   }
-  return (v << -m_b) | (v >> ((nbits + m_b) % nbits));  // rotl(v, -b)
+  return (v << -m_b) | (v >> ((nbits + m_b) % nbits)); // rotl(v, -b)
 }
 
 } // namespace hpctoolkit::stdshim
 
-#endif  // HPCTOOLKIT_STDSHIM_STD_HAS_bit
+#endif // HPCTOOLKIT_STDSHIM_STD_HAS_bit
 
-#endif  // HPCTOOLKIT_STDSHIM_BIT_H
+#endif // HPCTOOLKIT_STDSHIM_BIT_H

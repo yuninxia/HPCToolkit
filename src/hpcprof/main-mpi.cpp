@@ -7,26 +7,26 @@
 #include "util/vgannotations.hpp"
 
 #include "../hpcprof/args.hpp"
-#include "tree.hpp"
-
+#include "finalizers/denseids.hpp"
+#include "finalizers/directclassification.hpp"
+#include "finalizers/kernelsyms.hpp"
+#include "finalizers/logical.hpp"
+#include "finalizers/struct.hpp"
+#include "mpi/all.hpp"
 #include "mpi/core.hpp"
-#include "pipeline.hpp"
 #include "packedids.hpp"
-#include "source.hpp"
-#include "sources/packed.hpp"
+#include "pipeline.hpp"
 #include "sinks/hpctracedb2.hpp"
 #include "sinks/metadb.hpp"
 #include "sinks/metricsyaml.hpp"
 #include "sinks/sparsedb.hpp"
-#include "finalizers/denseids.hpp"
-#include "finalizers/directclassification.hpp"
-#include "finalizers/logical.hpp"
-#include "finalizers/struct.hpp"
-#include "finalizers/kernelsyms.hpp"
+#include "source.hpp"
+#include "sources/packed.hpp"
+#include "tree.hpp"
 #include "util/log.hpp"
-#include "mpi/all.hpp"
 
 #include <mpi.h>
+
 #include <iostream>
 
 std::mutex mpitex;
@@ -37,17 +37,15 @@ namespace {
 
 class ThreadIdExscan : public ProfileSink {
 public:
-  ThreadIdExscan(std::size_t& result) : result(result) {};
+  ThreadIdExscan(std::size_t& result) : result(result){};
 
   void write() override {}
   DataClass accepts() const noexcept override { return DataClass::threads; }
   ExtensionClass requirements() const noexcept override { return {}; }
   DataClass wavefronts() const noexcept override { return DataClass::threads; }
   void notifyWavefront(DataClass wave) override {
-    if(wave.hasThreads()) {
-      util::call_once(once, [this]{
-        result = src.threads().size();
-      });
+    if (wave.hasThreads()) {
+      util::call_once(once, [this] { result = src.threads().size(); });
     }
   }
 
@@ -57,9 +55,11 @@ private:
 };
 class ThreadIdProvider : public ProfileFinalizer {
 public:
-  ThreadIdProvider(std::size_t offset) : nextId((unsigned int)offset) {};
+  ThreadIdProvider(std::size_t offset) : nextId((unsigned int)offset){};
 
-  ExtensionClass provides() const noexcept override { return ExtensionClass::identifier; }
+  ExtensionClass provides() const noexcept override {
+    return ExtensionClass::identifier;
+  }
   ExtensionClass requirements() const noexcept override { return {}; }
   std::optional<unsigned int> identify(const Thread&) noexcept override {
     return nextId.fetch_add(1, std::memory_order_relaxed);
@@ -71,7 +71,7 @@ private:
 
 class ManyIdPacker : public IdPacker {
 public:
-  ManyIdPacker(std::vector<uint8_t>& result) : result(result) {};
+  ManyIdPacker(std::vector<uint8_t>& result) : result(result){};
 
   void notifyPacked(std::vector<uint8_t>&& block) override {
     result = std::move(block);
@@ -81,7 +81,7 @@ private:
   std::vector<uint8_t>& result;
 };
 
-}
+} // namespace
 
 int main(int argc, char* const argv[]) {
   // Fire up MPI. We just use the WORLD communicator for everything.
@@ -96,28 +96,30 @@ int main(int argc, char* const argv[]) {
 #ifndef NVALGRIND
   char start_arc;
   char end_arc;
-#endif  // !NVALGRIND
+#endif // !NVALGRIND
   ANNOTATE_HAPPENS_BEFORE(&start_arc);
-  #pragma omp parallel num_threads(args.threads)
+#pragma omp parallel num_threads(args.threads)
   {
     ANNOTATE_HAPPENS_AFTER(&start_arc);
     std::vector<std::unique_ptr<ProfileSource>> my_sources;
-    #pragma omp for schedule(dynamic) nowait
-    for(std::size_t i = 0; i < args.sources.size(); i++) {
+#pragma omp for schedule(dynamic) nowait
+    for (std::size_t i = 0; i < args.sources.size(); i++) {
       auto arg = args.source_args[i];
       assert(arg > 0);
       stdshim::filesystem::path meas = argv[arg];
-      if(!stdshim::filesystem::is_directory(meas)) {
+      if (!stdshim::filesystem::is_directory(meas)) {
         meas = "";
       }
       my_sources.emplace_back(ProfileSource::create_for(args.sources[i].second, meas));
     }
-    #pragma omp critical
-    for(auto& s: my_sources) pipelineB1 << std::move(s);
+#pragma omp critical
+    for (auto& s : my_sources)
+      pipelineB1 << std::move(s);
     ANNOTATE_HAPPENS_BEFORE(&end_arc);
   }
   ANNOTATE_HAPPENS_AFTER(&end_arc);
-  for(auto& sp: args.sources) pipelineB2 << std::move(sp.first);
+  for (auto& sp : args.sources)
+    pipelineB2 << std::move(sp.first);
 
   // Common state across the entire process
   RankTree tree(std::max<std::size_t>(args.threads, 2));
@@ -137,21 +139,24 @@ int main(int argc, char* const argv[]) {
 
     // In this phase, rank 0 is the one that provides structural information
     // and decides the ids for everything.
-    if(mpi::World::rank() == 0) {
+    if (mpi::World::rank() == 0) {
       // Make sure all Metrics have their Statistics set properly
       pipelineB1 << std::make_unique<ProfArgs::StatisticsExtender>(args);
 
       // Load in the Finalizers for special cases
       pipelineB1 << std::make_unique<finalizers::LogicalFile>();
-      for(auto& sp : args.ksyms) pipelineB1 << std::move(sp.first);
+      for (auto& sp : args.ksyms)
+        pipelineB1 << std::move(sp.first);
 
       // Load in the Finalizers for Structfiles.
-      for(auto& sp: args.structs) pipelineB1 << std::move(sp.first);
+      for (auto& sp : args.structs)
+        pipelineB1 << std::move(sp.first);
       pipelineB1 << std::make_unique<ProfArgs::StructPartialMatch>(args);
 
       // Insert the proper Finalizer for drawing data directly from the Modules.
       // This is used as a fallback if the Structfiles aren't available.
-      pipelineB1 << std::make_unique<finalizers::DirectClassification>(args.dwarfMaxSize);
+      pipelineB1 << std::make_unique<finalizers::DirectClassification>(
+          args.dwarfMaxSize);
 
       // Ids for everything are pulled from the void. We call the shots here.
       pipelineB1 << std::make_unique<finalizers::DenseIds>();
@@ -160,7 +165,7 @@ int main(int argc, char* const argv[]) {
       pipelineB1 << std::make_unique<ManyIdPacker>(packedIds);
 
       // Output the parts we can, here where we have the full information
-      switch(args.format) {
+      switch (args.format) {
       case ProfArgs::Format::metadb:
         pipelineB1 << std::make_unique<sinks::MetaDB>(args.output, args.include_sources)
                    << std::make_unique<sinks::MetricsYAML>(args.output);
@@ -171,7 +176,8 @@ int main(int argc, char* const argv[]) {
       pipelineB1 << std::make_unique<sinks::Packed::DontClassify>();
 
       // We still need the Structfiles for FlowGraph data, but nothing else.
-      for(auto& sp: args.structs) pipelineB1 << std::move(sp.first);
+      for (auto& sp : args.structs)
+        pipelineB1 << std::move(sp.first);
     }
 
     // Receive any bits from below us in the tree. We save these blocks and
@@ -179,7 +185,7 @@ int main(int argc, char* const argv[]) {
     Receiver::append(pipelineB1, tree, receivedBlocks);
 
     // Ship our bits up when we're done here.
-    if(mpi::World::rank() > 0)
+    if (mpi::World::rank() > 0)
       pipelineB1 << std::make_unique<Sender>(tree);
 
     ProfilePipeline pipeline(std::move(pipelineB1), args.threads);
@@ -193,7 +199,7 @@ int main(int argc, char* const argv[]) {
   // Phase 3: Reduction (towards rank 0) of the metric values and such.
   {
     // Restore the bits we got in the first Pipeline, to keep things consistent.
-    for(auto& block: receivedBlocks)
+    for (auto& block : receivedBlocks)
       pipelineB2 << std::make_unique<Receiver>(block);
 
     // The Statistics need to be consistent between all the ranks, since we only
@@ -216,14 +222,15 @@ int main(int argc, char* const argv[]) {
     // Load in a copy of all the finalizers.
     finalizers::LogicalFile lf;
     pipelineB2 << lf;
-    for(auto& sp: args.ksyms) {
+    for (auto& sp : args.ksyms) {
       (void)sp;
       pipelineB2 << std::make_unique<finalizers::KernelSymbols>();
     }
-    for(auto& sp: args.structs){
+    for (auto& sp : args.structs) {
       assert(sp.second.parent_path().filename() == "structs");
       // FIXME: the hacky ugly measurement directory
-      pipelineB2 << std::make_unique<finalizers::StructFile>(sp.second, sp.second.parent_path().parent_path(), nullptr);
+      pipelineB2 << std::make_unique<finalizers::StructFile>(
+          sp.second, sp.second.parent_path().parent_path(), nullptr);
     }
 
     // Insert the proper Finalizer for drawing data directly from the Modules.
@@ -237,14 +244,14 @@ int main(int argc, char* const argv[]) {
 
     // Receive any bits from below us in the tree, and ship our bits up.
     MetricReceiver::append(pipelineB2, tree, tracker);
-    if(mpi::World::rank() > 0)
+    if (mpi::World::rank() > 0)
       pipelineB2 << std::make_unique<MetricSender>(tree);
 
     // Finally, we get to write stuff out
-    switch(args.format) {
+    switch (args.format) {
     case ProfArgs::Format::metadb:
       pipelineB2 << std::make_unique<sinks::SparseDB>(args.output);
-      if(args.include_traces)
+      if (args.include_traces)
         pipelineB2 << std::make_unique<sinks::HPCTraceDB2>(args.output);
       break;
     }
@@ -252,7 +259,7 @@ int main(int argc, char* const argv[]) {
     ProfilePipeline pipeline(std::move(pipelineB2), args.threads);
     pipeline.run();
 
-    if(args.valgrindUnclean) {
+    if (args.valgrindUnclean) {
       mpi::World::finalize();
       std::exit(0);
     }

@@ -15,37 +15,37 @@
 namespace hpctoolkit::util {
 
 namespace detail {
-template<class X, class Y, class Cmp>
+template <class X, class Y, class Cmp>
 struct compare_only_first_pair_impl : public Cmp {
   bool operator()(const std::pair<X, Y>& a, const std::pair<X, Y>& b) const {
     return Cmp::operator()(a.first, b.first);
   }
 };
-template<class X, class Y, class Cmp>
+template <class X, class Y, class Cmp>
 struct compare_only_second_pair_impl : public Cmp {
   bool operator()(const std::pair<X, Y>& a, const std::pair<X, Y>& b) const {
     return Cmp::operator()(a.second, b.second);
   }
 };
-}
+} // namespace detail
 
 /// Helper comparison for pairs, compares by the first element.
-template<class, class = void> struct compare_only_first {};
-template<class X, class Y>
+template <class, class = void> struct compare_only_first {};
+template <class X, class Y>
 struct compare_only_first<std::pair<X, Y>, void>
-  : public detail::compare_only_first_pair_impl<X, Y, std::less<X>> {};
-template<class X, class Y, class Cmp>
+    : public detail::compare_only_first_pair_impl<X, Y, std::less<X>> {};
+template <class X, class Y, class Cmp>
 struct compare_only_first<std::pair<X, Y>, Cmp>
-  : public detail::compare_only_first_pair_impl<X, Y, Cmp> {};
+    : public detail::compare_only_first_pair_impl<X, Y, Cmp> {};
 
 /// Helper comparison for pairs, compares by the second element.
-template<class, class = void> struct compare_only_second {};
-template<class X, class Y>
+template <class, class = void> struct compare_only_second {};
+template <class X, class Y>
 struct compare_only_second<std::pair<X, Y>, void>
-  : public detail::compare_only_second_pair_impl<X, Y, std::less<Y>> {};
-template<class X, class Y, class Cmp>
+    : public detail::compare_only_second_pair_impl<X, Y, std::less<Y>> {};
+template <class X, class Y, class Cmp>
 struct compare_only_second<std::pair<X, Y>, Cmp>
-  : public detail::compare_only_second_pair_impl<X, Y, Cmp> {};
+    : public detail::compare_only_second_pair_impl<X, Y, Cmp> {};
 
 /// Container specialized for streaming sorting algorithms.
 ///
@@ -54,14 +54,12 @@ struct compare_only_second<std::pair<X, Y>, Cmp>
 /// in the sorted order. For memory-efficiency only K elements need to be
 /// stored, the remainder can be "streamed" through the container. In practice,
 /// this is all done with a consistently maintained min-heap.
-template<class T, class Cmp = std::less<T>, class Alloc = std::allocator<T>>
+template <class T, class Cmp = std::less<T>, class Alloc = std::allocator<T>>
 class streaming_sort_buffer {
   // The STL heap algorithms make a max-heap. Since we want a min-heap, this
   // reverses the arguments to get what we actually want.
   struct RevCmp : public Cmp {
-    bool operator()(const T& a, const T& b) {
-      return Cmp::operator()(b, a);
-    }
+    bool operator()(const T& a, const T& b) { return Cmp::operator()(b, a); }
   } m_rcmp;
   // Storage for the maintained min-heap.
   std::vector<T, Alloc> m_heap;
@@ -70,9 +68,8 @@ public:
   /// Construct a default (empty) buffer.
   streaming_sort_buffer() = default;
   /// Construct from an initial vector of elements.
-  template<class A>
-  explicit streaming_sort_buffer(std::vector<T, A> data)
-    : m_heap(std::move(data)) {
+  template <class A>
+  explicit streaming_sort_buffer(std::vector<T, A> data) : m_heap(std::move(data)) {
     std::make_heap(m_heap.begin(), m_heap.end(), m_rcmp);
   }
 
@@ -111,17 +108,12 @@ public:
 
   /// Add a new element to the buffer, increasing the size. Returns true if the
   /// new element is the smallest of all the elements currently in the buffer.
-  bool push(const T& value) {
-    return emplace(T(value));
-  }
-  bool push(T&& value) {
-    return emplace(std::move(value));
-  }
+  bool push(const T& value) { return emplace(T(value)); }
+  bool push(T&& value) { return emplace(std::move(value)); }
 
   /// Add a new element to the buffer, increasing the size. Returns true if the
   /// new element is the smallest of all the elements currently in the buffer.
-  template<class... Args>
-  bool emplace(Args&&... args) {
+  template <class... Args> bool emplace(Args&&... args) {
     m_heap.emplace_back(std::forward<Args>(args)...);
     return push_heap_last();
   }
@@ -137,17 +129,12 @@ public:
 
   /// Pop the smallest element and push a new element, retaining current size.
   /// Equiv. to `std::make_pair(pop(), push(value))`.
-  std::pair<T, bool> replace(const T& value) {
-    return em_replace(T(value));
-  }
-  std::pair<T, bool> replace(T&& value) {
-    return em_replace(std::move(value));
-  }
+  std::pair<T, bool> replace(const T& value) { return em_replace(T(value)); }
+  std::pair<T, bool> replace(T&& value) { return em_replace(std::move(value)); }
 
   /// Pop the smallest element and push a new element, retaining current size.
   /// Equiv. to `std::make_pair(pop(), push(args...))`.
-  template<class... Args>
-  std::pair<T, bool> em_replace(Args&&... args) {
+  template <class... Args> std::pair<T, bool> em_replace(Args&&... args) {
     std::pop_heap(m_heap.begin(), m_heap.end(), m_rcmp);
     T res = std::move(m_heap.back());
     m_heap.back() = T(std::forward<Args>(args)...);
@@ -170,9 +157,9 @@ private:
   // the newly-added element is now the smallest in the heap.
   bool push_heap_last() {
     size_t idx = m_heap.size() - 1;
-    while(idx > 0) {
+    while (idx > 0) {
       size_t par = (idx - 1) / 2;
-      if(m_rcmp(m_heap[idx], m_heap[par])) {
+      if (m_rcmp(m_heap[idx], m_heap[par])) {
         // idx is bigger than its parent, so we're done!
         // idx > 0 so we didn't have to swap the root.
         return false;
@@ -189,32 +176,31 @@ private:
 
 /// Variant of streaming_sort_buffer that has an upper bound on its size.
 /// This bound is set dynamically on construction.
-template<class T, class Cmp = std::less<T>, class Alloc = std::allocator<T>>
-class bounded_streaming_sort_buffer
-  : public streaming_sort_buffer<T, Cmp, Alloc> {
+template <class T, class Cmp = std::less<T>, class Alloc = std::allocator<T>>
+class bounded_streaming_sort_buffer : public streaming_sort_buffer<T, Cmp, Alloc> {
   using Base = streaming_sort_buffer<T, Cmp, Alloc>;
 
   // Hard upper bound on the size of this buffer. Never changes.
   size_t m_bound;
+
 public:
   /// Default construct an empty buffer with 0 bound.
-  bounded_streaming_sort_buffer() : Base(), m_bound(0) {};
+  bounded_streaming_sort_buffer() : Base(), m_bound(0){};
   /// Construct an empty buffer of the given bound
-  explicit bounded_streaming_sort_buffer(size_t bound)
-    : Base(), m_bound(bound) {
+  explicit bounded_streaming_sort_buffer(size_t bound) : Base(), m_bound(bound) {
     Base::reserve(m_bound);
   }
   /// Construct from the given vector, the bound will be the initial size.
-  template<class A>
+  template <class A>
   explicit bounded_streaming_sort_buffer(std::vector<T, A> data)
-    : Base(std::move(data)), m_bound(Base::size()) {};
+      : Base(std::move(data)), m_bound(Base::size()){};
   /// Construct from the given vector and explicit bound.
-  template<class A>
+  template <class A>
   bounded_streaming_sort_buffer(size_t bound, std::vector<T, A> data)
-    : Base(std::move(data)), m_bound(bound) {
-    if(Base::size() > m_bound) {
+      : Base(std::move(data)), m_bound(bound) {
+    if (Base::size() > m_bound) {
       throw std::logic_error("Attempt to over-fill a "
-          "bounded_streaming_sort_buffer on construction!");
+                             "bounded_streaming_sort_buffer on construction!");
     }
     Base::reserve(m_bound);
   }
@@ -224,7 +210,8 @@ public:
   bounded_streaming_sort_buffer(bounded_streaming_sort_buffer&&) = default;
   bounded_streaming_sort_buffer& operator=(bounded_streaming_sort_buffer&&) = default;
   bounded_streaming_sort_buffer(const bounded_streaming_sort_buffer&) = default;
-  bounded_streaming_sort_buffer& operator=(const bounded_streaming_sort_buffer&) = default;
+  bounded_streaming_sort_buffer&
+  operator=(const bounded_streaming_sort_buffer&) = default;
 
   /// Check if this buffer is full (has hit the hard bound).
   /// If true, push and emplace will throw.
@@ -235,25 +222,25 @@ public:
 
   /// Add a new element to the buffer. Throws if the buffer is already full.
   bool push(const T& value) {
-    if(Base::size() >= m_bound)
+    if (Base::size() >= m_bound)
       throw std::logic_error("Cannot push into a full bounded_streaming_sort_buffer!");
     return Base::push(value);
   }
   bool push(T&& value) {
-    if(Base::size() >= m_bound)
+    if (Base::size() >= m_bound)
       throw std::logic_error("Cannot push into a full bounded_streaming_sort_buffer!");
     return Base::push(std::move(value));
   }
 
   /// Add a new element to the buffer. Throws if the buffer is already full.
-  template<class... Args>
-  bool emplace(Args&&... args) {
-    if(Base::size() >= m_bound)
-      throw std::logic_error("Cannot emplace into a full bounded_streaming_sort_buffer!");
+  template <class... Args> bool emplace(Args&&... args) {
+    if (Base::size() >= m_bound)
+      throw std::logic_error(
+          "Cannot emplace into a full bounded_streaming_sort_buffer!");
     return Base::emplace(std::forward<Args>(args)...);
   }
 };
 
-}
+} // namespace hpctoolkit::util
 
-#endif  // HPCTOOLKIT_PROFILE_UTIL_STREAMING_SORT_H
+#endif // HPCTOOLKIT_PROFILE_UTIL_STREAMING_SORT_H

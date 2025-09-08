@@ -23,6 +23,10 @@ BasedOnStyle: LLVM
 # dropping system #includes (if allowed by other policy like e.g. IWYU).
 IncludeBlocks:   Regroup
 IncludeCategories:
+- Regex:           '(^[<"]|/)vgannotations\.hpp[">]'  # This header MUST come first, before any others
+  Priority:        -100
+  SortPriority:    0
+  CaseSensitive:   true
 - Regex:           '^<.*\.h>'
   Priority:        2
   SortPriority:    0

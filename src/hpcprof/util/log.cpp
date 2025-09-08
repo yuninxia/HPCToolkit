@@ -16,18 +16,21 @@ using namespace hpctoolkit::util::log;
 using namespace detail;
 
 MessageBuffer::MessageBuffer(bool en)
-  : std::ostream(), enabled(en), sbuf(std::ios_base::out) {
-  if(enabled) this->init(&sbuf);
+    : std::ostream(), enabled(en), sbuf(std::ios_base::out) {
+  if (enabled)
+    this->init(&sbuf);
 }
 MessageBuffer::MessageBuffer(MessageBuffer&& o)
-  : std::ostream(std::move(o)), enabled(o.enabled), sbuf(std::move(o.sbuf)) {
-  if(enabled) this->init(&sbuf);
+    : std::ostream(std::move(o)), enabled(o.enabled), sbuf(std::move(o.sbuf)) {
+  if (enabled)
+    this->init(&sbuf);
 }
 MessageBuffer& MessageBuffer::operator=(MessageBuffer&& o) {
   std::ostream::operator=(std::move(o));
   enabled = o.enabled;
   sbuf = std::move(o.sbuf);
-  if(enabled) this->init(&sbuf);
+  if (enabled)
+    this->init(&sbuf);
   return *this;
 }
 
@@ -38,7 +41,8 @@ bool MessageBuffer::empty() noexcept {
 static bool settings_set = false;
 static Settings settings = Settings::none;
 Settings Settings::get() {
-  assert(settings_set && "Logging is not available before calling util::log::Settings::set!");
+  assert(settings_set &&
+         "Logging is not available before calling util::log::Settings::set!");
   return settings;
 }
 void Settings::set(Settings s) {
@@ -53,33 +57,41 @@ fatal::~fatal() {
   std::abort();
 }
 
-error::error() : detail::MessageBuffer(Settings::get().error()) { (*this) << "ERROR: "; }
+error::error() : detail::MessageBuffer(Settings::get().error()) {
+  (*this) << "ERROR: ";
+}
 error::~error() {
-  if(!empty()) {
+  if (!empty()) {
     (*this) << '\n';
     std::cerr << sbuf.str();
   }
 }
 
-verror::verror() : detail::MessageBuffer(Settings::get().verbose()) { (*this) << "VERBOSE ERROR: "; }
+verror::verror() : detail::MessageBuffer(Settings::get().verbose()) {
+  (*this) << "VERBOSE ERROR: ";
+}
 verror::~verror() {
-  if(!empty()) {
+  if (!empty()) {
     (*this) << '\n';
     std::cerr << sbuf.str();
   }
 }
 
-warning::warning() : detail::MessageBuffer(Settings::get().warning()) { (*this) << "WARNING: "; }
+warning::warning() : detail::MessageBuffer(Settings::get().warning()) {
+  (*this) << "WARNING: ";
+}
 warning::~warning() {
-  if(!empty()) {
+  if (!empty()) {
     (*this) << '\n';
     std::cerr << sbuf.str();
   }
 }
 
-vwarning::vwarning() : detail::MessageBuffer(Settings::get().verbose()) { (*this) << "VERBOSE WARNING: "; }
+vwarning::vwarning() : detail::MessageBuffer(Settings::get().verbose()) {
+  (*this) << "VERBOSE WARNING: ";
+}
 vwarning::~vwarning() {
-  if(!empty()) {
+  if (!empty()) {
     (*this) << '\n';
     std::cerr << sbuf.str();
   }
@@ -87,7 +99,7 @@ vwarning::~vwarning() {
 
 argsinfo::argsinfo() : detail::MessageBuffer(true) { (*this) << "INFO: "; }
 argsinfo::~argsinfo() {
-  if(!empty()) {
+  if (!empty()) {
     (*this) << '\n';
     std::cerr << sbuf.str();
   }
@@ -95,7 +107,7 @@ argsinfo::~argsinfo() {
 
 info::info() : detail::MessageBuffer(Settings::get().info()) { (*this) << "INFO: "; }
 info::~info() {
-  if(!empty()) {
+  if (!empty()) {
     (*this) << '\n';
     std::cerr << sbuf.str();
   }
@@ -103,12 +115,12 @@ info::~info() {
 
 debug::debug() : detail::MessageBuffer(Settings::get().debug()) {
   (*this) << "DEBUG";
-  if(mpi::World::size() > 0)
+  if (mpi::World::size() > 0)
     (*this) << " [" << mpi::World::rank() << "]";
   (*this) << ": ";
 }
 debug::~debug() {
-  if(!empty()) {
+  if (!empty()) {
     (*this) << '\n';
     std::cerr << sbuf.str();
   }

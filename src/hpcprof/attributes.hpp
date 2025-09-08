@@ -7,15 +7,14 @@
 #ifndef HPCTOOLKIT_PROFILE_ATTRIBUTES_H
 #define HPCTOOLKIT_PROFILE_ATTRIBUTES_H
 
+#include "../common/lean/id-tuple.h"
 #include "accumulators.hpp"
 #include "scope.hpp"
-
+#include "stdshim/filesystem.hpp"
 #include "util/ragged_vector.hpp"
 #include "util/ref_wrappers.hpp"
 #include "util/streaming_sort.hpp"
-#include "../common/lean/id-tuple.h"
 
-#include "stdshim/filesystem.hpp"
 #include <functional>
 #include <optional>
 #include <thread>
@@ -62,13 +61,15 @@ public:
   /// the Metric-type timepoints in this Thread for the given Metric.
   // MT: Externally Synchronized
   unsigned long long metricTimepointMaxCount(const Metric&) const noexcept;
-  void metricTimepointStats(const Metric&, unsigned long long cnt, unsigned int disorder);
+  void metricTimepointStats(const Metric&, unsigned long long cnt,
+                            unsigned int disorder);
 
 private:
   std::vector<pms_id_t> m_idTuple;
   std::optional<std::pair<unsigned long long, unsigned int>> m_ctxTimepointStats;
   std::unordered_map<util::reference_index<const Metric>,
-      std::pair<unsigned long long, unsigned int>> m_metricTimepointStats;
+                     std::pair<unsigned long long, unsigned int>>
+      m_metricTimepointStats;
 
   friend class ProfilePipeline;
   unsigned int ctxTimepointDisorder() const noexcept;
@@ -93,6 +94,7 @@ private:
     class CountingLookupMap {
       std::mutex lock;
       std::unordered_map<uint64_t, uint64_t> map;
+
     public:
       CountingLookupMap() = default;
       ~CountingLookupMap() = default;
@@ -105,7 +107,8 @@ private:
     };
     util::locked_unordered_map<uint16_t, CountingLookupMap> globalIdxMap;
     util::locked_unordered_map<std::vector<uint16_t>, CountingLookupMap,
-                               std::shared_mutex, LocalHash> localIdxMap;
+                               std::shared_mutex, LocalHash>
+        localIdxMap;
 
     std::thread server;
     std::mutex mpilock;
@@ -122,8 +125,8 @@ public:
 
   Thread(ud_t::struct_t& rs, ThreadAttributes attr);
   Thread(Thread&& o)
-    : userdata(std::move(o.userdata), std::cref(*this)),
-      attributes(std::move(o.attributes)) {};
+      : userdata(std::move(o.userdata), std::cref(*this)),
+        attributes(std::move(o.attributes)){};
 
   mutable ud_t userdata;
 
@@ -149,10 +152,10 @@ public:
 
   /// Get or set the path to the program that was profiled.
   // MT: Externally Synchronized
-  const std::optional<stdshim::filesystem::path>& path() const noexcept { return m_path; }
-  void path(const stdshim::filesystem::path& p) {
-    path(stdshim::filesystem::path(p));
+  const std::optional<stdshim::filesystem::path>& path() const noexcept {
+    return m_path;
   }
+  void path(const stdshim::filesystem::path& p) { path(stdshim::filesystem::path(p)); }
   void path(stdshim::filesystem::path&&);
 
   /// Get or set the job number corresponding to the profiled program.
@@ -198,10 +201,10 @@ private:
   std::unordered_map<uint16_t, std::string> m_idtupleNames;
 };
 
-}
+} // namespace hpctoolkit
 
 namespace std {
-  std::ostream& operator<<(std::ostream&, const hpctoolkit::ThreadAttributes&) noexcept;
+std::ostream& operator<<(std::ostream&, const hpctoolkit::ThreadAttributes&) noexcept;
 }
 
-#endif  // HPCTOOLKIT_PROFILE_ATTRIBUTES_H
+#endif // HPCTOOLKIT_PROFILE_ATTRIBUTES_H

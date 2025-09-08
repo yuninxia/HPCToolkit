@@ -16,8 +16,12 @@ public:
   LogicalFile();
   ~LogicalFile() = default;
 
-  ExtensionClass provides() const noexcept override { return ExtensionClass::classification; }
-  ExtensionClass requirements() const noexcept override { return ExtensionClass::resolvedPath; }
+  ExtensionClass provides() const noexcept override {
+    return ExtensionClass::classification;
+  }
+  ExtensionClass requirements() const noexcept override {
+    return ExtensionClass::resolvedPath;
+  }
 
   void notifyPipeline() noexcept override;
 
@@ -30,16 +34,15 @@ private:
 
   struct udModule {
     bool isLogical = false;
-    std::unordered_map<uint32_t,
-        std::variant<std::reference_wrapper<const File>,
-                     std::reference_wrapper<const Function>>
-    > map;
+    std::unordered_map<uint32_t, std::variant<std::reference_wrapper<const File>,
+                                              std::reference_wrapper<const Function>>>
+        map;
   };
   Module::ud_t::typed_member_t<udModule> ud;
 
   void load(const Module&, udModule&) noexcept;
 };
 
-}
+} // namespace hpctoolkit::finalizers
 
-#endif  // HPCTOOLKIT_PROFILE_FINALIZERS_LOGICAL_H
+#endif // HPCTOOLKIT_PROFILE_FINALIZERS_LOGICAL_H

@@ -7,10 +7,10 @@
 #ifndef HPCTOOLKIT_PROF2_ARGS_H
 #define HPCTOOLKIT_PROF2_ARGS_H
 
-#include "source.hpp"
 #include "finalizer.hpp"
-
+#include "source.hpp"
 #include "stdshim/filesystem.hpp"
+
 #include <functional>
 
 namespace hpctoolkit {
@@ -23,24 +23,29 @@ public:
   ~ProfArgs() = default;
 
   /// Sources and corresponding paths specified as arguments.
-  std::vector<std::pair<std::unique_ptr<ProfileSource>, stdshim::filesystem::path>> sources;
+  std::vector<std::pair<std::unique_ptr<ProfileSource>, stdshim::filesystem::path>>
+      sources;
 
   /// Index of the argument group the source belongs to.
   std::vector<std::size_t> source_args;
 
   /// KernelSymbols Finalizers from properly named measurements directories
-  std::vector<std::pair<std::unique_ptr<ProfileFinalizer>, stdshim::filesystem::path>> ksyms;
+  std::vector<std::pair<std::unique_ptr<ProfileFinalizer>, stdshim::filesystem::path>>
+      ksyms;
 
   /// (Structfile) Finalizers and corresponding paths specified as arguments.
-  std::vector<std::pair<std::unique_ptr<ProfileFinalizer>, stdshim::filesystem::path>> structs;
+  std::vector<std::pair<std::unique_ptr<ProfileFinalizer>, stdshim::filesystem::path>>
+      structs;
 
   /// Finalizer that warns when a Structfile is present but missed due to path differences
   class StructPartialMatch final : public ProfileFinalizer {
   public:
-    StructPartialMatch(ProfArgs& a) : args(a) {};
+    StructPartialMatch(ProfArgs& a) : args(a){};
     ~StructPartialMatch() = default;
 
-    ExtensionClass provides() const noexcept override { return ExtensionClass::classification; }
+    ExtensionClass provides() const noexcept override {
+      return ExtensionClass::classification;
+    }
     ExtensionClass requirements() const noexcept override { return {}; }
     std::optional<std::pair<util::optional_ref<Context>, Context&>>
     classify(Context&, NestedScope&) noexcept override;
@@ -55,12 +60,13 @@ public:
 
   /// Path prefix transformation pairs
   std::unordered_map<stdshim::filesystem::path, stdshim::filesystem::path,
-                     stdshim::hash_path> prefixes;
+                     stdshim::hash_path>
+      prefixes;
 
   /// Statistics adding Transformer
   class StatisticsExtender final : public ProfileFinalizer {
   public:
-    StatisticsExtender(ProfArgs& a) : args(a) {};
+    StatisticsExtender(ProfArgs& a) : args(a){};
     ~StatisticsExtender() = default;
 
     ExtensionClass provides() const noexcept override {
@@ -77,13 +83,16 @@ public:
   /// Path prefix expansion Finalizer
   class Prefixer final : public ProfileFinalizer {
   public:
-    Prefixer(ProfArgs& a) : args(a) {};
+    Prefixer(ProfArgs& a) : args(a){};
     ~Prefixer() = default;
 
-    ExtensionClass provides() const noexcept override { return ExtensionClass::resolvedPath; }
+    ExtensionClass provides() const noexcept override {
+      return ExtensionClass::resolvedPath;
+    }
     ExtensionClass requirements() const noexcept override { return {}; }
     std::optional<stdshim::filesystem::path> resolvePath(const File&) noexcept override;
-    std::optional<stdshim::filesystem::path> resolvePath(const Module&) noexcept override;
+    std::optional<stdshim::filesystem::path>
+    resolvePath(const Module&) noexcept override;
 
   private:
     ProfArgs& args;
@@ -101,8 +110,8 @@ public:
     bool stddev : 1;
     bool cfvar : 1;
 
-    Stats() : sum(true), mean(false), min(false), max(false), stddev(false),
-              cfvar(false) {};
+    Stats()
+        : sum(true), mean(false), min(false), max(false), stddev(false), cfvar(false){};
   } stats;
 
   /// Path for the root database directory, or output file
@@ -136,10 +145,11 @@ private:
   std::once_flag onceMissingGPUCFGs;
   std::unordered_set<stdshim::filesystem::path, stdshim::hash_path> structpaths;
   std::unordered_map<stdshim::filesystem::path, std::vector<stdshim::filesystem::path>,
-                     stdshim::hash_path> structheads;
+                     stdshim::hash_path>
+      structheads;
   std::unordered_set<stdshim::filesystem::path, stdshim::hash_path> allowedForeignDirs;
 };
 
-}
+} // namespace hpctoolkit
 
-#endif  // HPCTOOLKIT_PROF2_ARGS_H
+#endif // HPCTOOLKIT_PROF2_ARGS_H

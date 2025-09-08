@@ -30,29 +30,37 @@ static struct AtomicCheck {
 #ifdef HAVE_FUTEX_H
 
 void atomic_uint32::wait(std::uint32_t old, std::memory_order) const noexcept {
-  if(isConvertable) hpctoolkit_futex_wait(ptr(), old);
-  else std::this_thread::yield();
+  if (isConvertable)
+    hpctoolkit_futex_wait(ptr(), old);
+  else
+    std::this_thread::yield();
 }
 void atomic_uint32::wait(std::uint32_t old, std::memory_order) const volatile noexcept {
-  if(isConvertable) hpctoolkit_futex_wait_v(ptr(), old);
-  else std::this_thread::yield();
+  if (isConvertable)
+    hpctoolkit_futex_wait_v(ptr(), old);
+  else
+    std::this_thread::yield();
 }
 
 void atomic_uint32::notify_one() noexcept {
-  if(isConvertable) hpctoolkit_futex_notify_one(ptr());
+  if (isConvertable)
+    hpctoolkit_futex_notify_one(ptr());
 }
 void atomic_uint32::notify_one() volatile noexcept {
-  if(isConvertable) hpctoolkit_futex_notify_one_v(ptr());
+  if (isConvertable)
+    hpctoolkit_futex_notify_one_v(ptr());
 }
 
 void atomic_uint32::notify_all() noexcept {
-  if(isConvertable) hpctoolkit_futex_notify_all(ptr());
+  if (isConvertable)
+    hpctoolkit_futex_notify_all(ptr());
 }
 void atomic_uint32::notify_all() volatile noexcept {
-  if(isConvertable) hpctoolkit_futex_notify_all_v(ptr());
+  if (isConvertable)
+    hpctoolkit_futex_notify_all_v(ptr());
 }
 
-#else  // !HAVE_FUTEX_H
+#else // !HAVE_FUTEX_H
 
 void atomic_uint32::wait(std::uint32_t old, std::memory_order) const noexcept {
   std::this_thread::yield();
@@ -67,7 +75,7 @@ void atomic_uint32::notify_one() volatile noexcept {};
 void atomic_uint32::notify_all() noexcept {};
 void atomic_uint32::notify_all() volatile noexcept {};
 
-#endif  // HAVE_FUTEX_H
+#endif // HAVE_FUTEX_H
 
 std::uint32_t* atomic_uint32::ptr() noexcept {
   return reinterpret_cast<std::uint32_t*>(this);

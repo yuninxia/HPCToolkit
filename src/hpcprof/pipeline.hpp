@@ -13,15 +13,14 @@
 #include "lexical.hpp"
 #include "metric.hpp"
 #include "module.hpp"
-
 #include "util/locked_unordered.hpp"
 #include "util/once.hpp"
 
-#include <map>
 #include <bitset>
-#include <optional>
-#include <memory>
 #include <chrono>
+#include <map>
+#include <memory>
+#include <optional>
 #include <stdexcept>
 
 namespace hpctoolkit {
@@ -64,10 +63,10 @@ protected:
   // All the Sinks, with notes on which callbacks they should be triggered for.
   struct SinkEntry {
     SinkEntry(DataClass d, DataClass w, ExtensionClass e, ProfileSink& s)
-      : dataLimit(d), waveLimit(w), extensionLimit(e), sink(s) {};
+        : dataLimit(d), waveLimit(w), extensionLimit(e), sink(s){};
     SinkEntry(SinkEntry&& o)
-      : dataLimit(o.dataLimit), waveLimit(o.waveLimit),
-        extensionLimit(o.extensionLimit), sink(o.sink) {};
+        : dataLimit(o.dataLimit), waveLimit(o.waveLimit),
+          extensionLimit(o.extensionLimit), sink(o.sink){};
 
     DataClass dataLimit;
     DataClass waveLimit;
@@ -96,15 +95,15 @@ protected:
     std::vector<std::reference_wrapper<ProfileFinalizer>> all;
   } finalizers;
 
-  ExtensionClass available;  // Maximum available Extension set.
-  ExtensionClass requested;  // Minimal requested Extension set.
+  ExtensionClass available; // Maximum available Extension set.
+  ExtensionClass requested; // Minimal requested Extension set.
 
   // Storage for the unique_ptrs
   std::vector<std::unique_ptr<ProfileSink>> up_sinks;
   std::vector<std::unique_ptr<ProfileFinalizer>> up_finalizers;
 };
 
-}  // namespace detail
+} // namespace detail
 
 /// Monolithic Pipeline for processing Profile data. Effectively connects
 /// ProfileSources to ProfileSinks, performs mediation of required data, and
@@ -337,7 +336,8 @@ public:
     /// See contextFlowGraph for more details on what this means in practice.
     /// DataClass: `contexts`
     // MT: Externally Synchronized (this), Internally Synchronized
-    void addToReconstructionGroup(Context&, const Scope&, PerThreadTemporary&, uint64_t);
+    void addToReconstructionGroup(Context&, const Scope&, PerThreadTemporary&,
+                                  uint64_t);
 
   private:
     // Helpers functions for creating and setting up new Threads
@@ -370,22 +370,25 @@ public:
 
   private:
     // Helper template to merge common code for all timepoint types
-    template<class Tp, class Rw, class Nt, class Sg>
+    template <class Tp, class Rw, class Nt, class Sg>
     [[nodiscard]] TimepointStatus timepoint(PerThreadTemporary&,
-        PerThreadTemporary::TimepointsData<Tp>&, Tp, Sg, const Rw&, const Nt&);
+                                            PerThreadTemporary::TimepointsData<Tp>&, Tp,
+                                            Sg, const Rw&, const Nt&);
 
   public:
     /// Emit a Context-type timepoint into the Pipeline.
     /// Returns the expected next timepoint the caller should inject.
     /// DataClass: `ctxTimepoints`
     // MT: Externally Synchronized (this), Internally Synchronized
-    [[nodiscard]] TimepointStatus timepoint(PerThreadTemporary&, Context&, std::chrono::nanoseconds);
+    [[nodiscard]] TimepointStatus timepoint(PerThreadTemporary&, Context&,
+                                            std::chrono::nanoseconds);
 
     /// Emit a Metric-value timepoint into the Pipeline.
     /// Returns the expected next timepoint the caller should inject.
     /// DataClass: `metricTimepoints`
     // MT: Externally Synchronized (this), Internally Synchronized
-    [[nodiscard]] TimepointStatus timepoint(PerThreadTemporary&, Metric&, double, std::chrono::nanoseconds);
+    [[nodiscard]] TimepointStatus timepoint(PerThreadTemporary&, Metric&, double,
+                                            std::chrono::nanoseconds);
 
     /// Reference to the Thread-local metric data for a particular Context.
     /// Allows for efficient emission of multiple Metrics' data to one location.
@@ -405,7 +408,7 @@ public:
     private:
       friend class ProfilePipeline::Source;
       std::reference_wrapper<decltype(PerThreadTemporary::c_data)::mapped_type> map;
-      explicit AccumulatorsRef(decltype(map)::type& m) : map(m) {};
+      explicit AccumulatorsRef(decltype(map)::type& m) : map(m){};
     };
 
     /// Attribute metric values to the given Thread and Context, by proxy
@@ -477,11 +480,13 @@ public:
     /// Can only be used after the appropriate wavefront or write() barrier.
     const ProfileAttributes& attributes();
     std::optional<std::pair<std::chrono::nanoseconds, std::chrono::nanoseconds>>
-      timepointBounds();
+    timepointBounds();
     const util::locked_unordered_uniqued_set<Module, stdshim::shared_mutex,
-        util::uniqued_hash<stdshim::hash_path>>& modules();
+                                             util::uniqued_hash<stdshim::hash_path>>&
+    modules();
     const util::locked_unordered_uniqued_set<File, stdshim::shared_mutex,
-        util::uniqued_hash<stdshim::hash_path>>& files();
+                                             util::uniqued_hash<stdshim::hash_path>>&
+    files();
     const util::locked_unordered_uniqued_set<Metric>& metrics();
     const util::locked_unordered_uniqued_set<ExtraStatistic>& extraStatistics();
     const Context& contexts();
@@ -512,8 +517,12 @@ public:
 
 private:
   // Finalize the data in a PerThreadTemporary, and commit it to the Sinks
-  // MT: Externally Synchronized (tt, localTimepointBounds), Internally Synchronized (this)
-  void complete(PerThreadTemporary&& tt, std::optional<std::pair<std::chrono::nanoseconds, std::chrono::nanoseconds>>& localTimepointBounds);
+  // MT: Externally Synchronized (tt, localTimepointBounds), Internally Synchronized
+  // (this)
+  void
+  complete(PerThreadTemporary&& tt,
+           std::optional<std::pair<std::chrono::nanoseconds, std::chrono::nanoseconds>>&
+               localTimepointBounds);
 
   // Scheduled data transfer. Minimal requested and available set.
   DataClass scheduled;
@@ -527,7 +536,7 @@ private:
   // Atomic counters for the early wavefronts.
   struct Waves {
     Waves() = delete;
-    Waves(std::size_t i) : attributes(i), references(i), contexts(i) {};
+    Waves(std::size_t i) : attributes(i), references(i), contexts(i){};
     std::atomic<std::size_t> attributes;
     std::atomic<std::size_t> references;
     std::atomic<std::size_t> contexts;
@@ -556,12 +565,14 @@ private:
   std::mutex attrsLock;
   ProfileAttributes attrs;
   std::optional<std::pair<std::chrono::nanoseconds, std::chrono::nanoseconds>>
-    timepointBounds;
+      timepointBounds;
   util::locked_unordered_set<std::unique_ptr<Thread>> threads;
   util::locked_unordered_uniqued_set<Module, stdshim::shared_mutex,
-      util::uniqued_hash<stdshim::hash_path>> mods;
+                                     util::uniqued_hash<stdshim::hash_path>>
+      mods;
   util::locked_unordered_uniqued_set<File, stdshim::shared_mutex,
-      util::uniqued_hash<stdshim::hash_path>> files;
+                                     util::uniqued_hash<stdshim::hash_path>>
+      files;
   util::locked_unordered_uniqued_set<Metric> mets;
   util::locked_unordered_uniqued_set<ExtraStatistic> estats;
   std::unique_ptr<Context> cct;
@@ -573,13 +584,14 @@ private:
     size_t operator()(const std::vector<pms_id_t>&) const noexcept;
   };
   struct TupleEqual {
-    bool operator()(const std::vector<pms_id_t>&, const std::vector<pms_id_t>&) const noexcept;
+    bool operator()(const std::vector<pms_id_t>&,
+                    const std::vector<pms_id_t>&) const noexcept;
   };
   std::shared_mutex mergedThreadsLock;
-  std::unordered_map<std::vector<pms_id_t>, PerThreadTemporary,
-                     TupleHash, TupleEqual> mergedThreads;
+  std::unordered_map<std::vector<pms_id_t>, PerThreadTemporary, TupleHash, TupleEqual>
+      mergedThreads;
 };
 
-}
+} // namespace hpctoolkit
 
-#endif  // HPCTOOLKIT_PROFILE_PIPELINE_H
+#endif // HPCTOOLKIT_PROFILE_PIPELINE_H

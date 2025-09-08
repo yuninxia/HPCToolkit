@@ -8,22 +8,24 @@
 #define HPCTOOLKIT_PROFILE_FINALIZERS_KERNELSYMS_H
 
 #include "../finalizer.hpp"
-
+#include "../stdshim/filesystem.hpp"
 #include "../util/range_map.hpp"
 
-#include "../stdshim/filesystem.hpp"
 #include <map>
 
 namespace hpctoolkit::finalizers {
 
 // Some Modules (in particular Linux kernels) don't have symbol tables in the
-// ELF format, instead they need to be pulled from an nm-like dump saved in the measurements.
+// ELF format, instead they need to be pulled from an nm-like dump saved in the
+// measurements.
 class KernelSymbols final : public ProfileFinalizer {
 public:
   KernelSymbols();
 
   void notifyPipeline() noexcept override;
-  ExtensionClass provides() const noexcept override { return ExtensionClass::classification; }
+  ExtensionClass provides() const noexcept override {
+    return ExtensionClass::classification;
+  }
   ExtensionClass requirements() const noexcept override { return {}; }
 
   std::optional<std::pair<util::optional_ref<Context>, Context&>>
@@ -42,6 +44,6 @@ private:
   void load(const Module&, udModule&) noexcept;
 };
 
-}
+} // namespace hpctoolkit::finalizers
 
-#endif  // HPCTOOLKIT_PROFILE_FINALIZERS_KERNELSYMS_H
+#endif // HPCTOOLKIT_PROFILE_FINALIZERS_KERNELSYMS_H

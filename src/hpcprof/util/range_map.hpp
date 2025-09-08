@@ -14,8 +14,8 @@
 #include <iterator>
 #include <stdexcept>
 #include <type_traits>
-#include <vector>
 #include <utility>
+#include <vector>
 
 namespace hpctoolkit::util {
 
@@ -25,8 +25,7 @@ namespace hpctoolkit::util {
 ///
 /// An extra template argument allows overriding the comparison operation. This
 /// comparison must implement a total order.
-template<class T, class Compare = std::less<T>>
-class interval {
+template <class T, class Compare = std::less<T>> class interval {
 private:
   Compare comp;
 
@@ -42,41 +41,39 @@ public:
 
   // Can also be constructed from two values.
   constexpr interval(const T& a, const T& b)
-    : begin(std::min<T>(a, b, comp)), end(std::max<T>(a, b, comp)) {}
+      : begin(std::min<T>(a, b, comp)), end(std::max<T>(a, b, comp)) {}
 
   // Empty intervals can be constructed from one value.
   constexpr interval(const T& v) : begin(v), end(v) {}
 
   /// Check if this is an empty interval.
-  bool empty() const {
-    return !comp(begin, end) && !comp(end, begin);
-  }
+  bool empty() const { return !comp(begin, end) && !comp(end, begin); }
 };
 
-template<class T, class C>
+template <class T, class C>
 constexpr bool operator<(const interval<T, C>& a, const interval<T, C>& b) {
   C comp;
   return !comp(b.begin, a.end) && comp(a.begin, b.begin);
 }
-template<class T, class C>
+template <class T, class C>
 constexpr bool operator<=(const interval<T, C>& a, const interval<T, C>& b) {
   return a < b || a == b;
 }
-template<class T, class C>
+template <class T, class C>
 constexpr bool operator>(const interval<T, C>& a, const interval<T, C>& b) {
   return b < a;
 }
-template<class T, class C>
+template <class T, class C>
 constexpr bool operator>=(const interval<T, C>& a, const interval<T, C>& b) {
   return a > b || a == b;
 }
-template<class T, class C>
+template <class T, class C>
 constexpr bool operator==(const interval<T, C>& a, const interval<T, C>& b) {
   C comp;
-  return !comp(a.begin, b.begin) && !comp(b.begin, a.begin)
-         && !comp(a.end, b.end) && !comp(b.end, a.end);
+  return !comp(a.begin, b.begin) && !comp(b.begin, a.begin) && !comp(a.end, b.end) &&
+         !comp(b.end, a.end);
 }
-template<class T, class C>
+template <class T, class C>
 constexpr bool operator!=(const interval<T, C>& a, const interval<T, C>& b) {
   return !(a == b);
 }
@@ -84,20 +81,20 @@ constexpr bool operator!=(const interval<T, C>& a, const interval<T, C>& b) {
 /// Subtract an interval out of another. Two sub-intervals of `a` are returned,
 /// the first is strictly before `b` and the second is strictly after `b`.
 /// One or both of the intervals may be empty.
-template<class T, class C>
-constexpr std::pair<interval<T, C>, interval<T, C>>
-operator-(const interval<T, C>& a, const interval<T, C>& b) {
+template <class T, class C>
+constexpr std::pair<interval<T, C>, interval<T, C>> operator-(const interval<T, C>& a,
+                                                              const interval<T, C>& b) {
   C comp;
-  if(a < b) return {a, interval<T, C>(a.end, a.end)};
-  if(b < a) return {interval<T, C>(a.begin, a.begin), a};
-  return {
-    interval<T,C>(std::min<T>(a.begin, b.begin, comp), b.begin),
-    interval<T,C>(b.end, std::max<T>(a.end, b.end, comp))
-  };
+  if (a < b)
+    return {a, interval<T, C>(a.end, a.end)};
+  if (b < a)
+    return {interval<T, C>(a.begin, a.begin), a};
+  return {interval<T, C>(std::min<T>(a.begin, b.begin, comp), b.begin),
+          interval<T, C>(b.end, std::max<T>(a.end, b.end, comp))};
 }
 
 /// Debugging support for printing intervals
-template<class T, class C>
+template <class T, class C>
 std::ostream& operator<<(std::ostream& os, const interval<T, C>& v) {
   return os << '[' << v.begin << '-' << v.end << ')';
 }
@@ -112,9 +109,8 @@ std::ostream& operator<<(std::ostream& os, const interval<T, C>& v) {
 /// lower memory cost after a call to make_consistent().
 ///
 /// MT: Safe when const, externally synchronized when non-const.
-template<class K, class V, class Merge,
-         class Compare = std::less<K>,
-         class Container = std::deque<std::pair<K, V>>>
+template <class K, class V, class Merge, class Compare = std::less<K>,
+          class Container = std::deque<std::pair<K, V>>>
 class range_map {
 public:
   using key_type = K;
@@ -130,7 +126,7 @@ public:
 
   // Can also be constructed with a custom merge or comparison object
   explicit range_map(const Merge& merge, const Compare& comp = Compare())
-    : m_merge(merge), m_compare(comp) {}
+      : m_merge(merge), m_compare(comp) {}
 
   // Movable and copiable
   range_map(range_map&&) = default;
@@ -140,18 +136,18 @@ public:
 
   /// The Container can change at will if so desired. When possible, the source
   /// will first be made consistent to reduce the overall memory cost.
-  template<class OtherContainer>
+  template <class OtherContainer>
   range_map(const range_map<K, V, Merge, OtherContainer>& other)
-    : m_ranges(other.m_ranges.size()), m_consistent(other.m_consistent) {
+      : m_ranges(other.m_ranges.size()), m_consistent(other.m_consistent) {
     std::copy(other.m_ranges.cbegin(), other.m_ranges.cend(), m_ranges.begin());
   }
-  template<class OtherContainer>
+  template <class OtherContainer>
   range_map(range_map<K, V, Merge, OtherContainer>& other) {
     other.make_consistent();
     m_ranges.resize(other.m_ranges.size());
     std::copy(other.m_ranges.cbegin(), other.m_ranges.cend(), m_ranges.begin());
   }
-  template<class OtherContainer>
+  template <class OtherContainer>
   range_map(range_map<K, V, Merge, OtherContainer>&& other) {
     other.make_consistent();
     m_ranges.resize(other.m_ranges.size());
@@ -161,12 +157,14 @@ public:
   /// Lookup the given value in the map. Throws if no range contains the value.
   V& at(const K& key) {
     iterator it = find(key);
-    if(it == end()) throw std::out_of_range("at() called with out-of-range key");
+    if (it == end())
+      throw std::out_of_range("at() called with out-of-range key");
     return it->second;
   }
   const V& at(const K& key) const {
     const_iterator it = find(key);
-    if(it == end()) throw std::out_of_range("at() called with out-of-range key");
+    if (it == end())
+      throw std::out_of_range("at() called with out-of-range key");
     return it->second;
   }
 
@@ -204,7 +202,7 @@ public:
   }
   const_iterator rbegin() const { return crbegin(); }
   const_iterator crbegin() const {
-    if(!m_consistent)
+    if (!m_consistent)
       throw std::logic_error("Attempt to read from a const inconsistent range_map!");
     return m_ranges.crbegin();
   }
@@ -215,7 +213,7 @@ public:
   }
   const_iterator rend() const { return crend(); }
   const_iterator crend() const {
-    if(!m_consistent)
+    if (!m_consistent)
       throw std::logic_error("Attempt to read from a const inconsistent range_map!");
     return m_ranges.crend();
   }
@@ -239,10 +237,10 @@ public:
   /// If the range matches one already in the map, the values will be merged
   /// using Merge::operator() (unlike std::map which ignores the new value).
   void insert(const value_type& value) {
-    if(m_consistent && !m_ranges.empty()) {
-      if(m_compare(value.first, m_ranges.back().first)) {
-        m_consistent = false;  // New out-of-order element
-      } else if(!m_compare(m_ranges.back().first, value.first)) {
+    if (m_consistent && !m_ranges.empty()) {
+      if (m_compare(value.first, m_ranges.back().first)) {
+        m_consistent = false; // New out-of-order element
+      } else if (!m_compare(m_ranges.back().first, value.first)) {
         // Incomparable keys, so we call it equal and merge it instead.
         m_merge(m_ranges.back().second, value.second);
         return;
@@ -251,10 +249,10 @@ public:
     m_ranges.push_back(value);
   }
   void insert(value_type&& value) {
-    if(m_consistent && !m_ranges.empty()) {
-      if(m_compare(value.first, m_ranges.back().first)) {
-        m_consistent = false;  // New out-of-order element
-      } else if(!m_compare(m_ranges.back().first, value.first)) {
+    if (m_consistent && !m_ranges.empty()) {
+      if (m_compare(value.first, m_ranges.back().first)) {
+        m_consistent = false; // New out-of-order element
+      } else if (!m_compare(m_ranges.back().first, value.first)) {
         // Incomparable keys, so we call it equal and merge it instead.
         m_merge(m_ranges.back().second, std::move(value.second));
         return;
@@ -262,23 +260,23 @@ public:
     }
     m_ranges.emplace_back(std::move(value));
   }
-  template<class P>
-  std::enable_if_t<std::is_constructible_v<value_type, P&&>,
-  void> insert(P&& value) { return emplace(std::forward<P>(value)); }
+  template <class P>
+  std::enable_if_t<std::is_constructible_v<value_type, P&&>, void> insert(P&& value) {
+    return emplace(std::forward<P>(value));
+  }
 
   /// Insert a new range into the range_map, constructing in-place.
   /// See insert for other details.
-  template<class... Args>
-  void emplace(Args&&... args) {
-    if(m_ranges.empty() || !m_consistent) {
+  template <class... Args> void emplace(Args&&... args) {
+    if (m_ranges.empty() || !m_consistent) {
       m_ranges.emplace_back(std::forward<Args>(args)...);
     } else {
       value_type& last = m_ranges.back();
       m_ranges.emplace_back(std::forward<Args>(args)...);
-      if(m_compare(m_ranges.back().first, last.first)) {
+      if (m_compare(m_ranges.back().first, last.first)) {
         // New out-of-order element
         m_consistent = false;
-      } else if(!m_compare(last.first, m_ranges.back().first)) {
+      } else if (!m_compare(last.first, m_ranges.back().first)) {
         // Incomparable keys, so we call it equal and merge it.
         m_merge(last.second, std::move(m_ranges.back().second));
         m_ranges.pop_back();
@@ -289,12 +287,11 @@ public:
   /// Insert a new range into the range_map, constructing in-place. Identical to
   /// emplace but is slightly more efficient.
   /// See insert for other details.
-  template<class... Args>
-  void try_emplace(const K& key, Args&&... args) {
-    if(m_consistent && !m_ranges.empty()) {
-      if(m_compare(key, m_ranges.back().first)) {
-        m_consistent = false;  // New out-of-order element
-      } else if(!m_compare(m_ranges.back().first, key)) {
+  template <class... Args> void try_emplace(const K& key, Args&&... args) {
+    if (m_consistent && !m_ranges.empty()) {
+      if (m_compare(key, m_ranges.back().first)) {
+        m_consistent = false; // New out-of-order element
+      } else if (!m_compare(m_ranges.back().first, key)) {
         // Incomparable keys, so we call it equal and merge it instead.
         m_merge(m_ranges.back().second, V(std::forward<Args>(args)...));
         return;
@@ -303,18 +300,18 @@ public:
     m_ranges.emplace_back(std::piecewise_construct, std::forward_as_tuple(key),
                           std::forward_as_tuple(std::forward<Args>(args)...));
   }
-  template<class... Args>
-  void try_emplace(K&& key, Args&&... args) {
-    if(m_consistent && !m_ranges.empty()) {
-      if(m_compare(key, m_ranges.back().first)) {
-        m_consistent = false;  // New out-of-order element
-      } else if(!m_compare(m_ranges.back().first, key)) {
+  template <class... Args> void try_emplace(K&& key, Args&&... args) {
+    if (m_consistent && !m_ranges.empty()) {
+      if (m_compare(key, m_ranges.back().first)) {
+        m_consistent = false; // New out-of-order element
+      } else if (!m_compare(m_ranges.back().first, key)) {
         // Incomparable keys, so we call it equal and merge it instead.
         m_merge(m_ranges.back().second, V(std::forward<Args>(args)...));
         return;
       }
     }
-    m_ranges.emplace_back(std::piecewise_construct, std::forward_as_tuple(std::move(key)),
+    m_ranges.emplace_back(std::piecewise_construct,
+                          std::forward_as_tuple(std::move(key)),
                           std::forward_as_tuple(std::forward<Args>(args)...));
   }
 
@@ -329,16 +326,18 @@ public:
   /// Requires the range_map to be consistent, calls make_consistent if not const.
   iterator find(const K& key) {
     iterator it = lower_bound(key);
-    if(it != end() && !m_compare(it->first, key) && !m_compare(key, it->first))
+    if (it != end() && !m_compare(it->first, key) && !m_compare(key, it->first))
       return it;
-    if(it == begin()) return end();
+    if (it == begin())
+      return end();
     return std::prev(it);
   }
   const_iterator find(const K& key) const {
     const_iterator it = lower_bound(key);
-    if(it != end() && !m_compare(it->first, key) && !m_compare(key, it->first))
+    if (it != end() && !m_compare(it->first, key) && !m_compare(key, it->first))
       return it;
-    if(it == begin()) return end();
+    if (it == begin())
+      return end();
     return std::prev(it);
   }
 
@@ -349,7 +348,7 @@ public:
     return !m_compare(key, m_ranges.front().first);
   }
   bool contains(const K& key) const {
-    if(!m_consistent)
+    if (!m_consistent)
       throw std::logic_error("Attempt to read from a const inconsistent range_map!");
     return !m_compare(key, m_ranges.front().first);
   }
@@ -367,23 +366,27 @@ public:
   /// Get the first element not less than (>=) the given key.
   /// Requires the range_map to be consistent, calls make_consistent if not const.
   iterator lower_bound(const K& key) {
-    return std::lower_bound(begin(), end(), key,
-        [&](const value_type& a, const K& b){ return m_compare(a.first, b); });
+    return std::lower_bound(begin(), end(), key, [&](const value_type& a, const K& b) {
+      return m_compare(a.first, b);
+    });
   }
   const_iterator lower_bound(const K& key) const {
-    return std::lower_bound(cbegin(), cend(), key,
-        [&](const value_type& a, const K& b){ return m_compare(a.first, b); });
+    return std::lower_bound(
+        cbegin(), cend(), key,
+        [&](const value_type& a, const K& b) { return m_compare(a.first, b); });
   }
 
   /// Get the first element greater than (>) the given key.
   /// Requires the range_map to be consistent, calls make_consistent if not const.
   iterator upper_bound(const K& key) {
-    return std::upper_bound(begin(), end(), key,
-        [&](const value_type& a, const K& b){ return m_compare(a.first, b); });
+    return std::upper_bound(begin(), end(), key, [&](const value_type& a, const K& b) {
+      return m_compare(a.first, b);
+    });
   }
   const_iterator upper_bound(const K& key) const {
-    return std::upper_bound(cbegin(), cend(), key,
-        [&](const value_type& a, const K& b){ return m_compare(a.first, b); });
+    return std::upper_bound(
+        cbegin(), cend(), key,
+        [&](const value_type& a, const K& b) { return m_compare(a.first, b); });
   }
 
   /// Make this range_map consistent. This may merge ranges with the same key,
@@ -391,21 +394,22 @@ public:
   ///
   /// This involves sorts and other things, so call sparingly.
   void make_consistent() {
-    if(m_consistent) return;
+    if (m_consistent)
+      return;
     std::sort(m_ranges.begin(), m_ranges.end(),
-        [&](const value_type& a, const value_type& b){
-          return m_compare(a.first, b.first);
-        });
+              [&](const value_type& a, const value_type& b) {
+                return m_compare(a.first, b.first);
+              });
     // The rest of this is like std::unique, but merges instead of overwriting.
     typename Container::iterator cur = m_ranges.begin();
     typename Container::iterator last = m_ranges.end();
     typename Container::iterator result = cur;
-    while((cur = std::next(cur)) != last) {
-      if(!m_compare(result->first, cur->first)) {
+    while ((cur = std::next(cur)) != last) {
+      if (!m_compare(result->first, cur->first)) {
         // The keys must be equal, since result < cur, result.key >= cur.key
         // and we're sorted so keys should be in order. Merge.
         m_merge(result->second, std::move(cur->second));
-      } else if((result = std::next(result)) != cur) {
+      } else if ((result = std::next(result)) != cur) {
         // New range to output, and the new result < cur. Move.
         *result = std::move(*cur);
       }
@@ -428,110 +432,108 @@ namespace range_merge {
 
 /// Simple merger for range_map, where the final value for a range is always
 /// the minimum of the available values.
-template<class T = void, class Compare = std::less<T>>
-class min {
+template <class T = void, class Compare = std::less<T>> class min {
 protected:
   Compare comp;
+
 public:
   void operator()(T& out, const T& in) const {
-    if(comp(in, const_cast<const T&>(out))) out = in;
+    if (comp(in, const_cast<const T&>(out)))
+      out = in;
   }
   void operator()(T& out, T&& in) const {
-    if(comp(const_cast<const T&>(in), const_cast<const T&>(out)))
+    if (comp(const_cast<const T&>(in), const_cast<const T&>(out)))
       out = std::move(in);
   }
 };
-template<class Compare>
-class min<void, Compare> {
+template <class Compare> class min<void, Compare> {
 protected:
   Compare comp;
+
 public:
-  template<class T, class U>
-  void operator()(T& out, U&& in) const {
-    if(comp(const_cast<const T&>(in), const_cast<const U&>(out)))
+  template <class T, class U> void operator()(T& out, U&& in) const {
+    if (comp(const_cast<const T&>(in), const_cast<const U&>(out)))
       out = std::forward<U>(in);
   }
 };
 
 /// Simple merger for range_map, which just throws an error when attempting to
 /// merge if the values are not already equal.
-template<class T = void, class Compare = std::equal_to<T>>
-class throw_unequal {
+template <class T = void, class Compare = std::equal_to<T>> class throw_unequal {
 protected:
   Compare comp;
+
 public:
   void operator()(const T& a, const T& b) const {
-    if(!comp(a, b))
+    if (!comp(a, b))
       throw std::logic_error("Conflicting values for entry in range_map!");
   }
 };
-template<class Compare>
-class throw_unequal<void, Compare> {
+template <class Compare> class throw_unequal<void, Compare> {
 protected:
   Compare comp;
+
 public:
-  template<class T>
-  void operator()(const T& a, const T& b) const {
-    if(!comp(a, b))
+  template <class T> void operator()(const T& a, const T& b) const {
+    if (!comp(a, b))
       throw std::logic_error("Conflicting values for entry in range_map!");
   }
 };
 
 /// Simple merger for range_map, that always throws. Useful for when there
 /// should never be overlapping ranges.
-template<class T = void>
-struct always_throw {
+template <class T = void> struct always_throw {
   void operator()(const T&, const T&) const {
     throw std::logic_error("Conflicting ranges in range_map!");
   }
 };
-template<>
-struct always_throw<void> {
-  template<class T>
-  void operator()(const T&, const T&) const {
+template <> struct always_throw<void> {
+  template <class T> void operator()(const T&, const T&) const {
     throw std::logic_error("Conflicting ranges in range_map!");
   }
 };
 
 /// Simple merger for range_map, where the final value for a range is the
 /// "truthy" value of the available values. Useful for optionals.
-template<class T = void, class FallbackMerge = throw_unequal<T>>
-class truthy {
+template <class T = void, class FallbackMerge = throw_unequal<T>> class truthy {
 protected:
   FallbackMerge fallbackMerge;
+
 public:
   void operator()(T& out, const T& in) const {
-    if(in) {
-      if(const_cast<const T&>(out)) {
+    if (in) {
+      if (const_cast<const T&>(out)) {
         fallbackMerge(out, in);
-      } else out = in;
+      } else
+        out = in;
     }
   }
   void operator()(T& out, T&& in) const {
-    if(const_cast<const T&>(in)) {
-      if(const_cast<const T&>(out)) {
+    if (const_cast<const T&>(in)) {
+      if (const_cast<const T&>(out)) {
         fallbackMerge(out, std::move(in));
-      } else out = std::move(in);
+      } else
+        out = std::move(in);
     }
   }
 };
-template<class FallbackMerge>
-class truthy<void, FallbackMerge> {
+template <class FallbackMerge> class truthy<void, FallbackMerge> {
 protected:
   FallbackMerge fallbackMerge;
+
 public:
-  template<class T, class U>
-  void operator()(T& out, U&& in) const {
-    if(const_cast<const U&>(in)) {
-      if(const_cast<const T&>(out)) {
+  template <class T, class U> void operator()(T& out, U&& in) const {
+    if (const_cast<const U&>(in)) {
+      if (const_cast<const T&>(out)) {
         fallbackMerge(out, std::forward<U>(in));
-      } else out = std::forward<U>(in);
+      } else
+        out = std::forward<U>(in);
     }
   }
 };
 
-}  // namespace merge
+} // namespace range_merge
 
-}  // namespace hpctoolkit
+} // namespace hpctoolkit::util
 
-#endif  // HPCTOOLKIT_PROFILE_UTIL_RANGE_MAP_H
+#endif // HPCTOOLKIT_PROFILE_UTIL_RANGE_MAP_H

@@ -10,9 +10,10 @@
 #include "vgannotations.hpp"
 
 #include <assert.h>
+
 #include <atomic>
-#include <limits>
 #include <functional>
+#include <limits>
 #include <shared_mutex>
 #include <thread>
 #include <variant>
@@ -22,7 +23,7 @@ namespace hpctoolkit::util {
 
 /// Helper structure for the results of a workshare contribution.
 struct WorkshareResult final {
-  WorkshareResult(bool a, bool b) : contributed(a), completed(b) {};
+  WorkshareResult(bool a, bool b) : contributed(a), completed(b){};
   ~WorkshareResult() = default;
 
   WorkshareResult(const WorkshareResult&) = default;
@@ -90,11 +91,10 @@ namespace detail {
 ///   Initial --> Completed: forceComplete()
 ///   Completed --> [*]
 /// \endmermaid
-template<class Derived, class Counter = std::size_t>
-class ParallelForCore {
+template <class Derived, class Counter = std::size_t> class ParallelForCore {
 private:
   static_assert(std::is_integral_v<Counter> && !std::numeric_limits<Counter>::is_signed,
-      "CounterType must be an unsigned integral value!");
+                "CounterType must be an unsigned integral value!");
 
   /// Reserved value for #inCounter indicating the "initial" state
   static const inline Counter cntInitial = 0;
@@ -144,13 +144,14 @@ protected:
   ///   - Any other state -> error
   // MT: Externally Synchronized, Internally Synchronized with contribute()
   void rawFill(Counter numItems, Counter newBlockSize = 0) {
-    assert(inCounter.load(std::memory_order_relaxed) == cntInitial
-           && "Attempt to call rawFill() in a non-initial state!");
-    assert(outCounter.load(std::memory_order_relaxed) >= maxCounter
-           && "Attempt to call rawFill() before waitForStable()!");
+    assert(inCounter.load(std::memory_order_relaxed) == cntInitial &&
+           "Attempt to call rawFill() in a non-initial state!");
+    assert(outCounter.load(std::memory_order_relaxed) >= maxCounter &&
+           "Attempt to call rawFill() before waitForStable()!");
 
     // Set the parameters for this batch of work
-    if(newBlockSize > 0) blockSize = newBlockSize;
+    if (newBlockSize > 0)
+      blockSize = newBlockSize;
     maxCounter = cntOffset + numItems;
 
     // Reset outCounter to cntOffset, to count up to maxCounter after numItems
@@ -184,11 +185,11 @@ private:
     Counter beginCount = inCounter.load(std::memory_order_acquire);
     do {
       ANNOTATE_HAPPENS_BEFORE(&inCounter);
-      if(beginCount == cntInitial) {
+      if (beginCount == cntInitial) {
         // No work is available, but we haven't "completed" yet
         return {0, 0, false};
       }
-      if(beginCount == cntCompleted) {
+      if (beginCount == cntCompleted) {
         // No work is available, we have "completed" now.
         return {0, 0, true};
       }
@@ -197,19 +198,20 @@ private:
       // Allocate up to blockSize work-items for myself, limited by maxCounter
       nextCounter = endCount = std::min(beginCount + blockSize, maxCounter);
 
-      if(nextCounter == maxCounter) {
+      if (nextCounter == maxCounter) {
         // We are taking the last of the work-items. Indicate to everyone else
         // that no more work is available.
         nextCounter = static_cast<Derived*>(this)->shouldWorkingToInitial()
-                      ? cntInitial : cntCompleted;
+                          ? cntInitial
+                          : cntCompleted;
       }
 
       // NB: We acquire here on failure, since we have return cases inside this
       // loop that may expose synchronizations.
       // We don't strictly need to acquire on success, but GCC doesn't like it
       // when the failure model is stronger than the success model.
-    } while(!inCounter.compare_exchange_weak(beginCount, nextCounter,
-        std::memory_order_acquire));
+    } while (!inCounter.compare_exchange_weak(beginCount, nextCounter,
+                                              std::memory_order_acquire));
 
     return {beginCount - cntOffset, endCount - cntOffset, nextCounter == cntCompleted};
   }
@@ -220,9 +222,9 @@ private:
   // MT: Internally Synchronized
   [[nodiscard]] WorkshareResult contribute() noexcept {
     auto [begin, end, completed] = acquireWork();
-    if(begin < end) {
+    if (begin < end) {
       // Perform the work allocated to us
-      for(Counter i = begin; i < end; ++i)
+      for (Counter i = begin; i < end; ++i)
         static_cast<Derived*>(this)->doWorkItem(i);
 
       // Report that we have completed some work
@@ -249,8 +251,9 @@ protected:
     WorkshareResult res{false, false};
     do {
       res = contribute();
-      if(res.contributed) anyContributed = true;
-    } while(res.contributed);
+      if (res.contributed)
+        anyContributed = true;
+    } while (res.contributed);
     res.contributed = anyContributed;
     return res;
   }
@@ -289,8 +292,9 @@ protected:
     WorkshareResult res(false, false);
     do {
       res = contribute();
-      if(!res.contributed) std::this_thread::yield();
-    } while(!res.completed);
+      if (!res.contributed)
+        std::this_thread::yield();
+    } while (!res.completed);
     waitUntilStable();
   }
 
@@ -303,11 +307,11 @@ protected:
   ///   - "working" -> "initial" or "completed"
   // MT: Externally Synchronized, Internally Synchronized with contribute()
   void waitUntilStable() noexcept {
-    while(outCounter.load(std::memory_order_acquire) < maxCounter)
+    while (outCounter.load(std::memory_order_acquire) < maxCounter)
       std::this_thread::yield();
     ANNOTATE_HAPPENS_AFTER(&outCounter);
-    assert(inCounter.load(std::memory_order_relaxed) < cntOffset
-           && "inCounter is not cntInitial or cntCompleted, failed to stabilize state!");
+    assert(inCounter.load(std::memory_order_relaxed) < cntOffset &&
+           "inCounter is not cntInitial or cntCompleted, failed to stabilize state!");
   }
 
   /// Mark the workshare as "completed," indicating that no new work will be
@@ -319,16 +323,16 @@ protected:
   ///   - Any other state -> error
   // MT: Externally Synchronized, Internally Synchronized with contribute()
   void forceComplete() noexcept {
-    assert(inCounter.load(std::memory_order_relaxed) < cntOffset
-           && "Attempt to call forceComplete() while work is available!");
-    assert(outCounter.load(std::memory_order_relaxed) >= maxCounter
-           && "Attempt to call forceComplete() before workers have finished!");
+    assert(inCounter.load(std::memory_order_relaxed) < cntOffset &&
+           "Attempt to call forceComplete() while work is available!");
+    assert(outCounter.load(std::memory_order_relaxed) >= maxCounter &&
+           "Attempt to call forceComplete() before workers have finished!");
 
     inCounter.store(cntCompleted, std::memory_order_relaxed);
   }
 };
 
-}  // namespace detail
+} // namespace detail
 
 /// Parallel workshare for a simple for loop, starting at 0 and counting up.
 ///
@@ -344,9 +348,7 @@ class ParallelFor : private detail::ParallelForCore<ParallelFor> {
 private:
   friend class detail::ParallelForCore<ParallelFor>;
   bool shouldWorkingToInitial() const noexcept { return false; }
-  void doWorkItem(std::size_t i) noexcept {
-    return action(i);
-  }
+  void doWorkItem(std::size_t i) noexcept { return action(i); }
 
 public:
   ParallelFor() = default;
@@ -362,9 +364,10 @@ public:
   // MT: Externally Synchronized, Internally Synchronized with contribute*()
   void fill(std::size_t n, std::function<void(std::size_t)> f = nullptr,
             std::size_t bs = 0) noexcept {
-    if(f) action = f;
+    if (f)
+      action = f;
     assert(action);
-    this->rawFill(n, bs);  // "initial" -> "working"
+    this->rawFill(n, bs); // "initial" -> "working"
   }
 
   using detail::ParallelForCore<ParallelFor>::contributeWhileAble;
@@ -374,17 +377,14 @@ private:
   std::function<void(std::size_t)> action;
 };
 
-
 /// Variant of ParallelFor that iterates over a given std::vector.
 /// See ParallelFor for details.
-template<class T>
+template <class T>
 class ParallelForEach : private detail::ParallelForCore<ParallelForEach<T>> {
 private:
   friend class detail::ParallelForCore<ParallelForEach<T>>;
   bool shouldWorkingToInitial() const noexcept { return false; }
-  void doWorkItem(std::size_t i) noexcept {
-    return action(workitems.at(i));
-  }
+  void doWorkItem(std::size_t i) noexcept { return action(workitems.at(i)); }
 
 public:
   ParallelForEach() = default;
@@ -402,9 +402,10 @@ public:
   void fill(std::vector<T> items, std::function<void(T&)> f = nullptr,
             std::size_t bs = 0) noexcept {
     workitems = std::move(items);
-    if(f) action = f;
+    if (f)
+      action = f;
     assert(action);
-    this->rawFill(workitems.size(), bs);  // "initial" -> "working"
+    this->rawFill(workitems.size(), bs); // "initial" -> "working"
   }
 
   using detail::ParallelForCore<ParallelForEach>::contributeWhileAble;
@@ -414,7 +415,6 @@ private:
   std::function<void(T&)> action;
   std::vector<T> workitems;
 };
-
 
 /// Repeating parallel workshare for a simple for loop, starting at 0 and
 /// counting up.
@@ -435,9 +435,7 @@ private:
   bool shouldWorkingToInitial() const noexcept {
     return !completed.load(std::memory_order_relaxed);
   }
-  void doWorkItem(std::size_t i) noexcept {
-    return action(i);
-  }
+  void doWorkItem(std::size_t i) noexcept { return action(i); }
 
 public:
   RepeatingParallelFor() = default;
@@ -454,19 +452,20 @@ public:
   void fill(std::size_t n, std::function<void(std::size_t)> f = nullptr,
             std::size_t bs = 0) noexcept {
     assert(!completed.load(std::memory_order_relaxed));
-    this->contributeUntilEmpty();  // * -> "initial"
+    this->contributeUntilEmpty(); // * -> "initial"
 
-    if(f) action = f;
+    if (f)
+      action = f;
     assert(action);
-    this->rawFill(n, bs);  // "initial" -> "working"
+    this->rawFill(n, bs); // "initial" -> "working"
   }
 
   /// Mark the loop as completed and wait for all work to complete.
   // MT: Externally Synchronized, Internally Synchronized with contribute*()
   void complete() noexcept {
     completed.store(true, std::memory_order_relaxed);
-    this->contributeUntilEmpty();  // * -> "initial" or "complete"
-    this->forceComplete();  // "initial" or "complete" -> "complete"
+    this->contributeUntilEmpty(); // * -> "initial" or "complete"
+    this->forceComplete();        // "initial" or "complete" -> "complete"
   }
 
   using detail::ParallelForCore<RepeatingParallelFor>::contributeWhileAble;
@@ -477,19 +476,17 @@ private:
   std::atomic<bool> completed = false;
 };
 
-
 /// Variant of RepeatingParallelFor that iterates over a given std::vector.
 /// See RepeatingParallelFor for details.
-template<class T>
-class RepeatingParallelForEach : private detail::ParallelForCore<RepeatingParallelForEach<T>> {
+template <class T>
+class RepeatingParallelForEach
+    : private detail::ParallelForCore<RepeatingParallelForEach<T>> {
 private:
   friend class detail::ParallelForCore<RepeatingParallelForEach>;
   bool shouldWorkingToInitial() const noexcept {
     return !completed.load(std::memory_order_relaxed);
   }
-  void doWorkItem(std::size_t i) noexcept {
-    return action(workitems.at(i));
-  }
+  void doWorkItem(std::size_t i) noexcept { return action(workitems.at(i)); }
 
 public:
   RepeatingParallelForEach() = default;
@@ -507,20 +504,21 @@ public:
   void fill(std::vector<T> items, std::function<void(T&)> f = nullptr,
             std::size_t bs = 0) noexcept {
     assert(!completed.load(std::memory_order_relaxed));
-    this->contributeUntilEmpty();  // * -> "initial"
+    this->contributeUntilEmpty(); // * -> "initial"
 
     workitems = std::move(items);
-    if(f) action = f;
+    if (f)
+      action = f;
     assert(action);
-    this->rawFill(workitems.size(), bs);  // "initial" -> "working"
+    this->rawFill(workitems.size(), bs); // "initial" -> "working"
   }
 
   /// Mark the loop as completed and wait for all work to complete.
   // MT: Externally Synchronized, Internally Synchronized with contribute*()
   void complete() noexcept {
     completed.store(true, std::memory_order_relaxed);
-    this->contributeUntilEmpty();  // * -> "initial" or "complete"
-    this->forceComplete();  // "initial" or "complete" -> "complete"
+    this->contributeUntilEmpty(); // * -> "initial" or "complete"
+    this->forceComplete();        // "initial" or "complete" -> "complete"
   }
 
   using detail::ParallelForCore<RepeatingParallelForEach>::contributeWhileAble;
@@ -532,6 +530,6 @@ private:
   std::atomic<bool> completed = false;
 };
 
-}
+} // namespace hpctoolkit::util
 
-#endif  // HPCTOOLKIT_PROFILE_UTIL_ONCE_H
+#endif // HPCTOOLKIT_PROFILE_UTIL_ONCE_H

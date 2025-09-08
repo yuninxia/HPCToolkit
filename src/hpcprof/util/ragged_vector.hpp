@@ -7,11 +7,10 @@
 #ifndef HPCTOOLKIT_PROFILE_UTIL_RAGGED_VECTOR_H
 #define HPCTOOLKIT_PROFILE_UTIL_RAGGED_VECTOR_H
 
-#include "once.hpp"
+#include "../stdshim/shared_mutex.hpp"
 #include "locked_unordered.hpp"
 #include "log.hpp"
-
-#include "../stdshim/shared_mutex.hpp"
+#include "once.hpp"
 
 #include <cassert>
 #include <cstddef>
@@ -25,17 +24,16 @@ class ProfilePipeline;
 
 namespace util {
 
-template<class...> class ragged_vector;
-template<class...> class ragged_map;
+template <class...> class ragged_vector;
+template <class...> class ragged_map;
 
 namespace detail {
 /// Structure definition for a set of ragged vectors. One of these must be
 /// available to construct a ragged_vector, and stay available to ensure
 /// validity.
-template<class... InitArgs>
-class ragged_struct {
+template <class... InitArgs> class ragged_struct {
 public:
-  ragged_struct() : complete(false), m_size(0), m_entries() {};
+  ragged_struct() : complete(false), m_size(0), m_entries(){};
   ~ragged_struct() = default;
 
   using initializer_t = std::function<void(void*, InitArgs&&...)>;
@@ -44,8 +42,7 @@ public:
 private:
   struct entry {
     entry(initializer_t&& i, destructor_t&& d, std::size_t s, std::size_t o)
-      : initializer(std::move(i)), destructor(std::move(d)), size(s), offset(o)
-      {};
+        : initializer(std::move(i)), destructor(std::move(d)), size(s), offset(o){};
     initializer_t initializer;
     destructor_t destructor;
     std::size_t size;
@@ -57,17 +54,16 @@ private:
   // needed.
   struct generic_member {
     generic_member(ragged_struct& b, std::size_t i, const entry& e)
-      : m_base(b), m_index(i), m_entry(e) {};
+        : m_base(b), m_index(i), m_entry(e){};
 
     ragged_struct& m_base;
     std::size_t m_index;
     entry m_entry;
   };
 
-  template<class T>
-  class generic_typed_member : public generic_member {
+  template <class T> class generic_typed_member : public generic_member {
   public:
-    generic_typed_member(generic_member&& m) : generic_member(std::move(m)) {};
+    generic_typed_member(generic_member&& m) : generic_member(std::move(m)){};
     ~generic_typed_member() = default;
   };
 
@@ -76,14 +72,14 @@ public:
   /// applicable ragged_vectors. Otherwise they're mostly opaque.
   class member {
   public:
-    member() : m_base(nullptr) {};
+    member() : m_base(nullptr){};
     ~member() = default;
     member(const member&) = default;
     member(member&&) = default;
 
     member(generic_member&& g)
-      : m_base(&g.m_base), m_index(g.m_index), m_offset(g.m_entry.offset),
-        m_size(g.m_entry.size) {};
+        : m_base(&g.m_base), m_index(g.m_index), m_offset(g.m_entry.offset),
+          m_size(g.m_entry.size){};
 
     member& operator=(const member&) = default;
     member& operator=(member&&) = default;
@@ -98,14 +94,15 @@ public:
 
     ragged_struct* m_base;
     std::size_t m_index;
-    std::size_t m_offset;  // Copied out for faster accesses.
-    std::size_t m_size;  // Also copied out for faster accesses.
+    std::size_t m_offset; // Copied out for faster accesses.
+    std::size_t m_size;   // Also copied out for faster accesses.
   };
 
   /// Register an arbitrary block of memory for future ragged_vectors.
   /// `init` is called to initialize the block, `des` to destroy it.
   // MT: Internally Synchronized
-  generic_member add(std::size_t sz, std::size_t align, initializer_t&& init, destructor_t&& des) {
+  generic_member add(std::size_t sz, std::size_t align, initializer_t&& init,
+                     destructor_t&& des) {
     assert(!complete && "Cannot add entries to a frozen ragged_struct!");
     std::unique_lock<stdshim::shared_mutex> l(m_mtex);
     auto idx = m_entries.size();
@@ -116,13 +113,12 @@ public:
   }
 
   /// Typed version of member, to allow for (more) compile-type type safety.
-  template<class T>
-  class typed_member : public member {
+  template <class T> class typed_member : public member {
   public:
-    typed_member() : member() {};
-    typed_member(const member& m) : member(m) {};
-    typed_member(member&& m) : member(std::move(m)) {};
-    typed_member(generic_typed_member<T>&& g) : member(std::move(g)) {};
+    typed_member() : member(){};
+    typed_member(const member& m) : member(m){};
+    typed_member(member&& m) : member(std::move(m)){};
+    typed_member(generic_typed_member<T>&& g) : member(std::move(g)){};
     typed_member& operator=(generic_typed_member<T>&& g) {
       member::operator=(std::move(g));
       return *this;
@@ -133,52 +129,51 @@ public:
   /// Register a typed memory block for future ragged_vectors. The constructor
   /// and destructor of T are used for initialization and destruction.
   // MT: Internally Synchronized
-  template<class T, class... Args>
-  generic_typed_member<T> add(Args&&... args) {
-    return add(sizeof(T), alignof(T), [args...](void* v, InitArgs&&... iargs){
-      new(v) T(std::forward<InitArgs>(iargs)..., args...);
-    }, [](void* v){
-      ((T*)v)->~T();
-    });
+  template <class T, class... Args> generic_typed_member<T> add(Args&&... args) {
+    return add(
+        sizeof(T), alignof(T),
+        [args...](void* v, InitArgs&&... iargs) {
+          new (v) T(std::forward<InitArgs>(iargs)..., args...);
+        },
+        [](void* v) { ((T*)v)->~T(); });
   }
 
   /// Register a typed memory block for future ragged_vectors. Unlike add(...),
   /// this uses the default constructor and the given function for initialization.
   // MT: Internally Synchronized
-  template<class T, class... Args>
+  template <class T, class... Args>
   generic_typed_member<T> add_default(std::function<void(T&, InitArgs&&...)>&& init) {
-    return add(sizeof(T), alignof(T), [init](void* v, InitArgs&&... iargs){
-      new(v) T;
-      init(*(T*)v, std::forward<InitArgs>(iargs)...);
-    }, [](void* v){
-      ((T*)v)->~T();
-    });
+    return add(
+        sizeof(T), alignof(T),
+        [init](void* v, InitArgs&&... iargs) {
+          new (v) T;
+          init(*(T*)v, std::forward<InitArgs>(iargs)...);
+        },
+        [](void* v) { ((T*)v)->~T(); });
   }
 
   /// Register a typed memory block for future ragged_vectors. Unlike add(...),
   /// this uses the default constructor for initialization.
   // MT: Internally Synchronized
-  template<class T, class... Args>
-  generic_typed_member<T> add_default() {
-    return add(sizeof(T), alignof(T), [](void* v, InitArgs&&... iargs){
-      new(v) T;
-    }, [](void* v){
-      ((T*)v)->~T();
-    });
+  template <class T, class... Args> generic_typed_member<T> add_default() {
+    return add(
+        sizeof(T), alignof(T), [](void* v, InitArgs&&... iargs) { new (v) T; },
+        [](void* v) { ((T*)v)->~T(); });
   }
 
   /// Register a typed memory block for future ragged_vectors. Uses the
   /// constructor add() would use, but still calls a custom function after.
   // MT: Internally Synchronized
-  template<class T, class... Args>
-  generic_typed_member<T> add_initializer(
-      std::function<void(T&, InitArgs&&...)>&& init, Args&&... args) {
-    return add(sizeof(T), alignof(T), [init, args...](void* v, InitArgs&&... iargs){
-      new(v) T(std::forward<InitArgs>(iargs)..., args...);
-      init(*(T*)v, std::forward<InitArgs>(iargs)...);
-    }, [](void* v){
-      ((T*)v)->~T();
-    });
+  template <class T, class... Args>
+  generic_typed_member<T> add_initializer(std::function<void(T&, InitArgs&&...)>&& init,
+                                          Args&&... args) {
+    return add(
+        sizeof(T), alignof(T),
+        [init, args...](void* v, InitArgs&&... iargs) {
+          new (v) T(std::forward<InitArgs>(iargs)..., args...);
+          init(*(T*)v, std::forward<InitArgs>(iargs)...);
+        },
+        [](void* v) { ((T*)v)->~T(); });
   }
 
   /// Freeze additions to the struct, allowing ragged_vectors to be generated.
@@ -187,9 +182,7 @@ public:
 
   /// Check whether the ragged_struct is frozen and ready for actual use.
   // MT: Externally Synchronized (after freeze())
-  void valid() {
-    assert(complete && "Cannot use a ragged_struct before freezing!");
-  }
+  void valid() { assert(complete && "Cannot use a ragged_struct before freezing!"); }
 
   /// Check whether a member (or typed_member) is valid with respect to this
   /// ragged_struct. Throws if its not.
@@ -206,7 +199,8 @@ public:
   // MT: Externally Synchronized (after freeze())
   void initialize(const member& m, void* d, InitArgs&&... args) {
     valid();
-    m_entries[m.m_index].initializer((char*)d + m.m_offset, std::forward<InitArgs>(args)...);
+    m_entries[m.m_index].initializer((char*)d + m.m_offset,
+                                     std::forward<InitArgs>(args)...);
   }
 
   /// Destroy the given member in the given data block.
@@ -243,49 +237,49 @@ private:
   std::size_t m_size;
   std::vector<entry> m_entries;
 };
-}
+} // namespace detail
 
 /// Ragged vectors are vectors with a runtime-defined structure. Unlike normal
 /// vectors, their size can't be changed after allocation. Like normal vectors,
 /// the items are allocated in one big block without any other mess.
-template<class... InitArgs>
-class ragged_vector {
+template <class... InitArgs> class ragged_vector {
 public:
   using struct_t = detail::ragged_struct<InitArgs...>;
   using member_t = typename struct_t::member;
-  template<class T>
-  using typed_member_t = typename struct_t::template typed_member<T>;
+  template <class T> using typed_member_t = typename struct_t::template typed_member<T>;
 
-  template<class... Args>
+  template <class... Args>
   ragged_vector(struct_t& rs, Args&&... args)
-    : m_base(rs), flags(m_base.entries().size()), data(new char[m_base.size()]) {
+      : m_base(rs), flags(m_base.entries().size()), data(new char[m_base.size()]) {
     auto base_r = std::ref(m_base);
     auto data_r = data.get();
-    init = [base_r, data_r, args...](const member_t& m){
+    init = [base_r, data_r, args...](const member_t& m) {
       base_r.get().initialize(m, data_r, args...);
     };
   }
 
   ragged_vector(const ragged_vector& o) = delete;
   ragged_vector(ragged_vector&& o)
-    : m_base(o.m_base), flags(std::move(o.flags)), init(std::move(o.init)),
-      data(std::move(o.data)) {};
+      : m_base(o.m_base), flags(std::move(o.flags)), init(std::move(o.init)),
+        data(std::move(o.data)){};
 
-  template<class... Args>
+  template <class... Args>
   ragged_vector(ragged_vector&& o, Args&&... args)
-    : m_base(o.m_base), flags(std::move(o.flags)), data(std::move(o.data)) {
+      : m_base(o.m_base), flags(std::move(o.flags)), data(std::move(o.data)) {
     auto base_r = std::ref(m_base);
     auto data_r = data.get();
-    init = [base_r, data_r, args...](const member_t& m){
+    init = [base_r, data_r, args...](const member_t& m) {
       base_r.get().initialize(m, data_r, args...);
     };
   }
 
   ~ragged_vector() noexcept {
-    if(!data) return;  // Not our problem anymore.
+    if (!data)
+      return; // Not our problem anymore.
     const auto& es = m_base.entries();
-    for(std::size_t i = 0; i < es.size(); i++) {
-      if(flags[i].query()) m_base.destruct(m_base.memberFor(i), data.get());
+    for (std::size_t i = 0; i < es.size(); i++) {
+      if (flags[i].query())
+        m_base.destruct(m_base.memberFor(i), data.get());
     }
   }
 
@@ -294,7 +288,7 @@ public:
   // MT: Internally Synchronized
   void initialize() noexcept {
     const auto& es = m_base.entries();
-    for(std::size_t i = 0; i < es.size(); i++)
+    for (std::size_t i = 0; i < es.size(); i++)
       flags[i].call_nowait(init, m_base.memberFor(i));
   }
 
@@ -308,17 +302,18 @@ public:
 
   /// Typed version of at(), that works with typed_members.
   // MT: Internally Synchronized
-  template<class T>
-  [[nodiscard]] T* at(const typed_member_t<T>& m) {
+  template <class T> [[nodiscard]] T* at(const typed_member_t<T>& m) {
     return static_cast<T*>(at((const member_t&)m));
   }
 
   // operator[], for ease of use.
   // MT: Internally Synchronized
-  template<class T>
-  [[nodiscard]] T& operator[](const typed_member_t<T>& m) { return *at(m); }
-  template<class K>
-  [[nodiscard]] auto& operator[](const K& k) { return *at(k(*this)); }
+  template <class T> [[nodiscard]] T& operator[](const typed_member_t<T>& m) {
+    return *at(m);
+  }
+  template <class K> [[nodiscard]] auto& operator[](const K& k) {
+    return *at(k(*this));
+  }
 
   struct_t& base() { return m_base; }
 
@@ -332,7 +327,7 @@ private:
   std::unique_ptr<char[], cleanup> data;
 };
 
-}
-}
+} // namespace util
+} // namespace hpctoolkit
 
-#endif  // HPCTOOLKIT_PROFILE_UTIL_RAGGED_VECTOR_H
+#endif // HPCTOOLKIT_PROFILE_UTIL_RAGGED_VECTOR_H
