@@ -1,0 +1,74 @@
+# SPDX-FileCopyrightText: Contributors to the HPCToolkit Project
+#
+# SPDX-License-Identifier: Apache-2.0
+
+aio amd64:compile:
+  extends: .compile
+  rules:
+    - if: &on_gitlab $CI_SERVER_FQDN == "gitlab.com"
+  tags: [$GITLAB_SAAS_LINUX_MAX_AMD64]
+  image: &image_amd64
+    name: registry.gitlab.com/hpctoolkit/rtt-images:1.0.0-aio@sha256:aed3071b8690dbdf3e2b4fec2071b47680c0be171e1a5613e43f425b55b67c2c
+    docker:
+      platform: linux/amd64
+  script:
+    # NB: We compile for MI100, MI210, and MI300. More GPUs may become relevant later, but for now this
+    # set covers what we have available in CI.
+    - >-
+      meson setup builddir/ -Dwerror=true -Ddyninst:werror=false -Dxed:werror=false
+      -Dhip_args="['--offload-arch=gfx908,gfx90a,gfx942']"
+      -Dcuda=enabled -Drocm=enabled -Dlevel0=enabled -Dgtpin=enabled
+    - cd builddir/
+    # FIXME: Tests that use Level Zero fail on systems that don't have a suitable GPU attached.
+    # This should be fixed, but for now don't try to run any of the affected tests.
+    # FIXME: The ROCm-enabled tests FAIL instead of SKIP if there is no AMD hardware available to run the test.
+    # For now, disable these tests to allow the CI job to pass
+    - meson test --print-errorlogs 'hpctoolkit:*' --no-suite level0 --no-suite rocm
+    - meson compile
+
+aio amd64:test cpu:
+  extends: .test
+  needs: [aio amd64:compile]
+  rules:
+    - if: *on_gitlab
+  tags: [$GITLAB_SAAS_LINUX_MAX_AMD64]
+  image: *image_amd64
+  script:
+    - cd builddir/
+    # FIXME: Tests that use Level Zero fail on systems that don't have a suitable GPU attached.
+    # This should be fixed, but for now don't try to run any of the affected tests.
+    # FIXME: The ROCm-enabled tests FAIL instead of SKIP if there is no AMD hardware available to run the test.
+    # For now, disable these tests to allow the CI job to pass
+    - meson test --print-errorlogs --repeat 7 'hpctoolkit:*' --no-suite level0 --no-suite rocm
+
+aio amd64:test nvidia gpu:
+  extends: .test
+  needs: [aio amd64:compile]
+  rules:
+    - if: $GITLAB_SAAS_LINUX_MAX_AMD64_GPU_STANDARD
+  tags: [$GITLAB_SAAS_LINUX_MAX_AMD64_GPU_STANDARD]
+  image: *image_amd64
+  variables:
+    # These variables are set for compatibility with legacy (non-CDI) nvidia-container-toolkit
+    NVIDIA_VISIBLE_DEVICES: all
+    NVIDIA_DRIVER_CAPABILITIES: compute,utility
+  script:
+    # These paths need to be set for compatibility with nvidia-docker v1
+    - export PATH="$PATH":/usr/local/nvidia/bin
+    - export LD_LIBRARY_PATH="$LD_LIBRARY_PATH":/usr/local/nvidia/lib:/usr/local/nvidia/lib64
+    - cd builddir/
+    # FIXME: -arch=native is needed in CI to avoid PTX JIT-compilation. Without this the
+    # CI falls over if the CUDA is too new compared to the driver.
+    - meson configure -Dcuda_args=-arch=native
+    - meson test --print-errorlogs --repeat 7 'hpctoolkit:*' --suite cuda --suite opencl
+
+aio amd64:test amd gpu:
+  extends: .test
+  needs: [aio amd64:compile]
+  rules:
+    - if: $HPCTOOLKIT_LINUX_MAX_AMD64_GPU_AMD
+  tags: [$HPCTOOLKIT_LINUX_MAX_AMD64_GPU_AMD]
+  image: *image_amd64
+  script:
+    - cd builddir/
+    - meson test --print-errorlogs --repeat 7 'hpctoolkit:*' --suite rocm --suite opencl

@@ -19,8 +19,8 @@ workflow:
 
 stages:
   - verify
-  - individual tests
-  - configuration tests
+  - build
+  - test
   - audit
   - pre-deploy checks
   - artifacts
@@ -74,12 +74,7 @@ default:
 
 include:
   - local: ci/verify.gitlab-ci.yml
-  - local: ci/tests/gitlab.gitlab-ci.yml
-    rules: &gitlab_com
-      - if: $CI_SERVER_FQDN == "gitlab.com"
-  - local: ci/tests/hpsf.gitlab-ci.yml
-    rules:
-      - if: $CI_SERVER_FQDN == "gitlab.spack.io"
+  - local: ci/build+test/.gitlab-ci.yml
   - local: ci/audit.gitlab-ci.yml
   - local: ci/artifacts.gitlab-ci.yml
 

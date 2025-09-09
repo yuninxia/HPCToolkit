@@ -1,0 +1,88 @@
+# SPDX-FileCopyrightText: Contributors to the HPCToolkit Project
+#
+# SPDX-License-Identifier: Apache-2.0
+
+.rhel9:compile:
+  extends: .compile
+  script:
+    # FIXME: This particular combination of PAPI et al. seems to cause hpcrun to hang, always.
+    # Disable PAPI in the build until a proper investigation can be carried out.
+    - >-
+      meson setup builddir/ -Dwerror=true -Ddyninst:werror=false -Dxed:werror=false
+      -Dpapi=disabled
+    - cd builddir/
+    - meson test --print-errorlogs 'hpctoolkit:*'
+    - meson compile
+
+.rhel9:test cpu:
+  extends: .test
+  script:
+    - cd builddir/
+    - meson test --print-errorlogs --repeat 7 'hpctoolkit:*'
+
+rhel9 amd64:compile:
+  extends: .rhel9:compile
+  rules:
+    - if: &on_gitlab $CI_SERVER_FQDN == "gitlab.com"
+  tags: [$GITLAB_SAAS_LINUX_MAX_AMD64]
+  image: &image_amd64
+    name: registry.gitlab.com/hpctoolkit/rtt-images:1.0.0-rhel9@sha256:df04f89eb8e6c9f02eacdf67f4e31bb7d84be83dde69e28e3949d8a6969efb97
+    docker:
+      platform: linux/amd64
+
+rhel9 amd64:test cpu:
+  extends: .rhel9:test cpu
+  needs: [rhel9 amd64:compile]
+  rules:
+    - if: *on_gitlab
+  tags: [$GITLAB_SAAS_LINUX_MAX_AMD64]
+  image: *image_amd64
+
+rhel9 arm64:compile:
+  extends: .rhel9:compile
+  rules:
+    - if: *on_gitlab
+  tags: [$GITLAB_SAAS_LINUX_MAX_ARM64]
+  image: &image_arm64
+    name: registry.gitlab.com/hpctoolkit/rtt-images:1.0.0-rhel9@sha256:df04f89eb8e6c9f02eacdf67f4e31bb7d84be83dde69e28e3949d8a6969efb97
+    docker:
+      platform: linux/arm64
+
+rhel9 arm64:test cpu:
+  extends: .rhel9:test cpu
+  needs: [rhel9 arm64:compile]
+  rules:
+    - if: *on_gitlab
+  tags: [$GITLAB_SAAS_LINUX_MAX_ARM64]
+  image: *image_arm64
+
+rhel9 ppc64le:compile:
+  extends: .rhel9:compile
+  rules:
+    - if: $HPCTOOLKIT_LINUX_MAX_PPC64LE
+  tags: [$HPCTOOLKIT_LINUX_MAX_PPC64LE]
+  image: &image_ppc64le
+    name: registry.gitlab.com/hpctoolkit/rtt-images:1.0.0-rhel9@sha256:df04f89eb8e6c9f02eacdf67f4e31bb7d84be83dde69e28e3949d8a6969efb97
+    docker:
+      platform: linux/ppc64le
+
+rhel9 ppc64le:compile:hpsf:
+  extends: rhel9 ppc64le:compile
+  rules:
+    - if: &on_hpsf $CI_SERVER_FQDN == "gitlab.spack.io"
+  tags: [hpsf-ppc64le]
+
+rhel9 ppc64le:test cpu:
+  extends: .rhel9:test cpu
+  needs: [rhel9 ppc64le:compile]
+  rules:
+    - if: $HPCTOOLKIT_LINUX_MAX_PPC64LE
+  tags: [$HPCTOOLKIT_LINUX_MAX_PPC64LE]
+  image: *image_ppc64le
+
+rhel9 ppc64le:test cpu:hpsf:
+  extends: rhel9 ppc64le:test cpu
+  needs: [rhel9 ppc64le:compile:hpsf]
+  rules:
+    - if: *on_hpsf
+  tags: [hpsf-ppc64le]

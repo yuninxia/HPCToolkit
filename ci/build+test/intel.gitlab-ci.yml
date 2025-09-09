@@ -1,0 +1,82 @@
+# SPDX-FileCopyrightText: Contributors to the HPCToolkit Project
+#
+# SPDX-License-Identifier: Apache-2.0
+
+.intel:compile:
+  extends: .compile
+  script:
+    - >-
+      meson setup builddir/ -Dwerror=true -Ddyninst:werror=false -Dxed:werror=false -Dlibunwind:werror=false
+      -Dlevel0=enabled -Dgtpin=enabled
+    - cd builddir/
+    # FIXME: Tests that use Level Zero fail on systems that don't have a suitable GPU attached.
+    # This should be fixed, but for now don't try to run any of the affected tests.
+    - meson test --print-errorlogs 'hpctoolkit:*' --no-suite level0
+    - meson compile
+
+intel amd64:compile:
+  extends: .intel:compile
+  rules:
+    - if: &on_gitlab $CI_SERVER_FQDN == "gitlab.com"
+  tags: [$GITLAB_SAAS_LINUX_MAX_AMD64]
+  image: &image_amd64
+    name: registry.gitlab.com/hpctoolkit/rtt-images:1.0.0-intel@sha256:86b36864e3b6ff0893c26df391928854bbc202ddd8f283d727276091dd182e60
+    docker:
+      platform: linux/amd64
+
+intel amd64:compile:hpsf:
+  extends: .intel:compile
+  rules:
+    - if: &on_hpsf $CI_SERVER_FQDN == "gitlab.spack.io"
+  tags: [hpsf-x86_64]
+  image: *image_amd64
+
+intel amd64:test cpu:
+  extends: .test
+  needs: [intel amd64:compile]
+  rules:
+    - if: *on_gitlab
+  tags: [$GITLAB_SAAS_LINUX_MAX_AMD64]
+  image: *image_amd64
+  script:
+    - cd builddir/
+    # FIXME: Tests that use Level Zero fail on systems that don't have a suitable GPU attached.
+    # This should be fixed, but for now don't try to run any of the affected tests.
+    - meson test --print-errorlogs --repeat 7 'hpctoolkit:*' --no-suite level0
+
+intel amd64:test cpu:hpsf:
+  extends: .test
+  needs: [intel amd64:compile:hpsf]
+  rules:
+    - if: *on_hpsf
+  tags: [hpsf-gpu, x86_64-intelgpu, intel-$INTEL_GPU_ARCH]
+  parallel:
+    matrix:
+      - INTEL_GPU_ARCH: [data-center-max-1100]
+  image: *image_amd64
+  script:
+    - cd builddir/
+    - meson test --print-errorlogs --repeat 7 'hpctoolkit:*' --suite opencl --suite level0
+
+intel:compile icx:
+  extends: .intel:compile
+  rules:
+    - if: *on_gitlab
+  tags: [$GITLAB_SAAS_LINUX_MAX_AMD64]
+  image: *image_amd64
+  variables:
+    CC: ccache icx
+    CXX: ccache icpx
+  script:
+    # FIXME: Meson's OpenMP dependency uses -fopenmp, but the newer Intel compilers prefer -qopenmp
+    # and will produce a compiler warning because of it.
+    # See https://github.com/mesonbuild/meson/issues/13516.
+    # Until this is fixed, disable werror for this compiler specifically.
+    - >-
+      meson setup builddir/ -Dwerror=false
+      -Dlevel0=enabled -Dgtpin=enabled
+    - cd builddir/
+    # FIXME: Tests that use Level Zero fail on systems that don't have a suitable GPU attached.
+    # This should be fixed, but for now don't try to run any of the affected tests.
+    - meson test --print-errorlogs 'hpctoolkit:*' --no-suite level0
+    - meson compile
