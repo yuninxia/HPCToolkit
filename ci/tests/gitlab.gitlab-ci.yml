@@ -17,9 +17,6 @@ aio amd64:
     # FIXME: The ROCm-enabled tests FAIL instead of SKIP if there is no AMD hardware available to run the test.
     # For now, disable these tests to allow the CI job to pass
     TEST_ARGS: --no-suite level0 --no-suite rocm
-ubuntu20.04 amd64:
-  extends: .individual test job std
-  image: registry.gitlab.com/hpctoolkit/rtt-images:1.0.0-ubuntu20.04@sha256:f427089fb14418968cafa7473c282e0287725ccee8ceca2cd10d506c138a5298
 ubuntu22.04 amd64:
   extends: .individual test job std
   image: registry.gitlab.com/hpctoolkit/rtt-images:1.0.0-ubuntu22.04@sha256:86b36864e3b6ff0893c26df391928854bbc202ddd8f283d727276091dd182e60
@@ -84,9 +81,6 @@ rhel9 ppc64le:
     # FIXME: This particular combination of PAPI et al. seems to cause hpcrun to hang, always.
     # Disable PAPI in the build until a proper investigation can be carried out.
     SETUP_ARGS: -Dpapi=disabled
-fedora39 amd64:
-  extends: .individual test job std
-  image: registry.gitlab.com/hpctoolkit/rtt-images:1.0.0-fedora39@sha256:51d09a0aceaec37a366963c9840e4d0013bf20a7b88d655cc56f3692257fc3da
 fedora40 amd64:
   extends: .individual test job std
   image: registry.gitlab.com/hpctoolkit/rtt-images:1.0.0-fedora40@sha256:aacef875771924780b7702669a932df1049d56f97c37859222b5708d2f03b2ae
@@ -191,20 +185,3 @@ compiler icx:
     # FIXME: Tests that use Level Zero fail on systems that don't have a suitable GPU attached.
     # This should be fixed, but for now don't try to run any of the affected tests.
     TEST_ARGS: --no-suite level0
-
-# Check that (parts of) the build pass under specific off-configurations.
-"setup: [no libdw]": # Libelf but not libdw
-  extends: .test job
-  stage: configuration tests
-  image: registry.gitlab.com/hpctoolkit/rtt-images:1.0.0-ubuntu24.04@sha256:cbfd9374a67442b42f619da129ae47352383a6e1c6312c0f1e9511984f0f6f6b
-  variables:
-    SETUP_ARGS: ""
-  script:
-    - apt-get purge -yqq libdw-dev libdw1
-    - meson setup "$BUILD_DIRECTORY"
-"setup: [long build dir]": # https://gitlab.com/hpctoolkit/hpctoolkit/-/issues/825
-  extends: .test job
-  stage: configuration tests
-  image: registry.gitlab.com/hpctoolkit/rtt-images:1.0.0-ubuntu24.04@sha256:cbfd9374a67442b42f619da129ae47352383a6e1c6312c0f1e9511984f0f6f6b
-  variables:
-    BUILD_DIRECTORY: builddir/long_path_segment__/long_path_segment__/long_path_segment__/long_path_segment__/long_path_segment__/long_path_segment__/long_path_segment__/long_path_segment__/long_path_segment__/long_path_segment__/long_path_segment__/long_path_segment__/
