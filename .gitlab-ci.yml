@@ -5,13 +5,10 @@
 # Only spawn workflows for MRs or protected branches
 workflow:
   auto_cancel:
-    on_job_failure: all
+    on_job_failure: none
     on_new_commit: interruptible
   rules:
     - if: $CI_COMMIT_REF_PROTECTED == "true"
-      auto_cancel:
-        on_job_failure: none
-        on_new_commit: none
       when: always
     - if: $CI_PIPELINE_SOURCE == "push" && $CI_COMMIT_REF_PROTECTED != "true"
       when: never
@@ -56,6 +53,7 @@ variables:
   EXECUTOR_JOB_SECTION_ATTEMPTS: 3
 
 default:
+  interruptible: true
   retry:
     max: 2
     when:
@@ -80,9 +78,7 @@ include:
 
 ci performance report:
   stage: .post
-  # Delay this job slightly to allow the data to settle first
-  when: delayed
-  start_in: 3 minutes
+  when: always
   image:
     name: docker.io/python:3.14.0-alpine@sha256:829edcc737417f9084a154511bde03a50b7996f3746e4c8a6b30a99a9a10648c
     entrypoint: [""]

@@ -54,7 +54,7 @@ include:
 .test:
   needs: [MISSING-SOURCE-JOB]
   stage: test
-  interruptible: false
+  interruptible: true
   tags: [MISSING-RUNNER-TAGS]
   cache:
     - key: meson-packagecache
