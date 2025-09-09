@@ -10,6 +10,21 @@ All notable changes and releases to this project will be documented in this file
 
 Recent releases are formatted loosely based on [Common Changelog](https://common-changelog.org/), a more restrictive subset of [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [2025.0.1] - 2025-09-09
+
+### Added
+
+- User's manual front page now links to downloadable EPUB and PDF, and available versioned docs ([!1306](https://gitlab.com/hpctoolkit/hpctoolkit/-/merge_requests/1306)) (Jonathon Anderson)
+
+### Changed
+
+- hpcrun: RPATHs and RUNPATHs are now stripped from critical preloaded libraries ([!1310](https://gitlab.com/hpctoolkit/hpctoolkit/-/merge_requests/1310)) (Jonathon Anderson)
+
+### Fixed
+
+- Improve error message when using Meson \<1.3.2 ([!1312](https://gitlab.com/hpctoolkit/hpctoolkit/-/merge_requests/1312)) (Jonathon Anderson)
+- Fix detection of Xed from `CMAKE_PREFIX_PATH` ([!1311](https://gitlab.com/hpctoolkit/hpctoolkit/-/merge_requests/1311)) (Jonathon Anderson)
+
 ## [2025.0.0] - 2025-08-26
 
 ### Added
@@ -1727,3 +1742,5 @@ HPCView Version 2.0 []
 [2023.03.01]: https://gitlab.com/hpctoolkit/hpctoolkit/-/tags/2023.03.01
 [2023.08.0]: https://gitlab.com/hpctoolkit/hpctoolkit/-/releases/2023.08.0
 [2024.01.1]: https://gitlab.com/hpctoolkit/hpctoolkit/-/releases/2024.01.1
+[2025.0.0]: https://gitlab.com/hpctoolkit/hpctoolkit/-/releases/2025.0.0
+[2025.0.1]: https://gitlab.com/hpctoolkit/hpctoolkit/-/releases/2025.0.1
