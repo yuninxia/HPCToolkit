@@ -22,7 +22,7 @@ stages:
   - individual tests
   - semi-fresh tests
   - configuration tests
-  - code quality
+  - audit
   - pre-deploy checks
   - artifacts
 
@@ -73,8 +73,7 @@ include:
       - if: $CI_SERVER_FQDN == "gitlab.spack.io"
   - local: ci/tests/data.gitlab-ci.yml
     rules: *hpctoolkit_gitlab_com
-  - local: ci/lint.gitlab-ci.yml
-    rules: *hpctoolkit_gitlab_com
+  - local: ci/audit.gitlab-ci.yml
   - local: doc/.gitlab-ci.yml
     rules: *gitlab_com
 
@@ -88,17 +87,17 @@ ci performance report:
     entrypoint: [""]
   dependencies: []
   script:
-  - |-
-    gitlab_discount=none
-    if [ "$CI_SERVER_FQDN" = "gitlab.com" ]; then
-      if [ "$CI_PROJECT_ID" = "38709409" ]; then
-        gitlab_discount=oss
-      else
-        gitlab_discount=oss-fork
+    - |-
+      gitlab_discount=none
+      if [ "$CI_SERVER_FQDN" = "gitlab.com" ]; then
+        if [ "$CI_PROJECT_ID" = "38709409" ]; then
+          gitlab_discount=oss
+        else
+          gitlab_discount=oss-fork
+        fi
       fi
-    fi
-  - >-
-    ./ci/perf_report.py
-    --gitlab-discount="$gitlab_discount"
-    --exclude="$CI_JOB_ID"
-    "$CI_SERVER_URL" "$CI_PROJECT_ID" "$CI_PIPELINE_ID"
+    - >-
+      ./ci/perf_report.py
+      --gitlab-discount="$gitlab_discount"
+      --exclude="$CI_JOB_ID"
+      "$CI_SERVER_URL" "$CI_PROJECT_ID" "$CI_PIPELINE_ID"
