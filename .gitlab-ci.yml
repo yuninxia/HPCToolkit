@@ -20,7 +20,6 @@ workflow:
 stages:
   - verify
   - individual tests
-  - semi-fresh tests
   - configuration tests
   - audit
   - pre-deploy checks
@@ -81,12 +80,8 @@ include:
   - local: ci/tests/hpsf.gitlab-ci.yml
     rules:
       - if: $CI_SERVER_FQDN == "gitlab.spack.io"
-  - local: ci/tests/data.gitlab-ci.yml
-    rules: &hpctoolkit_gitlab_com
-      - if: $CI_SERVER_FQDN == "gitlab.com" && $CI_PROJECT_ID == "38709409"
   - local: ci/audit.gitlab-ci.yml
-  - local: doc/.gitlab-ci.yml
-    rules: *gitlab_com
+  - local: ci/artifacts.gitlab-ci.yml
 
 ci performance report:
   stage: .post

@@ -1,0 +1,124 @@
+# SPDX-FileCopyrightText: Contributors to the HPCToolkit Project
+#
+# SPDX-License-Identifier: Apache-2.0
+
+include:
+  - local: /doc/.gitlab-ci.yml
+
+# Jobs to regenerate the test data, for updating the regression tests when the behavior changes
+# in known-good ways.
+.regen testdata:
+  extends: .needs verify
+  stage: artifacts
+  interruptible: false
+  when: manual
+  allow_failure: true
+  cache:
+    - key: meson-packagecache
+      when: always
+      paths:
+        - subprojects/packagecache
+    - key: ccache-$CI_JOB_NAME
+      when: always
+      paths:
+        - .ccache/
+  variables:
+    CCACHE_DIR: "$CI_PROJECT_DIR/.ccache"
+    REGEN_SUITES: ""
+  script:
+    - mkdir -p logs
+    # If we don't have sufficient perf events support, try to enable it.
+    - if [ "$(cat /proc/sys/kernel/perf_event_paranoid)" -gt 1 ]; then echo 1 > /proc/sys/kernel/perf_event_paranoid; fi || true
+    # We also want kernel symbols available (kallsyms), so enable that too.
+    - if [ "$(cat /proc/sys/kernel/kptr_restrict)" -gt 0 ]; then echo 0 > /proc/sys/kernel/kptr_restrict; fi || true
+    # Usual sequence from here: setup, build and test. In CI warnings are errors if they don't come
+    # from subprojects.
+    # FIXME: -arch=native is needed in CI to avoid PTX JIT-compilation, without this the
+    # CI falls over if the CUDA is too new compared to the driver.
+    - >-
+      meson setup
+      --force-fallback-for=gtpin
+      -Dwerror=true
+      -Dbzip2:werror=false
+      -Ddyninst:werror=false
+      -Delfutils:werror=false
+      -Dgtpin:werror=false
+      -Dlibiberty:werror=false
+      -Dliblzma:werror=false
+      -Dlibpfm:werror=false
+      -Dlibunwind:werror=false
+      -Dopencl-headers:werror=false
+      -Dtbb:werror=false
+      -Dxed:werror=false
+      -Dxerces-c:werror=false
+      -Dxxhash:werror=false
+      -Dyaml-cpp:werror=false
+      -Dzlib:werror=false
+      -Dzstd:werror=false
+      -Dcuda_args=-arch=native
+      builddir/
+    - meson compile -C builddir/ $(printf 'regen-testdata-%s\n' $REGEN_SUITES)
+    - git add --intent-to-add tests/data/
+    - meson compile -C builddir/ $(printf 'patches-testdata-%s\n' $REGEN_SUITES)
+    - mkdir testdata-patches/
+    - cp -t testdata-patches/ builddir/tests/data/*.patch
+    - find testdata-patches/ -type f -size 0 -delete
+  artifacts:
+    expire_in: 6 hours
+    paths:
+      - testdata-patches/
+
+"regen testdata: [none, cpu]":
+  extends: .regen testdata
+  image: registry.gitlab.com/hpctoolkit/rtt-images:1.0.0-ubuntu20.04@sha256:f427089fb14418968cafa7473c282e0287725ccee8ceca2cd10d506c138a5298
+  rules:
+    - if: $CI_SERVER_FQDN == "gitlab.com"
+  tags: [$GITLAB_SAAS_LINUX_MAX_AMD64]
+  variables:
+    REGEN_SUITES: none cpu
+
+"regen testdata: [nvidia, sw-cuda]":
+  extends: .regen testdata
+  image: registry.gitlab.com/hpctoolkit/rtt-images:1.0.0-cuda12.5@sha256:2aa0499fff7f72a0b017f52de8bbc6e3bab8049e842e68fd0c82a48fa24b452f
+  rules:
+    - if: $GITLAB_SAAS_LINUX_MAX_AMD64_GPU_STANDARD
+  tags: [$GITLAB_SAAS_LINUX_MAX_AMD64_GPU_STANDARD]
+  before_script:
+    &cuda_before_script # These paths need to be set for compatibility with nvidia-docker v1
+    - export PATH="$PATH":/usr/local/nvidia/bin
+    - export LD_LIBRARY_PATH="${LD_LIBRARY_PATH:+$LD_LIBRARY_PATH:}"/usr/local/nvidia/lib:/usr/local/nvidia/lib64
+  variables:
+    REGEN_SUITES: nvidia sw-cuda
+
+"regen testdata: [amd]":
+  extends: .regen testdata
+  image: registry.gitlab.com/hpctoolkit/rtt-images:1.0.0-aio@sha256:aed3071b8690dbdf3e2b4fec2071b47680c0be171e1a5613e43f425b55b67c2c
+  rules:
+    - if: $HPCTOOLKIT_LINUX_MAX_AMD64_GPU_AMD
+  tags: [$HPCTOOLKIT_LINUX_MAX_AMD64_GPU_AMD]
+  variables:
+    REGEN_SUITES: amd
+    # FIXME: The Level Zero-enabled tests FAIL instead of SKIP if the Level Zero driver is unavailable on the
+    # system. For now, disable these tests to allow the CI job to pass.
+    TEST_ARGS: --no-suite level0
+
+# For easy access, the regenerated test data is made available as a single job artifact archive
+"regen testdata: [*]":
+  stage: artifacts
+  interruptible: false
+  rules:
+    - if: $CI_SERVER_FQDN == "gitlab.com" && $GITLAB_SAAS_LINUX_MAX_AMD64_GPU_STANDARD && $HPCTOOLKIT_LINUX_MAX_AMD64_GPU_AMD
+  needs:
+    - "regen testdata: [none, cpu]"
+    - "regen testdata: [nvidia, sw-cuda]"
+    - "regen testdata: [amd]"
+  image: docker.io/alpine@sha256:4bcff63911fcb4448bd4fdacec207030997caf25e9bea4045fa6c8c44de311d1
+  script:
+    - apk add git
+    - ls -l testdata-patches/
+    - git apply --index --check -- testdata-patches/*.patch
+  artifacts:
+    expose_as: "Test data refresh patches"
+    expire_in: 1 day
+    paths:
+      - testdata-patches/

@@ -86,39 +86,6 @@
   extends: .test job
   stage: individual tests
 
-# Selected semi-fresh test runs. These regenerate suitable parts of the test data
-# before running the tests, thus testing that "freshening" the test data doesn't
-# break any tests. For example, an uncaught change to the output format.
-.semifresh test job:
-  extends: .test job
-  stage: semi-fresh tests
-  variables:
-    SETUP_ARGS: ""
-    REGEN_SUITES: ""
-  script:
-    - *test_job_setup
-    - meson compile -C "$BUILD_DIRECTORY" $(printf 'regen-testdata-%s\n' $REGEN_SUITES)
-    - git add --intent-to-add tests/data/
-    - meson compile -C "$BUILD_DIRECTORY" $(printf 'patches-testdata-%s\n' $REGEN_SUITES)
-    - mkdir testdata-patches/
-    - cp -t testdata-patches/ "$BUILD_DIRECTORY"/tests/data/*.patch
-    - find testdata-patches/ -type f -size 0 -delete
-    # Make sure we run the tests once in the same build directory that generated them
-    - meson test -C "$BUILD_DIRECTORY" -j $(nproc) --maxfail 3 --print-errorlogs $TEST_ARGS 'hpctoolkit:*'
-    # Then wipe the build directory and re-test against a "sterilized" build
-    - meson setup --wipe "$BUILD_DIRECTORY"
-    - meson test -C "$BUILD_DIRECTORY" -j $(nproc) --maxfail 3 --repeat 6 --print-errorlogs $TEST_ARGS 'hpctoolkit:*'
-  after_script:
-    - EXTRA_ENVS=" -e REGEN_SUITES='$REGEN_SUITES'"
-    - *test_reproduce_msg
-  artifacts:
-    expire_in: 1 day
-    reports:
-      junit: $BUILD_DIRECTORY/meson-logs/testlog.junit.xml
-    paths:
-      - testdata-patches/
-    when: always
-
 # Compiler compatibility checks. There are a lot of different breeds of compilers out there,
 # and we want to be widely compatible with a wide range of them. Test the ones that aren't
 # the defaults in the individual tests, and ensure the wraps are tested here as well.
