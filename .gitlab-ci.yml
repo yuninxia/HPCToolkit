@@ -27,6 +27,19 @@ stages:
   - artifacts
 
 variables:
+  GITLAB_SAAS_LINUX_MAX_AMD64:
+    description: Tag for the largest GitLab-hosted x86-64 runner available
+    value: saas-linux-medium-amd64 # Without Premium/Ultimate
+  GITLAB_SAAS_LINUX_MAX_ARM64:
+    description: Tag for the largest GitLab-hosted aarch64 runner available
+    value: saas-linux-small-arm64 # Without Premium/Ultimate
+  HPCTOOLKIT_LINUX_MAX_PPC64LE:
+    description: Tag for the largest ppc64le runner available, hosted by the HPCToolkit Project
+  GITLAB_SAAS_LINUX_MAX_AMD64_GPU_STANDARD:
+    description: Tag for the largest GitLab-hosted x86-64 standard-GPU runner available
+  HPCTOOLKIT_LINUX_MAX_AMD64_GPU_AMD:
+    description: Tag for the largest x86-64 AMD-GPU runner available, hosted by the HPCToolkit Project
+
   # Most jobs require the submodules, those that don't will override this
   GIT_SUBMODULE_STRATEGY: recursive
 
@@ -65,14 +78,12 @@ include:
   - local: ci/tests/gitlab.gitlab-ci.yml
     rules: &gitlab_com
       - if: $CI_SERVER_FQDN == "gitlab.com"
-  - local: ci/tests/hpctoolkit.gitlab-ci.yml
-    rules: &hpctoolkit_gitlab_com
-      - if: $CI_SERVER_FQDN == "gitlab.com" && $CI_PROJECT_ID == "38709409"
   - local: ci/tests/hpsf.gitlab-ci.yml
     rules:
       - if: $CI_SERVER_FQDN == "gitlab.spack.io"
   - local: ci/tests/data.gitlab-ci.yml
-    rules: *hpctoolkit_gitlab_com
+    rules: &hpctoolkit_gitlab_com
+      - if: $CI_SERVER_FQDN == "gitlab.com" && $CI_PROJECT_ID == "38709409"
   - local: ci/audit.gitlab-ci.yml
   - local: doc/.gitlab-ci.yml
     rules: *gitlab_com

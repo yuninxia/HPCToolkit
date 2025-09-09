@@ -125,6 +125,6 @@
 .compiler compat test job:
   extends: .test job
   stage: configuration tests
-  tags: [saas-linux-medium-amd64]
+  tags: [$GITLAB_SAAS_LINUX_MAX_AMD64]
   variables:
     SETUP_ARGS: --wrap-mode=forcefallback
