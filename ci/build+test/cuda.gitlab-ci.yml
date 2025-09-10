@@ -45,7 +45,7 @@
 cuda12.0 amd64:compile:
   extends: .cuda amd64:compile
   image: &image_cuda12_0_amd64
-    name: registry.gitlab.com/hpctoolkit/rtt-images:1.0.0-cuda12.0@sha256:4fdf8c1abbbd3d6971b02ea455a607e57a7ecdad765100ffe5eab2d6c2e3c8c9
+    name: registry.gitlab.com/hpctoolkit/rtt-images:1.0.0-cuda12.0
     docker:
       platform: linux/amd64
 
@@ -66,7 +66,7 @@ cuda12.0 amd64:test nvidia gpu:hpsf:
 cuda12.1 amd64:compile:
   extends: .cuda amd64:compile
   image: &image_cuda12_1_amd64
-    name: registry.gitlab.com/hpctoolkit/rtt-images:1.0.0-cuda12.1@sha256:2d31cbde10972cbc1cec4f446fcf2b4deae784023c9c142613af06716013f046
+    name: registry.gitlab.com/hpctoolkit/rtt-images:1.0.0-cuda12.1
     docker:
       platform: linux/amd64
 
@@ -87,7 +87,7 @@ cuda12.1 amd64:test nvidia gpu:hpsf:
 cuda12.2 amd64:compile:
   extends: .cuda amd64:compile
   image: &image_cuda12_2_amd64
-    name: registry.gitlab.com/hpctoolkit/rtt-images:1.0.0-cuda12.2@sha256:fd00a225efd6dfdac62dcf5dbd62ee30bc5893262a4c4b479684aacf9f77c875
+    name: registry.gitlab.com/hpctoolkit/rtt-images:1.0.0-cuda12.2
     docker:
       platform: linux/amd64
 
@@ -108,7 +108,7 @@ cuda12.2 amd64:test nvidia gpu:hpsf:
 cuda12.4 amd64:compile:
   extends: .cuda amd64:compile
   image: &image_cuda12_4_amd64
-    name: registry.gitlab.com/hpctoolkit/rtt-images:1.0.0-cuda12.4@sha256:7cc5dbff367dba6f9187b0759785fa7a4e72108dfdd7872a4b83aeaae7555d6c
+    name: registry.gitlab.com/hpctoolkit/rtt-images:1.0.0-cuda12.4
     docker:
       platform: linux/amd64
 
@@ -129,7 +129,7 @@ cuda12.4 amd64:test nvidia gpu:hpsf:
 cuda12.5 amd64:compile:
   extends: .cuda amd64:compile
   image: &image_cuda12_5_amd64
-    name: registry.gitlab.com/hpctoolkit/rtt-images:1.0.0-cuda12.5@sha256:2aa0499fff7f72a0b017f52de8bbc6e3bab8049e842e68fd0c82a48fa24b452f
+    name: registry.gitlab.com/hpctoolkit/rtt-images:1.0.0-cuda12.5
     docker:
       platform: linux/amd64
 

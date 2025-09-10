@@ -22,7 +22,7 @@ rhel8 amd64:compile:
     - if: &on_gitlab $CI_SERVER_FQDN == "gitlab.com"
   tags: [$GITLAB_SAAS_LINUX_MAX_AMD64]
   image: &image_amd64
-    name: registry.gitlab.com/hpctoolkit/rtt-images:1.0.0-rhel8@sha256:7b3173bcdc96237dcb3fdf8074342aadee0c1e79e651d8d3264ed836271c33c9
+    name: registry.gitlab.com/hpctoolkit/rtt-images:1.0.0-rhel8
     docker:
       platform: linux/amd64
 

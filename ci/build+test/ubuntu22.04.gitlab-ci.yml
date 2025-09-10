@@ -22,7 +22,7 @@ ubuntu22.04 amd64:compile:
     - if: &on_gitlab $CI_SERVER_FQDN == "gitlab.com"
   tags: [$GITLAB_SAAS_LINUX_MAX_AMD64]
   image: &image_amd64
-    name: registry.gitlab.com/hpctoolkit/rtt-images:1.0.0-ubuntu22.04@sha256:86b36864e3b6ff0893c26df391928854bbc202ddd8f283d727276091dd182e60
+    name: registry.gitlab.com/hpctoolkit/rtt-images:1.0.0-ubuntu22.04
     docker:
       platform: linux/amd64
 
@@ -40,7 +40,7 @@ ubuntu22.04 arm64:compile:
     - if: *on_gitlab
   tags: [$GITLAB_SAAS_LINUX_MAX_ARM64]
   image: &image_arm64
-    name: registry.gitlab.com/hpctoolkit/rtt-images:1.0.0-ubuntu22.04@sha256:86b36864e3b6ff0893c26df391928854bbc202ddd8f283d727276091dd182e60
+    name: registry.gitlab.com/hpctoolkit/rtt-images:1.0.0-ubuntu22.04
     docker:
       platform: linux/arm64
 
@@ -58,7 +58,7 @@ ubuntu22.04 ppc64le:compile:
     - if: $HPCTOOLKIT_LINUX_MAX_PPC64LE
   tags: [$HPCTOOLKIT_LINUX_MAX_PPC64LE]
   image: &image_ppc64le
-    name: registry.gitlab.com/hpctoolkit/rtt-images:1.0.0-ubuntu22.04@sha256:86b36864e3b6ff0893c26df391928854bbc202ddd8f283d727276091dd182e60
+    name: registry.gitlab.com/hpctoolkit/rtt-images:1.0.0-ubuntu22.04
     docker:
       platform: linux/ppc64le
 

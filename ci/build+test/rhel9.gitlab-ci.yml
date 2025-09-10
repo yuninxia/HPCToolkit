@@ -26,7 +26,7 @@ rhel9 amd64:compile:
     - if: &on_gitlab $CI_SERVER_FQDN == "gitlab.com"
   tags: [$GITLAB_SAAS_LINUX_MAX_AMD64]
   image: &image_amd64
-    name: registry.gitlab.com/hpctoolkit/rtt-images:1.0.0-rhel9@sha256:df04f89eb8e6c9f02eacdf67f4e31bb7d84be83dde69e28e3949d8a6969efb97
+    name: registry.gitlab.com/hpctoolkit/rtt-images:1.0.0-rhel9
     docker:
       platform: linux/amd64
 
@@ -44,7 +44,7 @@ rhel9 arm64:compile:
     - if: *on_gitlab
   tags: [$GITLAB_SAAS_LINUX_MAX_ARM64]
   image: &image_arm64
-    name: registry.gitlab.com/hpctoolkit/rtt-images:1.0.0-rhel9@sha256:df04f89eb8e6c9f02eacdf67f4e31bb7d84be83dde69e28e3949d8a6969efb97
+    name: registry.gitlab.com/hpctoolkit/rtt-images:1.0.0-rhel9
     docker:
       platform: linux/arm64
 
@@ -62,7 +62,7 @@ rhel9 ppc64le:compile:
     - if: $HPCTOOLKIT_LINUX_MAX_PPC64LE
   tags: [$HPCTOOLKIT_LINUX_MAX_PPC64LE]
   image: &image_ppc64le
-    name: registry.gitlab.com/hpctoolkit/rtt-images:1.0.0-rhel9@sha256:df04f89eb8e6c9f02eacdf67f4e31bb7d84be83dde69e28e3949d8a6969efb97
+    name: registry.gitlab.com/hpctoolkit/rtt-images:1.0.0-rhel9
     docker:
       platform: linux/ppc64le
 

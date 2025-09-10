@@ -12,7 +12,7 @@ clang-tidy:
   rules:
     - if: &on_gitlab $CI_SERVER_FQDN == "gitlab.com"
   tags: [$GITLAB_SAAS_LINUX_MAX_AMD64]
-  image: registry.gitlab.com/hpctoolkit/rtt-images:1.0.0-aio@sha256:aed3071b8690dbdf3e2b4fec2071b47680c0be171e1a5613e43f425b55b67c2c
+  image: registry.gitlab.com/hpctoolkit/rtt-images:1.0.0-aio
   cache:
     key: ccache-clang-tidy
     when: always
