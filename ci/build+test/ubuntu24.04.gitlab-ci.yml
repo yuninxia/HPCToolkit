@@ -14,7 +14,7 @@
   extends: .test
   script:
     - cd builddir/
-    - meson test --print-errorlogs --repeat 7 'hpctoolkit:*'
+    - meson test --print-errorlogs 'hpctoolkit:*'
 
 ubuntu24.04 amd64:compile:
   extends: .ubuntu24.04:compile
@@ -60,7 +60,7 @@ ubuntu24.04 arm64:test cpu:
   script:
     - cd builddir/
     # FIXME: Dodge undiagnosed bugs in the OpenMP threading and Python support in this image specifically, in CI
-    - meson test --print-errorlogs --repeat 7 'hpctoolkit:*' --no-suite hpcrun --no-suite python
+    - meson test --print-errorlogs 'hpctoolkit:*' --no-suite hpcrun --no-suite python
 
 ubuntu24.04 ppc64le:compile:
   extends: .ubuntu24.04:compile
@@ -89,7 +89,7 @@ ubuntu24.04 ppc64le:test cpu:
     - cd builddir/
     # FIXME: For unknown reasons, the Python support doesn't work in this version of Python.
     # Not sure why. Disable it for now. https://gitlab.com/hpctoolkit/hpctoolkit/-/issues/847
-    - meson test --print-errorlogs --repeat 7 'hpctoolkit:*' --no-suite python
+    - meson test --print-errorlogs 'hpctoolkit:*' --no-suite python
 
 ubuntu24.04 ppc64le:test cpu:hpsf:
   extends: ubuntu24.04 ppc64le:test cpu

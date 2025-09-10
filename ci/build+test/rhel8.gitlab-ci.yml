@@ -14,7 +14,7 @@
   extends: .test
   script:
     - cd builddir/
-    - meson test --print-errorlogs --repeat 7 'hpctoolkit:*'
+    - meson test --print-errorlogs 'hpctoolkit:*'
 
 rhel8 amd64:compile:
   extends: .rhel8:compile

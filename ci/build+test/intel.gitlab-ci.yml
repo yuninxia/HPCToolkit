@@ -42,7 +42,7 @@ intel amd64:test cpu:
     - cd builddir/
     # FIXME: Tests that use Level Zero fail on systems that don't have a suitable GPU attached.
     # This should be fixed, but for now don't try to run any of the affected tests.
-    - meson test --print-errorlogs --repeat 7 'hpctoolkit:*' --no-suite level0
+    - meson test --print-errorlogs 'hpctoolkit:*' --no-suite level0
 
 intel amd64:test cpu:hpsf:
   extends: .test
@@ -56,7 +56,7 @@ intel amd64:test cpu:hpsf:
   image: *image_amd64
   script:
     - cd builddir/
-    - meson test --print-errorlogs --repeat 7 'hpctoolkit:*' --suite opencl --suite level0
+    - meson test --print-errorlogs 'hpctoolkit:*' --suite opencl --suite level0
 
 intel:compile icx:
   extends: .intel:compile
