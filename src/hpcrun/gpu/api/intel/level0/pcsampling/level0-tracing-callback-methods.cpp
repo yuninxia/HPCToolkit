@@ -23,7 +23,16 @@ std::map<ze_module_handle_t, ZeModule> modules_on_devices_;
 // local variables
 //******************************************************************************
 
+/* Mutex protecting access to the global device handle map (devices_) */
+/* FIXME(Yuning): Consider if this mutex is still needed or if access patterns allow removal */
 static std::shared_mutex devices_mutex_;
+
+/* 
+ * Thread-local storage for the MCS lock node. Each application thread
+ * calling the kernel launch callbacks gets its own unique node instance,
+ * which is necessary for the MCS queuing lock algorithm.
+ */
+static thread_local mcs_node_t pc_monitoring_node;
 
 
 //******************************************************************************
@@ -262,9 +271,10 @@ OnEnterCommandListAppendLaunchKernel
 
   ZeDeviceDescriptor* desc = getDeviceDescriptor(hDevice);
   if (desc) {
+    mcs_lock(&desc->kernel_launch_lock, &pc_monitoring_node);
     desc->running_kernel_ = hKernel;
     desc->running_kernel_end_ = hSignalEvent;
-    desc->kernel_started_.store(true, std::memory_order_release);
+    desc->SetKernelStarted(true);
   }
 }
 
@@ -290,10 +300,9 @@ OnExitCommandListAppendLaunchKernel
 
   ZeDeviceDescriptor* desc = getDeviceDescriptor(hDevice);
   if (desc) {
-    // Wait until the data ready event is signaled
     waitForEventReady(desc->serial_data_ready_, dispatch);
-    // Reset the event flag after processing
-    desc->serial_data_ready_.store(false, std::memory_order_release);
+    desc->SetSerialDataReady(false);
+    mcs_unlock(&desc->kernel_launch_lock, &pc_monitoring_node);
   }
 }
 

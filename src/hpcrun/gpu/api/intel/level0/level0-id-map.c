@@ -14,6 +14,7 @@
 #include "../../../../../common/lean/spinlock.h"
 #include "../../../../../common/lean/splay-macros.h"
 
+#include "../../../../foil/level0.h"
 #include "../../../../messages/messages.h"
 #include "../../../../memory/hpcrun-malloc.h"
 
@@ -210,18 +211,19 @@ zebin_id_map_entry_elf_vector_get
 char* 
 level0_kernel_name_get
 (
-  ze_kernel_handle_t hKernel
+  ze_kernel_handle_t hKernel,
+  const struct hpcrun_foil_appdispatch_level0* dispatch
 ) 
 {
   size_t name_len = 0;
-  ze_result_t status = zeKernelGetName(hKernel, &name_len, NULL);
+  ze_result_t status = f_zeKernelGetName(hKernel, &name_len, NULL, dispatch);
   if (status != ZE_RESULT_SUCCESS || name_len == 0) {
     fprintf(stderr, "zeKernelGetName failed or returned zero length\n");
     return NULL;
   }
 
   char* kernel_name = (char*) malloc(name_len);
-  status = zeKernelGetName(hKernel, &name_len, kernel_name);
+  status = f_zeKernelGetName(hKernel, &name_len, kernel_name, dispatch);
   if (status != ZE_RESULT_SUCCESS) {
     fprintf(stderr, "zeKernelGetName failed\n");
     free(kernel_name);
@@ -236,22 +238,25 @@ uint8_t*
 level0_module_debug_zebin_get
 (
   ze_module_handle_t hModule, 
-  size_t* zebin_size
+  size_t* zebin_size,
+  const struct hpcrun_foil_appdispatch_level0* dispatch
 ) 
 {
-  zetModuleGetDebugInfo(
+  f_zetModuleGetDebugInfo(
     hModule,
     ZET_MODULE_DEBUG_INFO_FORMAT_ELF_DWARF,
     zebin_size,
-    NULL
+    NULL,
+    dispatch
   );
 
   uint8_t* debug_zebin = (uint8_t*) malloc(*zebin_size);
-  zetModuleGetDebugInfo(
+  f_zetModuleGetDebugInfo(
     hModule,
     ZET_MODULE_DEBUG_INFO_FORMAT_ELF_DWARF,
     zebin_size,
-    debug_zebin
+    debug_zebin,
+    dispatch
   );
 
   return debug_zebin;
@@ -267,12 +272,13 @@ zebin_id_transform
 (
   ze_module_handle_t hModule, 
   ze_kernel_handle_t hKernel, 
-  uint64_t offset
+  uint64_t offset,
+  const struct hpcrun_foil_appdispatch_level0* dispatch
 ) 
 {
   ip_normalized_t ip = {0, 0};
   
-  char* function_name = level0_kernel_name_get(hKernel);
+  char* function_name = level0_kernel_name_get(hKernel, dispatch);
   if (!function_name) {
     return ip;
   }
@@ -291,7 +297,7 @@ zebin_id_transform
     ip.lm_id = (uint16_t)hpctoolkit_module_id;
 
     void* function_pointer = NULL;
-    ze_result_t status = zeModuleGetFunctionPointer(hModule, function_name, &function_pointer);
+    ze_result_t status = f_zeModuleGetFunctionPointer(hModule, function_name, &function_pointer, dispatch);
     if (status == ZE_RESULT_SUCCESS && function_pointer != NULL) {
       ip.lm_ip = (uintptr_t)function_pointer + offset;
     } else {

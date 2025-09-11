@@ -119,7 +119,7 @@ METHOD_FN(thread_init_action)
   TMSG(CUDA, "thread_init_action");
 }
 
-
+// FIXME(Yuning): The start and stop are not supported for Level0.
 static void
 METHOD_FN(start)
 {

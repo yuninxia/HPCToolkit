@@ -68,10 +68,13 @@ level0CreateTracer
   const struct hpcrun_foil_appdispatch_level0* dispatch
 )
 {
+  // Configure the tracer descriptor.
+  // The pointer provided to pUserData here will be passed as the
+  // 'global_user_data' argument to all callbacks associated with this tracer.
   zel_tracer_desc_t tracer_desc = {
-    ZEL_STRUCTURE_TYPE_TRACER_EXP_DESC,  // [in] Type of this structure.
-    nullptr,                             // [in][optional] Pointer to extension-specific structure.
-    collector                            // [in] Pointer passed to every tracer's callbacks.
+    ZEL_STRUCTURE_TYPE_TRACER_EXP_DESC,  // [in] Must be this value
+    nullptr,                             // [in][optional] No extension structures used
+    /* .pUserData = */ collector         // [in] User context passed to callbacks
   };
 
   // Create the tracer

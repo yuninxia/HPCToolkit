@@ -839,10 +839,8 @@ hpcrun_zeKernelCreate
 {
   ze_result_t ret = f_zeKernelCreate(hModule, desc, phKernel, dispatch);
   PRINT("foilbase_zeKernelCreate: module handle %p, kernel handle %p\n",hModule, *phKernel);
-  // Exit action
+  // Exit action - save kernel-module mapping for PC sampling
   level0_kernel_module_map_insert(*phKernel, hModule);
-  ip_normalized_t kernel_ip;
-  kernel_ip = level0_func_ip_resolve(*phKernel, dispatch);
 
   return ret;
 }
@@ -854,6 +852,9 @@ hpcrun_zeKernelDestroy
   const struct hpcrun_foil_appdispatch_level0* dispatch
 )
 {
+  // Entry action - remove kernel-module mapping
+  level0_kernel_module_map_delete(hKernel);
+  
   ze_result_t ret = f_zeKernelDestroy(hKernel, dispatch);
 
   return ret;

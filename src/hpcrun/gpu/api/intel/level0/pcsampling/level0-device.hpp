@@ -36,12 +36,16 @@
 #include "level0-eventpool.hpp"
 #include "level0-metric.hpp"
 
+extern "C" {
+  #include "../../../../../../common/lean/mcs-lock.h"
+}
 
 //*****************************************************************************
 // type definitions
 //*****************************************************************************
 
 enum ZeProfilerState {
+  PROFILER_UNKNOWN = -1,
   PROFILER_DISABLED = 0,
   PROFILER_ENABLED = 1
 };
@@ -55,16 +59,55 @@ struct ZeDeviceDescriptor {
   int32_t parent_device_id_;
   int32_t subdevice_id_;
   int32_t num_sub_devices_;
+
   zet_metric_group_handle_t metric_group_;
   std::thread *profiling_thread_;
-  std::atomic<ZeProfilerState> profiling_state_;
+  std::atomic<int> profiling_state_{PROFILER_UNKNOWN};
   bool stall_sampling_;
+
   uint64_t correlation_id_;
-  uint64_t last_correlation_id_;
   ze_kernel_handle_t running_kernel_;
   ze_event_handle_t running_kernel_end_;
+
   std::atomic<bool> kernel_started_{false};
   std::atomic<bool> serial_data_ready_{false};
+  mcs_lock_t kernel_launch_lock;
+
+  // FIXME(Yuning)
+  // application_UpdateProfilerState
+  // profiler_XXX
+
+  void UpdateProfilerState(int state) {
+    profiling_state_.store(state, std::memory_order_release);
+  }
+
+  bool IsProfilerActive() const {
+    return profiling_state_.load(std::memory_order_acquire) != PROFILER_DISABLED;
+  }
+
+  bool IsProfilerDisabled() const {
+    return profiling_state_.load(std::memory_order_acquire) == PROFILER_DISABLED;
+  }
+
+  bool IsProfilerInitialized() const { // Check if specifically set to ENABLED
+    return profiling_state_.load(std::memory_order_acquire) == PROFILER_ENABLED;
+  }
+
+  void SetKernelStarted(bool started) {
+    kernel_started_.store(started, std::memory_order_release);
+  }
+
+  bool IsKernelStarted() const {
+    return kernel_started_.load(std::memory_order_acquire);
+  }
+
+  void SetSerialDataReady(bool ready) {
+    serial_data_ready_.store(ready, std::memory_order_release);
+  }
+
+  bool IsSerialDataReady() const {
+    return serial_data_ready_.load(std::memory_order_acquire);
+  }
 };
 
 struct ZeDevice {

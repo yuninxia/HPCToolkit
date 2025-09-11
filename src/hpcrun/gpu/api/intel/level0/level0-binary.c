@@ -219,7 +219,7 @@ level0_func_ip_resolve
 {
   ze_module_handle_t hModule = level0_kernel_module_map_lookup(hKernel);
   
-  ip_normalized_t ip_norm = zebin_id_transform(hModule, hKernel, 0);
+  ip_normalized_t ip_norm = zebin_id_transform(hModule, hKernel, 0, dispatch);
 
   return ip_norm;
 }

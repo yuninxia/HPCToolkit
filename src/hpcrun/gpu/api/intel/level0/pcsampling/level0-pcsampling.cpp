@@ -101,13 +101,13 @@ level0PCSamplingInit
   void
 )
 {
-  const std::string base_path = "/tmp/hpcrun_level0_pc";
+  const std::string base_path = "/tmp/hpcrun_level0_pc"; // FIXME(Yuning): put it to the measurement directory
   // Create the base directory if it does not exist
   if (!std::filesystem::exists(base_path)) {
     try {
       std::filesystem::create_directories(base_path);
       // Grant all permissions to the base directory
-      std::filesystem::permissions(base_path, std::filesystem::perms::all, std::filesystem::perm_options::add);
+      std::filesystem::permissions(base_path, std::filesystem::perms::owner_all, std::filesystem::perm_options::add);
     } catch (const std::filesystem::filesystem_error& e) {
       std::cerr << "[ERROR] Failed to create base directory '" << base_path << "': " << e.what() << std::endl;
       exit(-1);
@@ -123,6 +123,13 @@ level0PCSamplingInit
   }
 }
 
+// device 1 - process 1 - thread 1
+// device 2 - process 2 - thread 2
+// FIXME(Yuning): How to collect data when using implicit scaling? multiple tiles under the same rank?
+//                To check whether it is necessary to support this right now.
+// TODO(Yuning): To put a runtime check for one tile per process.
+// TODO(Yuning): To check the env var ZE_FLAT_DEVICE_HIERARCHY and implicit scaling. (quit)
+// TODO(Yuning): The whole process maybe should be like: init, start, pause, resume, stop.
 void
 level0PCSamplingEnable
 (

@@ -36,6 +36,7 @@ ZeCollector::Create
     return nullptr;
   }
 
+  // Notes(Yuning): Here we have two seperate mechanisms for callbacks
   // Create the tracer associated with the collector
   if (!level0CreateTracer(collector.get(), dispatch)) {
     std::cerr << "Failed to create tracer for collector" << std::endl;

@@ -241,7 +241,7 @@ level0_command_begin
 #endif  // ENABLE_GTPIN
     {
       if (level0_pcsampling_enabled()) {
-        kernel_ip = level0_func_ip_resolve(kernel);
+        kernel_ip = level0_func_ip_resolve(kernel, command_node->dispatch);
       } else {
         kernel_ip = gpu_kernel_table_get(kernel_name, LOGICAL_MANGLING_CPP);
       }

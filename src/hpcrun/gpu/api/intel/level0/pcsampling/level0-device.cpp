@@ -51,17 +51,18 @@ createDeviceDescriptor
     desc->driver_              = driver;
     desc->context_             = context;
     desc->correlation_id_      = 0;
-    desc->last_correlation_id_ = 0;
     
     // Set the metric group based on the provided metric_group string
     level0GetMetricGroup(device, metric_group, desc->metric_group_, dispatch);
     
     desc->profiling_thread_    = nullptr;
-    desc->profiling_state_.store(PROFILER_DISABLED, std::memory_order_release);
+    desc->UpdateProfilerState(PROFILER_DISABLED);
     desc->running_kernel_      = nullptr;
     desc->running_kernel_end_  = nullptr;
-    desc->kernel_started_.store(false, std::memory_order_release);
-    desc->serial_data_ready_.store(false, std::memory_order_release);
+    desc->SetKernelStarted(false);
+    desc->SetSerialDataReady(false);
+
+    mcs_init(&desc->kernel_launch_lock);
 
     return desc;
   } catch (const std::exception& e) {
@@ -101,9 +102,11 @@ createSubDeviceDescriptor
     sub_desc->context_          = parent_desc->context_;
     sub_desc->metric_group_     = parent_desc->metric_group_;
     sub_desc->profiling_thread_ = nullptr;
-    sub_desc->profiling_state_.store(PROFILER_DISABLED, std::memory_order_release);
-    sub_desc->kernel_started_.store(false, std::memory_order_release);
-    sub_desc->serial_data_ready_.store(false, std::memory_order_release);
+    sub_desc->UpdateProfilerState(PROFILER_DISABLED);
+    sub_desc->SetKernelStarted(false);
+    sub_desc->SetSerialDataReady(false);
+
+    mcs_init(&sub_desc->kernel_launch_lock);
     
     return sub_desc;
   } catch (const std::exception& e) {
@@ -263,6 +266,8 @@ level0DeviceGetRootDevice
   return (rootDevice != nullptr) ? rootDevice : device;
 }
 
+// FIXME(Yuning): Separate the two mechanisms.
+// Fixme(Yuning)(Optional): To use a design like rocm_agent_apply_helper for device setup.
 void
 level0EnumerateAndSetupDevices
 (

@@ -64,7 +64,7 @@ zeCommandListAppendLaunchKernelOnEnter
   void** instance_user_data
 )
 {
-  auto collector = static_cast<ZeCollector*>(global_user_data);
+  ZeCollector* collector = static_cast<ZeCollector*>(global_user_data);
   OnEnterCommandListAppendLaunchKernel(params, collector->getDispatch());
 }
 

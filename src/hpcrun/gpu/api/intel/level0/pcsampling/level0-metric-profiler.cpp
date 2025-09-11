@@ -22,6 +22,17 @@ std::string ZeMetricProfiler::data_dir_name_;
 // private methods
 //******************************************************************************
 
+static void
+FinalizeKernelProcessing
+(
+  ZeDeviceDescriptor* desc
+)
+{
+  desc->running_kernel_ = nullptr;
+  desc->SetKernelStarted(false);
+  desc->SetSerialDataReady(true);
+}
+
 static bool
 WaitForKernelStart
 (
@@ -29,8 +40,8 @@ WaitForKernelStart
 )
 {
   while (true) {
-    if (desc->kernel_started_.load(std::memory_order_acquire)) return true;
-    if (desc->profiling_state_.load(std::memory_order_acquire) == PROFILER_DISABLED) return false;
+    if (desc->IsKernelStarted()) return true;
+    if (desc->IsProfilerDisabled()) return false;
     std::this_thread::yield();
   }
 }
@@ -46,7 +57,7 @@ WaitForNextInterval
   while (true) {
     status = f_zeEventQueryStatus(desc->running_kernel_end_, dispatch);
     if (status == ZE_RESULT_SUCCESS) return true;
-    if (desc->profiling_state_.load(std::memory_order_acquire) == PROFILER_DISABLED) return false;
+    if (desc->IsProfilerDisabled()) return false;
     std::this_thread::yield();
   }
 }
@@ -130,11 +141,11 @@ ZeMetricProfiler::RunProfilingLoop
 )
 {
   std::vector<uint8_t> raw_metrics(MAX_METRIC_BUFFER + 512);
-  desc->profiling_state_.store(PROFILER_ENABLED, std::memory_order_release);
+  desc->UpdateProfilerState(PROFILER_ENABLED);
   ze_result_t status;
 
   // Continue while profiling is enabled
-  while (desc->profiling_state_.load(std::memory_order_acquire) != PROFILER_DISABLED) {
+  while (desc->IsProfilerActive()) {
 
     // Wait for the kernel to start running
     if (!WaitForKernelStart(desc)) return;
@@ -143,23 +154,19 @@ ZeMetricProfiler::RunProfilingLoop
     gpu_correlation_channel_receive(1, level0UpdateCorrelationId, desc);
 
     // Wait for the next sampling interval; continuously collect metrics until the event is signaled
-    if (!WaitForNextInterval(desc, dispatch, status)) return;
+    if (!WaitForNextInterval(desc, dispatch, status)) return; // Rename to WaitForKernelEnd
 
     while (status != ZE_RESULT_SUCCESS) {
       CollectAndProcessMetrics(desc, streamer, raw_metrics, metric_list, dispatch);
-      if (desc->profiling_state_.load(std::memory_order_acquire) == PROFILER_DISABLED) return;
+      // FIXME(Yuning): We can a seperate function devicePCSamplingStatus
+      if (desc->IsProfilerDisabled()) return;
       if (!WaitForNextInterval(desc, dispatch, status)) return;
     }
 
     // Final sampling after the kernel has finished running
     CollectAndProcessMetrics(desc, streamer, raw_metrics, metric_list, dispatch);
 
-    // Reset kernel state
-    desc->running_kernel_ = nullptr;
-    desc->kernel_started_.store(false, std::memory_order_release);
-
-    // Notify the application thread that data processing is complete
-    desc->serial_data_ready_.store(true, std::memory_order_release);
+    FinalizeKernelProcessing(desc);
   }
 }
 
@@ -179,7 +186,8 @@ ZeMetricProfiler::CollectAndProcessMetrics
   if (kprops.empty()) return;
 
   // Continuously process metric data while profiling is enabled
-  while (desc->profiling_state_.load(std::memory_order_acquire) != PROFILER_DISABLED) {
+  while (desc->IsProfilerActive()) {
+    // FIXME(Yuning): To check the status of the streamer whether it is empty.
     if (!ProcessMetricData(desc, streamer, raw_metrics, metric_list, kprops, dispatch))
       return;
   }
@@ -247,7 +255,7 @@ ZeMetricProfiler::StartProfilingMetrics
     it->second->profiling_thread_ = new std::thread(MetricProfilingThread, this, it->second, dispatch);
     monitor_enable_new_threads();
     // Wait until profiling is enabled before continuing
-    while (it->second->profiling_state_.load(std::memory_order_acquire) != PROFILER_ENABLED) {
+    while (!it->second->IsProfilerInitialized()) {
       std::this_thread::sleep_for(std::chrono::milliseconds(1));
     }
   }
@@ -266,7 +274,7 @@ ZeMetricProfiler::StopProfilingMetrics
     }
     
     // Signal the profiling thread to stop
-    it->second->profiling_state_.store(PROFILER_DISABLED, std::memory_order_release);
+    it->second->UpdateProfilerState(PROFILER_DISABLED);
     
     // Join the profiling thread if it exists
     if (it->second->profiling_thread_ != nullptr) {
