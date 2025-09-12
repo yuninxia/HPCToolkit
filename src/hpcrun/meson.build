@@ -478,6 +478,7 @@ if level0_dep.found()
     'gpu/api/intel/level0/pcsampling/level0-event.cpp',
     'gpu/api/intel/level0/pcsampling/level0-eventpool.cpp',
     'gpu/api/intel/level0/pcsampling/level0-kernel-properties.cpp',
+    'gpu/api/intel/level0/pcsampling/level0-kernel-properties-cache.cpp',
     'gpu/api/intel/level0/pcsampling/level0-kernel-size-map.cpp',
     'gpu/api/intel/level0/pcsampling/level0-logging.cpp',
     'gpu/api/intel/level0/pcsampling/level0-metric-list.cpp',

@@ -45,21 +45,17 @@
 
 class ZeCollector {
  public:
-  static ZeCollector* Create(const std::string& data_dir, const struct hpcrun_foil_appdispatch_level0* dispatch);
+  static ZeCollector* Create(const struct hpcrun_foil_appdispatch_level0* dispatch);
   ZeCollector(const ZeCollector& that) = delete;
   ZeCollector& operator=(const ZeCollector& that) = delete;
   ~ZeCollector();
 
-  std::string GetDataDir() const { return data_dir_; }
   const struct hpcrun_foil_appdispatch_level0* getDispatch() const { return dispatch_; }
 
  private:
-  ZeCollector(const std::string& data_dir, const struct hpcrun_foil_appdispatch_level0* dispatch);
+  ZeCollector(const struct hpcrun_foil_appdispatch_level0* dispatch);
 
  private:
-  /** Directory where collected data will be stored */
-  std::string data_dir_;
-  
   /** Function dispatch table for Level Zero API calls */
   const struct hpcrun_foil_appdispatch_level0* dispatch_;
 };

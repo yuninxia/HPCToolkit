@@ -9,6 +9,7 @@
 //*****************************************************************************
 
 #include "level0-tracing-callback-methods.hpp"
+#include "level0-kernel-properties-cache.hpp"
 
 
 //*****************************************************************************
@@ -248,13 +249,16 @@ OnExitKernelCreate
     } 
     devices_mutex_.unlock_shared();
   }
-  kernel_command_properties_mutex_.lock();
-
   ze_kernel_handle_t kernel = **(params->pphKernel);
   ZeKernelCommandProperties desc = extractKernelProperties(kernel, module_id, mod, aot, device_id, device, dispatch);
   
-  kernel_command_properties_->insert({desc.kernel_id_, std::move(desc)});
-  kernel_command_properties_mutex_.unlock();
+  // Store directly in memory cache - no file I/O
+  KernelPropertiesCache::getInstance().storeKernelProperties(desc.kernel_id_, desc);
+  if (std::getenv("HPCTOOLKIT_LEVEL0_DEBUG_CACHE")) {
+    std::cout << "[DEBUG] Stored kernel '" << desc.name_ << "' (id: " << desc.kernel_id_ 
+              << ", base_addr: 0x" << std::hex << desc.base_addr_ << std::dec
+              << ") to memory cache for device " << desc.device_id_ << std::endl;
+  }
 }
 
 void

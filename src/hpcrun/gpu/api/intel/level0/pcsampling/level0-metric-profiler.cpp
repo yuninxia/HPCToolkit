@@ -15,7 +15,6 @@
 // static member variables
 //******************************************************************************
 
-std::string ZeMetricProfiler::data_dir_name_;
 
 
 //******************************************************************************
@@ -180,10 +179,14 @@ ZeMetricProfiler::CollectAndProcessMetrics
   const struct hpcrun_foil_appdispatch_level0* dispatch
 )
 {
-  // Read kernel properties from file
+  // Read kernel properties from memory cache
   std::map<uint64_t, KernelProperties> kprops;
-  level0ReadKernelProperties(desc->device_id_, data_dir_name_, kprops);
-  if (kprops.empty()) return;
+  level0ReadKernelProperties(desc->device_id_, kprops);
+  if (kprops.empty()) {
+    std::cout << "[WARNING] No kernel properties found for device " << desc->device_id_ 
+              << " in level0ProcessMetricData - PC sampling data will not be processed" << std::endl;
+    return;
+  }
 
   // Continuously process metric data while profiling is enabled
   while (desc->IsProfilerActive()) {
@@ -201,17 +204,9 @@ ZeMetricProfiler::CollectAndProcessMetrics
 ZeMetricProfiler*
 ZeMetricProfiler::Create
 (
-  char* dir,
   const struct hpcrun_foil_appdispatch_level0* dispatch
 )
 {
-  if (dir == nullptr) {
-    std::cerr << "[ERROR] Invalid directory path provided to ZeMetricProfiler::Create" << std::endl;
-    return nullptr;
-  }
-
-  data_dir_name_ = std::string(dir);
-  
   try {
     ZeMetricProfiler* profiler = new ZeMetricProfiler(dispatch);
     if (profiler == nullptr) {

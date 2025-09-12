@@ -19,7 +19,6 @@
 ZeCollector*
 ZeCollector::Create
 (
-  const std::string& data_dir,
   const struct hpcrun_foil_appdispatch_level0* dispatch
 )
 {
@@ -30,7 +29,7 @@ ZeCollector::Create
   }
 
   // Create a new collector instance
-  std::unique_ptr<ZeCollector> collector(new ZeCollector(data_dir, dispatch));
+  std::unique_ptr<ZeCollector> collector(new ZeCollector(dispatch));
   if (!collector) {
     std::cerr << "Failed to allocate memory for ZeCollector" << std::endl;
     return nullptr;
@@ -52,9 +51,8 @@ ZeCollector::Create
 
 ZeCollector::ZeCollector
 (
-  const std::string& data_dir,
   const struct hpcrun_foil_appdispatch_level0* dispatch
-) : data_dir_(data_dir), dispatch_(dispatch)
+) : dispatch_(dispatch)
 {
   // Enumerate and set up all available devices
   level0EnumerateAndSetupDevices(dispatch);
@@ -68,6 +66,6 @@ ZeCollector::~ZeCollector()
   // Clean up tracer resources
   level0DestroyTracer(dispatch_);
   
-  // Dump collected kernel profiles to the data directory
-  level0DumpKernelProfiles(data_dir_);
+  // Dump collected kernel profiles
+  level0DumpKernelProfiles();
 }

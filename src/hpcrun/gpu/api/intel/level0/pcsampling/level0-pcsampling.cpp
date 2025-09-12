@@ -8,8 +8,10 @@
 // system includes
 //*****************************************************************************
 
+#include <atomic>
 #include <filesystem>
 #include <iostream>
+#include <mutex>
 #include <pthread.h>
 
 
@@ -20,6 +22,7 @@
 #include "level0-pcsampling.hpp"
 #include "level0-tracing-callbacks.hpp"
 #include "level0-metric-profiler.hpp"
+#include "level0-kernel-properties-cache.hpp"
 
 
 //*****************************************************************************
@@ -31,11 +34,6 @@ ZeMetricProfiler* metric_profiler = nullptr;
 
 static pthread_once_t level0_pcsampling_init_once = PTHREAD_ONCE_INIT;
 static std::string level0_pcsampling_enabled_str = (std::getenv("ZET_ENABLE_METRICS") ? std::getenv("ZET_ENABLE_METRICS") : "");
-
-// Buffer for generating a unique directory name
-static char pattern[256];
-// Pointer to the created data directory name
-static char* data_dir_name = nullptr;
 
 // Thread-safe dispatch pointer for initialization
 static const struct hpcrun_foil_appdispatch_level0* saved_dispatch = nullptr;
@@ -57,11 +55,10 @@ isPcSamplingEnabled
 static void
 enableProfiling
 (
-  char* dir,
   const struct hpcrun_foil_appdispatch_level0* dispatch
 )
 {
-  metric_profiler = ZeMetricProfiler::Create(dir, dispatch);
+  metric_profiler = ZeMetricProfiler::Create(dispatch);
 }
 
 static void
@@ -82,8 +79,8 @@ pcSamplingEnableHelper
   const struct hpcrun_foil_appdispatch_level0* dispatch
 )
 {
-  enableProfiling(data_dir_name, dispatch);
-  ze_collector = ZeCollector::Create(data_dir_name, dispatch);
+  enableProfiling(dispatch);
+  ze_collector = ZeCollector::Create(dispatch);
   if (ze_collector == nullptr) {
     std::cerr << "[ERROR] Failed to create ZeCollector instance." << std::endl;
     exit(-1);
@@ -101,26 +98,8 @@ level0PCSamplingInit
   void
 )
 {
-  const std::string base_path = "/tmp/hpcrun_level0_pc"; // FIXME(Yuning): put it to the measurement directory
-  // Create the base directory if it does not exist
-  if (!std::filesystem::exists(base_path)) {
-    try {
-      std::filesystem::create_directories(base_path);
-      // Grant all permissions to the base directory
-      std::filesystem::permissions(base_path, std::filesystem::perms::owner_all, std::filesystem::perm_options::add);
-    } catch (const std::filesystem::filesystem_error& e) {
-      std::cerr << "[ERROR] Failed to create base directory '" << base_path << "': " << e.what() << std::endl;
-      exit(-1);
-    }
-  }
-
-  // Generate a unique temporary directory name using mkdtemp
-  std::snprintf(pattern, sizeof(pattern), "%s/tmpdir.XXXXXX", base_path.c_str());
-  data_dir_name = mkdtemp(pattern);
-  if (data_dir_name == nullptr) {
-    std::cerr << "[ERROR] Failed to create data folder '" << base_path << "': " << strerror(errno) << std::endl;
-    exit(-1);
-  }
+  // Initialize the memory cache system
+  KernelPropertiesCache::getInstance().clear();
 }
 
 // device 1 - process 1 - thread 1
@@ -151,10 +130,18 @@ level0PCSamplingFini
   void
 )
 {
-  // Set to true if you want to keep the data directory for debugging purposes
-  static const bool keep_data_dir_for_debug = false;
-
   if (isPcSamplingEnabled()) {
+    // Export cache statistics if in debug mode
+    if (std::getenv("HPCTOOLKIT_LEVEL0_DEBUG_CACHE")) {
+      auto stats = KernelPropertiesCache::getInstance().getStats();
+      std::cout << "\n[INFO] PC Sampling Cache Statistics:\n"
+                << "  Total kernel entries: " << stats.total_entries << "\n"
+                << "  Devices tracked: " << stats.devices << "\n"
+                << "  Average read time: " << stats.avg_read_time.count() << " us\n"
+                << "  Average write time: " << stats.avg_write_time.count() << " us\n"
+                << "  Memory usage: " << stats.memory_bytes / 1024 << " KB\n" << std::endl;
+    }
+    
     // Clean up collector resources
     if (ze_collector != nullptr) {
       delete ze_collector;
@@ -163,18 +150,6 @@ level0PCSamplingFini
     
     // Clean up profiler resources
     disableProfiling();
-
-    // Clean up temporary directory
-    if (!keep_data_dir_for_debug && data_dir_name != nullptr) {
-      std::error_code ec;
-      // Recursively remove the data directory
-      std::filesystem::remove_all(data_dir_name, ec);
-      if (ec) {
-        std::cerr << "[WARNING] Failed to remove " << data_dir_name 
-                  << ". Please manually remove it. Error: " << ec.message() << std::endl;
-      }
-      data_dir_name = nullptr;
-    }
     
     // Reset initialization flag to allow re-initialization if needed
     pthread_once_t once_init = PTHREAD_ONCE_INIT;
