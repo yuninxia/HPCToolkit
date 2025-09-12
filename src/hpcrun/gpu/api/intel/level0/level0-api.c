@@ -569,9 +569,16 @@ hpcrun_zeInit
   monitor_initialize(); // early init necessary to set up libunwind
   hpcrun_prepare_measurement_subsystem(false); // late init for level0
 
+  // ignore any threads created by Level Zero's zeInit
+  monitor_disable_new_threads();
+
   // Entry action
   // Execute the real level0 API
   ze_result_t ret = f_zeInit(flag, dispatch);
+
+  // resume tracking thread creation
+  monitor_enable_new_threads();
+
   level0_check_result(ret, __LINE__);
 
   // Exit action
