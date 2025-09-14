@@ -5,6 +5,13 @@
 // -*-Mode: C++;-*-
 
 //*****************************************************************************
+// system includes
+//*****************************************************************************
+
+#include <thread>
+
+
+//*****************************************************************************
 // local includes
 //*****************************************************************************
 
@@ -179,7 +186,10 @@ OnExitModuleCreate
   const struct hpcrun_foil_appdispatch_level0* dispatch
 )
 {
-  assert(result == ZE_RESULT_SUCCESS && "Module creation failed unexpectedly");
+  if (result != ZE_RESULT_SUCCESS) {
+    std::cerr << "[ERROR] Module creation failed with result: " << result << std::endl;
+    return;
+  }
 
   ze_module_handle_t mod = **(params->pphModule);
   ze_device_handle_t device = *(params->phDevice);
@@ -216,7 +226,10 @@ OnExitKernelCreate
   const struct hpcrun_foil_appdispatch_level0* dispatch
 )
 {
-  assert(result == ZE_RESULT_SUCCESS && "Kernel creation failed unexpectedly");
+  if (result != ZE_RESULT_SUCCESS) {
+    std::cerr << "[ERROR] Kernel creation failed with result: " << result << std::endl;
+    return;
+  }
 
   ze_module_handle_t mod = *(params->phModule);
   ze_device_handle_t device = nullptr;
@@ -317,7 +330,10 @@ OnExitCommandListCreateImmediate
   void* global_user_data
 )
 {
-  assert(global_user_data != nullptr);
+  if (global_user_data == nullptr) {
+    std::cerr << "[ERROR] global_user_data is null in OnExitCommandListCreateImmediate" << std::endl;
+    return;
+  }
   ze_command_list_handle_t hCommandList = **(params->pphCommandList);
   ze_device_handle_t hDevice = *(params->phDevice);
   level0InsertCmdListDeviceMap(hCommandList, hDevice);

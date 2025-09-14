@@ -9,6 +9,7 @@
 //*****************************************************************************
 
 #include <algorithm>
+#include <iostream>
 
 
 //*****************************************************************************
@@ -22,9 +23,6 @@
 //*****************************************************************************
 // global variables
 //*****************************************************************************
-
-std::shared_mutex kernel_command_properties_mutex_;
-std::map<std::string, ZeKernelCommandProperties> *kernel_command_properties_ = nullptr;
 
 
 //*****************************************************************************
@@ -40,32 +38,12 @@ static ze_result_t (*zexKernelGetBaseAddress)(ze_kernel_handle_t hKernel, uint64
 //******************************************************************************
 
 
-// Store kernel properties in memory cache
-static void
-storeKernelPropertiesInCache
-(
-  const ZeKernelCommandProperties& props
-)
-{
-  KernelPropertiesCache::getInstance().storeKernelProperties(props.kernel_id_, props);
-}
 
 
 //******************************************************************************
 // interface operations
 //******************************************************************************
 
-void
-level0InitializeKernelCommandProperties
-(
-  void
-)
-{
-  std::lock_guard<std::shared_mutex> lock(kernel_command_properties_mutex_);
-  if (kernel_command_properties_ == nullptr) {
-    kernel_command_properties_ = new std::map<std::string, ZeKernelCommandProperties>;
-  }
-}
 
 void
 level0ReadKernelProperties
@@ -118,7 +96,7 @@ level0GetKernelBaseAddress
   if (zexKernelGetBaseAddress != nullptr && zexKernelGetBaseAddress(kernel, &base_addr) == ZE_RESULT_SUCCESS) {
     return base_addr;
   }
-  std::cout << "[WARNING] Unable to get base address for kernel: " << level0GetKernelName(kernel, dispatch) << std::endl;
+  std::cerr << "[WARNING] Unable to get base address for kernel: " << level0GetKernelName(kernel, dispatch) << std::endl;
   return 0;
 }
 
@@ -128,14 +106,6 @@ level0DumpKernelProfiles
   void
 )
 {
-  // Store all pending kernel properties to memory cache
-  std::lock_guard<std::shared_mutex> lock(kernel_command_properties_mutex_);
-  if (kernel_command_properties_) {
-    for (const auto& [kernel_id, props] : *kernel_command_properties_) {
-      storeKernelPropertiesInCache(props);
-    }
-  }
-  
   // Print cache statistics in debug mode
   if (std::getenv("HPCTOOLKIT_LEVEL0_DEBUG_CACHE")) {
     auto stats = KernelPropertiesCache::getInstance().getStats();

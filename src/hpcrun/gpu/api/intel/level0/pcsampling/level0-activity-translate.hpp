@@ -7,15 +7,6 @@
 #ifndef LEVEL0_ACTIVITY_TRANSLATE_H
 #define LEVEL0_ACTIVITY_TRANSLATE_H
 
-//*****************************************************************************
-// system includes
-//*****************************************************************************
-
-#include <deque>
-#include <iomanip>
-#include <map>
-#include <sstream>
-
 
 //*****************************************************************************
 // local includes

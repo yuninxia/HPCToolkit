@@ -11,7 +11,6 @@
 // system includes
 //*****************************************************************************
 
-#include <iostream>
 #include <string>
 #include <unordered_map>
 
@@ -36,7 +35,7 @@ level0FillKernelSizeMap
 size_t
 level0GetKernelSize
 (
-  std::string& kernel_name
+  const std::string& kernel_name
 );
 
 

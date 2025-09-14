@@ -18,6 +18,7 @@
 #include <shared_mutex>
 #include <string>
 #include <unordered_map>
+#include <unordered_set>
 #include <vector>
 
 //*****************************************************************************
@@ -108,7 +109,7 @@ private:
 
   // Device mapping: device_id -> set of kernel_ids
   mutable std::shared_mutex device_mutex_;
-  std::unordered_map<int32_t, std::vector<std::string>> device_kernels_;
+  std::unordered_map<int32_t, std::unordered_set<std::string>> device_kernels_;
 
   // Performance monitoring
   mutable std::atomic<uint64_t> read_count_{0};

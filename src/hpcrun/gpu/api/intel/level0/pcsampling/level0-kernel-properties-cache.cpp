@@ -9,7 +9,6 @@
 //*****************************************************************************
 
 #include <algorithm>
-#include <fstream>
 #include <iostream>
 #include <mutex>
 
@@ -37,10 +36,7 @@ KernelPropertiesCache::storeKernelProperties(
   
   {
     std::unique_lock<std::shared_mutex> lock(device_mutex_);
-    auto& device_list = device_kernels_[props.device_id_];
-    if (std::find(device_list.begin(), device_list.end(), kernel_id) == device_list.end()) {
-      device_list.push_back(kernel_id);
-    }
+    device_kernels_[props.device_id_].insert(kernel_id);
   }
   
   auto end_time = std::chrono::high_resolution_clock::now();
@@ -68,7 +64,7 @@ KernelPropertiesCache::getKernelProperties(
   out_props.clear();
   
   // Get list of kernel IDs for this device
-  std::vector<std::string> kernel_ids;
+  std::unordered_set<std::string> kernel_ids;
   {
     std::shared_lock lock(device_mutex_);
     auto it = device_kernels_.find(device_id);
@@ -207,9 +203,9 @@ KernelPropertiesCache::getStats() const
   
   // Estimate memory usage
   stats.memory_bytes = stats.total_entries * sizeof(ZeKernelCommandProperties) +
-                      stats.total_entries * 64 + // Estimated string overhead
-                      stats.devices * sizeof(std::vector<std::string>) +
-                      stats.devices * stats.total_entries / stats.devices * 64;
+                      stats.total_entries * 64 + // Estimated string overhead per kernel
+                      stats.devices * sizeof(std::unordered_set<std::string>) +
+                      stats.total_entries * 64; // Estimated overhead for kernel ID strings
   
   return stats;
 }
@@ -268,13 +264,15 @@ KernelPropertiesRCU::update(
   }
   new_kernel_data->version = new_version;
   
-  // Atomic pointer swap
+  // Update the map - shared_ptr assignment is atomic
   rcu_data_[device_id] = new_kernel_data;
 }
 
 std::shared_ptr<const KernelPropertiesRCU::KernelData> 
 KernelPropertiesRCU::read(int32_t device_id) const
 {
+  // Use shared_lock for concurrent reads - multiple readers allowed
+  // This is still efficient as writers are rare (only on kernel creation)
   std::shared_lock lock(update_mutex_);
   
   auto it = rcu_data_.find(device_id);

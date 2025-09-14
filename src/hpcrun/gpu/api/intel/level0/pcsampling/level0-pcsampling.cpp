@@ -8,10 +8,7 @@
 // system includes
 //*****************************************************************************
 
-#include <atomic>
-#include <filesystem>
 #include <iostream>
-#include <mutex>
 #include <pthread.h>
 
 
@@ -24,19 +21,24 @@
 #include "level0-metric-profiler.hpp"
 #include "level0-kernel-properties-cache.hpp"
 
+extern "C" {
+#include "../../../../../messages/messages.h"
+}
+
 
 //*****************************************************************************
 // local variables
 //*****************************************************************************
 
 static ZeCollector* ze_collector = nullptr;
-ZeMetricProfiler* metric_profiler = nullptr;
+static ZeMetricProfiler* metric_profiler = nullptr;
 
 static pthread_once_t level0_pcsampling_init_once = PTHREAD_ONCE_INIT;
 static std::string level0_pcsampling_enabled_str = (std::getenv("ZET_ENABLE_METRICS") ? std::getenv("ZET_ENABLE_METRICS") : "");
 
 // Thread-safe dispatch pointer for initialization
 static const struct hpcrun_foil_appdispatch_level0* saved_dispatch = nullptr;
+static bool pcsampling_init_succeeded = false;
 
 
 //******************************************************************************
@@ -82,8 +84,12 @@ pcSamplingEnableHelper
   enableProfiling(dispatch);
   ze_collector = ZeCollector::Create(dispatch);
   if (ze_collector == nullptr) {
-    std::cerr << "[ERROR] Failed to create ZeCollector instance." << std::endl;
-    exit(-1);
+    EEMSG("Level0: Failed to create ZeCollector instance");
+    // Disable profiling since we couldn't initialize collector
+    disableProfiling();
+    pcsampling_init_succeeded = false;
+  } else {
+    pcsampling_init_succeeded = true;
   }
 }
 
@@ -91,16 +97,6 @@ pcSamplingEnableHelper
 //******************************************************************************
 // interface operations
 //******************************************************************************
-
-void
-level0PCSamplingInit
-(
-  void
-)
-{
-  // Initialize the memory cache system
-  KernelPropertiesCache::getInstance().clear();
-}
 
 // device 1 - process 1 - thread 1
 // device 2 - process 2 - thread 2
@@ -110,7 +106,7 @@ level0PCSamplingInit
 // TODO(Yuning): To check the env var ZE_FLAT_DEVICE_HIERARCHY and implicit scaling. (quit)
 // TODO(Yuning): The whole process maybe should be like: init, start, pause, resume, stop.
 void
-level0PCSamplingEnable
+level0PCSamplingInit
 (
   const struct hpcrun_foil_appdispatch_level0* dispatch
 )
@@ -120,7 +116,7 @@ level0PCSamplingEnable
     saved_dispatch = dispatch;
     pthread_once(&level0_pcsampling_init_once, []() { pcSamplingEnableHelper(saved_dispatch); });
   } else {
-    std::cerr << "[WARNING] PC sampling is not enabled in the current configuration." << std::endl;
+    TMSG(LEVEL0, "PC sampling is not enabled in the current configuration");
   }
 }
 
@@ -130,16 +126,17 @@ level0PCSamplingFini
   void
 )
 {
-  if (isPcSamplingEnabled()) {
+  // Only cleanup if PC sampling was enabled AND successfully initialized
+  if (isPcSamplingEnabled() && pcsampling_init_succeeded) {
     // Export cache statistics if in debug mode
     if (std::getenv("HPCTOOLKIT_LEVEL0_DEBUG_CACHE")) {
       auto stats = KernelPropertiesCache::getInstance().getStats();
-      std::cout << "\n[INFO] PC Sampling Cache Statistics:\n"
-                << "  Total kernel entries: " << stats.total_entries << "\n"
-                << "  Devices tracked: " << stats.devices << "\n"
-                << "  Average read time: " << stats.avg_read_time.count() << " us\n"
-                << "  Average write time: " << stats.avg_write_time.count() << " us\n"
-                << "  Memory usage: " << stats.memory_bytes / 1024 << " KB\n" << std::endl;
+      TMSG(LEVEL0, "PC Sampling Cache Statistics:");
+      TMSG(LEVEL0, "  Total kernel entries: %zu", stats.total_entries);
+      TMSG(LEVEL0, "  Devices tracked: %zu", stats.devices);
+      TMSG(LEVEL0, "  Average read time: %lld us", stats.avg_read_time.count());
+      TMSG(LEVEL0, "  Average write time: %lld us", stats.avg_write_time.count());
+      TMSG(LEVEL0, "  Memory usage: %zu KB", stats.memory_bytes / 1024);
     }
     
     // Clean up collector resources

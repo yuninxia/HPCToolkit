@@ -5,6 +5,14 @@
 // -*-Mode: C++;-*-
 
 //*****************************************************************************
+// system includes
+//*****************************************************************************
+
+#include <iomanip>
+#include <iostream>
+#include <sstream>
+
+//*****************************************************************************
 // local includes
 //*****************************************************************************
 
@@ -38,7 +46,7 @@ logPCSampleInfo
   uint64_t offset
 )
 {
-  std::cout << "PC sampling: sample(pc=" << toHex(pc)
+  std::cerr << "PC sampling: sample(pc=" << toHex(pc)
             << ", cid=" << cid
             << ", kernel_name=" << kernel_name << ")\n"
             << "PC sampling: normalize " << toHex(pc)
@@ -88,7 +96,7 @@ logActivity
   const auto& [kernel_name, kernel_base] = findKernelInfo(instruction_pc_lm_ip, kernel_info);
   uint64_t offset = (kernel_base != 0) ? (instruction_pc_lm_ip - kernel_base) : 0;
 
-  std::cout << "PC Sample\n";
+  std::cerr << "PC Sample\n";
   logPCSampleInfo(activity->details.pc_sampling.pc.lm_ip, cid, kernel_name, lm_id, offset);
   ++cid_count[cid];
 }
@@ -99,11 +107,11 @@ printCorrelationIdStatistics
   const std::unordered_map<uint64_t, int>& cid_count
 )
 {
-  std::cout << "\nCorrelation ID Statistics:\n";
+  std::cerr << "\nCorrelation ID Statistics:\n";
   for (const auto& [cid, count] : cid_count) {
-    std::cout << "Correlation ID: " << cid << " Count: " << count << '\n';
+    std::cerr << "Correlation ID: " << cid << " Count: " << count << '\n';
   }
-  std::cout << '\n';
+  std::cerr << '\n';
 }
 
 static std::string
@@ -143,12 +151,12 @@ logMetricsForSample
   const std::vector<zet_typed_value_t>& metrics
 )
 {
-  std::cout << "Sample " << sampleIndex << ": " << metricCount << " metrics\n";
+  std::cerr << "Sample " << sampleIndex << ": " << metricCount << " metrics\n";
   // Compute the starting index for this sample
   for (uint32_t j = 0; j < metricCount; ++j) {
     size_t metricIndex = sampleIndex * metricCount + j;
     if (metricIndex < metrics.size()) {
-      std::cout << "  Metric " << j << ": Type = "
+      std::cerr << "  Metric " << j << ": Type = "
                 << formatMetricValue(metrics[metricIndex]) << "\n";
     }
   }
@@ -168,7 +176,7 @@ level0LogActivities
   // Build a map from kernel base addresses to kernel names
   auto kernel_info = buildKernelInfoMap(kprops);
 
-  std::cout << '\n';
+  std::cerr << '\n';
   std::unordered_map<uint64_t, int> cid_count;
 
   // Log each GPU activity
@@ -192,10 +200,10 @@ level0LogPCSample
 {
   // Calculate the offset of the PC sampling address from the kernel base
   uint64_t offset = pc_sampling.pc.lm_ip - base_address;
-  
-  std::cout << "[PC_Sample]\n";
+
+  std::cerr << "[PC_Sample]\n";
   logPCSampleInfo(pc_sampling.pc.lm_ip, correlation_id, kernel_props.name, pc_sampling.pc.lm_id, offset);
-  std::cout << "Stall reason: " << pc_sampling.stallReason
+  std::cerr << "Stall reason: " << pc_sampling.stallReason
             << ", Samples: " << pc_sampling.samples
             << ", Latency samples: " << pc_sampling.latencySamples << "\n"
             << "Stall counts: Active: " << stall.active_
@@ -215,12 +223,12 @@ level0LogMetricList
   const std::vector<std::string>& metric_list
 )
 {
-  std::cout << "\nMetric list:\n";
-  std::cout << "metric_list.size(): " << metric_list.size() << '\n';
+  std::cerr << "\nMetric list:\n";
+  std::cerr << "metric_list.size(): " << metric_list.size() << '\n';
   for (const auto& metric : metric_list) {
-    std::cout << "metric_list: " << metric << '\n';
+    std::cerr << "metric_list: " << metric << '\n';
   }
-  std::cout << '\n';
+  std::cerr << '\n';
 }
 
 void
@@ -230,13 +238,13 @@ level0LogSamplesAndMetrics
   const std::vector<zet_typed_value_t>& metrics
 )
 {
-  std::cout << "\nSamples and Metrics\n";
-  std::cout << "samples: " << samples.size() << '\n';
-  std::cout << "metrics: " << metrics.size() << '\n';
+  std::cerr << "\nSamples and Metrics\n";
+  std::cerr << "samples: " << samples.size() << '\n';
+  std::cerr << "metrics: " << metrics.size() << '\n';
 
   // Iterate over each sample and log its metrics.
   for (size_t i = 0; i < samples.size(); ++i) {
     logMetricsForSample(i, samples[i], metrics);
   }
-  std::cout << '\n';
+  std::cerr << '\n';
 }

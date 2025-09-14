@@ -19,14 +19,8 @@
 //*****************************************************************************
 
 #include <cstdint>
-#include <filesystem>
-#include <fstream>
-#include <iostream>
 #include <map>
-#include <shared_mutex>
 #include <string>
-#include <unistd.h>
-#include <unordered_map>
 
 
 //*****************************************************************************
@@ -78,22 +72,8 @@ struct KernelProperties {
 
 
 //******************************************************************************
-// global variables
-//******************************************************************************
-
-extern std::shared_mutex kernel_command_properties_mutex_;
-extern std::map<std::string, ZeKernelCommandProperties> *kernel_command_properties_;
-
-
-//******************************************************************************
 // interface operations
 //******************************************************************************
-
-void
-level0InitializeKernelCommandProperties
-(
-  void
-);
 
 void
 level0ReadKernelProperties

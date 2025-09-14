@@ -7,14 +7,6 @@
 #ifndef LEVEL0_ACTIVITY_GENERATE_H
 #define LEVEL0_ACTIVITY_GENERATE_H
 
-//*****************************************************************************
-// system includes
-//*****************************************************************************
-
-#include <algorithm>
-#include <deque>
-#include <unordered_map>
-
 
 //******************************************************************************
 // local includes

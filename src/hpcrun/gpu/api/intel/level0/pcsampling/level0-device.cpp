@@ -5,10 +5,19 @@
 // -*-Mode: C++;-*-
 
 //*****************************************************************************
+// system includes
+//*****************************************************************************
+
+#include <memory>
+#include <vector>
+
+
+//*****************************************************************************
 // local includes
 //*****************************************************************************
 
 #include "level0-device.hpp"
+#include "level0-cmdlist-device-map.hpp"
 
 
 //******************************************************************************
@@ -35,11 +44,7 @@ createDeviceDescriptor
 ) 
 {
   try {
-    ZeDeviceDescriptor* desc = new ZeDeviceDescriptor;
-    if (desc == nullptr) {
-      std::cerr << "[ERROR] Failed to allocate memory for device descriptor" << std::endl;
-      return nullptr;
-    }
+    auto desc = std::make_unique<ZeDeviceDescriptor>();
 
     desc->stall_sampling_      = stall_sampling;
     desc->device_              = device;
@@ -64,7 +69,7 @@ createDeviceDescriptor
 
     mcs_init(&desc->kernel_launch_lock);
 
-    return desc;
+    return desc.release();
   } catch (const std::exception& e) {
     std::cerr << "[ERROR] Exception in createDeviceDescriptor: " << e.what() << std::endl;
     return nullptr;
@@ -85,11 +90,7 @@ createSubDeviceDescriptor
   }
 
   try {
-    ZeDeviceDescriptor* sub_desc = new ZeDeviceDescriptor;
-    if (sub_desc == nullptr) {
-      std::cerr << "[ERROR] Failed to allocate memory for sub-device descriptor" << std::endl;
-      return nullptr;
-    }
+    auto sub_desc = std::make_unique<ZeDeviceDescriptor>();
 
     sub_desc->stall_sampling_   = parent_desc->stall_sampling_;
     sub_desc->device_           = sub_device;
@@ -108,7 +109,7 @@ createSubDeviceDescriptor
 
     mcs_init(&sub_desc->kernel_launch_lock);
     
-    return sub_desc;
+    return sub_desc.release();
   } catch (const std::exception& e) {
     std::cerr << "[ERROR] Exception in createSubDeviceDescriptor: " << e.what() << std::endl;
     return nullptr;
@@ -197,7 +198,7 @@ level0GetSubDeviceCount
 void
 level0EnumerateDevices
 (
-  std::map<ze_device_handle_t, ZeDeviceDescriptor*>& device_descriptors,
+  std::map<ze_device_handle_t, ZeDeviceDescriptor*>& device_descriptors,  // Not used anymore - kept for compatibility
   std::vector<ze_context_handle_t>& metric_contexts,
   const struct hpcrun_foil_appdispatch_level0* dispatch
 )
@@ -220,7 +221,7 @@ level0EnumerateDevices
       // Create the root device descriptor
       ZeDeviceDescriptor* root_desc = createDeviceDescriptor(device, did, driver, context, stall_sampling, metric_group, dispatch);
       if (root_desc != nullptr) {
-        device_descriptors.insert({device, root_desc});
+        level0InsertDeviceDescriptor(device, root_desc);
 
         // If the device has sub-devices, enumerate and create their descriptors
         uint32_t num_sub_devices = root_desc->num_sub_devices_;
@@ -228,7 +229,7 @@ level0EnumerateDevices
           std::vector<ze_device_handle_t> sub_devices = level0GetSubDevices(device, num_sub_devices, dispatch);
           for (uint32_t j = 0; j < num_sub_devices; j++) {
             ZeDeviceDescriptor* sub_desc = createSubDeviceDescriptor(root_desc, sub_devices[j], j);
-            device_descriptors.insert({sub_devices[j], sub_desc});
+            level0InsertDeviceDescriptor(sub_devices[j], sub_desc);
           }
         }
         ++did;

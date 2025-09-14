@@ -5,6 +5,15 @@
 // -*-Mode: C++;-*-
 
 //*****************************************************************************
+// system includes
+//*****************************************************************************
+
+#include <cstdlib>
+#include <iostream>
+#include <memory>
+
+
+//*****************************************************************************
 // local includes
 //*****************************************************************************
 
@@ -39,9 +48,7 @@ setPCSamplingModuleId
 )
 {
   // Convert the first 8 characters of the hex string to a uint32_t
-  uint32_t module_id_uint32 = 0;
-  std::istringstream iss(kernel_props.module_id.substr(0, 8));
-  iss >> std::hex >> module_id_uint32;
+  uint32_t module_id_uint32 = std::strtoul(kernel_props.module_id.substr(0, 8).c_str(), nullptr, 16);
 
   zebin_id_map_entry_t* entry = zebin_id_map_lookup(module_id_uint32);
   if (entry) {
@@ -81,8 +88,6 @@ convertPCSampling
 )
 {
   if (!activity) return false;
-  if (eustall_iter == std::map<uint64_t, EuStalls>().end()) return false;
-  if (kernel_iter == std::map<uint64_t, KernelProperties>().end()) return false;
 
   activity->kind = GPU_ACTIVITY_PC_SAMPLING;
   const KernelProperties& kernel_props = kernel_iter->second;
@@ -90,19 +95,23 @@ convertPCSampling
   // Set the module id (lm_id) using the kernel properties
   setPCSamplingModuleId(activity, kernel_props);
 
-#if 0
-  uint64_t real = eustall_iter->first;
-  uint64_t base = kernel_iter->first;
-  uint64_t offset = real - base;
-  std::cout << "[INFO] real: " << std::hex << real << " ,base: " << std::hex << base << " ,offset: " << std::hex << offset << std::endl;
-#endif
+  // Debug: Print address offset information if debugging is enabled
+  if (std::getenv("HPCTOOLKIT_LEVEL0_DEBUG_PCSAMPLE")) {
+    uint64_t real = eustall_iter->first;
+    uint64_t base = kernel_iter->first;
+    uint64_t offset = real - base;
+    std::cerr << "[DEBUG] PC Sample - real: 0x" << std::hex << real
+              << ", base: 0x" << base
+              << ", offset: 0x" << offset << std::dec << std::endl;
+  }
 
   // Fill in the remaining fields
   fillPCSamplingActivityFields(activity, eustall_iter->first, correlation_id, stall_count, stall_reason);
 
-#if 0
-  level0LogPCSample(correlation_id, kernel_props, activity->details.pc_sampling, eustall_iter->second, kernel_iter->first);
-#endif
+  // Debug: Log detailed PC sample information if debugging is enabled
+  if (std::getenv("HPCTOOLKIT_LEVEL0_DEBUG_PCSAMPLE")) {
+    level0LogPCSample(correlation_id, kernel_props, activity->details.pc_sampling, eustall_iter->second, kernel_iter->first);
+  }
 
   return true;
 }

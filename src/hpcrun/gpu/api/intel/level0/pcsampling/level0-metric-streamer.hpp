@@ -19,7 +19,7 @@
 // system includes
 //*****************************************************************************
 
-#include <iostream>
+#include <atomic>
 
 //*****************************************************************************
 // local includes
@@ -34,7 +34,7 @@
 //******************************************************************************
 
 // Maximum number of metric samples to collect in a single batch
-extern uint32_t max_metric_samples;
+extern std::atomic<uint32_t> max_metric_samples;
 
 
 //******************************************************************************

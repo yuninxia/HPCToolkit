@@ -5,6 +5,12 @@
 // -*-Mode: C++;-*-
 
 //*****************************************************************************
+// system includes
+//*****************************************************************************
+
+#include <iostream>
+
+//*****************************************************************************
 // local includes
 //*****************************************************************************
 
@@ -53,22 +59,18 @@ level0GetKernelExecutionTime
   const uint64_t kernelDuration = endTimestamp - startTimestamp;
 
   // Retrieve device properties to obtain the timer resolution
-  try {
-    ze_device_properties_t deviceProps = level0GetDeviceProperties(hDevice, dispatch);
-    const double timerResolution = deviceProps.timerResolution;
+  ze_device_properties_t deviceProps = level0GetDeviceProperties(hDevice, dispatch);
+  const double timerResolution = deviceProps.timerResolution;
 
-    if (timerResolution <= 0) {
-      std::cerr << "[WARNING] Invalid timer resolution: " << timerResolution << std::endl;
-      return result;
-    }
-
-    // Convert timestamps to nanoseconds using the timer resolution
-    result.startTimeNs     = startTimestamp * timerResolution;
-    result.endTimeNs       = endTimestamp   * timerResolution;
-    result.executionTimeNs = kernelDuration * timerResolution;
-  } catch (const std::exception& e) {
-    std::cerr << "[ERROR] Exception in level0GetKernelExecutionTime: " << e.what() << std::endl;
+  if (timerResolution <= 0) {
+    std::cerr << "[WARNING] Invalid timer resolution: " << timerResolution << std::endl;
+    return result;
   }
+
+  // Convert timestamps to nanoseconds using the timer resolution
+  result.startTimeNs     = startTimestamp * timerResolution;
+  result.endTimeNs       = endTimestamp   * timerResolution;
+  result.executionTimeNs = kernelDuration * timerResolution;
 
   return result;
 }

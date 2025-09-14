@@ -5,6 +5,13 @@
 // -*-Mode: C++;-*-
 
 //*****************************************************************************
+// system includes
+//*****************************************************************************
+
+#include <iostream>
+#include <mutex>
+
+//*****************************************************************************
 // local includes
 //*****************************************************************************
 
@@ -17,6 +24,9 @@
 
 // Global map to store kernel sizes, keyed by kernel name
 static std::unordered_map<std::string, size_t> kernel_size_map_;
+
+// Mutex to protect concurrent access to kernel_size_map_
+static std::mutex kernel_size_map_mutex_;
 
 
 //******************************************************************************
@@ -46,6 +56,7 @@ level0FillKernelSizeMap
   }
 
   // Loop through each symbol and record its size in the map
+  std::lock_guard<std::mutex> lock(kernel_size_map_mutex_);
   for (int i = 0; i < symbols->nsymbols; ++i) {
     if (symbols->symbolName[i] != nullptr) {
       kernel_size_map_[symbols->symbolName[i]] = symbols->symbolSize[i];
@@ -58,7 +69,7 @@ level0FillKernelSizeMap
 size_t
 level0GetKernelSize
 (
-  std::string &kernel_name
+  const std::string &kernel_name
 )
 {
   if (kernel_name.empty()) {
@@ -66,19 +77,21 @@ level0GetKernelSize
     return static_cast<size_t>(-1);
   }
 
-  // Remove a trailing null character if present
-  if (kernel_name.back() == '\0') {
-    kernel_name.pop_back();
+  // Create a copy and remove trailing null character if present
+  std::string name = kernel_name;
+  if (name.back() == '\0') {
+    name.pop_back();
   }
-  
-  auto it = kernel_size_map_.find(kernel_name);
+
+  std::lock_guard<std::mutex> lock(kernel_size_map_mutex_);
+  auto it = kernel_size_map_.find(name);
   if (it != kernel_size_map_.end()) {
     return it->second;
   }
-  
+
   // Log a warning if the kernel name is not found
-  std::cerr << "[WARNING] Kernel size not found for kernel: " << kernel_name << std::endl;
-  
+  std::cerr << "[WARNING] Kernel size not found for kernel: " << name << std::endl;
+
   // Return size_t(-1) if kernel name is not found
   return static_cast<size_t>(-1);
 }

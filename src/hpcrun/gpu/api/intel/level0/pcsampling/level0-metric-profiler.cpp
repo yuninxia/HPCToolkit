@@ -5,6 +5,13 @@
 // -*-Mode: C++;-*-
 
 //*****************************************************************************
+// system includes
+//*****************************************************************************
+
+#include <iostream>
+#include <chrono>
+
+//*****************************************************************************
 // local includes
 //*****************************************************************************
 
@@ -123,7 +130,11 @@ ZeMetricProfiler::MetricProfilingThread
   // Get the list of metrics
   std::vector<std::string> metric_list;
   level0GetMetricList(group, metric_list, dispatch);
-  if (!level0IsValidMetricList(metric_list)) return;
+  if (!level0IsValidMetricList(metric_list)) {
+    // Clean up streamer before returning
+    level0CleanupMetricStreamer(context, device, group, streamer, dispatch);
+    return;
+  }
 
   RunProfilingLoop(desc, streamer, metric_list, dispatch);
 
@@ -183,16 +194,17 @@ ZeMetricProfiler::CollectAndProcessMetrics
   std::map<uint64_t, KernelProperties> kprops;
   level0ReadKernelProperties(desc->device_id_, kprops);
   if (kprops.empty()) {
-    std::cout << "[WARNING] No kernel properties found for device " << desc->device_id_ 
+    std::cerr << "[WARNING] No kernel properties found for device " << desc->device_id_
               << " in level0ProcessMetricData - PC sampling data will not be processed" << std::endl;
     return;
   }
 
   // Continuously process metric data while profiling is enabled
+  // This ensures we drain all available data from the streamer buffer
   while (desc->IsProfilerActive()) {
     // FIXME(Yuning): To check the status of the streamer whether it is empty.
     if (!ProcessMetricData(desc, streamer, raw_metrics, metric_list, kprops, dispatch))
-      return;
+      break;  // No more data available
   }
 }
 
@@ -209,10 +221,6 @@ ZeMetricProfiler::Create
 {
   try {
     ZeMetricProfiler* profiler = new ZeMetricProfiler(dispatch);
-    if (profiler == nullptr) {
-      std::cerr << "[ERROR] Failed to allocate memory for ZeMetricProfiler" << std::endl;
-      return nullptr;
-    }
     
     profiler->StartProfilingMetrics(dispatch);
     return profiler;
@@ -284,5 +292,8 @@ ZeMetricProfiler::StopProfilingMetrics
       }
     }
   }
+
+  // Clean up all device descriptors and free memory
+  level0CleanupDeviceDescriptors();
   device_descriptors_.clear();
 }

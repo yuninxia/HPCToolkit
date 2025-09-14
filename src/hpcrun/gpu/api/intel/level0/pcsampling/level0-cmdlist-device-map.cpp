@@ -5,6 +5,16 @@
 // -*-Mode: C++;-*-
 
 //*****************************************************************************
+// system includes
+//*****************************************************************************
+
+#include <iostream>
+#include <map>
+#include <mutex>
+#include <shared_mutex>
+
+
+//*****************************************************************************
 // local includes
 //*****************************************************************************
 
@@ -23,6 +33,9 @@ std::map<ze_device_handle_t, ZeDeviceDescriptor*> device_descriptors_;
 // local variables
 //*****************************************************************************
 
+// Mutex to protect access to the device descriptors (using shared_mutex for read-write lock)
+static std::shared_mutex device_descriptors_mutex_;
+
 // Mutex to protect access to the command list to device mapping
 static std::mutex cmdlist_device_map_mutex_;
 
@@ -40,6 +53,8 @@ level0GetDeviceDesc
   std::map<ze_device_handle_t, ZeDeviceDescriptor*>& out_descriptors
 )
 {
+  // Use shared lock for read access
+  std::shared_lock<std::shared_mutex> lock(device_descriptors_mutex_);
   out_descriptors = device_descriptors_;
 }
 
@@ -82,4 +97,56 @@ level0GetDeviceForCmdList
     return nullptr;
   }
   return it->second;
+}
+
+void
+level0InsertDeviceDescriptor
+(
+  ze_device_handle_t device,
+  ZeDeviceDescriptor* descriptor
+)
+{
+  if (device == nullptr) {
+    std::cerr << "[WARNING] Null device handle passed to level0InsertDeviceDescriptor" << std::endl;
+    if (descriptor != nullptr) {
+      delete descriptor;  // Prevent memory leak
+    }
+    return;
+  }
+
+  if (descriptor == nullptr) {
+    std::cerr << "[WARNING] Null descriptor passed to level0InsertDeviceDescriptor" << std::endl;
+    return;
+  }
+
+  // Use unique lock for write access
+  std::unique_lock<std::shared_mutex> lock(device_descriptors_mutex_);
+
+  // Check if device already exists and clean up old descriptor if needed
+  auto it = device_descriptors_.find(device);
+  if (it != device_descriptors_.end() && it->second != nullptr) {
+    delete it->second;  // Delete old descriptor
+  }
+
+  device_descriptors_[device] = descriptor;
+}
+
+void
+level0CleanupDeviceDescriptors
+(
+  void
+)
+{
+  // Use unique lock for write access
+  std::unique_lock<std::shared_mutex> lock(device_descriptors_mutex_);
+
+  // Delete all device descriptors
+  for (auto& [device, descriptor] : device_descriptors_) {
+    if (descriptor != nullptr) {
+      delete descriptor;
+    }
+  }
+
+  // Clear the map
+  device_descriptors_.clear();
 }

@@ -5,6 +5,12 @@
 // -*-Mode: C++;-*-
 
 //*****************************************************************************
+// system includes
+//*****************************************************************************
+
+#include <iostream>
+
+//*****************************************************************************
 // local includes
 //*****************************************************************************
 
@@ -127,6 +133,10 @@ updateExistingEuStalls
   existing.other_    += stall.other_;
 }
 
+// Intel GPU kernel address space constants
+constexpr uint64_t GPU_KERNEL_BASE = 0x800000000000ULL;  // Intel GPU kernel address base
+constexpr uint32_t GPU_OFFSET_MASK = 0xFFFFFFFF;         // 32-bit offset within kernel space
+
 static void
 processMetricSample
 (
@@ -135,12 +145,12 @@ processMetricSample
 )
 {
   // Process a single metric sample and update the EuStalls map accordingly
-  // Compute low instruction pointer (IP) value
+  // Compute low instruction pointer (IP) value (left shift to restore 8-byte alignment)
   uint64_t low_ip = (value[0].value.ui64 << 3);
   if (low_ip == 0) return;
 
-  // Combine to form full IP
-  uint64_t full_ip = 0x800000000000ULL | (low_ip & 0xFFFFFFFF);
+  // Combine base address with offset to form full GPU kernel IP
+  uint64_t full_ip = GPU_KERNEL_BASE | (low_ip & GPU_OFFSET_MASK);
   if (full_ip == 0) return;
 
   EuStalls stall = createEuStalls(value);
@@ -235,7 +245,8 @@ level0GetMetricGroup
   group = findMatchingMetricGroup(groups, metric_group_name, dispatch);
   if (group == nullptr) {
     std::cerr << "[ERROR] Invalid metric group " << metric_group_name << std::endl;
-    exit(-1);
+    // Leave group as nullptr to indicate failure
+    // Caller should check if group is valid before using it
   }
 }
 
@@ -253,7 +264,10 @@ level0MetricStreamerReadData
   // First call: determine the available data size
   ze_result_t status = f_zetMetricStreamerReadData(streamer, UINT32_MAX, &actual_data_size, nullptr, dispatch);
   level0_check_result(status, __LINE__);
-  assert(actual_data_size > 0);
+  if (actual_data_size == 0) {
+    // No data available yet, which is valid
+    return 0;
+  }
 
   // If available data exceeds our storage size, truncate and warn
   if (actual_data_size > max_size) {

@@ -5,6 +5,14 @@
 // -*-Mode: C++;-*-
 
 //*****************************************************************************
+// system includes
+//*****************************************************************************
+
+#include <algorithm>
+#include <deque>
+
+
+//*****************************************************************************
 // local includes
 //*****************************************************************************
 
@@ -33,11 +41,10 @@ static uint64_t
 getCorrelationId
 (
   const std::unordered_map<std::string, uint64_t>& kernel_cids,
-  const std::string& running_kernel_name
+  const std::string& stripped_kernel_name  // Already stripped kernel name
 )
 {
-  std::string stripped_name = stripEdgeQuotes(running_kernel_name);
-  auto it = kernel_cids.find(stripped_name);
+  auto it = kernel_cids.find(stripped_kernel_name);
   if (it != kernel_cids.end()) {
     return it->second;
   }
@@ -83,14 +90,13 @@ static std::vector<std::pair<uint64_t, uint64_t>>
 collectKernelRanges
 (
   const std::map<uint64_t, KernelProperties>& kprops,
-  const std::string& running_kernel_name
+  const std::string& stripped_kernel_name  // Already stripped kernel name
 )
 {
   std::vector<std::pair<uint64_t, uint64_t>> ranges;
-  std::string stripped_name = stripEdgeQuotes(running_kernel_name);
   // Iterate in forward order to preserve ascending order of addresses.
   for (const auto& entry : kprops) {
-    if (stripEdgeQuotes(entry.second.name) == stripped_name) {
+    if (stripEdgeQuotes(entry.second.name) == stripped_kernel_name) {
       ranges.emplace_back(entry.first, entry.first + entry.second.size);
     }
   }
@@ -101,14 +107,16 @@ static std::unordered_map<std::string, uint64_t>
 generateKernelCorrelationIds
 (
   const std::map<uint64_t, KernelProperties>& kprops,  // [in] map from kernel base address to kernel properties
-  uint64_t& correlation_id                             // [in] unique identifier for correlating kernel activities
+  uint64_t correlation_id                              // [in] unique identifier for correlating kernel activities
 )
 {
   std::unordered_map<std::string, uint64_t> kernel_cids;
-  // Iterate in forward order (ascending addresses) for consistency
-  for (auto it = kprops.begin(); it != kprops.end(); ++it) {
-    // Use the stripped kernel name as the key
-    kernel_cids.emplace(stripEdgeQuotes(it->second.name), correlation_id);
+  // Build a map of unique kernel names to the current correlation ID
+  // Note: All instances of the same kernel name will share the same correlation ID
+  for (const auto& [addr, props] : kprops) {
+    std::string stripped_name = stripEdgeQuotes(props.name);
+    // Only insert if this kernel name hasn't been seen before
+    kernel_cids.try_emplace(stripped_name, correlation_id);
   }
   return kernel_cids;
 }
@@ -119,19 +127,19 @@ generateActivities
   const std::map<uint64_t, KernelProperties>& kprops,            // [in] map of kernel addresses to their properties
   std::map<uint64_t, EuStalls>& eustalls,                        // [in] map of EU stall addresses to stall information
   const std::unordered_map<std::string, uint64_t>& kernel_cids,  // [in] map of kernel names to correlation IDs
-  const std::string& running_kernel_name,                        // [in] name of currently running kernel
+  const std::string& stripped_kernel_name,                       // [in] stripped name of currently running kernel
   std::deque<gpu_activity_t*>& activities                        // [out] queue for generated activities
 )
 {
   // Return early if no kernel is running
-  if (running_kernel_name.empty()) return;
+  if (stripped_kernel_name.empty()) return;
 
   // Collect kernel address ranges matching the running kernel.
-  auto kernel_ranges = collectKernelRanges(kprops, running_kernel_name);
+  auto kernel_ranges = collectKernelRanges(kprops, stripped_kernel_name);
   if (kernel_ranges.empty()) return; // No matching kernel instances found.
 
   // Retrieve the correlation ID for the running kernel.
-  uint64_t cid = getCorrelationId(kernel_cids, running_kernel_name);
+  uint64_t cid = getCorrelationId(kernel_cids, stripped_kernel_name);
 
   // Process EU stall events and generate activities.
   processEuStalls(kprops, eustalls, kernel_ranges, cid, activities);
@@ -157,15 +165,19 @@ level0GenerateActivities
     return;
   }
 
-  // Clear any existing activities
+  // Clean up any existing activities before clearing
+  for (auto activity : activities) {
+    delete activity;
+  }
   activities.clear();
 
-  // Extract the running kernel name
+  // Extract the running kernel name and strip quotes once
   std::string running_kernel_name = level0GetKernelName(running_kernel, dispatch);
+  std::string stripped_kernel_name = stripEdgeQuotes(running_kernel_name);
 
   // Generate kernel correlation IDs using stripped kernel names
   auto kernel_cids = generateKernelCorrelationIds(kprops, correlation_id);
 
   // Generate GPU activities based on kernel properties and EU stall events
-  generateActivities(kprops, eustalls, kernel_cids, running_kernel_name, activities);
+  generateActivities(kprops, eustalls, kernel_cids, stripped_kernel_name, activities);
 }

@@ -544,7 +544,7 @@ hpcrun_zeInit
 
   // Exit action
   get_gpu_driver_and_device(dispatch);
-  level0PCSamplingEnable(dispatch);
+  level0PCSamplingInit(dispatch);
   return ret;
 }
 
@@ -915,7 +915,6 @@ level0_init
 
   const char* is_level0_pcsampling_enabled  = getenv("ZET_ENABLE_METRICS");
   if (is_level0_pcsampling_enabled != NULL && strcmp(is_level0_pcsampling_enabled, "1") == 0) {
-    level0PCSamplingInit();
     level0_pcsampling = true;
   }
 

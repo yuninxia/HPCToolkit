@@ -15,14 +15,6 @@
 
 
 //*****************************************************************************
-// system includes
-//*****************************************************************************
-
-#include <map>
-#include <mutex>
-
-
-//*****************************************************************************
 // local includes
 //*****************************************************************************
 
@@ -56,6 +48,19 @@ ze_device_handle_t
 level0GetDeviceForCmdList
 (
   ze_command_list_handle_t cmdList  // [in] command list handle to look up the associated device
+);
+
+void
+level0InsertDeviceDescriptor
+(
+  ze_device_handle_t device,         // [in] device handle to be mapped
+  ZeDeviceDescriptor* descriptor     // [in] device descriptor (ownership transferred)
+);
+
+void
+level0CleanupDeviceDescriptors
+(
+  void  // Clean up all device descriptors and free memory
 );
 
 

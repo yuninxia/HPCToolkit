@@ -5,6 +5,13 @@
 // -*-Mode: C++;-*-
 
 //*****************************************************************************
+// system includes
+//*****************************************************************************
+
+#include <atomic>
+#include <iostream>
+
+//*****************************************************************************
 // local includes
 //*****************************************************************************
 
@@ -15,7 +22,7 @@
 // global variables
 //******************************************************************************
 
-uint32_t max_metric_samples = 65536;
+std::atomic<uint32_t> max_metric_samples(65536);
 
 
 //******************************************************************************
@@ -63,9 +70,12 @@ openMetricStreamer
     return;
   }
 
-  // Update the global maximum if necessary
-  if (streamer_desc.notifyEveryNReports > max_metric_samples) {
-    max_metric_samples = streamer_desc.notifyEveryNReports;
+  // Update the global maximum if necessary (atomic compare-exchange)
+  uint32_t current = max_metric_samples.load();
+  while (streamer_desc.notifyEveryNReports > current) {
+    if (max_metric_samples.compare_exchange_weak(current, streamer_desc.notifyEveryNReports)) {
+      break;
+    }
   }
 }
 
@@ -100,18 +110,14 @@ level0InitializeMetricStreamer
     return;
   }
 
-  try {
-    // Activate the metric group
-    activateMetricGroup(context, device, group, 1, dispatch);
-    
-    // Open the metric streamer
-    openMetricStreamer(context, device, group, streamer, dispatch);
-    
-    if (streamer == nullptr) {
-      std::cerr << "[ERROR] Failed to initialize metric streamer" << std::endl;
-    }
-  } catch (const std::exception& e) {
-    std::cerr << "[ERROR] Exception in level0InitializeMetricStreamer: " << e.what() << std::endl;
+  // Activate the metric group
+  activateMetricGroup(context, device, group, 1, dispatch);
+
+  // Open the metric streamer
+  openMetricStreamer(context, device, group, streamer, dispatch);
+
+  if (streamer == nullptr) {
+    std::cerr << "[ERROR] Failed to initialize metric streamer" << std::endl;
   }
 }
 

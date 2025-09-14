@@ -5,10 +5,19 @@
 // -*-Mode: C++;-*-
 
 //*****************************************************************************
+// system includes
+//*****************************************************************************
+
+#include <iostream>
+#include <string>
+#include <vector>
+
+//*****************************************************************************
 // local includes
 //*****************************************************************************
 
 #include "level0-module.hpp"
+#include "../level0-debug.h"
 
 
 //******************************************************************************
@@ -33,8 +42,8 @@ level0GetKernelName
   std::vector<char> kernel_name(name_len);
   status = f_zeKernelGetName(kernel, &name_len, kernel_name.data(), dispatch);
   
-  // Construct a std::string excluding the null terminator if successful
-  return (status == ZE_RESULT_SUCCESS) ? std::string(kernel_name.begin(), kernel_name.end() - 1) : "UnknownKernel";
+  // Construct a std::string from the C string if successful
+  return (status == ZE_RESULT_SUCCESS) ? std::string(kernel_name.data()) : "UnknownKernel";
 }
 
 uint64_t

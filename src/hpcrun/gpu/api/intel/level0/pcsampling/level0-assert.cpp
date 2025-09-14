@@ -24,8 +24,8 @@ level0_check_result
 {
   if (result == ZE_RESULT_SUCCESS) return;
 
-  EEMSG("hpcrun: Level Zero API failed: %s",
-        ze_result_to_string(result));
+  EEMSG("hpcrun: Level Zero API failed at line %d: %s",
+        lineNo, ze_result_to_string(result));
 
   exit(1);
 }

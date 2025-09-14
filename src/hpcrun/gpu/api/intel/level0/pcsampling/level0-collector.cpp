@@ -11,6 +11,10 @@
 #include "level0-collector.hpp"
 #include "level0-tracing-callbacks.hpp"
 
+extern "C" {
+#include "../../../../../messages/messages.h"
+}
+
 
 //******************************************************************************
 // public methods
@@ -24,21 +28,21 @@ ZeCollector::Create
 {
   // Verify that the driver version meets minimum requirements
   if (!level0CheckDriverVersion(1, 2, /*printVersion=*/false, dispatch)) {
-    std::cerr << "Failed to create collector: driver version requirements not met" << std::endl;
+    EEMSG("Level0: Failed to create collector: driver version requirements not met");
     return nullptr;
   }
 
   // Create a new collector instance
   std::unique_ptr<ZeCollector> collector(new ZeCollector(dispatch));
   if (!collector) {
-    std::cerr << "Failed to allocate memory for ZeCollector" << std::endl;
+    EEMSG("Level0: Failed to allocate memory for ZeCollector");
     return nullptr;
   }
 
   // Notes(Yuning): Here we have two seperate mechanisms for callbacks
   // Create the tracer associated with the collector
   if (!level0CreateTracer(collector.get(), dispatch)) {
-    std::cerr << "Failed to create tracer for collector" << std::endl;
+    EEMSG("Level0: Failed to create tracer for collector");
     // If tracer creation fails, the collector is automatically deleted
     return nullptr;
   }
@@ -56,9 +60,6 @@ ZeCollector::ZeCollector
 {
   // Enumerate and set up all available devices
   level0EnumerateAndSetupDevices(dispatch);
-  
-  // Initialize properties for kernel commands
-  level0InitializeKernelCommandProperties();
 }
 
 ZeCollector::~ZeCollector()
