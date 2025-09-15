@@ -171,7 +171,7 @@ void DirectClassification::load(const Module& m, udModule& ud) noexcept {
   // check for degenerate ELF files
   // Note: these are sometimes recorded for ROCm OpenMP
   GElf_Ehdr ehdr;
-  GElf_Ehdr *e = gelf_getehdr(elf, &ehdr);
+  GElf_Ehdr* e = gelf_getehdr(elf, &ehdr);
   if (e && e->e_machine == 0) {
     elf_end(elf);
     close(fd);
