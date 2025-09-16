@@ -2,6 +2,17 @@
 //
 // SPDX-License-Identifier: Apache-2.0
 
+// This data structure is a map from a correlation id for a GPU operation
+// to the calling context tree node representing the calling context where
+// the GPU operation was intiated. 
+
+// For kernel launches, we may also store a non-zero kernel_ip, which is a
+// normalized instruction pointer for the first address of the kernel. For
+// some GPU monitoring infrastructures, kernel_ip is available in the
+// measurement data reported from the GPU. For others，it is not. We only
+// store kernel_ip in this table if it is not available at the point
+// measurement data is delivered.
+
 #ifndef gpu_cid_map_h
 #define gpu_cid_map_h
 
