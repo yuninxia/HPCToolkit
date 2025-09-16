@@ -8,10 +8,12 @@
 // system include files
 //****************************************************************************
 
-#include <iostream>
+#include <algorithm>
 #include <exception>
+#include <iostream>
 #include <string>
 #include <unordered_set>
+#include <vector>
 
 
 
@@ -24,6 +26,7 @@
 #include "../../hpcprof/stdshim/filesystem.hpp"
 #include "../../common/lean/hpcrun-fmt.h"
 #include "../../common/diagnostics.h"
+#include "../../common/StrUtil.hpp"
 
 
 namespace fs = hpctoolkit::stdshim::filesystem;
@@ -40,33 +43,59 @@ namespace fs = hpctoolkit::stdshim::filesystem;
 // local data
 //****************************************************************************
 
+enum {
+  LM_KEEP = 0,
+  LM_SKIP_NO_ANALYZE,
+  LM_SKIP_NULL,
+  LM_SKIP_FILTER,
+};
+
 static const char *filter_strings[] = {
   "logical/",
   "kernel_symbols/",
   0
 };
 
+static std::vector <std::string> filterVec;
 
 
 //****************************************************************************
 // internal operations
 //****************************************************************************
 
-static bool
+//
+// Append builtin filter_strings with command-line --exclude options.
+//
+static void
+makeFilterVec(Args & args)
+{
+  filterVec.clear();
+
+  StrUtil::tokenize_str(args.exclude_string, CLP_SEPARATOR, filterVec);
+
+  for (int i = 0; filter_strings[i]; i++) {
+    filterVec.push_back(std::string(filter_strings[i]));
+  }
+}
+
+
+// Return reason for skip so we can inform the user.
+static int
 skipLoadMapEntry(loadmap_entry_t* x)
 {
   // if this load map entry doesn't need to be analyzed
-  if (!(x->flags & LOADMAP_ENTRY_ANALYZE)) return true;
+  if (!(x->flags & LOADMAP_ENTRY_ANALYZE)) return LM_SKIP_NO_ANALYZE;
 
   // ignore empty names
-  if (x->name == NULL) return true;
+  if (x->name == NULL) return LM_SKIP_NULL;
 
-  bool result = false;
-  for (int i = 0; filter_strings[i]; i++) {
-    result |= strstr(x->name, filter_strings[i]) != 0;
+  for (unsigned int i = 0; i < filterVec.size(); i++) {
+    if (strstr(x->name, filterVec[i].c_str()) != NULL) {
+      return LM_SKIP_FILTER;
+    }
   }
 
-  return result;
+  return LM_KEEP;
 }
 
 
@@ -97,7 +126,9 @@ readFooter(FILE* fs, hpcrun_fmt_footer_t &footer)
 
 
 static bool
-readLoadmap(FILE *infs, hpcrun_fmt_footer_t &footer, std::unordered_set<std::string> &loadModules)
+readLoadmap(FILE *infs, hpcrun_fmt_footer_t &footer,
+            std::unordered_set<std::string> &loadModules,
+            std::unordered_set<std::string> &filterModules)
 {
   fseek(infs, footer.loadmap_start, SEEK_SET);
 
@@ -109,9 +140,15 @@ readLoadmap(FILE *infs, hpcrun_fmt_footer_t &footer, std::unordered_set<std::str
 
   for (uint32_t i = 0; i < loadmap_tbl.len; i++) {
     loadmap_entry_t* x = &loadmap_tbl.lst[i];
-    if (skipLoadMapEntry(x)) continue;
     std::string name = getLoadModuleName(x);
-    loadModules.insert(name);
+    int skip = skipLoadMapEntry(x);
+
+    if (skip == LM_KEEP) {
+      loadModules.insert(name);
+    }
+    else if (skip == LM_SKIP_FILTER) {
+      filterModules.insert(name);
+    }
   }
 
   return true;
@@ -119,7 +156,8 @@ readLoadmap(FILE *infs, hpcrun_fmt_footer_t &footer, std::unordered_set<std::str
 
 
 static void
-processProfile(const fs::path &path, std::unordered_set<std::string> &loadModules)
+processProfile(const fs::path &path, std::unordered_set<std::string> &loadModules,
+               std::unordered_set<std::string> &filterModules)
 {
    std::string filename = path;
    const char *fnm = filename.c_str();
@@ -129,7 +167,7 @@ processProfile(const fs::path &path, std::unordered_set<std::string> &loadModule
     hpcrun_fmt_footer_t footer;
     bool status = readFooter(fs, footer);
     if (status) {
-      status = readLoadmap(fs, footer, loadModules);
+      status = readLoadmap(fs, footer, loadModules, filterModules);
     }
     DIAG_WMsgIf(status == false, "unable to extract loadmap from profile " << filename);
     fclose(fs);
@@ -159,18 +197,48 @@ processMeasurementsDirectory(Args &args)
       status = 1;
     } else {
       std::unordered_set<std::string> loadModules;
-      #pragma omp parallel shared(loadModules)
+      std::unordered_set<std::string> filterModules;
+
+      #pragma omp parallel shared(loadModules, filterModules)
       {
         std::unordered_set<std::string> privateLoadModules;
+        std::unordered_set<std::string> privateFilterModules;
+
         #pragma omp for
         for (size_t i = 0; i < hpcrunFiles.size(); i++) {
-          processProfile(hpcrunFiles[i], privateLoadModules);
+          processProfile(hpcrunFiles[i], privateLoadModules, privateFilterModules);
         }
         #pragma omp critical
-        loadModules.merge(std::move(privateLoadModules));
+        {
+          loadModules.merge(std::move(privateLoadModules));
+          filterModules.merge(std::move(privateFilterModules));
+        }
       }
+
+      // the analyzed load modules go to stdout and into all.lm
+      std::vector <std::string> strVec;
       for (const auto& lm: loadModules) {
+        strVec.push_back(lm);
+      }
+      std::sort(strVec.begin(), strVec.end(), std::less<std::string>());
+
+      for (const auto& lm: strVec) {
         std::cout << lm << "\n";
+      }
+
+      // display the filtered modules on stderr, if any
+      if (! filterModules.empty()) {
+        strVec.clear();
+        for (const auto& lm: filterModules) {
+          strVec.push_back(lm);
+        }
+        std::sort(strVec.begin(), strVec.end(), std::less<std::string>());
+
+        std::cerr << "INFO: modules not analyzed:" << std::endl;
+        for (const auto& lm: strVec) {
+          std::cerr << lm << "\n";
+        }
+        std::cerr << std::endl;
       }
     }
   }
@@ -191,6 +259,7 @@ main(int argc, char* const* argv)
 
   try {
     Args args(argc, argv);  // exits if error on command line
+    makeFilterVec(args);
     ret = processMeasurementsDirectory(args);
   }
   catch (const Diagnostics::Exception& x) {

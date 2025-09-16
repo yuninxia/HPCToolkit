@@ -60,6 +60,7 @@ static const char* usage_details =
      "Options:\n"
      "  -V, --version        Print version information.\n"
      "  -h, --help           Print this help.\n"
+     "  -x, --exclude <lib>  Skip libraries matching <lib>.\n"
      ;
 
 #define CLP CmdLineParser
@@ -70,6 +71,8 @@ CmdLineParser::OptArgDesc Args::optArgs[] = {
   { 'V', "version",         CLP::ARG_NONE, CLP::DUPOPT_CLOB, NULL,
      NULL },
   { 'h', "help",            CLP::ARG_NONE, CLP::DUPOPT_CLOB, NULL,
+     NULL },
+  { 'x', "exclude",         CLP::ARG_REQ,  CLP::DUPOPT_CAT,  CLP_SEPARATOR,
      NULL },
   CmdLineParser_OptArgDesc_NULL_MACRO // SGI's compiler requires this version
 };
@@ -136,6 +139,10 @@ Args::parse(int argc, const char* const argv[])
     if (parser.isOpt("help")) {
       printUsage(std::cerr);
       exit(1);
+    }
+
+    if (parser.isOpt("exclude")) {
+      exclude_string = parser.getOptArg("exclude");
     }
 
     // Check for required arguments
