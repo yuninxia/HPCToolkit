@@ -1,0 +1,152 @@
+// SPDX-FileCopyrightText: Contributors to the HPCToolkit Project
+//
+// SPDX-License-Identifier: BSD-3-Clause
+
+// -*-Mode: C++;-*-
+
+//*****************************************************************************
+// system includes
+//*****************************************************************************
+
+#include <iostream>
+#include <map>
+#include <mutex>
+#include <shared_mutex>
+
+
+//*****************************************************************************
+// local includes
+//*****************************************************************************
+
+#include "level0-cmdlist-device-map.hpp"
+
+
+//*****************************************************************************
+// global variables
+//*****************************************************************************
+
+// Global mapping from device handles to their descriptors
+std::map<ze_device_handle_t, ZeDeviceDescriptor*> device_descriptors_;
+
+
+//*****************************************************************************
+// local variables
+//*****************************************************************************
+
+// Mutex to protect access to the device descriptors (using shared_mutex for read-write lock)
+static std::shared_mutex device_descriptors_mutex_;
+
+// Mutex to protect access to the command list to device mapping
+static std::mutex cmdlist_device_map_mutex_;
+
+// Map from command list handles to device handles
+static std::map<ze_command_list_handle_t, ze_device_handle_t> cmdlist_device_map_;
+
+
+//******************************************************************************
+// interface operations
+//******************************************************************************
+
+void
+level0GetDeviceDesc
+(
+  std::map<ze_device_handle_t, ZeDeviceDescriptor*>& out_descriptors
+)
+{
+  // Use shared lock for read access
+  std::shared_lock<std::shared_mutex> lock(device_descriptors_mutex_);
+  out_descriptors = device_descriptors_;
+}
+
+void
+level0InsertCmdListDeviceMap
+(
+  ze_command_list_handle_t cmdList,
+  ze_device_handle_t device
+)
+{
+  if (cmdList == nullptr) {
+    std::cerr << "[WARNING] Null command list handle passed to level0InsertCmdListDeviceMap" << std::endl;
+    return;
+  }
+
+  if (device == nullptr) {
+    std::cerr << "[WARNING] Null device handle passed to level0InsertCmdListDeviceMap" << std::endl;
+    return;
+  }
+
+  std::lock_guard<std::mutex> lock(cmdlist_device_map_mutex_);
+  cmdlist_device_map_[cmdList] = device;
+}
+
+ze_device_handle_t
+level0GetDeviceForCmdList
+(
+  ze_command_list_handle_t cmdList
+)
+{
+  if (cmdList == nullptr) {
+    std::cerr << "[WARNING] Null command list handle passed to level0GetDeviceForCmdList" << std::endl;
+    return nullptr;
+  }
+
+  std::lock_guard<std::mutex> lock(cmdlist_device_map_mutex_);
+  auto it = cmdlist_device_map_.find(cmdList);
+  if (it == cmdlist_device_map_.end()) {
+    std::cerr << "[WARNING] No device found for command list: " << cmdList << std::endl;
+    return nullptr;
+  }
+  return it->second;
+}
+
+void
+level0InsertDeviceDescriptor
+(
+  ze_device_handle_t device,
+  ZeDeviceDescriptor* descriptor
+)
+{
+  if (device == nullptr) {
+    std::cerr << "[WARNING] Null device handle passed to level0InsertDeviceDescriptor" << std::endl;
+    if (descriptor != nullptr) {
+      delete descriptor;  // Prevent memory leak
+    }
+    return;
+  }
+
+  if (descriptor == nullptr) {
+    std::cerr << "[WARNING] Null descriptor passed to level0InsertDeviceDescriptor" << std::endl;
+    return;
+  }
+
+  // Use unique lock for write access
+  std::unique_lock<std::shared_mutex> lock(device_descriptors_mutex_);
+
+  // Check if device already exists and clean up old descriptor if needed
+  auto it = device_descriptors_.find(device);
+  if (it != device_descriptors_.end() && it->second != nullptr) {
+    delete it->second;  // Delete old descriptor
+  }
+
+  device_descriptors_[device] = descriptor;
+}
+
+void
+level0CleanupDeviceDescriptors
+(
+  void
+)
+{
+  // Use unique lock for write access
+  std::unique_lock<std::shared_mutex> lock(device_descriptors_mutex_);
+
+  // Delete all device descriptors
+  for (auto& [device, descriptor] : device_descriptors_) {
+    if (descriptor != nullptr) {
+      delete descriptor;
+    }
+  }
+
+  // Clear the map
+  device_descriptors_.clear();
+}

@@ -231,7 +231,11 @@ level0_command_begin
     } else
 #endif  // ENABLE_GTPIN
     {
-      kernel_ip = gpu_kernel_table_get(kernel_name, LOGICAL_MANGLING_CPP);
+      if (level0_pcsampling_enabled()) {
+        kernel_ip = level0_func_ip_resolve(kernel, command_node->dispatch);
+      } else {
+        kernel_ip = gpu_kernel_table_get(kernel_name, LOGICAL_MANGLING_CPP);
+      }
     }
     free(kernel_name);
     command_node->kernel = api_node;
@@ -262,6 +266,8 @@ level0_command_end
   uint64_t end
 )
 {
+  gpu_application_thread_process_activities();
+
   gpu_monitoring_thread_activities_ready();
   gpu_activity_t gpu_activity;
   gpu_activity_t* ga = &gpu_activity;
