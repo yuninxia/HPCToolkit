@@ -1,0 +1,105 @@
+// SPDX-FileCopyrightText: Contributors to the HPCToolkit Project
+//
+// SPDX-License-Identifier: BSD-3-Clause
+
+// -*-Mode: C++;-*-
+
+#ifndef LEVEL0_KERNEL_PROPERTIES_H
+#define LEVEL0_KERNEL_PROPERTIES_H
+
+//*****************************************************************************
+// level zero includes
+//*****************************************************************************
+
+#include <level_zero/ze_api.h>
+
+
+//*****************************************************************************
+// system includes
+//*****************************************************************************
+
+#include <cstdint>
+#include <map>
+#include <string>
+
+
+//*****************************************************************************
+// local includes
+//*****************************************************************************
+
+#include "../../../../../foil/level0.h"
+#include "level0-module.hpp"
+
+
+//*****************************************************************************
+// type definitions
+//*****************************************************************************
+
+struct ZeKernelGroupSize {
+  uint32_t x;
+  uint32_t y;
+  uint32_t z;
+};
+
+struct ZeKernelCommandProperties {
+  std::string kernel_id_;
+  uint64_t size_;
+  uint64_t base_addr_;
+  ze_device_handle_t device_;
+  int32_t device_id_;
+  uint32_t simd_width_;
+  uint32_t nargs_;
+  uint32_t nsubgrps_;
+  uint32_t slmsize_;
+  uint32_t private_mem_size_;
+  uint32_t spill_mem_size_;
+  ZeKernelGroupSize group_size_;
+  uint32_t regsize_;
+  bool aot_;
+  std::string name_;
+  std::string module_id_;
+  uint64_t function_pointer_;
+};
+
+struct KernelProperties {
+  std::string name;
+  uint64_t base_address;
+  std::string kernel_id;
+  std::string module_id;
+  size_t size;
+  size_t sample_count;
+};
+
+
+//******************************************************************************
+// interface operations
+//******************************************************************************
+
+void
+level0ReadKernelProperties
+(
+  const int32_t device_id,                      // [in] id of the GPU device
+  std::map<uint64_t, KernelProperties>& kprops  // [out] map from kernel base address to kernel properties
+);
+
+void
+level0InitializeKernelBaseAddressFunction
+(
+  const struct hpcrun_foil_appdispatch_level0* dispatch
+);
+
+uint64_t
+level0GetKernelBaseAddress
+(
+  ze_kernel_handle_t kernel,
+  const struct hpcrun_foil_appdispatch_level0* dispatch
+);
+
+void
+level0DumpKernelProfiles
+(
+  void
+);
+
+
+#endif // LEVEL0_KERNEL_PROPERTIES_H

@@ -10,6 +10,7 @@
 
 #define _GNU_SOURCE
 
+#include <pthread.h>
 #include <stdlib.h>
 #include <stdio.h>
 
@@ -23,12 +24,15 @@
 #include "level0-binary.h"
 #include "level0-command-list-map.h"
 #include "level0-command-list-context-map.h"
+#include "level0-command-process.h"
 #include "level0-command-queue-map.h"
 #include "level0-event-map.h"
-#include "level0-command-process.h"
 #include "level0-data-node.h"
 #include "level0-debug.h"
 #include "level0-fence-map.h"
+#include "level0-id-map.h"
+#include "level0-kernel-module-map.h"
+#include "pcsampling/level0-pcsampling.hpp"
 
 #include "../../../../utilities/linuxtimer.h"
 
@@ -81,6 +85,7 @@ ze_device_handle_t hDevice = NULL;
 uint64_t clock_offset_ns_from_level0 = 0;
 
 static bool gtpin_instrumentation = false;
+static bool level0_pcsampling = false;
 
 //******************************************************************************
 // private operations
@@ -584,6 +589,8 @@ hpcrun_zeInit
   // Exit action
   get_gpu_driver_and_device(dispatch);
 
+  level0PCSamplingInit(dispatch);
+
   PRINT("hpcrun_zeInit: exit\n");
 
   return ret;
@@ -614,6 +621,12 @@ hpcrun_zeCommandListAppendLaunchKernel
   // Execute the real level0 API
   ze_result_t ret = f_zeCommandListAppendLaunchKernel(hCommandList, hKernel, pLaunchFuncArgs,
     new_event_handle, numWaitEvents, phWaitEvents, dispatch);
+
+#if 0
+  if (level0_pcsampling_enabled()) {
+    f_zeEventHostSynchronize(new_event_handle, UINT64_MAX - 1, dispatch);
+  }
+#endif
 
   // Exit action
   level0_process_immediate_command_list(new_event_handle, hCommandList, dispatch);
@@ -901,6 +914,16 @@ hpcrun_zeModuleDestroy
   const struct hpcrun_foil_appdispatch_level0* dispatch
 )
 {
+  // Entry action
+  level0_module_handle_map_delete(hModule);
+
+  // Hash the module handle to get a unique id
+  char zebin_id[CRYPTO_HASH_STRING_LENGTH];
+  crypto_compute_hash_string(&hModule, sizeof(hModule), zebin_id, CRYPTO_HASH_STRING_LENGTH);
+  uint32_t zebin_id_uint32;
+  sscanf(zebin_id, "%8x", &zebin_id_uint32);
+  zebin_id_map_delete(zebin_id_uint32);
+
   ze_result_t ret = f_zeModuleDestroy(hModule, dispatch);
 
   return ret;
@@ -916,7 +939,11 @@ hpcrun_zeKernelCreate
 )
 {
   ze_result_t ret = f_zeKernelCreate(hModule, desc, phKernel, dispatch);
+
   PRINT("hpcrun_zeKernelCreate: module handle %p, kernel handle %p\n",hModule, *phKernel);
+  
+  // Exit action - save kernel-module mapping for PC sampling
+  level0_kernel_module_map_insert(*phKernel, hModule);
 
   return ret;
 }
@@ -928,6 +955,9 @@ hpcrun_zeKernelDestroy
   const struct hpcrun_foil_appdispatch_level0* dispatch
 )
 {
+  // Entry action - remove kernel-module mapping
+  level0_kernel_module_map_delete(hKernel);
+  
   ze_result_t ret = f_zeKernelDestroy(hKernel, dispatch);
 
   return ret;
@@ -998,6 +1028,12 @@ level0_init
     gtpin_instrumentation_options(inst_options);
 #endif
   }
+
+  const char* is_level0_pcsampling_enabled  = getenv("ZET_ENABLE_METRICS");
+  if (is_level0_pcsampling_enabled != NULL && strcmp(is_level0_pcsampling_enabled, "1") == 0) {
+    level0_pcsampling = true;
+  }
+
   if (!gtpin_instrumentation) {
     gpu_kernel_table_init();
   }
@@ -1014,8 +1050,10 @@ level0_fini
     GPU_FLUSH_ALARM_SET("hpcrun: warning: some Level 0 events not marked"
                         " complete; some GPU event data may be lost.");
 
+    level0PCSamplingFini();
+
     GPU_FLUSH_ALARM_TEST();
-    GPU_FLUSH_ALARM_CLEAR();
+    GPU_FLUSH_ALARM_CLEAR(); 
   }
 
   // even if this is not normal exit, gpu-trace-fini will behave as if it is a normal exit
@@ -1047,7 +1085,6 @@ level0_gtpin_enabled
   return gtpin_instrumentation;
 }
 
-
 // adjust device timestamp to be consistent with host realtime
 uint64_t
 level0_timestamp_to_realtime
@@ -1078,3 +1115,13 @@ level0_timestamp_to_realtime
 
   return result;
 }
+
+bool
+level0_pcsampling_enabled
+(
+  void
+)
+{
+  return level0_pcsampling;
+}
+

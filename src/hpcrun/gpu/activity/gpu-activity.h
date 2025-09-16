@@ -485,6 +485,10 @@ typedef void (*gpu_activity_attribute_fn_t)(gpu_activity_t *a);
 // interface functions
 //******************************************************************************
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 void
 gpu_activity_init
 (
@@ -533,5 +537,9 @@ gpu_page_trigger_to_string
 (
   gpu_page_op_trigger_t type
 );
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif
