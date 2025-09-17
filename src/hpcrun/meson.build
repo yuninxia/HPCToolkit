@@ -557,6 +557,7 @@ patchelf = find_program('patchelf', version: '>=0.11', native: true)
 audit_lib = shared_library(
   'hpcrun_audit',
   'audit/auditor.c',
+  'audit/dtv.c',
   'audit/private-ns.c',
   'audit/symbol-bindings.c',
   'foil/workarounds/dl-iterate-phdr.c',
