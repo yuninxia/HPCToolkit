@@ -4,15 +4,25 @@
 
 // -*-Mode: C++;-*- // technically C99
 
+#define _GNU_SOURCE
+
+//******************************************************************************
+// local includes
+//******************************************************************************
+
+#include "audit-api.h"
+#include "binding.h"
+#include "dtv.h"
+#include "symbol-bindings.h"
+
 //******************************************************************************
 // global includes
 //******************************************************************************
 
-#define _GNU_SOURCE
-
 #include <ctype.h>
 #include <fcntl.h>
 #include <link.h>
+#include <pthread.h>
 #include <sched.h>
 #include <stdbool.h>
 #include <stddef.h>
@@ -26,18 +36,6 @@
 #include <sys/wait.h>
 #include <unistd.h>
 #include <signal.h>
-#include <pthread.h>
-
-
-//******************************************************************************
-// local includes
-//******************************************************************************
-
-#include "audit-api.h"
-
-#include "binding.h"
-#include "symbol-bindings.h"
-
 
 //******************************************************************************
 // macros
@@ -395,6 +393,9 @@ unsigned int la_version(unsigned int version) {
   // Read in our arguments
   verbose = getenv("HPCRUN_AUDIT_DEBUG");
 
+  // capture initial value of glibc's DTV
+  dtv_capture_initial(verbose);
+
   // Check if we need to optimize PLT calls
   disable_plt_call_opt = getenv("HPCRUN_AUDIT_DISABLE_PLT_CALL_OPT");
   if (!disable_plt_call_opt) {
@@ -654,6 +655,8 @@ void la_activity(uintptr_t* cookie, unsigned int flag) {
   if(flag == LA_ACT_CONSISTENT) {
     if(verbose)
       fprintf(stderr, "[audit] la_activity: LA_CONSISTENT\n");
+
+    dtv_finalize(verbose);
 
     // If we're connected, let the mainlib know about the current stability
     if(hooks != NULL) {
