@@ -652,11 +652,15 @@ __attribute__((visibility("default")))
 void la_activity(uintptr_t* cookie, unsigned int flag) {
   static unsigned int previous = LA_ACT_CONSISTENT;
 
+  // report the state of the dtv
+  dtv_debug(verbose);
+
   if(flag == LA_ACT_CONSISTENT) {
     if(verbose)
       fprintf(stderr, "[audit] la_activity: LA_CONSISTENT\n");
 
-    dtv_finalize(verbose);
+    // if necessary, copy the dtv into the heap
+    dtv_validate(verbose);
 
     // If we're connected, let the mainlib know about the current stability
     if(hooks != NULL) {
