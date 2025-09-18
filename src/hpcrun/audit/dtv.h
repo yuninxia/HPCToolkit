@@ -38,8 +38,11 @@
 /// @brief call this in la_version to capture the initial value of glibc's DTV
 void dtv_capture_initial(bool verbose);
 
+/// @brief output the DTV when verbose == true
+void dtv_debug(bool verbose);
+
 /// @brief when LA_ACT_CONSISTENT, reallocate glibc's DTV in the heap if needed
 /// @param verbose print debug messages if verbose == true
-void dtv_finalize(bool verbose);
+void dtv_validate(bool verbose);
 
 #endif  // DTV_H
