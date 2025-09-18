@@ -408,7 +408,7 @@ doMeasurementsDir
            << "LTHREADS = "     << pthreads << "\n"
            << "PROFLM = "       << hpcproflm_path << "\n"
            << "STRUCT = "       << hpcstruct_path << "\n"
-           << "EXCL_LIST = "    << args.exclude_str << "\n"
+           << "EXCL_LIST = "    << args.exclude_str << " " << args.include_str << "\n"
            << "CACHE = "        << cache_path << "\n";
 
   makefile << analysis_makefile << endl;

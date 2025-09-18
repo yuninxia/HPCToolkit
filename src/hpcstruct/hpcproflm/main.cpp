@@ -11,10 +11,10 @@
 #include <algorithm>
 #include <exception>
 #include <iostream>
+#include <regex>
 #include <string>
 #include <unordered_set>
 #include <vector>
-
 
 
 //****************************************************************************
@@ -53,10 +53,12 @@ enum {
 static const char *filter_strings[] = {
   "logical/",
   "kernel_symbols/",
+  "/opt/aurora/.*/libmpi.so",
   0
 };
 
-static std::vector <std::string> filterVec;
+static std::vector <std::string> includeVec;
+static std::vector <std::string> excludeVec;
 
 
 //****************************************************************************
@@ -69,12 +71,14 @@ static std::vector <std::string> filterVec;
 static void
 makeFilterVec(Args & args)
 {
-  filterVec.clear();
+  includeVec.clear();
+  excludeVec.clear();
 
-  StrUtil::tokenize_str(args.exclude_string, CLP_SEPARATOR, filterVec);
+  StrUtil::tokenize_str(args.include_string, CLP_SEPARATOR, includeVec);
+  StrUtil::tokenize_str(args.exclude_string, CLP_SEPARATOR, excludeVec);
 
   for (int i = 0; filter_strings[i]; i++) {
-    filterVec.push_back(std::string(filter_strings[i]));
+    excludeVec.push_back(std::string(filter_strings[i]));
   }
 }
 
@@ -89,8 +93,18 @@ skipLoadMapEntry(loadmap_entry_t* x)
   // ignore empty names
   if (x->name == NULL) return LM_SKIP_NULL;
 
-  for (unsigned int i = 0; i < filterVec.size(); i++) {
-    if (strstr(x->name, filterVec[i].c_str()) != NULL) {
+  // check include list first, this wins over exclude
+  for (unsigned int i = 0; i < includeVec.size(); i++) {
+    auto patn = std::regex{".*" + includeVec[i] + ".*"};
+    if (std::regex_match(x->name, patn)) {
+      return LM_KEEP;
+    }
+  }
+
+  // finally, exclude list
+  for (unsigned int i = 0; i < excludeVec.size(); i++) {
+    auto patn = std::regex{".*" + excludeVec[i] + ".*"};
+    if (std::regex_match(x->name, patn)) {
       return LM_SKIP_FILTER;
     }
   }

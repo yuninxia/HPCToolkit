@@ -78,6 +78,7 @@ public:
   bool analyze_gpu_binaries ;     // default: true
   bool compute_gpu_cfg;
   std::string exclude_str;
+  std::string include_str;
   bool make_clean;
   std::string meas_dir;
   bool is_from_makefile;        // set true if -M argument is seen

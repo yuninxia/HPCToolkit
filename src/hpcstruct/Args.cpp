@@ -164,8 +164,12 @@ Options: Override structure recovery defaults
                        instruction-level measurements collected using PC
                        sampling or instrumentation. {no}
   -x <lib>, --exclude <lib>
-                       Don't analyze libraries matching <lib>.
+                       Don't analyze libraries matching regex pattern <lib>.
                        Useful if <lib> takes too long to analyze.
+                       May be used multiple times.
+  -i <lib>, --include <lib>
+                       Do analyze libraries matching <lib>.
+                       Include overrides exclude.
                        May be used multiple times.
   --clean              Remove hpcstruct files from measurements directory.
 
@@ -213,13 +217,12 @@ CmdLineParser::OptArgDesc Args::optArgs[] = {
   {  0 ,  "gpucfg",       CLP::ARG_REQ,  CLP::DUPOPT_CLOB,  NULL,  NULL },
   {  1 ,  "gpu",          CLP::ARG_REQ,  CLP::DUPOPT_CLOB,  NULL,  NULL },
   {  1 ,  "cpu",          CLP::ARG_REQ,  CLP::DUPOPT_CLOB,  NULL,  NULL },
-  { 'I', "include",       CLP::ARG_REQ,  CLP::DUPOPT_CAT,  ":",
-     NULL },
   { 'R', "replace-path",  CLP::ARG_REQ,  CLP::DUPOPT_CAT,  CLP_SEPARATOR,
      NULL},
   {  0 , "show-gaps",     CLP::ARG_NONE, CLP::DUPOPT_CLOB, NULL,
      NULL },
   { 'x', "exclude",       CLP::ARG_REQ,  CLP::DUPOPT_CAT,  " -x ", NULL },
+  { 'i', "include",       CLP::ARG_REQ,  CLP::DUPOPT_CAT,  " -i ", NULL },
   {  0,  "clean",         CLP::ARG_NONE, CLP::DUPOPT_CLOB,  NULL,  NULL },
 
   // Output options
@@ -277,6 +280,7 @@ Args::Ctor()
   nocache = false;
   compute_gpu_cfg = false;
   exclude_str = "";
+  include_str = "";
   make_clean = false;
   meas_dir = "";
   is_from_makefile = false;
@@ -458,6 +462,11 @@ Args::parse(int argc, const char* const argv[])
     if (parser.isOpt("exclude")) {
       const string & arg = parser.getOptArg("exclude");
       exclude_str = " -x " + arg;
+    }
+
+    if (parser.isOpt("include")) {
+      const string & arg = parser.getOptArg("include");
+      include_str = " -i " + arg;
     }
 
     if (parser.isOpt("clean")) {
