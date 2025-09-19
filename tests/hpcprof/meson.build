@@ -32,7 +32,7 @@ foreach name, dbase : testdata_dbase
     )
   endforeach
 
-  if mpi_dep.found()
+  if mpi_dep.found() and mpiexec.found()
     foreach x : [[1, 1], [3, 1], [2, 2]]
       ranks = x[0]
       threads = x[1]
@@ -42,7 +42,7 @@ foreach name, dbase : testdata_dbase
         args: [
           hpctesttool,
           dbase['dir'],
-          mpiexec,
+          mpiexec_cmd,
           f'@ranks@',
           hpcprof_mpi,
           f'-j@threads@',
@@ -51,8 +51,8 @@ foreach name, dbase : testdata_dbase
         ],
         suite: ['hpcprof', 'mpi'],
         is_parallel: false,  # Needed to deal with touchy MPI implementations
-        priority: 100,  # High priority to optimize for lack of parallelism
-        timeout: 90,
+        priority: -100,  # Normal, threaded tests should run first
+        timeout: 0,
       )
     endforeach
   endif

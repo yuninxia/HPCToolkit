@@ -421,13 +421,13 @@ endif
 # For testing hpcprof-mpi, we also need mpiexec to actually launch the tool.
 mpiexec = find_program(
   'mpiexec',
-  required: get_option('hpcprof_mpi').disabled() ? get_option('hpcprof_mpi') : false,
+  required: get_option('hpcprof_mpi_tests').require(
+    mpi_dep.found(),
+    error_message: 'hpcprof-mpi tests enabled but MPI was either disabled or not found',
+  ),
 )
 if mpiexec.found()
-  mpiexec = [mpiexec.full_path(), '-host', 'localhost:1000', '-n']
-else
-  _sh = find_program('sh')
-  mpiexec = [_sh.full_path(), '-c', 'exit 77']
+  mpiexec_cmd = [mpiexec.full_path(), '-host', 'localhost:1000', '-n']
 endif
 
 
