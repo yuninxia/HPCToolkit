@@ -272,6 +272,9 @@ $(STRUCTS_DIR)/%-gpucfg-$(GPUBIN_CFG).hpcstruct: $(GPUBIN_DIR)/%
 #-------------------------------------------------------------------------------
 # analyze files to create structure files
 #-------------------------------------------------------------------------------
+
+.PHONY: all analyze clean show-libs
+
 DOMAKE=1
 
 ifeq ($(DOMAKE),1)
@@ -281,6 +284,9 @@ all: $(CPUBIN_DIR) $(GPUBIN_USED_DIR)
 endif
 
 analyze: $(GS) $(CS)
+
+show-libs:
+	$(PROFLM) --show-libs $(EXCL_LIST) $(MEAS_DIR)
 
 #-------------------------------------------------------------------------------
 # remove all generated files
@@ -418,12 +424,11 @@ doMeasurementsDir
   string make_cmd = string("make -C ") + structs_dir + " -k --silent "
       + " --no-print-directory";
 
+  //--------------------------------------------------
+  // make clean on measurements directory and exit
+  //--------------------------------------------------
   if (args.make_clean) {
-    //
-    // make clean on measurements directory and exit
-    //
     cout << "INFO: Cleaning measurements directory" << endl;
-
     make_cmd += " clean";
 
     if (system(make_cmd.c_str()) != 0) {
@@ -433,9 +438,22 @@ doMeasurementsDir
     exit(0);
   }
 
-  //
+  //--------------------------------------------------
+  // show libraries that will be analyzed and exit
+  //--------------------------------------------------
+  if (args.show_libs) {
+    make_cmd += " show-libs";
+
+    if (system(make_cmd.c_str()) != 0) {
+      DIAG_EMsg("make show-libs failed");
+      exit(1);
+    }
+    exit(0);
+  }
+
+  //--------------------------------------------------
   // make all: analyze binaries to make struct files
-  //
+  //--------------------------------------------------
   cout << "INFO: Using a pool of " << jobs
        << " threads to analyze binaries in a measurement directory\n"
        << "INFO: Analyzing each large binary of >= " << args.parallel_analysis_threshold

@@ -79,6 +79,7 @@ public:
   bool compute_gpu_cfg;
   std::string exclude_str;
   std::string include_str;
+  bool show_libs;
   bool make_clean;
   std::string meas_dir;
   bool is_from_makefile;        // set true if -M argument is seen

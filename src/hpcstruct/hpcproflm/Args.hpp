@@ -88,6 +88,7 @@ public:
   std::string measurements_directory;
   std::string exclude_string;
   std::string include_string;
+  bool show_libs;
 
 private:
   static CmdLineParser::OptArgDesc optArgs[];

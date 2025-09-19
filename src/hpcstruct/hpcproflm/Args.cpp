@@ -62,6 +62,7 @@ static const char* usage_details =
      "  -h, --help           Print this help.\n"
      "  -x, --exclude <lib>  Don't analyze libraries matching <lib>.\n"
      "  -i, --include <lib>  Do analyze libraries matching <lib>.\n"
+     "  --show-libs          Display libraries that will be analyzed and exit.\n"
      ;
 
 #define CLP CmdLineParser
@@ -77,6 +78,7 @@ CmdLineParser::OptArgDesc Args::optArgs[] = {
      NULL },
   { 'i', "include",         CLP::ARG_REQ,  CLP::DUPOPT_CAT,  CLP_SEPARATOR,
      NULL },
+  {  0,  "show-libs",       CLP::ARG_NONE, CLP::DUPOPT_CLOB,  NULL,  NULL },
   CmdLineParser_OptArgDesc_NULL_MACRO // SGI's compiler requires this version
 };
 
@@ -94,6 +96,11 @@ Args::Args()
 
 Args::Args(int argc, const char* const argv[])
 {
+  measurements_directory = "";
+  exclude_string = "";
+  include_string = "";
+  show_libs = false;
+
   parse(argc, argv);
 }
 
@@ -150,6 +157,10 @@ Args::parse(int argc, const char* const argv[])
 
     if (parser.isOpt("include")) {
       include_string = parser.getOptArg("include");
+    }
+
+    if (parser.isOpt("show-libs")) {
+      show_libs = true;
     }
 
     // Check for required arguments

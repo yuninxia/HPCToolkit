@@ -229,27 +229,51 @@ processMeasurementsDirectory(Args &args)
         }
       }
 
-      // the analyzed load modules go to stdout and into all.lm
-      std::vector <std::string> strVec;
-      for (const auto& lm: loadModules) {
-        strVec.push_back(lm);
-      }
-      std::sort(strVec.begin(), strVec.end(), std::less<std::string>());
+      // sort the loadModules and filterModules names
+      std::vector <std::string> loadNamesVec;
+      std::vector <std::string> filterNamesVec;
 
-      for (const auto& lm: strVec) {
+      for (const auto& lm: loadModules) {
+        loadNamesVec.push_back(lm);
+      }
+      std::sort(loadNamesVec.begin(), loadNamesVec.end(), std::less<std::string>());
+
+      for (const auto& lm: filterModules) {
+        filterNamesVec.push_back(lm);
+      }
+      std::sort(filterNamesVec.begin(), filterNamesVec.end(), std::less<std::string>());
+
+      //--------------------------------------------------
+      // show-libs: display analyzed and filter libs on stdout and exit
+      //--------------------------------------------------
+      if (args.show_libs) {
+        std::cout << "INFO: modules that will be analyzed\n";
+        for (const auto& lm: loadNamesVec) {
+          std::cout << lm << "\n";
+        }
+        std::cout << std::endl;
+
+        if (! filterNamesVec.empty()) {
+          std::cout << "INFO: modules that will NOT be analyzed\n";
+          for (const auto& lm: filterNamesVec) {
+            std::cout << lm << "\n";
+          }
+          std::cout << std::endl;
+        }
+        return status;
+      }
+
+      //--------------------------------------------------
+      // all: write load module names to stdout (and into all.lm)
+      //--------------------------------------------------
+      for (const auto& lm: loadNamesVec) {
         std::cout << lm << "\n";
       }
 
-      // display the filtered modules on stderr, if any
-      if (! filterModules.empty()) {
-        strVec.clear();
-        for (const auto& lm: filterModules) {
-          strVec.push_back(lm);
-        }
-        std::sort(strVec.begin(), strVec.end(), std::less<std::string>());
-
-        std::cerr << "INFO: modules not analyzed:" << std::endl;
-        for (const auto& lm: strVec) {
+      // display the filtered names on stderr, if any
+      if (! filterNamesVec.empty()) {
+        std::cerr << "INFO: modules NOT analyzed\n";
+        for (const auto& lm: filterNamesVec) {
           std::cerr << lm << "\n";
         }
         std::cerr << std::endl;
