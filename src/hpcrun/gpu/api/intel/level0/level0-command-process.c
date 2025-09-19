@@ -245,6 +245,12 @@ level0_command_begin
   command_node->cct_node = api_node;
   gpu_cid_map_insert(correlation_id, api_node, kernel_ip);
 
+  // Send correlation ID to PC sampling thread for kernel launches
+  if (command_node->type == LEVEL0_KERNEL && level0_pcsampling_enabled()) {
+    gpu_activity_channel_t *channel = gpu_activity_channel_get_local();
+    gpu_correlation_channel_send(1, correlation_id, channel);
+  }
+
   gpu_application_thread_process_activities();
 
   // Generate host side operation timestamp
