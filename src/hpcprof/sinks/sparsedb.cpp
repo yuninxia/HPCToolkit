@@ -75,27 +75,17 @@ void SparseDB::notifyPipeline() noexcept {
   auto& ss = src.structs();
   ud.context = ss.context.add_default<udContext>();
   ud.thread = ss.thread.add_default<udThread>();
+
+  // Set up the output file and buffers. We preallocate just enough space for the file
+  // header at the very start.
+  pmf->synchronize();
+  profDataOut.initialize(*pmf, FMT_PROFILEDB_SZ_FHdr);
 }
 
-static constexpr auto pProfileInfos = align(FMT_PROFILEDB_SZ_FHdr, 8);
-static constexpr auto pProfiles =
-    pProfileInfos + align(FMT_PROFILEDB_SZ_ProfInfoSHdr, 8);
-
 void SparseDB::notifyWavefront(DataClass d) noexcept {
-  if (!d.hasContexts() || !d.hasThreads())
+  if (!d.hasThreads())
     return;
   auto mpiSem = src.enterOrderedWavefront();
-
-  // Fill contexts with the sorted list of Contexts
-  assert(contexts.empty());
-  src.contexts().citerate([&](const Context& c) { contexts.push_back(c); }, nullptr);
-  std::sort(contexts.begin(), contexts.end(),
-            [this](const Context& a, const Context& b) -> bool {
-              return a.userdata[src.identifier()] < b.userdata[src.identifier()];
-            });
-
-  // Synchronize the profile.db across the ranks
-  pmf->synchronize();
 
   // Count the total number of profiles across all ranks
   size_t myNProf = src.threads().size();
@@ -106,13 +96,12 @@ void SparseDB::notifyWavefront(DataClass d) noexcept {
   // Start laying out the profile.db file format
   fmt_profiledb_fHdr_t fhdr;
   fmt_profiledb_profInfoSHdr_t pi_sHdr;
-  fhdr.pProfileInfos = pProfileInfos;
-  pi_sHdr.pProfiles = pProfiles;
+  pi_sHdr.pProfiles = align(FMT_PROFILEDB_SZ_ProfInfoSHdr, 8);
   pi_sHdr.nProfiles = nProf;
-  fhdr.szProfileInfos = pi_sHdr.pProfiles +
-                        pi_sHdr.nProfiles * FMT_PROFILEDB_SZ_ProfInfo -
-                        fhdr.pProfileInfos;
-  fhdr.pIdTuples = align(fhdr.pProfileInfos + fhdr.szProfileInfos, 8);
+  fhdr.szProfileInfos =
+      pi_sHdr.pProfiles + pi_sHdr.nProfiles * FMT_PROFILEDB_SZ_ProfInfo;
+  pi_sHdr.pProfiles += fhdr.pProfileInfos = mpi::bcast(
+      mpi::World::rank() == 0 ? profDataOut.allocate(fhdr.szProfileInfos) : 0, 0);
 
   // Write out our part of the id tuples section, and figure out its final size
   {
@@ -152,16 +141,19 @@ void SparseDB::notifyWavefront(DataClass d) noexcept {
       t.userdata[ud].info.pIdTuple = oldsz;
     }
 
+    // Figure out the total size and allocate in the correct location.
+    // NB: Since rank 0 writes the file header, only rank 0 needs the total size, so we
+    // can use mpi::reduce instead of a full mpi::allreduce.
+    fhdr.szIdTuples = mpi::reduce(buf.size(), 0, mpi::Op::sum());
+    fhdr.pIdTuples = mpi::bcast(
+        mpi::World::rank() == 0 ? profDataOut.allocate(fhdr.szIdTuples) : 0, 0);
+
     // Determine the offset of our blob, update the pointers and write it out.
     uint64_t offset = mpi::exscan<uint64_t>(buf.size(), mpi::Op::sum()).value_or(0);
     for (const auto& t : src.threads().citerate())
       t->userdata[ud].info.pIdTuple += fhdr.pIdTuples + offset;
     auto fhi = pmf->open(true, false);
     fhi.writeat(fhdr.pIdTuples + offset, buf.size(), buf.data());
-
-    // Set the section size based on the sizes everyone contributes
-    // Rank 0 handles the file header, so only Rank 0 needs to know
-    fhdr.szIdTuples = mpi::reduce(buf.size(), 0, mpi::Op::sum());
   }
 
   // Rank 0 writes out the final file header and section headers
@@ -179,35 +171,25 @@ void SparseDB::notifyWavefront(DataClass d) noexcept {
     }
   }
 
-  // Set up the double-buffered output for profile data
-  profDataOut.initialize(*pmf, fhdr.pIdTuples + fhdr.szIdTuples);
-
-  // Drain the prebuffer and process the waiting Threads
-  std::unique_lock<std::shared_mutex> l(prebuffer_lock);
-  auto prebuffer_l = std::move(prebuffer);
-  prebuffer_done = true;
-  l.unlock();
-
-  for (auto& tt : prebuffer_l)
-    process(std::move(tt));
+  // Save the layout information for later
+  pmf_pProfileInfoSection = fhdr.pProfileInfos;
+  pmf_pProfileInfos = pi_sHdr.pProfiles;
 }
 
-void SparseDB::notifyThreadFinal(std::shared_ptr<const PerThreadTemporary> tt) {
-  {
-    std::shared_lock<std::shared_mutex> l(prebuffer_lock);
-    if (prebuffer_done)
-      return process(std::move(tt));
+void SparseDB::notifyThreadFinal(const PerThreadTemporary& tt) {
+  const auto& t = tt.thread();
+
+  // Sort the Contexts we care about for this Thread. They go in order, so we need them
+  // sorted ahead of time.
+  std::vector<std::reference_wrapper<const Context>> contexts;
+  contexts.reserve(tt.accumulators().size());
+  for (const auto& [ctx, _] : tt.accumulators().citerate()) {
+    contexts.emplace_back(ctx);
   }
-
-  std::unique_lock<std::shared_mutex> l(prebuffer_lock);
-  if (prebuffer_done)
-    return process(std::move(tt));
-
-  prebuffer.emplace_back(std::move(tt));
-}
-
-void SparseDB::process(std::shared_ptr<const PerThreadTemporary> tt) {
-  const auto& t = tt->thread();
+  std::sort(contexts.begin(), contexts.end(),
+            [this](const Context& a, const Context& b) -> bool {
+              return a.userdata[src.identifier()] < b.userdata[src.identifier()];
+            });
 
   // Allocate the blobs needed for the final output
   std::vector<char> mvalsBuf;
@@ -228,7 +210,7 @@ void SparseDB::process(std::shared_ptr<const PerThreadTemporary> tt) {
 
   // Now stitch together each Context's results
   for (const Context& c : contexts) {
-    if (auto accums = tt->accumulatorsFor(c)) {
+    if (auto accums = tt.accumulatorsFor(c)) {
       // Add the ctx_id/idx pair for this Context
       addCIdx({
           .ctxId = c.userdata[src.identifier()],
@@ -281,13 +263,13 @@ SparseDB::DoubleBufferedOutput::DoubleBufferedOutput() : pos(mpi::Tag::SparseDB_
 void SparseDB::DoubleBufferedOutput::initialize(util::File& outfile,
                                                 uint64_t startOffset) {
   file = outfile;
-  // We ensure all blobs are 4-aligned in the final output.
-  pos.initialize(align(startOffset, 4));
+  // We ensure all blobs are 8-aligned in the final output.
+  pos.initialize(align(startOffset, 8));
 }
 
 uint64_t SparseDB::DoubleBufferedOutput::allocate(uint64_t size) {
-  // We ensure all blobs are 4-aligned in the final output.
-  return pos.fetch_add(align(size, 4));
+  // We ensure all blobs are 8-aligned in the final output.
+  return pos.fetch_add(align(size, 8));
 }
 
 void SparseDB::DoubleBufferedOutput::write(const std::vector<char>& mvBlob,
@@ -565,6 +547,14 @@ static void writeContexts(uint32_t firstCtx, uint32_t lastCtx, const util::File&
 void SparseDB::write() {
   auto mpiSem = src.enterOrderedWrite();
 
+  // Before anything else, we need a list of all the Contexts, in order by their ids.
+  std::deque<std::reference_wrapper<const Context>> contexts;
+  src.contexts().citerate([&](const Context& c) { contexts.push_back(c); }, nullptr);
+  std::sort(contexts.begin(), contexts.end(),
+            [this](const Context& a, const Context& b) -> bool {
+              return a.userdata[src.identifier()] < b.userdata[src.identifier()];
+            });
+
   // Make sure all the profile data is on disk and all offsets are updated
   profDataOut.flush();
   mpi::barrier();
@@ -584,7 +574,8 @@ void SparseDB::write() {
       fmt_profiledb_profInfo_write(buf, &pi);
 
       pmf->open(true, false)
-          .writeat(pProfiles + FMT_PROFILEDB_SZ_ProfInfo * idx, sizeof buf, buf);
+          .writeat(pmf_pProfileInfos + FMT_PROFILEDB_SZ_ProfInfo * idx, sizeof buf,
+                   buf);
     });
     forEachThread.contributeUntilComplete();
   }
@@ -661,7 +652,7 @@ void SparseDB::write() {
     fmt_profiledb_profInfoSHdr_t piSHdr;
     {
       char buf[FMT_PROFILEDB_SZ_ProfInfoSHdr];
-      fi.readat(pProfileInfos, sizeof buf, buf);
+      fi.readat(pmf_pProfileInfoSection, sizeof buf, buf);
       fmt_profiledb_profInfoSHdr_read(&piSHdr, buf);
     }
 
@@ -765,7 +756,7 @@ void SparseDB::write() {
       {
         char buf[FMT_PROFILEDB_SZ_ProfInfo];
         fmt_profiledb_profInfo_write(buf, &summary_info);
-        pmfi.writeat(pProfiles, sizeof buf, buf);
+        pmfi.writeat(pmf_pProfileInfos, sizeof buf, buf);
       }
 
       // Write out the footer to indicate that profile.db is complete

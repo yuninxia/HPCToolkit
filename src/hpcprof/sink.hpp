@@ -103,7 +103,7 @@ public:
 
   /// Notify the Sink that a Thread has finished.
   // MT: Internally Synchronized
-  virtual void notifyThreadFinal(std::shared_ptr<const PerThreadTemporary>);
+  virtual void notifyThreadFinal(const PerThreadTemporary&);
 
 protected:
   /// You should never create a base ProfileSink. Use a subclass.

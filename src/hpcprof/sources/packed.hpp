@@ -29,6 +29,7 @@ public:
     DataClass accepts() const noexcept override {
       return DataClass::attributes + DataClass::contexts;
     }
+    DataClass wavefronts() const noexcept override { return DataClass::contexts; }
     ExtensionClass requirements() const noexcept override {
       return ExtensionClass::identifier;
     }

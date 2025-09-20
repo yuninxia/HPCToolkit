@@ -46,7 +46,7 @@ public:
       const std::vector<std::pair<std::chrono::nanoseconds,
                                   std::reference_wrapper<const Context>>>&) override;
   void notifyCtxTimepointRewindStart(const Thread&) override;
-  void notifyThreadFinal(std::shared_ptr<const PerThreadTemporary>) override;
+  void notifyThreadFinal(const PerThreadTemporary&) override;
 
 private:
   std::optional<hpctoolkit::util::File> tracefile;
