@@ -18,6 +18,7 @@
 //*****************************************************************************
 
 #include "level0-activity-translate.hpp"
+#include "pcsampling-api-receiver.hpp"
 
 
 //******************************************************************************
@@ -50,9 +51,9 @@ setPCSamplingModuleId
   // Convert the first 8 characters of the hex string to a uint32_t
   uint32_t module_id_uint32 = std::strtoul(kernel_props.module_id.substr(0, 8).c_str(), nullptr, 16);
 
-  zebin_id_map_entry_t* entry = zebin_id_map_lookup(module_id_uint32);
+  zebin_id_map_entry_t* entry = pcsampling::lookupZebinIdMap(module_id_uint32);
   if (entry) {
-    uint32_t hpctoolkit_module_id = zebin_id_map_entry_hpctoolkit_id_get(entry);
+    uint32_t hpctoolkit_module_id = pcsampling::getZebinIdMapEntryHpctoolkitId(entry);
     activity->details.pc_sampling.pc.lm_id = static_cast<uint16_t>(hpctoolkit_module_id);
   }
 }
@@ -116,7 +117,7 @@ convertPCSampling
   return true;
 }
 
-static std::unique_ptr<gpu_activity_t>
+static gpu_activity_t*
 createAndFillActivity
 (
   const std::map<uint64_t, EuStalls>::iterator& eustall_iter,
@@ -126,11 +127,15 @@ createAndFillActivity
   uint64_t stall_count
 )
 {
-  auto activity = std::make_unique<gpu_activity_t>();
-  gpu_activity_init(activity.get());
-  if (convertPCSampling(eustall_iter, kernel_iter, correlation_id, stall_reason, stall_count, activity.get())) {
+  gpu_activity_t* activity = pcsampling::allocActivity();
+  if (!activity) return nullptr;
+
+  pcsampling::initActivity(activity);
+
+  if (convertPCSampling(eustall_iter, kernel_iter, correlation_id, stall_reason, stall_count, activity)) {
     return activity;
   } else {
+    pcsampling::freeActivity(activity);
     return nullptr;
   }
 }
@@ -157,7 +162,7 @@ level0ActivityTranslate
     if (stall_count == 0) continue; // Skip if no stalls of this type
 
     // Create and fill a new GPU activity
-    auto activity = createAndFillActivity(eustall_iter, kernel_iter, correlation_id, mapping.reason, stall_count);
-    if (activity) activities.push_back(activity.release());
+    gpu_activity_t* activity = createAndFillActivity(eustall_iter, kernel_iter, correlation_id, mapping.reason, stall_count);
+    if (activity) activities.push_back(activity);
   }
 }

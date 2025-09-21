@@ -153,3 +153,12 @@ level0PCSamplingFini
     level0_pcsampling_init_once = once_init;
   }
 }
+
+bool
+level0PCSamplingIsReady
+(
+  void
+)
+{
+  return pcsampling_init_succeeded && isPcSamplingEnabled();
+}

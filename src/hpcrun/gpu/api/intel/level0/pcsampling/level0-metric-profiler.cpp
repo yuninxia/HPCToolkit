@@ -16,6 +16,7 @@
 //*****************************************************************************
 
 #include "level0-metric-profiler.hpp"
+#include "pcsampling-api-receiver.hpp"
 
 
 //******************************************************************************
@@ -107,7 +108,7 @@ ProcessMetricData
 
   // Clean up the dynamically allocated activity objects
   for (auto activity : activities) {
-    delete activity;
+    pcsampling::freeActivity(activity);
   }
   return true;
 }
@@ -161,7 +162,7 @@ ZeMetricProfiler::RunProfilingLoop
     if (!WaitForKernelStart(desc)) return;
 
     // Update correlation ID
-    gpu_correlation_channel_receive(1, level0UpdateCorrelationId, desc);
+    pcsampling::receiveCorrelationChannel(1, level0UpdateCorrelationId, desc);
 
     // Wait for the next sampling interval; continuously collect metrics until the event is signaled
     if (!WaitForNextInterval(desc, dispatch, status)) return; // Rename to WaitForKernelEnd
@@ -254,9 +255,9 @@ ZeMetricProfiler::StartProfilingMetrics
       // Skip subdevices
       continue;
     }
-    monitor_disable_new_threads();
+    pcsampling::disableNewThreads();
     it->second->profiling_thread_ = new std::thread(MetricProfilingThread, this, it->second, dispatch);
-    monitor_enable_new_threads();
+    pcsampling::enableNewThreads();
     // Wait until profiling is enabled before continuing
     while (!it->second->IsProfilerInitialized()) {
       std::this_thread::sleep_for(std::chrono::milliseconds(1));

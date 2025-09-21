@@ -469,6 +469,10 @@ if level0_dep.found()
     'gpu/api/intel/level0/level0-handle-map.c',
     'gpu/api/intel/level0/level0-id-map.c',
     'gpu/api/intel/level0/level0-kernel-module-map.c',
+    'sample-sources/level0.c',
+  )
+
+  pcsampling_cpp_srcs = files(
     'gpu/api/intel/level0/pcsampling/level0-activity-generate.cpp',
     'gpu/api/intel/level0/pcsampling/level0-activity-send.cpp',
     'gpu/api/intel/level0/pcsampling/level0-activity-translate.cpp',
@@ -481,8 +485,8 @@ if level0_dep.found()
     'gpu/api/intel/level0/pcsampling/level0-driver.cpp',
     'gpu/api/intel/level0/pcsampling/level0-event.cpp',
     'gpu/api/intel/level0/pcsampling/level0-eventpool.cpp',
-    'gpu/api/intel/level0/pcsampling/level0-kernel-properties.cpp',
     'gpu/api/intel/level0/pcsampling/level0-kernel-properties-cache.cpp',
+    'gpu/api/intel/level0/pcsampling/level0-kernel-properties.cpp',
     'gpu/api/intel/level0/pcsampling/level0-kernel-size-map.cpp',
     'gpu/api/intel/level0/pcsampling/level0-logging.cpp',
     'gpu/api/intel/level0/pcsampling/level0-metric-list.cpp',
@@ -496,8 +500,34 @@ if level0_dep.found()
     'gpu/api/intel/level0/pcsampling/level0-tracing-callbacks.cpp',
     'gpu/api/intel/level0/pcsampling/level0-tracing.cpp',
     'gpu/api/intel/level0/pcsampling/level0-unique-id.cpp',
-    'sample-sources/level0.c',
+    'gpu/api/intel/level0/pcsampling/pcsampling-api-receiver.cpp',
+    'gpu/api/intel/level0/pcsampling/pcsampling-main.cpp',
+    'gpu/api/intel/level0/pcsampling/pcsampling-level0-stubs.cpp',
   )
+
+  pcsampling_cxx_lib = shared_library(
+    'hpcrun_pcsampling_cxx',
+    pcsampling_cpp_srcs,
+    gnu_symbol_visibility: 'hidden',
+    implicit_include_directories: false,
+    override_options: ['b_lundef=false'],
+    dependencies: [
+      common_lean_deps,
+      dl_dep,
+      level0_dep.partial_dependency(compile_args: true, includes: true),
+      libunwind_dep.partial_dependency(compile_args: true, includes: true),
+      threads_dep,
+    ],
+    link_language: 'cpp',
+    install: true,
+  )
+  hpcrun_sonames.set_quoted(
+    'HPCRUN_PCSAMPLING_CXX_SO',
+    fs.name(pcsampling_cxx_lib.full_path()),
+  )
+  libs += pcsampling_cxx_lib
+
+  srcs += files('gpu/api/intel/level0/pcsampling-shim.c')
 endif
 
 if gtpin_dep.found()
