@@ -15,6 +15,7 @@
 //*****************************************************************************
 
 #include "level0-metric-list.hpp"
+#include "pcsampling-api-receiver.hpp"
 
 
 //******************************************************************************
@@ -56,7 +57,7 @@ getMetricCount
   zet_metric_group_properties_t group_props{};
   group_props.stype = ZET_STRUCTURE_TYPE_METRIC_GROUP_PROPERTIES;
   
-  ze_result_t status = f_zetMetricGroupGetProperties(group, &group_props, dispatch);
+  ze_result_t status = pcsampling::callZetMetricGroupGetProperties(group, &group_props, dispatch);
   level0_check_result(status, __LINE__);
   return group_props.metricCount;
 }
@@ -80,7 +81,7 @@ getMetricHandles
   }
 
   std::vector<zet_metric_handle_t> metric_list(metric_count);
-  ze_result_t status = f_zetMetricGet(group, &metric_count, metric_list.data(), dispatch);
+  ze_result_t status = pcsampling::callZetMetricGet(group, &metric_count, metric_list.data(), dispatch);
   level0_check_result(status, __LINE__);
   // Verify that the retrieved metric count matches the vector size
   if (metric_count != metric_list.size()) {
@@ -107,7 +108,7 @@ getMetricProperties
     return metric_props;
   }
   
-  ze_result_t status = f_zetMetricGetProperties(metric, &metric_props, dispatch);
+  ze_result_t status = pcsampling::callZetMetricGetProperties(metric, &metric_props, dispatch);
   level0_check_result(status, __LINE__);
   return metric_props;
 }

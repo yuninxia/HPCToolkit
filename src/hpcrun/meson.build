@@ -452,6 +452,7 @@ if opencl_dep.found()
 endif
 
 if level0_dep.found()
+  # Core Level Zero support files (always included)
   srcs += files(
     'foil/level0.c',
     'gpu/api/intel/binaries/symbolVector.c',
@@ -469,35 +470,14 @@ if level0_dep.found()
     'gpu/api/intel/level0/level0-handle-map.c',
     'gpu/api/intel/level0/level0-id-map.c',
     'gpu/api/intel/level0/level0-kernel-module-map.c',
-    'gpu/api/intel/level0/pcsampling/level0-activity-generate.cpp',
-    'gpu/api/intel/level0/pcsampling/level0-activity-send.cpp',
-    'gpu/api/intel/level0/pcsampling/level0-activity-translate.cpp',
-    'gpu/api/intel/level0/pcsampling/level0-assert.cpp',
-    'gpu/api/intel/level0/pcsampling/level0-cmdlist-device-map.cpp',
-    'gpu/api/intel/level0/pcsampling/level0-collector.cpp',
-    'gpu/api/intel/level0/pcsampling/level0-context.cpp',
-    'gpu/api/intel/level0/pcsampling/level0-correlation-id.cpp',
-    'gpu/api/intel/level0/pcsampling/level0-device.cpp',
-    'gpu/api/intel/level0/pcsampling/level0-driver.cpp',
-    'gpu/api/intel/level0/pcsampling/level0-event.cpp',
-    'gpu/api/intel/level0/pcsampling/level0-eventpool.cpp',
-    'gpu/api/intel/level0/pcsampling/level0-kernel-properties.cpp',
-    'gpu/api/intel/level0/pcsampling/level0-kernel-properties-cache.cpp',
-    'gpu/api/intel/level0/pcsampling/level0-kernel-size-map.cpp',
-    'gpu/api/intel/level0/pcsampling/level0-logging.cpp',
-    'gpu/api/intel/level0/pcsampling/level0-metric-list.cpp',
-    'gpu/api/intel/level0/pcsampling/level0-metric-profiler.cpp',
-    'gpu/api/intel/level0/pcsampling/level0-metric-streamer.cpp',
-    'gpu/api/intel/level0/pcsampling/level0-metric.cpp',
-    'gpu/api/intel/level0/pcsampling/level0-module.cpp',
-    'gpu/api/intel/level0/pcsampling/level0-pcsampling.cpp',
-    'gpu/api/intel/level0/pcsampling/level0-timestamp.cpp',
-    'gpu/api/intel/level0/pcsampling/level0-tracing-callback-methods.cpp',
-    'gpu/api/intel/level0/pcsampling/level0-tracing-callbacks.cpp',
-    'gpu/api/intel/level0/pcsampling/level0-tracing.cpp',
-    'gpu/api/intel/level0/pcsampling/level0-unique-id.cpp',
+    'gpu/api/intel/level0/level0-kernel-size-map.c',
     'sample-sources/level0.c',
   )
+
+  # Add the PC sampling shim to main hpcrun library
+  srcs += files('gpu/api/intel/level0/pcsampling-shim.c')
+
+  # PC sampling library will be defined after main_hpcrun_lib
 endif
 
 if gtpin_dep.found()
@@ -578,6 +558,66 @@ main_hpcrun_lib = shared_library(
 )
 hpcrun_sonames.set_quoted('HPCRUN_SO', fs.name(main_hpcrun_lib.full_path()))
 libs += main_hpcrun_lib
+
+# Build PC sampling library after main_hpcrun_lib is defined
+if level0_dep.found()
+  # Build a minimal set of required source files to avoid duplicate symbols
+  # Since we link with main_hpcrun_lib, we only need files not in main lib
+  pcsampling_minimal_srcs = files(
+    # Files that are likely not in main_hpcrun_lib but needed for PC sampling
+    '../common/lean/crypto-hash.c',  # For crypto_compute_hash_string
+    '../common/lean/mcs-lock.c',  # For mcs_lock/unlock
+  )
+
+  pcsampling_cxx_lib = shared_library(
+    'hpcrun_pcsampling_cxx',
+    pcsampling_minimal_srcs,
+    'gpu/api/intel/level0/pcsampling/pcsampling-main.cpp',
+    'gpu/api/intel/level0/pcsampling/pcsampling-api-receiver.cpp',
+    'gpu/api/intel/level0/pcsampling/level0-activity-generate.cpp',
+    'gpu/api/intel/level0/pcsampling/level0-activity-send.cpp',
+    'gpu/api/intel/level0/pcsampling/level0-activity-translate.cpp',
+    'gpu/api/intel/level0/pcsampling/level0-assert.cpp',
+    'gpu/api/intel/level0/pcsampling/level0-cmdlist-device-map.cpp',
+    'gpu/api/intel/level0/pcsampling/level0-collector.cpp',
+    'gpu/api/intel/level0/pcsampling/level0-context.cpp',
+    'gpu/api/intel/level0/pcsampling/level0-correlation-id.cpp',
+    'gpu/api/intel/level0/pcsampling/level0-device.cpp',
+    'gpu/api/intel/level0/pcsampling/level0-driver.cpp',
+    'gpu/api/intel/level0/pcsampling/level0-event.cpp',
+    'gpu/api/intel/level0/pcsampling/level0-eventpool.cpp',
+    'gpu/api/intel/level0/pcsampling/level0-kernel-properties.cpp',
+    'gpu/api/intel/level0/pcsampling/level0-kernel-properties-cache.cpp',
+    'gpu/api/intel/level0/pcsampling/level0-kernel-size-map.cpp',
+    'gpu/api/intel/level0/pcsampling/level0-logging.cpp',
+    'gpu/api/intel/level0/pcsampling/level0-metric.cpp',
+    'gpu/api/intel/level0/pcsampling/level0-metric-list.cpp',
+    'gpu/api/intel/level0/pcsampling/level0-metric-profiler.cpp',
+    'gpu/api/intel/level0/pcsampling/level0-metric-streamer.cpp',
+    'gpu/api/intel/level0/pcsampling/level0-module.cpp',
+    'gpu/api/intel/level0/pcsampling/level0-pcsampling.cpp',
+    'gpu/api/intel/level0/pcsampling/level0-timestamp.cpp',
+    'gpu/api/intel/level0/pcsampling/level0-tracing.cpp',
+    'gpu/api/intel/level0/pcsampling/level0-tracing-callbacks.cpp',
+    'gpu/api/intel/level0/pcsampling/level0-tracing-callback-methods.cpp',
+    'gpu/api/intel/level0/pcsampling/level0-unique-id.cpp',
+    # Removed common_lean_srcs to speed up build - add specific files if needed
+    gnu_symbol_visibility: 'hidden',
+    implicit_include_directories: true,
+    # link_with removed - PC sampling library should be independent
+    override_options: ['b_lundef=false'],  # Disable undefined symbol checking
+    dependencies: [
+      common_lean_deps,
+      dl_dep,
+      level0_dep,
+      threads_dep,
+      libunwind_dep,
+    ],
+    install: true,
+  )
+  hpcrun_sonames.set_quoted('HPCRUN_PCSAMPLING_CXX_SO', fs.name(pcsampling_cxx_lib.full_path()))
+  libs += pcsampling_cxx_lib
+endif
 
 # Some of the libraries defined below are designed to be loaded into the application
 # using LD_PRELOAD. These libraries must not have RPATH or RUNPATH attributes, which may

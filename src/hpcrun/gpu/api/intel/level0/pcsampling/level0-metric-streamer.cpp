@@ -16,6 +16,7 @@
 //*****************************************************************************
 
 #include "level0-metric-streamer.hpp"
+#include "pcsampling-api-receiver.hpp"
 
 
 //******************************************************************************
@@ -39,7 +40,7 @@ activateMetricGroup
   const struct hpcrun_foil_appdispatch_level0* dispatch
 )
 {
-  ze_result_t status = f_zetContextActivateMetricGroups(context, device, count, &group, dispatch);
+  ze_result_t status = pcsampling::callZetContextActivateMetricGroups(context, device, count, &group, dispatch);
   level0_check_result(status, __LINE__);
 }
 
@@ -63,7 +64,7 @@ openMetricStreamer
     kInterval
   };
 
-  ze_result_t status = f_zetMetricStreamerOpen(context, device, group, &streamer_desc, nullptr, &streamer, dispatch);
+  ze_result_t status = pcsampling::callZetMetricStreamerOpen(context, device, group, &streamer_desc, nullptr, &streamer, dispatch);
   if (status != ZE_RESULT_SUCCESS) {
     std::cerr << "[ERROR] Failed to open metric streamer (" << status 
               << "). The sampling interval might be too small." << std::endl;
@@ -86,7 +87,7 @@ closeMetricStreamer
   const struct hpcrun_foil_appdispatch_level0* dispatch
 )
 {
-  ze_result_t status = f_zetMetricStreamerClose(streamer, dispatch);
+  ze_result_t status = pcsampling::callZetMetricStreamerClose(streamer, dispatch);
   level0_check_result(status, __LINE__);
 }
 

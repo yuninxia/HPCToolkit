@@ -80,16 +80,19 @@ KernelPropertiesCache::getKernelProperties(
     for (const auto& kid : kernel_ids) {
       auto it = kernel_cache_.find(kid);
       if (it != kernel_cache_.end() && it->second.device_id_ == device_id) {
-        device_kernel_map[it->second.base_addr_] = it->second;
+        // Use function_pointer if available (GPU virtual address), otherwise base_addr
+        uint64_t key = (it->second.function_pointer_ != 0) ? it->second.function_pointer_ : it->second.base_addr_;
+        device_kernel_map[key] = it->second;
       }
     }
   }
-  
+
   // Convert to output format with computed sizes
-  for (const auto& [base_addr, cmd_props] : device_kernel_map) {
+  for (const auto& [key_addr, cmd_props] : device_kernel_map) {
     KernelProperties props = convertToKernelProperties(cmd_props);
     props.size = computeKernelSize(cmd_props, device_kernel_map);
-    out_props[base_addr] = props;
+    // Use the same key (function_pointer or base_addr) for the output map
+    out_props[key_addr] = props;
   }
   
   if (std::getenv("HPCTOOLKIT_LEVEL0_DEBUG_CACHE")) {
@@ -110,7 +113,8 @@ KernelPropertiesCache::convertToKernelProperties(
 {
   KernelProperties props;
   props.name = cmd_props.name_;
-  props.base_address = cmd_props.base_addr_;
+  // Use function_pointer if available (GPU virtual address), otherwise fall back to base_addr
+  props.base_address = (cmd_props.function_pointer_ != 0) ? cmd_props.function_pointer_ : cmd_props.base_addr_;
   props.kernel_id = cmd_props.kernel_id_;
   props.module_id = cmd_props.module_id_;
   props.size = cmd_props.size_;

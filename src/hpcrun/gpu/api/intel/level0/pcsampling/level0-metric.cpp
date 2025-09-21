@@ -15,6 +15,8 @@
 //*****************************************************************************
 
 #include "level0-metric.hpp"
+#include "pcsampling-api-receiver.hpp"
+#include "pcsampling-api-receiver.hpp"
 
 
 //*****************************************************************************
@@ -30,7 +32,7 @@ getNumberOfMetricGroups
 {
   // Retrieve the number of metric groups available for the given device
   uint32_t num_groups = 0;
-  ze_result_t status = f_zetMetricGroupGet(device, &num_groups, nullptr, dispatch);
+  ze_result_t status = pcsampling::callZetMetricGroupGet(device, &num_groups, nullptr, dispatch);
   level0_check_result(status, __LINE__);
   return num_groups;
 }
@@ -45,7 +47,7 @@ getMetricGroups
 {
   // Retrieve all metric group handles for the given device
   std::vector<zet_metric_group_handle_t> groups(num_groups, nullptr);
-  ze_result_t status = f_zetMetricGroupGet(device, &num_groups, groups.data(), dispatch);
+  ze_result_t status = pcsampling::callZetMetricGroupGet(device, &num_groups, groups.data(), dispatch);
   level0_check_result(status, __LINE__);
   return groups;
 }
@@ -60,7 +62,7 @@ getMetricGroupProperties
   // Retrieve the properties of a metric group
   zet_metric_group_properties_t group_props{};
   group_props.stype = ZET_STRUCTURE_TYPE_METRIC_GROUP_PROPERTIES;
-  ze_result_t status = f_zetMetricGroupGetProperties(group, &group_props, dispatch);
+  ze_result_t status = pcsampling::callZetMetricGroupGetProperties(group, &group_props, dispatch);
   level0_check_result(status, __LINE__);
   return group_props;
 }
@@ -175,7 +177,7 @@ calculateMetricValues
   uint32_t num_metrics = 0;
 
   // First call: get the number of samples and metrics.
-  ze_result_t status = f_zetMetricGroupCalculateMultipleMetricValuesExp(
+  ze_result_t status = pcsampling::callZetMetricGroupCalculateMultipleMetricValuesExp(
     metric_group, ZET_METRIC_GROUP_CALCULATION_TYPE_METRIC_VALUES,
     raw_size, raw_metrics.data(), &num_samples, &num_metrics,
     nullptr, nullptr, dispatch);
@@ -193,7 +195,7 @@ calculateMetricValues
   metrics.resize(num_metrics);
 
   // Second call: retrieve the calculated metric values.
-  status = f_zetMetricGroupCalculateMultipleMetricValuesExp(
+  status = pcsampling::callZetMetricGroupCalculateMultipleMetricValuesExp(
     metric_group, ZET_METRIC_GROUP_CALCULATION_TYPE_METRIC_VALUES,
     raw_size, raw_metrics.data(), &num_samples, &num_metrics,
     samples.data(), metrics.data(), dispatch);
@@ -262,7 +264,7 @@ level0MetricStreamerReadData
   // Read metric streamer data while ensuring the data does not exceed a maximum size
   uint64_t actual_data_size = 0;
   // First call: determine the available data size
-  ze_result_t status = f_zetMetricStreamerReadData(streamer, UINT32_MAX, &actual_data_size, nullptr, dispatch);
+  ze_result_t status = pcsampling::callZetMetricStreamerReadData(streamer, UINT32_MAX, &actual_data_size, nullptr, dispatch);
   level0_check_result(status, __LINE__);
   if (actual_data_size == 0) {
     // No data available yet, which is valid
@@ -276,7 +278,7 @@ level0MetricStreamerReadData
   }
 
   // Second call: read the data into the storage buffer
-  status = f_zetMetricStreamerReadData(streamer, UINT32_MAX, &actual_data_size, storage.data(), dispatch);
+  status = pcsampling::callZetMetricStreamerReadData(streamer, UINT32_MAX, &actual_data_size, storage.data(), dispatch);
   level0_check_result(status, __LINE__);
   return actual_data_size;
 }

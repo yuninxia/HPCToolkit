@@ -17,6 +17,8 @@
 
 #include "level0-tracing-callback-methods.hpp"
 #include "level0-kernel-properties-cache.hpp"
+#include "level0-kernel-size-map.hpp"
+#include "pcsampling-api-receiver.hpp"
 
 
 //*****************************************************************************
@@ -62,7 +64,7 @@ getDeviceForCommandList
   ze_device_handle_t hDevice = nullptr;
 #if 0
   // Option 1: Use the compute runtime (requires level0 >= v1.9.0)
-  ze_result_t status = f_zeCommandListGetDeviceHandle(hCommandList, &hDevice, dispatch);
+  ze_result_t status = pcsampling::callZeCommandListGetDeviceHandle(hCommandList, &hDevice, dispatch);
   level0_check_result(status, __LINE__);
 #else
   // Option 2: Manually maintain the mapping
@@ -143,7 +145,7 @@ extractKernelProperties
   ze_kernel_properties_t kprops{};
   zex_kernel_register_file_size_exp_t regsize{};
   kprops.pNext = (void *)&regsize;
-  ze_result_t status = f_zeKernelGetProperties(kernel, &kprops, dispatch);
+  ze_result_t status = pcsampling::callZeKernelGetProperties(kernel, &kprops, dispatch);
   level0_check_result(status, __LINE__);
 
   desc.simd_width_ = kprops.maxSubgroupSize;
@@ -245,13 +247,25 @@ OnExitKernelCreate
   }
   modules_on_devices_mutex_.unlock_shared();
 
-  // Fill function size map
-  uint32_t zebin_id_uint32;
-  sscanf(module_id.c_str(), "%8x", &zebin_id_uint32);
-  zebin_id_map_entry_t* entry = zebin_id_map_lookup(zebin_id_uint32);
-  if (entry != nullptr) {
-    level0FillKernelSizeMap(entry);
-  }
+  // KNOWN LIMITATION: Cannot fill kernel size map when zebin_id_map_entry_t is opaque
+  //
+  // The PC sampling library has been separated into libhpcrun_pcsampling_cxx.so for
+  // modularity, but this creates a limitation: zebin_id_map_entry_t is an opaque type
+  // in this context, preventing access to its internal elf_vector field.
+  //
+  // Impact: This causes "Control flow data is missing or corrupted" warning in hpcprof.
+  //         GPU context reconstruction may be affected, but PC sampling data is still
+  //         collected and usable.
+  //
+  // Future fix: Requires API redesign to pass symbol data through the API boundary
+  //             or moving kernel size map functionality back to libhpcrun.so
+  //
+  // uint32_t zebin_id_uint32;
+  // sscanf(module_id.c_str(), "%8x", &zebin_id_uint32);
+  // zebin_id_map_entry_t* entry = pcsampling::lookupZebinIdMap(zebin_id_uint32);
+  // if (entry != nullptr) {
+  //   pcsampling::fillKernelSizeMap(entry);
+  // }
 
   int device_id = -1;
   if (device != nullptr) {
@@ -317,8 +331,11 @@ OnExitCommandListAppendLaunchKernel
 
   ZeDeviceDescriptor* desc = getDeviceDescriptor(hDevice);
   if (desc) {
-    waitForEventReady(desc->serial_data_ready_, dispatch);
-    desc->SetSerialDataReady(false);
+    // Don't wait here - the exit callback is called immediately after appending,
+    // not after the kernel executes. The profiling thread will handle the actual
+    // kernel execution monitoring.
+    // waitForEventReady(desc->serial_data_ready_, dispatch);
+    // desc->SetSerialDataReady(false);
     mcs_unlock(&desc->kernel_launch_lock, &pc_monitoring_node);
   }
 }

@@ -32,6 +32,24 @@ level0FillKernelSizeMap
   zebin_id_map_entry_t *entry
 );
 
+// New function that takes symbol data directly
+// This can be called when zebin_id_map_entry_t is opaque
+#ifdef __cplusplus
+extern "C" {
+#endif
+
+void
+level0FillKernelSizeMapFromSymbols
+(
+  int nsymbols,
+  const char** symbolNames,
+  const size_t* symbolSizes
+);
+
+#ifdef __cplusplus
+}
+#endif
+
 size_t
 level0GetKernelSize
 (

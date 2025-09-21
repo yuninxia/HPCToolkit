@@ -13,10 +13,6 @@
 
 #include "../../../../activity/gpu-activity.h"
 
-extern "C" {
-  #include "../../../../activity/gpu-activity-channel.h"
-}
-
 
 //******************************************************************************
 // interface operations

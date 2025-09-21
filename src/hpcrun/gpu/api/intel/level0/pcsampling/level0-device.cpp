@@ -18,6 +18,7 @@
 
 #include "level0-device.hpp"
 #include "level0-cmdlist-device-map.hpp"
+#include "pcsampling-api-receiver.hpp"
 
 
 //******************************************************************************
@@ -59,8 +60,8 @@ createDeviceDescriptor
     
     // Set the metric group based on the provided metric_group string
     level0GetMetricGroup(device, metric_group, desc->metric_group_, dispatch);
-    
-    desc->profiling_thread_    = nullptr;
+
+    desc->profiling_thread_id_ = -1;  // Initialize to invalid thread ID
     desc->UpdateProfilerState(PROFILER_DISABLED);
     desc->running_kernel_      = nullptr;
     desc->running_kernel_end_  = nullptr;
@@ -102,7 +103,7 @@ createSubDeviceDescriptor
     sub_desc->driver_           = parent_desc->driver_;
     sub_desc->context_          = parent_desc->context_;
     sub_desc->metric_group_     = parent_desc->metric_group_;
-    sub_desc->profiling_thread_ = nullptr;
+    sub_desc->profiling_thread_id_ = -1;  // Initialize to invalid thread ID
     sub_desc->UpdateProfilerState(PROFILER_DISABLED);
     sub_desc->SetKernelStarted(false);
     sub_desc->SetSerialDataReady(false);
@@ -154,7 +155,7 @@ level0GetDevices
 )
 {
   uint32_t num_devices = 0;
-  ze_result_t status = f_zeDeviceGet(driver, &num_devices, nullptr, dispatch);
+  ze_result_t status = pcsampling::callZeDeviceGet(driver, &num_devices, nullptr, dispatch);
   level0_check_result(status, __LINE__);
   
   if (num_devices == 0) {
@@ -162,7 +163,7 @@ level0GetDevices
   }
   
   std::vector<ze_device_handle_t> devices(num_devices);
-  status = f_zeDeviceGet(driver, &num_devices, devices.data(), dispatch);
+  status = pcsampling::callZeDeviceGet(driver, &num_devices, devices.data(), dispatch);
   level0_check_result(status, __LINE__);
   
   return devices;
@@ -177,7 +178,7 @@ level0GetSubDevices
 )
 {
   std::vector<ze_device_handle_t> sub_devices(num_sub_devices);
-  ze_result_t status = f_zeDeviceGetSubDevices(device, &num_sub_devices, sub_devices.data(), dispatch);
+  ze_result_t status = pcsampling::callZeDeviceGetSubDevices(device, &num_sub_devices, sub_devices.data(), dispatch);
   level0_check_result(status, __LINE__);
   return sub_devices;
 }
@@ -190,7 +191,7 @@ level0GetSubDeviceCount
 )
 {
   uint32_t num_sub_devices = 0;
-  ze_result_t status = f_zeDeviceGetSubDevices(device, &num_sub_devices, nullptr, dispatch);
+  ze_result_t status = pcsampling::callZeDeviceGetSubDevices(device, &num_sub_devices, nullptr, dispatch);
   level0_check_result(status, __LINE__);
   return num_sub_devices;
 }
@@ -248,7 +249,7 @@ level0GetDeviceProperties
   ze_device_properties_t deviceProps = {};
   deviceProps.stype = ZE_STRUCTURE_TYPE_DEVICE_PROPERTIES;
   
-  ze_result_t status = f_zeDeviceGetProperties(device, &deviceProps, dispatch);
+  ze_result_t status = pcsampling::callZeDeviceGetProperties(device, &deviceProps, dispatch);
   level0_check_result(status, __LINE__);
   
   return deviceProps;
@@ -262,7 +263,7 @@ level0DeviceGetRootDevice
 )
 {
   ze_device_handle_t rootDevice = nullptr;
-  ze_result_t status = f_zeDeviceGetRootDevice(device, &rootDevice, dispatch);
+  ze_result_t status = pcsampling::callZeDeviceGetRootDevice(device, &rootDevice, dispatch);
   level0_check_result(status, __LINE__);
   return (rootDevice != nullptr) ? rootDevice : device;
 }

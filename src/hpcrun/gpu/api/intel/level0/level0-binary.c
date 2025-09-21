@@ -27,6 +27,7 @@
 #include "level0-handle-map.h"
 #include "level0-id-map.h"
 #include "level0-kernel-module-map.h"
+#include "level0-kernel-size-map.h"
 
 
 //*****************************************************************************
@@ -137,6 +138,8 @@ level0_binary_process
   if (entry == NULL) {
     SymbolVector *symbols = collectZebinSymbols(debug_zebin, debug_zebin_size);
     zebin_id_map_insert(zebin_id_uint32, loadmap_module_id, symbols);
+    // Fill the kernel size map with symbol data while we have it
+    level0_kernel_size_map_fill_from_symbols(symbols);
   }
 
   gpu_binary_kind_t bkind = gpu_binary_kind((const char *) debug_zebin, debug_zebin_size);

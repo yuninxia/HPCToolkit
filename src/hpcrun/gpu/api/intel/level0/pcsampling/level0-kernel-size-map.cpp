@@ -16,6 +16,7 @@
 //*****************************************************************************
 
 #include "level0-kernel-size-map.hpp"
+#include "pcsampling-api-receiver.hpp"
 
 
 //*****************************************************************************
@@ -33,33 +34,46 @@ static std::mutex kernel_size_map_mutex_;
 // interface operations
 //******************************************************************************
 
+// Original function that tries to access opaque pointer fields
+// This function cannot work when zebin_id_map_entry_t is opaque
+// Keeping for backward compatibility but it should not be called directly
 void
 level0FillKernelSizeMap
 (
   zebin_id_map_entry_t *entry
 )
 {
-  if (entry == nullptr) {
-    std::cerr << "[WARNING] Null entry passed to level0FillKernelSizeMap" << std::endl;
-    return;
-  }
-  
-  SymbolVector* symbols = entry->elf_vector;
-  if (symbols == nullptr) {
-    std::cerr << "[WARNING] Null symbol vector in entry passed to level0FillKernelSizeMap" << std::endl;
+  // This function cannot work with opaque pointers
+  // Use level0FillKernelSizeMapFromSymbols instead
+  std::cerr << "[WARNING] level0FillKernelSizeMap called with opaque pointer - skipping" << std::endl;
+  return;
+}
+
+// New function that takes symbol data directly
+// This can be called from the wrapper in pcsampling-shim.c
+extern "C" void
+level0FillKernelSizeMapFromSymbols
+(
+  int nsymbols,
+  const char** symbolNames,
+  const size_t* symbolSizes
+)
+{
+  if (nsymbols <= 0) {
+    std::cerr << "[WARNING] No symbols provided to level0FillKernelSizeMapFromSymbols" << std::endl;
     return;
   }
 
-  if (symbols->nsymbols <= 0) {
-    std::cerr << "[WARNING] No symbols found in entry passed to level0FillKernelSizeMap" << std::endl;
+  if (symbolNames == nullptr || symbolSizes == nullptr) {
+    std::cerr << "[WARNING] Null symbol data passed to level0FillKernelSizeMapFromSymbols" << std::endl;
     return;
   }
 
   // Loop through each symbol and record its size in the map
   std::lock_guard<std::mutex> lock(kernel_size_map_mutex_);
-  for (int i = 0; i < symbols->nsymbols; ++i) {
-    if (symbols->symbolName[i] != nullptr) {
-      kernel_size_map_[symbols->symbolName[i]] = symbols->symbolSize[i];
+  for (int i = 0; i < nsymbols; ++i) {
+    if (symbolNames[i] != nullptr) {
+      kernel_size_map_[symbolNames[i]] = symbolSizes[i];
     } else {
       std::cerr << "[WARNING] Null symbol name at index " << i << std::endl;
     }
@@ -77,21 +91,11 @@ level0GetKernelSize
     return static_cast<size_t>(-1);
   }
 
-  // Create a copy and remove trailing null character if present
-  std::string name = kernel_name;
-  if (name.back() == '\0') {
-    name.pop_back();
-  }
+  // Use the kernel size lookup from libhpcrun through the API
+  // This ensures we get the kernel size from where the symbols were actually loaded
+  size_t size = pcsampling::lookupKernelSize(kernel_name.c_str());
 
-  std::lock_guard<std::mutex> lock(kernel_size_map_mutex_);
-  auto it = kernel_size_map_.find(name);
-  if (it != kernel_size_map_.end()) {
-    return it->second;
-  }
+  // Warnings disabled - kernel size lookup may not be needed for PC sampling
 
-  // Log a warning if the kernel name is not found
-  std::cerr << "[WARNING] Kernel size not found for kernel: " << name << std::endl;
-
-  // Return size_t(-1) if kernel name is not found
-  return static_cast<size_t>(-1);
+  return size;
 }

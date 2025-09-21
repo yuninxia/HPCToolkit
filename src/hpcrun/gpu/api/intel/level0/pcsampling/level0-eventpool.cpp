@@ -15,6 +15,7 @@
 //*****************************************************************************
 
 #include "level0-eventpool.hpp"
+#include "pcsampling-api-receiver.hpp"
 
 
 //*****************************************************************************
@@ -51,7 +52,7 @@ level0CreateEventPool
   ze_event_pool_handle_t event_pool = nullptr;
 
   const uint32_t num_devices = 1; // Single device visibility
-  ze_result_t status = f_zeEventPoolCreate(
+  ze_result_t status = pcsampling::callZeEventPoolCreate(
     context,
     &event_pool_desc,
     num_devices,

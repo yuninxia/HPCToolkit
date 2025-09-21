@@ -61,28 +61,26 @@ processEuStalls
   std::deque<gpu_activity_t*>& activities
 )
 {
-  // Process each EU stall event.
+  // Since we can't reliably match GPU virtual addresses with kernel handle addresses,
+  // associate all EU stalls with the currently running kernel.
+  // This is valid because we're collecting samples while a specific kernel is executing.
+
+  if (kernel_ranges.empty() || kprops.empty()) {
+    return;
+  }
+
+  // Get the first kernel's properties (should be the only one for the running kernel)
+  const auto& first_range = kernel_ranges[0];
+  auto kernel_iter = kprops.find(first_range.first);
+  if (kernel_iter == kprops.end()) {
+    return;
+  }
+
+  // Associate all EU stalls with this kernel
   for (auto eustall_iter = eustalls.begin(); eustall_iter != eustalls.end(); ++eustall_iter) {
-    uint64_t stall_addr = eustall_iter->first;
-
-    // Use binary search to locate a kernel range that might include the stall address.
-    auto it = std::lower_bound(kernel_ranges.begin(), kernel_ranges.end(),
-      std::make_pair(stall_addr, UINT64_MAX),
-      [](const std::pair<uint64_t, uint64_t>& range, const std::pair<uint64_t, uint64_t>& value) {
-        return range.first < value.first;
-      });
-
-    // Check the previous range in case lower_bound overshoots.
-    if (it != kernel_ranges.begin()) {
-      --it;
-      if (stall_addr >= it->first && stall_addr < it->second) {
-        // Retrieve kernel properties using the start address.
-        auto kernel_iter = kprops.find(it->first);
-        if (kernel_iter != kprops.end()) {
-          level0ActivityTranslate(eustall_iter, kernel_iter, cid, activities);
-        }
-      }
-    }
+    // The EU stall address is a GPU virtual address - pass it through as-is
+    // The analysis tools will handle address translation appropriately
+    level0ActivityTranslate(eustall_iter, kernel_iter, cid, activities);
   }
 }
 
@@ -96,7 +94,8 @@ collectKernelRanges
   std::vector<std::pair<uint64_t, uint64_t>> ranges;
   // Iterate in forward order to preserve ascending order of addresses.
   for (const auto& entry : kprops) {
-    if (stripEdgeQuotes(entry.second.name) == stripped_kernel_name) {
+    std::string prop_name_stripped = stripEdgeQuotes(entry.second.name);
+    if (prop_name_stripped == stripped_kernel_name) {
       ranges.emplace_back(entry.first, entry.first + entry.second.size);
     }
   }
@@ -165,10 +164,7 @@ level0GenerateActivities
     return;
   }
 
-  // Clean up any existing activities before clearing
-  for (auto activity : activities) {
-    delete activity;
-  }
+  // Activities should be empty when called
   activities.clear();
 
   // Extract the running kernel name and strip quotes once

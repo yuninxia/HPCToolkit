@@ -16,6 +16,7 @@
 //*****************************************************************************
 
 #include "level0-driver.hpp"
+#include "pcsampling-api-receiver.hpp"
 
 
 //******************************************************************************
@@ -29,7 +30,7 @@ fetchDriverCount
 )
 {
   uint32_t driver_count = 0;
-  ze_result_t status = f_zeDriverGet(&driver_count, nullptr, dispatch);
+  ze_result_t status = pcsampling::callZeDriverGet(&driver_count, nullptr, dispatch);
   level0_check_result(status, __LINE__);
   return driver_count;
 }
@@ -46,7 +47,7 @@ fetchDriverHandles
   }
 
   std::vector<ze_driver_handle_t> drivers(driver_count);
-  ze_result_t status = f_zeDriverGet(&driver_count, drivers.data(), dispatch);
+  ze_result_t status = pcsampling::callZeDriverGet(&driver_count, drivers.data(), dispatch);
   level0_check_result(status, __LINE__);
   
   return drivers;
@@ -69,7 +70,7 @@ fetchDriverVersion
     return;
   }
 
-  ze_result_t status = f_zeDriverGetApiVersion(driver, &version, dispatch);
+  ze_result_t status = pcsampling::callZeDriverGetApiVersion(driver, &version, dispatch);
   if (status != ZE_RESULT_SUCCESS) {
     std::cerr << "[ERROR] Failed to get driver API version: " << ze_result_to_string(status) << std::endl;
     // Set version to a known invalid value to indicate error condition

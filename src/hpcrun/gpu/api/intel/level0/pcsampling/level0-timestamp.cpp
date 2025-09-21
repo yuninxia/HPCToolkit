@@ -15,6 +15,7 @@
 //*****************************************************************************
 
 #include "level0-timestamp.hpp"
+#include "pcsampling-api-receiver.hpp"
 
 
 //******************************************************************************
@@ -43,7 +44,7 @@ level0GetKernelExecutionTime
 
   // Query the kernel timestamp
   ze_kernel_timestamp_result_t timestampResult;
-  ze_result_t status = f_zeEventQueryKernelTimestamp(hSignalEvent, &timestampResult, dispatch);
+  ze_result_t status = pcsampling::callZeEventQueryKernelTimestamp(hSignalEvent, &timestampResult, dispatch);
   level0_check_result(status, __LINE__);
 
   const uint64_t startTimestamp = timestampResult.global.kernelStart;

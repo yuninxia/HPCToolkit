@@ -59,7 +59,7 @@ struct ZeDeviceDescriptor {
   int32_t num_sub_devices_;
 
   zet_metric_group_handle_t metric_group_;
-  std::thread *profiling_thread_;
+  int profiling_thread_id_;  // Thread ID from hpcrun's thread creation API
   std::atomic<int> profiling_state_{PROFILER_UNKNOWN};
   bool stall_sampling_;
 
@@ -96,7 +96,8 @@ struct ZeDeviceDescriptor {
   }
 
   bool IsKernelStarted() const {
-    return kernel_started_.load(std::memory_order_acquire);
+    bool val = kernel_started_.load(std::memory_order_acquire);
+    return val;
   }
 
   void SetSerialDataReady(bool ready) {

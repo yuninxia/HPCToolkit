@@ -131,23 +131,22 @@ level0PCSamplingFini
     // Export cache statistics if in debug mode
     if (std::getenv("HPCTOOLKIT_LEVEL0_DEBUG_CACHE")) {
       auto stats = KernelPropertiesCache::getInstance().getStats();
-      TMSG(LEVEL0, "PC Sampling Cache Statistics:");
-      TMSG(LEVEL0, "  Total kernel entries: %zu", stats.total_entries);
-      TMSG(LEVEL0, "  Devices tracked: %zu", stats.devices);
-      TMSG(LEVEL0, "  Average read time: %lld us", stats.avg_read_time.count());
-      TMSG(LEVEL0, "  Average write time: %lld us", stats.avg_write_time.count());
-      TMSG(LEVEL0, "  Memory usage: %zu KB", stats.memory_bytes / 1024);
+      // Debug output disabled for now to avoid linking issues
+      // TODO: Re-enable once proper logging is implemented
+      (void)stats;  // Suppress unused variable warning
     }
-    
-    // Clean up collector resources
+
+    // First stop the collector to ensure no new events are generated
     if (ze_collector != nullptr) {
+      // Collector's destructor should handle proper shutdown
       delete ze_collector;
       ze_collector = nullptr;
     }
-    
-    // Clean up profiler resources
+
+    // Then clean up profiler resources
+    // This will wait for profiling threads to complete
     disableProfiling();
-    
+
     // Reset initialization flag to allow re-initialization if needed
     pthread_once_t once_init = PTHREAD_ONCE_INIT;
     level0_pcsampling_init_once = once_init;

@@ -15,6 +15,7 @@
 //*****************************************************************************
 
 #include "level0-event.hpp"
+#include "pcsampling-api-receiver.hpp"
 
 
 //******************************************************************************
@@ -45,7 +46,7 @@ level0CreateEvent
   };
 
   ze_event_handle_t event = nullptr;
-  ze_result_t status = f_zeEventCreate(event_pool, &event_desc, &event, dispatch);
+  ze_result_t status = pcsampling::callZeEventCreate(event_pool, &event_desc, &event, dispatch);
   if (status != ZE_RESULT_SUCCESS) {
     std::cerr << "[ERROR] Failed to create Level Zero event at line " << __LINE__
               << ": " << ze_result_to_string(status) << std::endl;

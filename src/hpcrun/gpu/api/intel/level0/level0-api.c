@@ -32,7 +32,10 @@
 #include "level0-fence-map.h"
 #include "level0-id-map.h"
 #include "level0-kernel-module-map.h"
-#include "pcsampling/level0-pcsampling.hpp"
+
+// PC sampling is now accessed through the shim interface
+#include "pcsampling-shim.h"
+// Old direct include removed: #include "pcsampling/level0-pcsampling.hpp"
 
 #include "../../../../utilities/linuxtimer.h"
 
@@ -589,7 +592,14 @@ hpcrun_zeInit
   // Exit action
   get_gpu_driver_and_device(dispatch);
 
-  level0PCSamplingInit(dispatch);
+  // Initialize PC sampling through the shim interface
+  // This will dynamically load the PC sampling library if enabled
+  if (pcsampling_enabled()) {
+    pcsampling_result_t result = pcsampling_init(dispatch);
+    if (result != PCSAMPLING_SUCCESS) {
+      EEMSG("Failed to initialize PC sampling: error code %d", result);
+    }
+  }
 
   PRINT("hpcrun_zeInit: exit\n");
 
@@ -1032,6 +1042,7 @@ level0_init
   const char* is_level0_pcsampling_enabled  = getenv("ZET_ENABLE_METRICS");
   if (is_level0_pcsampling_enabled != NULL && strcmp(is_level0_pcsampling_enabled, "1") == 0) {
     level0_pcsampling = true;
+    // PC sampling will be initialized when we get the dispatch in zeInit
   }
 
   if (!gtpin_instrumentation) {
@@ -1047,13 +1058,17 @@ level0_fini
 )
 {
   if (!GPU_FLUSH_ALARM_FIRED()) {
+    // Shutdown PC sampling first to ensure clean shutdown
+    // This will stop profiling threads and wait for them to complete
+    if (pcsampling_enabled()) {
+      pcsampling_shutdown();
+    }
+
     GPU_FLUSH_ALARM_SET("hpcrun: warning: some Level 0 events not marked"
                         " complete; some GPU event data may be lost.");
 
-    level0PCSamplingFini();
-
     GPU_FLUSH_ALARM_TEST();
-    GPU_FLUSH_ALARM_CLEAR(); 
+    GPU_FLUSH_ALARM_CLEAR();
   }
 
   // even if this is not normal exit, gpu-trace-fini will behave as if it is a normal exit

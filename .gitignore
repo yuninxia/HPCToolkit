@@ -8,3 +8,6 @@ __pycache__/
 !/.pre-commit-config.yaml
 !.pylintrc
 !.vermin
+
+.venv/
+.vscode/

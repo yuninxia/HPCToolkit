@@ -18,6 +18,7 @@
 //*****************************************************************************
 
 #include "level0-activity-translate.hpp"
+#include "pcsampling-api-receiver.hpp"
 
 
 //******************************************************************************
@@ -49,11 +50,24 @@ setPCSamplingModuleId
 {
   // Convert the first 8 characters of the hex string to a uint32_t
   uint32_t module_id_uint32 = std::strtoul(kernel_props.module_id.substr(0, 8).c_str(), nullptr, 16);
+  // Debug output disabled
+  // std::cerr << "[DEBUG] setPCSamplingModuleId: kernel_props.module_id=" << kernel_props.module_id
+  //           << ", extracted uint32=0x" << std::hex << module_id_uint32 << std::dec << std::endl;
 
-  zebin_id_map_entry_t* entry = zebin_id_map_lookup(module_id_uint32);
+  zebin_id_map_entry_t* entry = pcsampling::lookupZebinIdMap(module_id_uint32);
   if (entry) {
-    uint32_t hpctoolkit_module_id = zebin_id_map_entry_hpctoolkit_id_get(entry);
+    uint32_t hpctoolkit_module_id = pcsampling::getZebinIdMapEntryHpctoolkitId(entry);
     activity->details.pc_sampling.pc.lm_id = static_cast<uint16_t>(hpctoolkit_module_id);
+    // Debug output disabled
+    // std::cerr << "[DEBUG] Found zebin entry for module_id 0x" << std::hex << module_id_uint32
+    //           << ", hpctoolkit_module_id=" << std::dec << hpctoolkit_module_id << std::endl;
+  } else {
+    // If no zebin entry found, set lm_id to 0 to indicate unknown module
+    activity->details.pc_sampling.pc.lm_id = 0;
+    // Only log in debug mode
+    if (std::getenv("HPCTOOLKIT_LEVEL0_DEBUG_PCSAMPLE")) {
+      std::cerr << "[WARNING] No zebin entry found for module_id 0x" << std::hex << module_id_uint32 << std::dec << std::endl;
+    }
   }
 }
 
@@ -68,6 +82,8 @@ fillPCSamplingActivityFields
 )
 {
   activity->details.pc_sampling.pc.lm_ip = lm_ip;
+  // Debug output disabled
+  // std::cerr << "[DEBUG] PC sample address: lm_ip=0x" << std::hex << lm_ip << std::dec << std::endl;
   activity->details.pc_sampling.correlation_id = correlation_id;
   activity->details.pc_sampling.samples = stall_count;
 
@@ -87,6 +103,8 @@ convertPCSampling
   gpu_activity_t* activity
 )
 {
+  // Debug output disabled
+  // std::cerr << "[DEBUG] convertPCSampling called" << std::endl;
   if (!activity) return false;
 
   activity->kind = GPU_ACTIVITY_PC_SAMPLING;
@@ -105,8 +123,13 @@ convertPCSampling
               << ", offset: 0x" << offset << std::dec << std::endl;
   }
 
-  // Fill in the remaining fields
-  fillPCSamplingActivityFields(activity, eustall_iter->first, correlation_id, stall_count, stall_reason);
+  // CRITICAL: Store the FULL GPU virtual address, not the offset!
+  // The pre-refactor version stores the full address (e.g., 0x800000100cc8)
+  // This is what hpcprof expects to properly correlate PC samples with the GPU structure
+  uint64_t pc_absolute = eustall_iter->first;  // GPU virtual address from EU stall
+
+  // Fill in the remaining fields with the FULL GPU virtual address
+  fillPCSamplingActivityFields(activity, pc_absolute, correlation_id, stall_count, stall_reason);
 
   // Debug: Log detailed PC sample information if debugging is enabled
   if (std::getenv("HPCTOOLKIT_LEVEL0_DEBUG_PCSAMPLE")) {
@@ -116,7 +139,7 @@ convertPCSampling
   return true;
 }
 
-static std::unique_ptr<gpu_activity_t>
+static gpu_activity_t*
 createAndFillActivity
 (
   const std::map<uint64_t, EuStalls>::iterator& eustall_iter,
@@ -126,13 +149,19 @@ createAndFillActivity
   uint64_t stall_count
 )
 {
-  auto activity = std::make_unique<gpu_activity_t>();
-  gpu_activity_init(activity.get());
-  if (convertPCSampling(eustall_iter, kernel_iter, correlation_id, stall_reason, stall_count, activity.get())) {
-    return activity;
-  } else {
+  // CRITICAL: Use hpcrun's allocator instead of new/make_unique
+  // This ensures memory is allocated by the correct allocator
+  gpu_activity_t* activity = pcsampling::allocActivity();
+  if (!activity) {
+    pcsampling::error("Failed to allocate GPU activity");
     return nullptr;
   }
+
+  pcsampling::initActivity(activity);
+  // convertPCSampling now always returns true since we're not filtering
+  convertPCSampling(eustall_iter, kernel_iter, correlation_id, stall_reason, stall_count, activity);
+
+  return activity;
 }
 
 //******************************************************************************
@@ -148,6 +177,8 @@ level0ActivityTranslate
   std::deque<gpu_activity_t*>& activities
 )
 {
+  // Debug output disabled
+  // std::cerr << "[DEBUG] level0ActivityTranslate called" << std::endl;
   const EuStalls& stall = eustall_iter->second;
 
   // Iterate over all stall mappings
@@ -157,7 +188,7 @@ level0ActivityTranslate
     if (stall_count == 0) continue; // Skip if no stalls of this type
 
     // Create and fill a new GPU activity
-    auto activity = createAndFillActivity(eustall_iter, kernel_iter, correlation_id, mapping.reason, stall_count);
-    if (activity) activities.push_back(activity.release());
+    gpu_activity_t* activity = createAndFillActivity(eustall_iter, kernel_iter, correlation_id, mapping.reason, stall_count);
+    if (activity) activities.push_back(activity);
   }
 }
