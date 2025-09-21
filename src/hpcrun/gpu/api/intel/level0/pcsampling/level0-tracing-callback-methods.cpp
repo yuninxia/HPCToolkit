@@ -16,6 +16,7 @@
 //*****************************************************************************
 
 #include "level0-tracing-callback-methods.hpp"
+#include "pcsampling-api-receiver.hpp"
 #include "level0-kernel-properties-cache.hpp"
 
 
@@ -248,9 +249,9 @@ OnExitKernelCreate
   // Fill function size map
   uint32_t zebin_id_uint32;
   sscanf(module_id.c_str(), "%8x", &zebin_id_uint32);
-  zebin_id_map_entry_t* entry = zebin_id_map_lookup(zebin_id_uint32);
+  zebin_id_map_entry_t* entry = pcsampling::lookupZebinIdMap(zebin_id_uint32);
   if (entry != nullptr) {
-    level0FillKernelSizeMap(entry);
+    pcsampling::fillKernelSizeMap(entry);
   }
 
   int device_id = -1;
@@ -288,7 +289,7 @@ OnEnterCommandListAppendLaunchKernel
 
   ZeDeviceDescriptor* desc = getDeviceDescriptor(hDevice);
   if (desc) {
-    mcs_lock(&desc->kernel_launch_lock, &pc_monitoring_node);
+    pcsampling::mcsLock(&desc->kernel_launch_lock, &pc_monitoring_node);
     desc->running_kernel_ = hKernel;
     desc->running_kernel_end_ = hSignalEvent;
     desc->SetKernelStarted(true);
@@ -319,7 +320,7 @@ OnExitCommandListAppendLaunchKernel
   if (desc) {
     waitForEventReady(desc->serial_data_ready_, dispatch);
     desc->SetSerialDataReady(false);
-    mcs_unlock(&desc->kernel_launch_lock, &pc_monitoring_node);
+    pcsampling::mcsUnlock(&desc->kernel_launch_lock, &pc_monitoring_node);
   }
 }
 

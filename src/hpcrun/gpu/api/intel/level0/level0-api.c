@@ -21,6 +21,7 @@
 //******************************************************************************
 
 #include "level0-api.h"
+#include "pcsampling-shim.h"
 #include "level0-binary.h"
 #include "level0-command-list-map.h"
 #include "level0-command-list-context-map.h"
@@ -589,7 +590,7 @@ hpcrun_zeInit
   // Exit action
   get_gpu_driver_and_device(dispatch);
 
-  level0PCSamplingInit(dispatch);
+  pcsampling_init(dispatch, NULL, 0);
 
   PRINT("hpcrun_zeInit: exit\n");
 
@@ -1050,7 +1051,7 @@ level0_fini
     GPU_FLUSH_ALARM_SET("hpcrun: warning: some Level 0 events not marked"
                         " complete; some GPU event data may be lost.");
 
-    level0PCSamplingFini();
+    pcsampling_shutdown();
 
     GPU_FLUSH_ALARM_TEST();
     GPU_FLUSH_ALARM_CLEAR(); 
@@ -1124,4 +1125,3 @@ level0_pcsampling_enabled
 {
   return level0_pcsampling;
 }
-

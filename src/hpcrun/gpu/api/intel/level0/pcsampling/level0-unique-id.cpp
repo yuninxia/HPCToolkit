@@ -9,6 +9,7 @@
 //*****************************************************************************
 
 #include "level0-unique-id.hpp"
+#include "pcsampling-api-receiver.hpp"
 
 
 //******************************************************************************
@@ -33,7 +34,7 @@ level0GenerateUniqueId
   }
 
   char hash_string[CRYPTO_HASH_STRING_LENGTH] = {0};
-  if (crypto_compute_hash_string(data, binary_size, hash_string, CRYPTO_HASH_STRING_LENGTH) != 0) {
+  if (pcsampling::computeHashString(data, binary_size, hash_string, CRYPTO_HASH_STRING_LENGTH) != 0) {
     std::cerr << "[WARNING] Failed to compute hash in level0GenerateUniqueId" << std::endl;
     return "hash_computation_failed";
   }
