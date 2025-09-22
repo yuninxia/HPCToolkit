@@ -108,7 +108,7 @@ level0GetModuleKernelNames
 )
 {
   if (module == nullptr) {
-    std::cerr << "[WARNING] Null module handle passed to level0GetModuleKernelNames" << std::endl;
+    pcsampling::warn("Null module handle passed to level0GetModuleKernelNames");
     return {};
   }
 
