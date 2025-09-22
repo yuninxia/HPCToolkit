@@ -9,6 +9,7 @@
 //*****************************************************************************
 
 #include "level0-tracing.hpp"
+#include "pcsampling-api-receiver.hpp"
 
 
 //*****************************************************************************
@@ -44,15 +45,15 @@ configureTracerCallbacks
   epilogue.CommandList.pfnCreateImmediateCb = zeCommandListCreateImmediateOnExit;
 
   // Set the prologue callbacks
-  ze_result_t status = f_zelTracerSetPrologues(tracer, &prologue, dispatch);
+  ze_result_t status = pcsampling::callZelTracerSetPrologues(tracer, &prologue, dispatch);
   level0_check_result(status, __LINE__);
 
   // Set the epilogue callbacks
-  status = f_zelTracerSetEpilogues(tracer, &epilogue, dispatch);
+  status = pcsampling::callZelTracerSetEpilogues(tracer, &epilogue, dispatch);
   level0_check_result(status, __LINE__);
 
   // Enable the tracer
-  status = f_zelTracerSetEnabled(tracer, true, dispatch);
+  status = pcsampling::callZelTracerSetEnabled(tracer, true, dispatch);
   level0_check_result(status, __LINE__);
 }
 
@@ -78,9 +79,9 @@ level0CreateTracer
   };
 
   // Create the tracer
-  ze_result_t status = f_zelTracerCreate(&tracer_desc, &tracer_, dispatch);
+  ze_result_t status = pcsampling::callZelTracerCreate(&tracer_desc, &tracer_, dispatch);
   if (status != ZE_RESULT_SUCCESS) {
-    std::cerr << "[WARNING] Unable to create Level Zero tracer" << std::endl;
+    pcsampling::warn("Unable to create Level Zero tracer");
     return false;
   }
 
@@ -100,18 +101,17 @@ level0DestroyTracer
 
   try {
     // Disable the tracer
-    ze_result_t status = f_zelTracerSetEnabled(tracer_, false, dispatch);
+    ze_result_t status = pcsampling::callZelTracerSetEnabled(tracer_, false, dispatch);
     level0_check_result(status, __LINE__);
 
     // Destroy the tracer
-    status = f_zelTracerDestroy(tracer_, dispatch);
+    status = pcsampling::callZelTracerDestroy(tracer_, dispatch);
     if (status != ZE_RESULT_SUCCESS) {
-      std::cerr << "[WARNING] Failed to destroy Level Zero tracer: " 
-                << ze_result_to_string(status) << std::endl;
+      pcsampling::warn("Failed to destroy Level Zero tracer: %s", ze_result_to_string(status));
     } else {
       tracer_ = nullptr;
     }
   } catch (const std::exception& e) {
-    std::cerr << "[ERROR] Exception in level0DestroyTracer: " << e.what() << std::endl;
+    pcsampling::error("Exception in level0DestroyTracer: %s", e.what());
   }
 }

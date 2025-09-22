@@ -174,7 +174,7 @@ calculateMetricValues
   uint32_t num_metrics = 0;
 
   // First call: get the number of samples and metrics.
-  ze_result_t status = f_zetMetricGroupCalculateMultipleMetricValuesExp(
+  ze_result_t status = pcsampling::callZetMetricGroupCalculateMultipleMetricValuesExp(
     metric_group, ZET_METRIC_GROUP_CALCULATION_TYPE_METRIC_VALUES,
     raw_size, raw_metrics.data(), &num_samples, &num_metrics,
     nullptr, nullptr, dispatch);
@@ -192,7 +192,7 @@ calculateMetricValues
   metrics.resize(num_metrics);
 
   // Second call: retrieve the calculated metric values.
-  status = f_zetMetricGroupCalculateMultipleMetricValuesExp(
+  status = pcsampling::callZetMetricGroupCalculateMultipleMetricValuesExp(
     metric_group, ZET_METRIC_GROUP_CALCULATION_TYPE_METRIC_VALUES,
     raw_size, raw_metrics.data(), &num_samples, &num_metrics,
     samples.data(), metrics.data(), dispatch);

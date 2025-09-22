@@ -56,20 +56,20 @@ getDeviceForCommandList
 )
 {
   if (hCommandList == nullptr) {
-    std::cerr << "[ERROR] Null command list in getDeviceForCommandList" << std::endl;
+    pcsampling::error("Null command list in getDeviceForCommandList");
     return nullptr;
   }
 
   ze_device_handle_t hDevice = nullptr;
 #if 0
   // Option 1: Use the compute runtime (requires level0 >= v1.9.0)
-  ze_result_t status = f_zeCommandListGetDeviceHandle(hCommandList, &hDevice, dispatch);
+  ze_result_t status = pcsampling::callZeCommandListGetDeviceHandle(hCommandList, &hDevice, dispatch);
   level0_check_result(status, __LINE__);
 #else
   // Option 2: Manually maintain the mapping
   hDevice = level0GetDeviceForCmdList(hCommandList);
   if (hDevice == nullptr) {
-    std::cerr << "[WARNING] No device found for command list: " << hCommandList << std::endl;
+    pcsampling::warn("No device found for command list: %p", (void*)hCommandList);
     return nullptr;
   }
 #endif
@@ -77,7 +77,7 @@ getDeviceForCommandList
   // Return the root device for proper notification and synchronization
   ze_device_handle_t rootDevice = level0DeviceGetRootDevice(hDevice, dispatch);
   if (rootDevice == nullptr) {
-    std::cerr << "[WARNING] Failed to get root device for device: " << hDevice << std::endl;
+    pcsampling::warn("Failed to get root device for device: %p", (void*)hDevice);
     return hDevice; // Return the original device as fallback
   }
   return rootDevice;
@@ -93,7 +93,7 @@ getDeviceDescriptor
   level0GetDeviceDesc(device_descriptors);
   auto it = device_descriptors.find(hDevice);
   if (it == device_descriptors.end()) {
-    std::cerr << "[Warning] Device descriptor not found for device handle: " << hDevice << std::endl;
+    pcsampling::warn("Device descriptor not found for device handle: %p", (void*)hDevice);
     return nullptr;
   }
   return it->second;
@@ -144,7 +144,7 @@ extractKernelProperties
   ze_kernel_properties_t kprops{};
   zex_kernel_register_file_size_exp_t regsize{};
   kprops.pNext = (void *)&regsize;
-  ze_result_t status = f_zeKernelGetProperties(kernel, &kprops, dispatch);
+  ze_result_t status = pcsampling::callZeKernelGetProperties(kernel, &kprops, dispatch);
   level0_check_result(status, __LINE__);
 
   desc.simd_width_ = kprops.maxSubgroupSize;
@@ -188,7 +188,7 @@ OnExitModuleCreate
 )
 {
   if (result != ZE_RESULT_SUCCESS) {
-    std::cerr << "[ERROR] Module creation failed with result: " << result << std::endl;
+    pcsampling::error("Module creation failed with result: %d", result);
     return;
   }
 
@@ -228,7 +228,7 @@ OnExitKernelCreate
 )
 {
   if (result != ZE_RESULT_SUCCESS) {
-    std::cerr << "[ERROR] Kernel creation failed with result: " << result << std::endl;
+    pcsampling::error("Kernel creation failed with result: %d", result);
     return;
   }
 
@@ -332,7 +332,7 @@ OnExitCommandListCreateImmediate
 )
 {
   if (global_user_data == nullptr) {
-    std::cerr << "[ERROR] global_user_data is null in OnExitCommandListCreateImmediate" << std::endl;
+    pcsampling::error("global_user_data is null in OnExitCommandListCreateImmediate");
     return;
   }
   ze_command_list_handle_t hCommandList = **(params->pphCommandList);

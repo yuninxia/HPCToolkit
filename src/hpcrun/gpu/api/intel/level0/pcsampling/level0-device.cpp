@@ -8,7 +8,6 @@
 // system includes
 //*****************************************************************************
 
-#include <iostream>
 #include <vector>
 #include <new>
 
@@ -38,7 +37,7 @@ allocateDeviceDescriptor()
 {
   void* raw = pcsampling::allocMemory(sizeof(ZeDeviceDescriptor));
   if (!raw) {
-    std::cerr << "[ERROR] Failed to allocate memory for ZeDeviceDescriptor" << std::endl;
+    pcsampling::error("Failed to allocate memory for ZeDeviceDescriptor");
     return nullptr;
   }
   return new (raw) ZeDeviceDescriptor();
@@ -92,7 +91,7 @@ createDeviceDescriptor
 
     return desc;
   } catch (const std::exception& e) {
-    std::cerr << "[ERROR] Exception in createDeviceDescriptor: " << e.what() << std::endl;
+    pcsampling::error("Exception in createDeviceDescriptor: %s", e.what());
     level0DestroyDeviceDescriptor(desc);
     return nullptr;
   }
@@ -107,7 +106,7 @@ createSubDeviceDescriptor
 )
 {
   if (parent_desc == nullptr) {
-    std::cerr << "[ERROR] Parent device descriptor is null" << std::endl;
+    pcsampling::error("Parent device descriptor is null");
     return nullptr;
   }
 
@@ -130,7 +129,7 @@ createSubDeviceDescriptor
 
     return sub_desc;
   } catch (const std::exception& e) {
-    std::cerr << "[ERROR] Exception in createSubDeviceDescriptor: " << e.what() << std::endl;
+    pcsampling::error("Exception in createSubDeviceDescriptor: %s", e.what());
     level0DestroyDeviceDescriptor(sub_desc);
     return nullptr;
   }
@@ -174,7 +173,7 @@ level0GetDevices
 )
 {
   uint32_t num_devices = 0;
-  ze_result_t status = f_zeDeviceGet(driver, &num_devices, nullptr, dispatch);
+  ze_result_t status = pcsampling::callZeDeviceGet(driver, &num_devices, nullptr, dispatch);
   level0_check_result(status, __LINE__);
   
   if (num_devices == 0) {
@@ -182,7 +181,7 @@ level0GetDevices
   }
   
   std::vector<ze_device_handle_t> devices(num_devices);
-  status = f_zeDeviceGet(driver, &num_devices, devices.data(), dispatch);
+  status = pcsampling::callZeDeviceGet(driver, &num_devices, devices.data(), dispatch);
   level0_check_result(status, __LINE__);
   
   return devices;
@@ -197,7 +196,7 @@ level0GetSubDevices
 )
 {
   std::vector<ze_device_handle_t> sub_devices(num_sub_devices);
-  ze_result_t status = f_zeDeviceGetSubDevices(device, &num_sub_devices, sub_devices.data(), dispatch);
+  ze_result_t status = pcsampling::callZeDeviceGetSubDevices(device, &num_sub_devices, sub_devices.data(), dispatch);
   level0_check_result(status, __LINE__);
   return sub_devices;
 }
@@ -210,7 +209,7 @@ level0GetSubDeviceCount
 )
 {
   uint32_t num_sub_devices = 0;
-  ze_result_t status = f_zeDeviceGetSubDevices(device, &num_sub_devices, nullptr, dispatch);
+  ze_result_t status = pcsampling::callZeDeviceGetSubDevices(device, &num_sub_devices, nullptr, dispatch);
   level0_check_result(status, __LINE__);
   return num_sub_devices;
 }
@@ -268,7 +267,7 @@ level0GetDeviceProperties
   ze_device_properties_t deviceProps = {};
   deviceProps.stype = ZE_STRUCTURE_TYPE_DEVICE_PROPERTIES;
   
-  ze_result_t status = f_zeDeviceGetProperties(device, &deviceProps, dispatch);
+  ze_result_t status = pcsampling::callZeDeviceGetProperties(device, &deviceProps, dispatch);
   level0_check_result(status, __LINE__);
   
   return deviceProps;
@@ -282,7 +281,7 @@ level0DeviceGetRootDevice
 )
 {
   ze_device_handle_t rootDevice = nullptr;
-  ze_result_t status = f_zeDeviceGetRootDevice(device, &rootDevice, dispatch);
+  ze_result_t status = pcsampling::callZeDeviceGetRootDevice(device, &rootDevice, dispatch);
   level0_check_result(status, __LINE__);
   return (rootDevice != nullptr) ? rootDevice : device;
 }
@@ -298,7 +297,7 @@ level0EnumerateAndSetupDevices
   if (devices_ == nullptr) {
     void* raw = pcsampling::allocMemory(sizeof(std::map<ze_device_handle_t, ZeDevice>));
     if (!raw) {
-      std::cerr << "[ERROR] Failed to allocate device map" << std::endl;
+      pcsampling::error("Failed to allocate device map");
       return;
     }
     devices_ = new (raw) std::map<ze_device_handle_t, ZeDevice>();

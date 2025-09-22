@@ -71,7 +71,7 @@ WaitForNextInterval
 )
 {
   while (true) {
-    status = f_zeEventQueryStatus(desc->running_kernel_end_, dispatch);
+    status = pcsampling::callZeEventQueryStatus(desc->running_kernel_end_, dispatch);
     if (status == ZE_RESULT_SUCCESS) return true;
     if (desc->IsProfilerDisabled()) return false;
     std::this_thread::yield();
