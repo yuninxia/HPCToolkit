@@ -15,6 +15,8 @@ static void init_dispatch() {
   dispatch_val = (struct hpcrun_foil_appdispatch_level0){
       .zeInit = foil_dlsym("zeInit"),
       .zeDriverGet = foil_dlsym("zeDriverGet"),
+      .zeDriverGetExtensionFunctionAddress =
+          foil_dlsym("zeDriverGetExtensionFunctionAddress"),
       .zeDriverGetApiVersion = foil_dlsym("zeDriverGetApiVersion"),
       .zeDeviceGet = foil_dlsym("zeDeviceGet"),
       .zeDeviceGetProperties = foil_dlsym("zeDeviceGetProperties"),

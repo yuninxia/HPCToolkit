@@ -15,6 +15,7 @@
 struct hpcrun_foil_appdispatch_level0 {
   ze_result_t (*zeInit)(ze_init_flag_t);
   ze_result_t (*zeDriverGet)(uint32_t*, ze_driver_handle_t*);
+  ze_result_t (*zeDriverGetExtensionFunctionAddress)(ze_driver_handle_t, const char*, void**);
   ze_result_t (*zeDeviceGet)(ze_driver_handle_t, uint32_t*, ze_device_handle_t*);
   ze_result_t (*zeDeviceGetProperties)(ze_device_handle_t, ze_device_properties_t*);
   ze_result_t (*zeEventCreate)(ze_event_pool_handle_t, const ze_event_desc_t*,

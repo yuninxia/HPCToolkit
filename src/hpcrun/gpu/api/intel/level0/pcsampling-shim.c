@@ -50,8 +50,7 @@ zeDriverGetExtensionFunctionAddress_wrapper(ze_driver_handle_t hDriver, const ch
                                             void** ppFunctionAddress,
                                             const struct hpcrun_foil_appdispatch_level0* dispatch)
 {
-    (void)dispatch;
-    return zeDriverGetExtensionFunctionAddress(hDriver, name, ppFunctionAddress);
+    return f_zeDriverGetExtensionFunctionAddress(hDriver, name, ppFunctionAddress, dispatch);
 }
 
 // Function pointers to PC sampling library
