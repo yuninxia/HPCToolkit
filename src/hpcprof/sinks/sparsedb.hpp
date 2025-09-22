@@ -33,7 +33,7 @@ public:
 
   hpctoolkit::DataClass wavefronts() const noexcept override {
     using namespace hpctoolkit;
-    return DataClass::contexts + DataClass::threads;
+    return DataClass::threads;
   }
 
   hpctoolkit::ExtensionClass requirements() const noexcept override {
@@ -45,8 +45,7 @@ public:
   void notifyPipeline() noexcept override;
 
   void notifyWavefront(hpctoolkit::DataClass) noexcept override;
-  void
-      notifyThreadFinal(std::shared_ptr<const hpctoolkit::PerThreadTemporary>) override;
+  void notifyThreadFinal(const hpctoolkit::PerThreadTemporary&) override;
 
 private:
   struct udContext {
@@ -64,14 +63,6 @@ private:
     hpctoolkit::Thread::ud_t::typed_member_t<udThread> thread;
     const auto& operator()(hpctoolkit::Thread::ud_t&) const noexcept { return thread; }
   } ud;
-
-  // Pre-buffer of Threads that have completed but need to wait before output
-  std::shared_mutex prebuffer_lock;
-  bool prebuffer_done = false;
-  std::vector<std::shared_ptr<const PerThreadTemporary>> prebuffer;
-
-  // Process a Thread and output it's results
-  void process(std::shared_ptr<const hpctoolkit::PerThreadTemporary>);
 
   // Double-buffered concurrent output for profile data, synchronized across
   // multiple MPI ranks.
@@ -140,9 +131,9 @@ private:
   std::optional<hpctoolkit::util::File> pmf;
   std::optional<hpctoolkit::util::File> cmf;
 
-  // All the contexts we know about, sorted by identifier.
-  // Filled during the Contexts wavefront
-  std::deque<std::reference_wrapper<const hpctoolkit::Context>> contexts;
+  // Profile.db layout information, filled during the Threads wavefront
+  std::uint64_t pmf_pProfileInfoSection;
+  std::uint64_t pmf_pProfileInfos;
 
   // Parallel workshares for the various parallel operations
   hpctoolkit::util::ParallelForEach<std::reference_wrapper<const Thread>> forEachThread;
