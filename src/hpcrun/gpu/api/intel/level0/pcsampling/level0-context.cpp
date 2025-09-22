@@ -8,13 +8,12 @@
 // system includes
 //*****************************************************************************
 
-#include <iostream>
-
 //*****************************************************************************
 // local includes
 //*****************************************************************************
 
 #include "level0-context.hpp"
+#include "pcsampling-api-receiver.hpp"
 
 
 //******************************************************************************
@@ -29,7 +28,7 @@ level0CreateContext
 )
 {
   if (driver == nullptr) {
-    std::cerr << "[ERROR] Null driver handle passed to level0CreateContext" << std::endl;
+    pcsampling::error("Null driver handle passed to level0CreateContext");
     return nullptr;
   }
 
@@ -40,10 +39,9 @@ level0CreateContext
     0                               // flags
   };
 
-  ze_result_t status = f_zeContextCreate(driver, &cdesc, &context, dispatch);
+  ze_result_t status = pcsampling::callZeContextCreate(driver, &cdesc, &context, dispatch);
   if (status != ZE_RESULT_SUCCESS) {
-    std::cerr << "[ERROR] Failed to create Level Zero context at line " << __LINE__
-              << ": " << ze_result_to_string(status) << std::endl;
+    pcsampling::error("Failed to create Level Zero context: %s", ze_result_to_string(status));
     return nullptr;
   }
 

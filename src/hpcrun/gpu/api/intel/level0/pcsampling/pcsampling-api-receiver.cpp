@@ -696,12 +696,36 @@ callZetMetricGet(zet_metric_group_handle_t hMetricGroup, uint32_t* pCount,
 
 
 ze_result_t
+callZetMetricGroupGet(ze_device_handle_t hDevice, uint32_t* pCount,
+                     zet_metric_group_handle_t* phMetricGroups,
+                     const struct hpcrun_foil_appdispatch_level0* dispatch)
+{
+    if (hpcrun_api && hpcrun_api->f_zetMetricGroupGet) {
+        return hpcrun_api->f_zetMetricGroupGet(hDevice, pCount, phMetricGroups, dispatch);
+    }
+    return ZE_RESULT_ERROR_UNINITIALIZED;
+}
+
+
+ze_result_t
 callZetMetricGetProperties(zet_metric_handle_t hMetric,
                           zet_metric_properties_t* pProperties,
                           const struct hpcrun_foil_appdispatch_level0* dispatch)
 {
     if (hpcrun_api && hpcrun_api->f_zetMetricGetProperties) {
         return hpcrun_api->f_zetMetricGetProperties(hMetric, pProperties, dispatch);
+    }
+    return ZE_RESULT_ERROR_UNINITIALIZED;
+}
+
+
+ze_result_t
+callZetMetricGroupGetProperties(zet_metric_group_handle_t hMetricGroup,
+                               zet_metric_group_properties_t* pProperties,
+                               const struct hpcrun_foil_appdispatch_level0* dispatch)
+{
+    if (hpcrun_api && hpcrun_api->f_zetMetricGroupGetProperties) {
+        return hpcrun_api->f_zetMetricGroupGetProperties(hMetricGroup, pProperties, dispatch);
     }
     return ZE_RESULT_ERROR_UNINITIALIZED;
 }
@@ -733,6 +757,46 @@ callZetModuleGetDebugInfo(ze_module_handle_t hModule, zet_module_debug_info_form
 {
     if (hpcrun_api && hpcrun_api->f_zetModuleGetDebugInfo) {
         return hpcrun_api->f_zetModuleGetDebugInfo(hModule, format, pSize, pDebugInfo, dispatch);
+    }
+    return ZE_RESULT_ERROR_UNINITIALIZED;
+}
+
+
+ze_result_t
+callZetMetricStreamerOpen(ze_context_handle_t hContext, ze_device_handle_t hDevice,
+                         zet_metric_group_handle_t hMetricGroup, const zet_metric_streamer_desc_t* desc,
+                         ze_event_handle_t hNotificationEvent,
+                         zet_metric_streamer_handle_t* phMetricStreamer,
+                         const struct hpcrun_foil_appdispatch_level0* dispatch)
+{
+    if (hpcrun_api && hpcrun_api->f_zetMetricStreamerOpen) {
+        return hpcrun_api->f_zetMetricStreamerOpen(hContext, hDevice, hMetricGroup,
+                                                  const_cast<zet_metric_streamer_desc_t*>(desc),
+                                                  hNotificationEvent, phMetricStreamer, dispatch);
+    }
+    return ZE_RESULT_ERROR_UNINITIALIZED;
+}
+
+
+ze_result_t
+callZetMetricStreamerClose(zet_metric_streamer_handle_t hMetricStreamer,
+                          const struct hpcrun_foil_appdispatch_level0* dispatch)
+{
+    if (hpcrun_api && hpcrun_api->f_zetMetricStreamerClose) {
+        return hpcrun_api->f_zetMetricStreamerClose(hMetricStreamer, dispatch);
+    }
+    return ZE_RESULT_ERROR_UNINITIALIZED;
+}
+
+
+ze_result_t
+callZetMetricStreamerReadData(zet_metric_streamer_handle_t hMetricStreamer, uint32_t maxReportCount,
+                             size_t* pRawDataSize, uint8_t* pRawData,
+                             const struct hpcrun_foil_appdispatch_level0* dispatch)
+{
+    if (hpcrun_api && hpcrun_api->f_zetMetricStreamerReadData) {
+        return hpcrun_api->f_zetMetricStreamerReadData(hMetricStreamer, maxReportCount,
+                                                       pRawDataSize, pRawData, dispatch);
     }
     return ZE_RESULT_ERROR_UNINITIALIZED;
 }

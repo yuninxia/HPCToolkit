@@ -8,7 +8,6 @@
 // system includes
 //*****************************************************************************
 
-#include <iostream>
 #include <mutex>
 
 //*****************************************************************************
@@ -16,6 +15,7 @@
 //*****************************************************************************
 
 #include "level0-kernel-size-map.hpp"
+#include "pcsampling-api-receiver.hpp"
 
 
 //*****************************************************************************
@@ -40,18 +40,18 @@ level0FillKernelSizeMap
 )
 {
   if (entry == nullptr) {
-    std::cerr << "[WARNING] Null entry passed to level0FillKernelSizeMap" << std::endl;
+    pcsampling::warn("Null entry passed to level0FillKernelSizeMap");
     return;
   }
   
   SymbolVector* symbols = entry->elf_vector;
   if (symbols == nullptr) {
-    std::cerr << "[WARNING] Null symbol vector in entry passed to level0FillKernelSizeMap" << std::endl;
+    pcsampling::warn("Null symbol vector in entry passed to level0FillKernelSizeMap");
     return;
   }
 
   if (symbols->nsymbols <= 0) {
-    std::cerr << "[WARNING] No symbols found in entry passed to level0FillKernelSizeMap" << std::endl;
+    pcsampling::warn("No symbols found in entry passed to level0FillKernelSizeMap");
     return;
   }
 
@@ -61,7 +61,7 @@ level0FillKernelSizeMap
     if (symbols->symbolName[i] != nullptr) {
       kernel_size_map_[symbols->symbolName[i]] = symbols->symbolSize[i];
     } else {
-      std::cerr << "[WARNING] Null symbol name at index " << i << std::endl;
+      pcsampling::warn("Null symbol name at index %d", i);
     }
   }
 }
@@ -73,7 +73,7 @@ level0GetKernelSize
 )
 {
   if (kernel_name.empty()) {
-    std::cerr << "[WARNING] Empty kernel name passed to level0GetKernelSize" << std::endl;
+    pcsampling::warn("Empty kernel name passed to level0GetKernelSize");
     return static_cast<size_t>(-1);
   }
 
@@ -90,7 +90,7 @@ level0GetKernelSize
   }
 
   // Log a warning if the kernel name is not found
-  std::cerr << "[WARNING] Kernel size not found for kernel: " << name << std::endl;
+  pcsampling::warn("Kernel size not found for kernel: %s", name.c_str());
 
   // Return size_t(-1) if kernel name is not found
   return static_cast<size_t>(-1);

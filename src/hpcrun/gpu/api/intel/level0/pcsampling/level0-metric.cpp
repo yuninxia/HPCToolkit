@@ -8,13 +8,12 @@
 // system includes
 //*****************************************************************************
 
-#include <iostream>
-
 //*****************************************************************************
 // local includes
 //*****************************************************************************
 
 #include "level0-metric.hpp"
+#include "pcsampling-api-receiver.hpp"
 
 
 //*****************************************************************************
@@ -30,7 +29,7 @@ getNumberOfMetricGroups
 {
   // Retrieve the number of metric groups available for the given device
   uint32_t num_groups = 0;
-  ze_result_t status = f_zetMetricGroupGet(device, &num_groups, nullptr, dispatch);
+  ze_result_t status = pcsampling::callZetMetricGroupGet(device, &num_groups, nullptr, dispatch);
   level0_check_result(status, __LINE__);
   return num_groups;
 }
@@ -45,7 +44,7 @@ getMetricGroups
 {
   // Retrieve all metric group handles for the given device
   std::vector<zet_metric_group_handle_t> groups(num_groups, nullptr);
-  ze_result_t status = f_zetMetricGroupGet(device, &num_groups, groups.data(), dispatch);
+  ze_result_t status = pcsampling::callZetMetricGroupGet(device, &num_groups, groups.data(), dispatch);
   level0_check_result(status, __LINE__);
   return groups;
 }
@@ -60,7 +59,7 @@ getMetricGroupProperties
   // Retrieve the properties of a metric group
   zet_metric_group_properties_t group_props{};
   group_props.stype = ZET_STRUCTURE_TYPE_METRIC_GROUP_PROPERTIES;
-  ze_result_t status = f_zetMetricGroupGetProperties(group, &group_props, dispatch);
+  ze_result_t status = pcsampling::callZetMetricGroupGetProperties(group, &group_props, dispatch);
   level0_check_result(status, __LINE__);
   return group_props;
 }
@@ -236,7 +235,7 @@ level0GetMetricGroup
   // Retrieve a matching metric group handle based on the metric group name
   uint32_t num_groups = getNumberOfMetricGroups(device, dispatch);
   if (num_groups == 0) {
-    std::cerr << "[WARNING] No metric groups found" << std::endl;
+    pcsampling::warn("No metric groups found");
     group = nullptr;
     return;
   }
@@ -244,7 +243,7 @@ level0GetMetricGroup
   std::vector<zet_metric_group_handle_t> groups = getMetricGroups(device, num_groups, dispatch);
   group = findMatchingMetricGroup(groups, metric_group_name, dispatch);
   if (group == nullptr) {
-    std::cerr << "[ERROR] Invalid metric group " << metric_group_name << std::endl;
+    pcsampling::error("Invalid metric group %s", metric_group_name.c_str());
     // Leave group as nullptr to indicate failure
     // Caller should check if group is valid before using it
   }
@@ -262,7 +261,7 @@ level0MetricStreamerReadData
   // Read metric streamer data while ensuring the data does not exceed a maximum size
   uint64_t actual_data_size = 0;
   // First call: determine the available data size
-  ze_result_t status = f_zetMetricStreamerReadData(streamer, UINT32_MAX, &actual_data_size, nullptr, dispatch);
+  ze_result_t status = pcsampling::callZetMetricStreamerReadData(streamer, UINT32_MAX, &actual_data_size, nullptr, dispatch);
   level0_check_result(status, __LINE__);
   if (actual_data_size == 0) {
     // No data available yet, which is valid
@@ -272,11 +271,11 @@ level0MetricStreamerReadData
   // If available data exceeds our storage size, truncate and warn
   if (actual_data_size > max_size) {
     actual_data_size = max_size;
-    std::cerr << "[WARNING] Metric samples dropped." << std::endl;
+    pcsampling::warn("Metric samples dropped.");
   }
 
   // Second call: read the data into the storage buffer
-  status = f_zetMetricStreamerReadData(streamer, UINT32_MAX, &actual_data_size, storage.data(), dispatch);
+  status = pcsampling::callZetMetricStreamerReadData(streamer, UINT32_MAX, &actual_data_size, storage.data(), dispatch);
   level0_check_result(status, __LINE__);
   return actual_data_size;
 }
@@ -295,7 +294,7 @@ level0MetricGroupCalculateMultipleMetricValuesExp
   // Calculate multiple metric values from raw metric data
   bool success = calculateMetricValues(metric_group, raw_size, raw_metrics, samples, metrics, dispatch);
   if (!success) {
-    std::cerr << "[WARNING] Unable to calculate metrics" << std::endl;
+    pcsampling::warn("Unable to calculate metrics");
     samples.clear();
     metrics.clear();
   }

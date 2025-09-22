@@ -8,13 +8,12 @@
 // system includes
 //*****************************************************************************
 
-#include <iostream>
-
 //*****************************************************************************
 // local includes
 //*****************************************************************************
 
 #include "level0-correlation-id.hpp"
+#include "pcsampling-api-receiver.hpp"
 
 
 //******************************************************************************
@@ -30,7 +29,7 @@ level0UpdateCorrelationId
 )
 {
   if (arg == nullptr) {
-    std::cerr << "[WARNING] Null device descriptor passed to level0UpdateCorrelationId" << std::endl;
+    pcsampling::warn("Null device descriptor passed to level0UpdateCorrelationId");
     return;
   }
 

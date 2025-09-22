@@ -45,6 +45,15 @@ static pthread_once_t once_control = PTHREAD_ONCE_INIT;
 static pcsampling_result_t init_result = PCSAMPLING_ERROR_INIT_FAILED;
 static void* pcsampling_lib_handle = NULL;
 
+static ze_result_t
+zeDriverGetExtensionFunctionAddress_wrapper(ze_driver_handle_t hDriver, const char* name,
+                                            void** ppFunctionAddress,
+                                            const struct hpcrun_foil_appdispatch_level0* dispatch)
+{
+    (void)dispatch;
+    return zeDriverGetExtensionFunctionAddress(hDriver, name, ppFunctionAddress);
+}
+
 // Function pointers to PC sampling library
 static uint32_t (*pcsampling_get_api_version_fn)(void);
 static const pcsampling_capabilities_t* (*pcsampling_get_capabilities_fn)(void);
@@ -385,7 +394,7 @@ static pcsampling_hpcrun_api_t pcsampling_hpcrun_api = {
     .f_zeModuleGetFunctionPointer = f_zeModuleGetFunctionPointer,
     .f_zeModuleGetKernelNames = f_zeModuleGetKernelNames,
     .f_zeCommandListGetDeviceHandle = f_zeCommandListGetDeviceHandle,
-    .f_zeDriverGetExtensionFunctionAddress = NULL,  // Not wrapped yet, will call directly
+    .f_zeDriverGetExtensionFunctionAddress = zeDriverGetExtensionFunctionAddress_wrapper,
 
     // Tools API functions
     .f_zetContextActivateMetricGroups = f_zetContextActivateMetricGroups,

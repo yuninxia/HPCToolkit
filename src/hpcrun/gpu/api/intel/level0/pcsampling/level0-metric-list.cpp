@@ -8,13 +8,12 @@
 // system includes
 //*****************************************************************************
 
-#include <iostream>
-
 //*****************************************************************************
 // local includes
 //*****************************************************************************
 
 #include "level0-metric-list.hpp"
+#include "pcsampling-api-receiver.hpp"
 
 
 //******************************************************************************
@@ -49,14 +48,14 @@ getMetricCount
 )
 {
   if (group == nullptr) {
-    std::cerr << "[ERROR] Null metric group handle passed to getMetricCount" << std::endl;
+    pcsampling::error("Null metric group handle passed to getMetricCount");
     return 0;
   }
 
   zet_metric_group_properties_t group_props{};
   group_props.stype = ZET_STRUCTURE_TYPE_METRIC_GROUP_PROPERTIES;
   
-  ze_result_t status = f_zetMetricGroupGetProperties(group, &group_props, dispatch);
+  ze_result_t status = pcsampling::callZetMetricGroupGetProperties(group, &group_props, dispatch);
   level0_check_result(status, __LINE__);
   return group_props.metricCount;
 }
@@ -70,22 +69,21 @@ getMetricHandles
 )
 {
   if (group == nullptr) {
-    std::cerr << "[ERROR] Null metric group handle passed to getMetricHandles" << std::endl;
+    pcsampling::error("Null metric group handle passed to getMetricHandles");
     return {};
   }
 
   if (metric_count == 0) {
-    std::cerr << "[WARNING] Zero metric count passed to getMetricHandles" << std::endl;
+    pcsampling::warn("Zero metric count passed to getMetricHandles");
     return {};
   }
 
   std::vector<zet_metric_handle_t> metric_list(metric_count);
-  ze_result_t status = f_zetMetricGet(group, &metric_count, metric_list.data(), dispatch);
+  ze_result_t status = pcsampling::callZetMetricGet(group, &metric_count, metric_list.data(), dispatch);
   level0_check_result(status, __LINE__);
   // Verify that the retrieved metric count matches the vector size
   if (metric_count != metric_list.size()) {
-    std::cerr << "[WARNING] Metric count mismatch: expected " << metric_list.size() 
-              << ", got " << metric_count << std::endl;
+    pcsampling::warn("Metric count mismatch: expected %zu, got %u", metric_list.size(), metric_count);
     // Resize the vector to match the actual count
     metric_list.resize(metric_count);
   }
@@ -103,11 +101,11 @@ getMetricProperties
   zet_metric_properties_t metric_props{ZET_STRUCTURE_TYPE_METRIC_PROPERTIES};
   
   if (metric == nullptr) {
-    std::cerr << "[ERROR] Null metric handle passed to getMetricProperties" << std::endl;
+    pcsampling::error("Null metric handle passed to getMetricProperties");
     return metric_props;
   }
   
-  ze_result_t status = f_zetMetricGetProperties(metric, &metric_props, dispatch);
+  ze_result_t status = pcsampling::callZetMetricGetProperties(metric, &metric_props, dispatch);
   level0_check_result(status, __LINE__);
   return metric_props;
 }
@@ -140,12 +138,12 @@ getMetricId
   metric_id = static_cast<uint32_t>(-1);
   
   if (metric_list.empty()) {
-    std::cerr << "[WARNING] Empty metric list passed to getMetricId" << std::endl;
+    pcsampling::warn("Empty metric list passed to getMetricId");
     return;
   }
 
   if (metric_name.empty()) {
-    std::cerr << "[WARNING] Empty metric name passed to getMetricId" << std::endl;
+    pcsampling::warn("Empty metric name passed to getMetricId");
     return;
   }
 
@@ -157,7 +155,7 @@ getMetricId
   }
   
   // If we get here, the metric was not found
-  std::cerr << "[WARNING] Metric '" << metric_name << "' not found in metric list" << std::endl;
+  pcsampling::warn("Metric '%s' not found in metric list", metric_name.c_str());
   metric_id = static_cast<uint32_t>(metric_list.size());
 }
 
@@ -178,28 +176,28 @@ level0GetMetricList
   name_list.clear();
   
   if (group == nullptr) {
-    std::cerr << "[ERROR] Null metric group handle passed to level0GetMetricList" << std::endl;
+    pcsampling::error("Null metric group handle passed to level0GetMetricList");
     return;
   }
 
   // Get the number of metrics in the group
   uint32_t metric_count = getMetricCount(group, dispatch);
   if (metric_count == 0) {
-    std::cerr << "[WARNING] No metrics found in the metric group" << std::endl;
+    pcsampling::warn("No metrics found in the metric group");
     return;
   }
 
   // Retrieve metric handles
   std::vector<zet_metric_handle_t> metric_handles = getMetricHandles(group, metric_count, dispatch);
   if (metric_handles.empty()) {
-    std::cerr << "[WARNING] Failed to retrieve metric handles" << std::endl;
+    pcsampling::warn("Failed to retrieve metric handles");
     return;
   }
 
   // Populate the output list with formatted metric names
   for (auto metric : metric_handles) {
     if (metric == nullptr) {
-      std::cerr << "[WARNING] Null metric handle encountered" << std::endl;
+      pcsampling::warn("Null metric handle encountered");
       continue;
     }
     
@@ -216,7 +214,7 @@ level0IsValidMetricList
 )
 {
   if (metric_list.empty()) {
-    std::cerr << "[WARNING] Empty metric list passed to level0IsValidMetricList" << std::endl;
+    pcsampling::warn("Empty metric list passed to level0IsValidMetricList");
     return false;
   }
   
@@ -225,7 +223,7 @@ level0IsValidMetricList
   
   bool is_valid = (ip_idx < metric_list.size());
   if (!is_valid) {
-    std::cerr << "[WARNING] No 'IP' metric found in the metric list" << std::endl;
+    pcsampling::warn("No 'IP' metric found in the metric list");
   }
   
   return is_valid;

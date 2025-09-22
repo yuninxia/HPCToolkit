@@ -8,13 +8,14 @@
 // system includes
 //*****************************************************************************
 
-#include <iostream>
+#include <inttypes.h>
 
 //*****************************************************************************
 // local includes
 //*****************************************************************************
 
 #include "level0-timestamp.hpp"
+#include "pcsampling-api-receiver.hpp"
 
 
 //******************************************************************************
@@ -32,18 +33,18 @@ level0GetKernelExecutionTime
   KernelExecutionTime result = {0, 0, 0};
   
   if (hSignalEvent == nullptr) {
-    std::cerr << "[WARNING] Null event handle passed to level0GetKernelExecutionTime" << std::endl;
+    pcsampling::warn("Null event handle passed to level0GetKernelExecutionTime");
     return result;
   }
 
   if (hDevice == nullptr) {
-    std::cerr << "[WARNING] Null device handle passed to level0GetKernelExecutionTime" << std::endl;
+    pcsampling::warn("Null device handle passed to level0GetKernelExecutionTime");
     return result;
   }
 
   // Query the kernel timestamp
   ze_kernel_timestamp_result_t timestampResult;
-  ze_result_t status = f_zeEventQueryKernelTimestamp(hSignalEvent, &timestampResult, dispatch);
+  ze_result_t status = pcsampling::callZeEventQueryKernelTimestamp(hSignalEvent, &timestampResult, dispatch);
   level0_check_result(status, __LINE__);
 
   const uint64_t startTimestamp = timestampResult.global.kernelStart;
@@ -51,8 +52,8 @@ level0GetKernelExecutionTime
   
   // Validate timestamps
   if (startTimestamp > endTimestamp) {
-    std::cerr << "[WARNING] Invalid timestamps: start (" << startTimestamp 
-              << ") is after end (" << endTimestamp << ")" << std::endl;
+    pcsampling::warn("Invalid timestamps: start (%" PRIu64 ") is after end (%" PRIu64 ")",
+                     startTimestamp, endTimestamp);
     return result;
   }
   
@@ -63,7 +64,7 @@ level0GetKernelExecutionTime
   const double timerResolution = deviceProps.timerResolution;
 
   if (timerResolution <= 0) {
-    std::cerr << "[WARNING] Invalid timer resolution: " << timerResolution << std::endl;
+    pcsampling::warn("Invalid timer resolution: %f", timerResolution);
     return result;
   }
 

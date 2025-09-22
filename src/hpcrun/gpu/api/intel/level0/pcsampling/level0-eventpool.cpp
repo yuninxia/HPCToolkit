@@ -8,13 +8,12 @@
 // system includes
 //*****************************************************************************
 
-#include <iostream>
-
 //*****************************************************************************
 // local includes
 //*****************************************************************************
 
 #include "level0-eventpool.hpp"
+#include "pcsampling-api-receiver.hpp"
 
 
 //*****************************************************************************
@@ -32,12 +31,12 @@ level0CreateEventPool
 )
 {
   if (context == nullptr) {
-    std::cerr << "[ERROR] Null context handle passed to level0CreateEventPool" << std::endl;
+    pcsampling::error("Null context handle passed to level0CreateEventPool");
     return nullptr;
   }
 
   if (device == nullptr) {
-    std::cerr << "[ERROR] Null device handle passed to level0CreateEventPool" << std::endl;
+    pcsampling::warn("Null device handle passed to level0CreateEventPool");
     return nullptr;
   }
 
@@ -51,7 +50,7 @@ level0CreateEventPool
   ze_event_pool_handle_t event_pool = nullptr;
 
   const uint32_t num_devices = 1; // Single device visibility
-  ze_result_t status = f_zeEventPoolCreate(
+  ze_result_t status = pcsampling::callZeEventPoolCreate(
     context,
     &event_pool_desc,
     num_devices,
@@ -61,8 +60,7 @@ level0CreateEventPool
   );
 
   if (status != ZE_RESULT_SUCCESS) {
-    std::cerr << "[ERROR] Failed to create Level Zero event pool at line " << __LINE__
-              << ": " << ze_result_to_string(status) << std::endl;
+    pcsampling::error("Failed to create Level Zero event pool: %s", ze_result_to_string(status));
     return nullptr;
   }
 

@@ -9,13 +9,13 @@
 //*****************************************************************************
 
 #include <atomic>
-#include <iostream>
 
 //*****************************************************************************
 // local includes
 //*****************************************************************************
 
 #include "level0-metric-streamer.hpp"
+#include "pcsampling-api-receiver.hpp"
 
 
 //******************************************************************************
@@ -39,7 +39,7 @@ activateMetricGroup
   const struct hpcrun_foil_appdispatch_level0* dispatch
 )
 {
-  ze_result_t status = f_zetContextActivateMetricGroups(context, device, count, &group, dispatch);
+  ze_result_t status = pcsampling::callZetContextActivateMetricGroups(context, device, count, &group, dispatch);
   level0_check_result(status, __LINE__);
 }
 
@@ -63,10 +63,10 @@ openMetricStreamer
     kInterval
   };
 
-  ze_result_t status = f_zetMetricStreamerOpen(context, device, group, &streamer_desc, nullptr, &streamer, dispatch);
+  ze_result_t status = pcsampling::callZetMetricStreamerOpen(context, device, group, &streamer_desc,
+                                                            nullptr, &streamer, dispatch);
   if (status != ZE_RESULT_SUCCESS) {
-    std::cerr << "[ERROR] Failed to open metric streamer (" << status 
-              << "). The sampling interval might be too small." << std::endl;
+    pcsampling::error("Failed to open metric streamer (%d). The sampling interval might be too small.", status);
     return;
   }
 
@@ -86,7 +86,7 @@ closeMetricStreamer
   const struct hpcrun_foil_appdispatch_level0* dispatch
 )
 {
-  ze_result_t status = f_zetMetricStreamerClose(streamer, dispatch);
+  ze_result_t status = pcsampling::callZetMetricStreamerClose(streamer, dispatch);
   level0_check_result(status, __LINE__);
 }
 
@@ -106,7 +106,7 @@ level0InitializeMetricStreamer
 )
 {
   if (context == nullptr || device == nullptr || group == nullptr) {
-    std::cerr << "[ERROR] Invalid parameters for metric streamer initialization" << std::endl;
+    pcsampling::error("Invalid parameters for metric streamer initialization");
     return;
   }
 
@@ -117,7 +117,7 @@ level0InitializeMetricStreamer
   openMetricStreamer(context, device, group, streamer, dispatch);
 
   if (streamer == nullptr) {
-    std::cerr << "[ERROR] Failed to initialize metric streamer" << std::endl;
+    pcsampling::error("Failed to initialize metric streamer");
   }
 }
 

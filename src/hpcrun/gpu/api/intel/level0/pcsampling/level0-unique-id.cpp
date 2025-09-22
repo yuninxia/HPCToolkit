@@ -24,18 +24,18 @@ level0GenerateUniqueId
 )
 {
   if (data == nullptr) {
-    std::cerr << "[WARNING] Null data pointer passed to level0GenerateUniqueId" << std::endl;
+    pcsampling::warn("Null data pointer passed to level0GenerateUniqueId");
     return "invalid_hash_null_data";
   }
 
   if (binary_size == 0) {
-    std::cerr << "[WARNING] Zero binary size passed to level0GenerateUniqueId" << std::endl;
+    pcsampling::warn("Zero binary size passed to level0GenerateUniqueId");
     return "invalid_hash_zero_size";
   }
 
   char hash_string[CRYPTO_HASH_STRING_LENGTH] = {0};
   if (pcsampling::computeHashString(data, binary_size, hash_string, CRYPTO_HASH_STRING_LENGTH) != 0) {
-    std::cerr << "[WARNING] Failed to compute hash in level0GenerateUniqueId" << std::endl;
+    pcsampling::warn("Failed to compute hash in level0GenerateUniqueId");
     return "hash_computation_failed";
   }
   
