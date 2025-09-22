@@ -8,7 +8,6 @@
 // system includes
 //*****************************************************************************
 
-#include <iostream>
 #include <map>
 #include <mutex>
 #include <shared_mutex>
@@ -19,6 +18,7 @@
 //*****************************************************************************
 
 #include "level0-cmdlist-device-map.hpp"
+#include "pcsampling-api-receiver.hpp"
 
 
 //*****************************************************************************
@@ -66,12 +66,12 @@ level0InsertCmdListDeviceMap
 )
 {
   if (cmdList == nullptr) {
-    std::cerr << "[WARNING] Null command list handle passed to level0InsertCmdListDeviceMap" << std::endl;
+    pcsampling::warn("Null command list handle passed to level0InsertCmdListDeviceMap");
     return;
   }
 
   if (device == nullptr) {
-    std::cerr << "[WARNING] Null device handle passed to level0InsertCmdListDeviceMap" << std::endl;
+    pcsampling::warn("Null device handle passed to level0InsertCmdListDeviceMap");
     return;
   }
 
@@ -86,14 +86,14 @@ level0GetDeviceForCmdList
 )
 {
   if (cmdList == nullptr) {
-    std::cerr << "[WARNING] Null command list handle passed to level0GetDeviceForCmdList" << std::endl;
+    pcsampling::warn("Null command list handle passed to level0GetDeviceForCmdList");
     return nullptr;
   }
 
   std::lock_guard<std::mutex> lock(cmdlist_device_map_mutex_);
   auto it = cmdlist_device_map_.find(cmdList);
   if (it == cmdlist_device_map_.end()) {
-    std::cerr << "[WARNING] No device found for command list: " << cmdList << std::endl;
+    pcsampling::warn("No device found for command list: %p", (void*)cmdList);
     return nullptr;
   }
   return it->second;
@@ -107,7 +107,7 @@ level0InsertDeviceDescriptor
 )
 {
   if (device == nullptr) {
-    std::cerr << "[WARNING] Null device handle passed to level0InsertDeviceDescriptor" << std::endl;
+    pcsampling::warn("Null device handle passed to level0InsertDeviceDescriptor");
     if (descriptor != nullptr) {
       level0DestroyDeviceDescriptor(descriptor);
     }
@@ -115,7 +115,7 @@ level0InsertDeviceDescriptor
   }
 
   if (descriptor == nullptr) {
-    std::cerr << "[WARNING] Null descriptor passed to level0InsertDeviceDescriptor" << std::endl;
+    pcsampling::warn("Null descriptor passed to level0InsertDeviceDescriptor");
     return;
   }
 

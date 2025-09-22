@@ -180,9 +180,15 @@ ze_result_t callZetContextActivateMetricGroups(zet_context_handle_t hContext, ze
 ze_result_t callZetMetricGet(zet_metric_group_handle_t hMetricGroup, uint32_t* pCount,
                             zet_metric_handle_t* phMetrics,
                             const struct hpcrun_foil_appdispatch_level0* dispatch);
+ze_result_t callZetMetricGroupGet(ze_device_handle_t hDevice, uint32_t* pCount,
+                                 zet_metric_group_handle_t* phMetricGroups,
+                                 const struct hpcrun_foil_appdispatch_level0* dispatch);
 ze_result_t callZetMetricGetProperties(zet_metric_handle_t hMetric,
                                       zet_metric_properties_t* pProperties,
                                       const struct hpcrun_foil_appdispatch_level0* dispatch);
+ze_result_t callZetMetricGroupGetProperties(zet_metric_group_handle_t hMetricGroup,
+                                           zet_metric_group_properties_t* pProperties,
+                                           const struct hpcrun_foil_appdispatch_level0* dispatch);
 ze_result_t callZetMetricGroupCalculateMultipleMetricValuesExp(
                                       zet_metric_group_handle_t hMetricGroup,
                                       zet_metric_group_calculation_type_t type, size_t rawDataSize,
@@ -194,6 +200,16 @@ ze_result_t callZetMetricGroupCalculateMultipleMetricValuesExp(
 ze_result_t callZetModuleGetDebugInfo(ze_module_handle_t hModule, zet_module_debug_info_format_t format,
                                      size_t* pSize, uint8_t* pDebugInfo,
                                      const struct hpcrun_foil_appdispatch_level0* dispatch);
+ze_result_t callZetMetricStreamerOpen(ze_context_handle_t hContext, ze_device_handle_t hDevice,
+                                     zet_metric_group_handle_t hMetricGroup, const zet_metric_streamer_desc_t* desc,
+                                     ze_event_handle_t hNotificationEvent,
+                                     zet_metric_streamer_handle_t* phMetricStreamer,
+                                     const struct hpcrun_foil_appdispatch_level0* dispatch);
+ze_result_t callZetMetricStreamerClose(zet_metric_streamer_handle_t hMetricStreamer,
+                                      const struct hpcrun_foil_appdispatch_level0* dispatch);
+ze_result_t callZetMetricStreamerReadData(zet_metric_streamer_handle_t hMetricStreamer, uint32_t maxReportCount,
+                                         size_t* pRawDataSize, uint8_t* pRawData,
+                                         const struct hpcrun_foil_appdispatch_level0* dispatch);
 
 // Additional Level Zero Core API wrappers
 ze_result_t callZeEventPoolCreate(ze_context_handle_t hContext, const ze_event_pool_desc_t* desc,

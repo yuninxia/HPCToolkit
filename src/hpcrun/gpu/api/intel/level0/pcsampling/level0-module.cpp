@@ -8,7 +8,6 @@
 // system includes
 //*****************************************************************************
 
-#include <iostream>
 #include <string>
 #include <vector>
 
@@ -18,6 +17,7 @@
 
 #include "level0-module.hpp"
 #include "../level0-debug.h"
+#include "pcsampling-api-receiver.hpp"
 
 
 //******************************************************************************
@@ -33,14 +33,14 @@ level0GetKernelName
 {
   size_t name_len = 0;
   // First call to determine the required buffer size
-  ze_result_t status = f_zeKernelGetName(kernel, &name_len, nullptr, dispatch);
+  ze_result_t status = pcsampling::callZeKernelGetName(kernel, &name_len, nullptr, dispatch);
   if (status != ZE_RESULT_SUCCESS || name_len == 0) {
     return "UnknownKernel";
   }
 
   // Allocate a buffer for the kernel name (including the null terminator)
   std::vector<char> kernel_name(name_len);
-  status = f_zeKernelGetName(kernel, &name_len, kernel_name.data(), dispatch);
+  status = pcsampling::callZeKernelGetName(kernel, &name_len, kernel_name.data(), dispatch);
   
   // Construct a std::string from the C string if successful
   return (status == ZE_RESULT_SUCCESS) ? std::string(kernel_name.data()) : "UnknownKernel";
@@ -55,12 +55,12 @@ level0GetFunctionPointer
 )
 {
   void* function_pointer = nullptr;
-  ze_result_t status = f_zeModuleGetFunctionPointer(module, kernel_name.c_str(), &function_pointer, dispatch);
+  ze_result_t status = pcsampling::callZeModuleGetFunctionPointer(module, kernel_name.c_str(), &function_pointer, dispatch);
   
   if (status == ZE_RESULT_SUCCESS && function_pointer != nullptr) {
     return reinterpret_cast<uint64_t>(function_pointer);
   } else {
-    std::cerr << "[WARNING] Unable to get function pointer for kernel: " << kernel_name << std::endl;
+    pcsampling::warn("Unable to get function pointer for kernel: %s", kernel_name.c_str());
     return 0;
   }
 }
@@ -73,7 +73,7 @@ level0GetModuleDebugInfo
 )
 {
   size_t binary_size = 0;
-  ze_result_t status = f_zetModuleGetDebugInfo(
+  ze_result_t status = pcsampling::callZetModuleGetDebugInfo(
     module, 
     ZET_MODULE_DEBUG_INFO_FORMAT_ELF_DWARF,
     &binary_size, 
@@ -83,12 +83,12 @@ level0GetModuleDebugInfo
   level0_check_result(status, __LINE__);
 
   if (binary_size == 0) {
-    std::cerr << "[WARNING] Unable to find kernel symbols" << std::endl;
+    pcsampling::warn("Unable to find kernel symbols");
     return {};
   }
 
   std::vector<uint8_t> binary(binary_size);
-  status = f_zetModuleGetDebugInfo(
+  status = pcsampling::callZetModuleGetDebugInfo(
     module, 
     ZET_MODULE_DEBUG_INFO_FORMAT_ELF_DWARF,
     &binary_size, 
@@ -114,9 +114,9 @@ level0GetModuleKernelNames
 
   uint32_t kernel_count = 0;
   // First call to get the count of kernels
-  ze_result_t status = f_zeModuleGetKernelNames(module, &kernel_count, nullptr, dispatch);
+  ze_result_t status = pcsampling::callZeModuleGetKernelNames(module, &kernel_count, nullptr, dispatch);
   if (status != ZE_RESULT_SUCCESS) {
-    std::cerr << "[WARNING] Failed to get kernel count: " << ze_result_to_string(status) << std::endl;
+    pcsampling::warn("Failed to get kernel count: %s", ze_result_to_string(status));
     return {};
   }
 
@@ -128,9 +128,9 @@ level0GetModuleKernelNames
   std::vector<const char*> kernel_names(kernel_count);
   
   // Second call to get the actual kernel names
-  status = f_zeModuleGetKernelNames(module, &kernel_count, kernel_names.data(), dispatch);
+  status = pcsampling::callZeModuleGetKernelNames(module, &kernel_count, kernel_names.data(), dispatch);
   if (status != ZE_RESULT_SUCCESS) {
-    std::cerr << "[WARNING] Failed to get kernel names: " << ze_result_to_string(status) << std::endl;
+    pcsampling::warn("Failed to get kernel names: %s", ze_result_to_string(status));
     return {};
   }
 

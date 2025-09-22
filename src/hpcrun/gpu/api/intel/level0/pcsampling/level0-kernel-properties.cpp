@@ -9,7 +9,7 @@
 //*****************************************************************************
 
 #include <algorithm>
-#include <iostream>
+#include <cstdlib>
 
 
 //*****************************************************************************
@@ -18,6 +18,8 @@
 
 #include "level0-kernel-properties.hpp"
 #include "level0-kernel-properties-cache.hpp"
+#include "pcsampling-api-receiver.hpp"
+#include "level0-driver.hpp"
 
 
 //*****************************************************************************
@@ -58,14 +60,15 @@ level0ReadKernelProperties
   if (rcu_data) {
     kprops = rcu_data->properties;
     if (std::getenv("HPCTOOLKIT_LEVEL0_DEBUG_CACHE")) {
-      std::cout << "[DEBUG] Read " << kprops.size() << " kernel properties from RCU cache for device " << device_id << std::endl;
+      pcsampling::warn("[DEBUG] Read %zu kernel properties from RCU cache for device %d",
+                       kprops.size(), device_id);
     }
     return;
   }
   
   // Fallback to regular cache if RCU not available
   if (std::getenv("HPCTOOLKIT_LEVEL0_DEBUG_CACHE")) {
-    std::cout << "[DEBUG] RCU cache miss for device " << device_id << ", falling back to regular cache" << std::endl;
+    pcsampling::warn("[DEBUG] RCU cache miss for device %d, falling back to regular cache", device_id);
   }
   KernelPropertiesCache::getInstance().getKernelProperties(device_id, kprops);
 }
@@ -76,12 +79,22 @@ level0InitializeKernelBaseAddressFunction
   const struct hpcrun_foil_appdispatch_level0* dispatch
 )
 {
-  ze_driver_handle_t driver;
+  ze_driver_handle_t driver = nullptr;
   uint32_t count = 1;
-  if (f_zeDriverGet(&count, &driver, dispatch) == ZE_RESULT_SUCCESS) {
-    if (zeDriverGetExtensionFunctionAddress(driver, "zexKernelGetBaseAddress", (void **)&zexKernelGetBaseAddress) != ZE_RESULT_SUCCESS) {
-      zexKernelGetBaseAddress = nullptr;
-    }
+  ze_result_t status = pcsampling::callZeDriverGet(&count, &driver, dispatch);
+  if (status != ZE_RESULT_SUCCESS || driver == nullptr) {
+    zexKernelGetBaseAddress = nullptr;
+    return;
+  }
+
+  void* addr = nullptr;
+  status = pcsampling::callZeDriverGetExtensionFunctionAddress(
+      driver, "zexKernelGetBaseAddress", &addr, dispatch);
+
+  if (status == ZE_RESULT_SUCCESS && addr != nullptr) {
+    zexKernelGetBaseAddress = reinterpret_cast<decltype(zexKernelGetBaseAddress)>(addr);
+  } else {
+    zexKernelGetBaseAddress = nullptr;
   }
 }
 
@@ -96,7 +109,8 @@ level0GetKernelBaseAddress
   if (zexKernelGetBaseAddress != nullptr && zexKernelGetBaseAddress(kernel, &base_addr) == ZE_RESULT_SUCCESS) {
     return base_addr;
   }
-  std::cerr << "[WARNING] Unable to get base address for kernel: " << level0GetKernelName(kernel, dispatch) << std::endl;
+  std::string kernel_name = level0GetKernelName(kernel, dispatch);
+  pcsampling::warn("Unable to get base address for kernel: %s", kernel_name.c_str());
   return 0;
 }
 
@@ -109,12 +123,11 @@ level0DumpKernelProfiles
   // Print cache statistics in debug mode
   if (std::getenv("HPCTOOLKIT_LEVEL0_DEBUG_CACHE")) {
     auto stats = KernelPropertiesCache::getInstance().getStats();
-    std::cout << "[INFO] Kernel cache stats: "
-              << stats.total_entries << " entries, "
-              << stats.devices << " devices, "
-              << "avg read: " << stats.avg_read_time.count() << "us, "
-              << "avg write: " << stats.avg_write_time.count() << "us, "
-              << "memory: " << stats.memory_bytes / 1024 << "KB" << std::endl;
+    pcsampling::warn("[INFO] Kernel cache stats: %zu entries, %zu devices, avg read: %lld us, avg write: %lld us, memory: %zu KB",
+                     stats.total_entries, stats.devices,
+                     static_cast<long long>(stats.avg_read_time.count()),
+                     static_cast<long long>(stats.avg_write_time.count()),
+                     stats.memory_bytes / 1024);
     
     // Optionally print detailed cache contents
     // KernelPropertiesCache::getInstance().debugPrint();

@@ -221,8 +221,8 @@ ZeMetricProfiler::CollectAndProcessMetrics
   std::map<uint64_t, KernelProperties> kprops;
   level0ReadKernelProperties(desc->device_id_, kprops);
   if (kprops.empty()) {
-    std::cerr << "[WARNING] No kernel properties found for device " << desc->device_id_
-              << " in level0ProcessMetricData - PC sampling data will not be processed" << std::endl;
+    pcsampling::warn("No kernel properties found for device %d in level0ProcessMetricData - PC sampling data will not be processed",
+                     desc->device_id_);
     return;
   }
 
@@ -248,7 +248,7 @@ ZeMetricProfiler::Create
 {
   void* raw = pcsampling::allocMemory(sizeof(ZeMetricProfiler));
   if (!raw) {
-    std::cerr << "[ERROR] Failed to allocate memory for ZeMetricProfiler" << std::endl;
+    pcsampling::error("Failed to allocate memory for ZeMetricProfiler");
     return nullptr;
   }
 
@@ -259,7 +259,7 @@ ZeMetricProfiler::Create
     profiler->StartProfilingMetrics(dispatch);
     return profiler;
   } catch (const std::exception& e) {
-    std::cerr << "[ERROR] Exception in ZeMetricProfiler::Create: " << e.what() << std::endl;
+    pcsampling::error("Exception in ZeMetricProfiler::Create: %s", e.what());
     profiler->~ZeMetricProfiler();
     pcsampling::freeMemory(profiler);
     return nullptr;
