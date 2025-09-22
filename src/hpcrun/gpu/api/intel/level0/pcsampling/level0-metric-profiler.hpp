@@ -13,8 +13,6 @@
 
 #include <deque>
 #include <map>
-#include <mutex>
-#include <thread>
 #include <vector>
 
 
@@ -66,9 +64,12 @@ constexpr static uint32_t max_metric_size = 512;
 class ZeMetricProfiler {
  public:
   static ZeMetricProfiler* Create(const struct hpcrun_foil_appdispatch_level0* dispatch);
+  static void Destroy(ZeMetricProfiler* profiler);
   ~ZeMetricProfiler();
   ZeMetricProfiler(const ZeMetricProfiler& that) = delete;
   ZeMetricProfiler& operator=(const ZeMetricProfiler& that) = delete;
+
+  static void* ThreadMain(void* arg);
 
  private:
   ZeMetricProfiler(const struct hpcrun_foil_appdispatch_level0* dispatch);

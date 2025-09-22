@@ -20,7 +20,6 @@
 //*****************************************************************************
 
 #include <atomic>
-#include <thread>
 
 
 //*****************************************************************************
@@ -59,7 +58,7 @@ struct ZeDeviceDescriptor {
   int32_t num_sub_devices_;
 
   zet_metric_group_handle_t metric_group_;
-  std::thread *profiling_thread_;
+  int profiling_thread_id_;
   std::atomic<int> profiling_state_{PROFILER_UNKNOWN};
   bool stall_sampling_;
 
@@ -178,6 +177,12 @@ void
 level0EnumerateAndSetupDevices
 (
   const struct hpcrun_foil_appdispatch_level0* dispatch
+);
+
+void
+level0DestroyDeviceDescriptor
+(
+  ZeDeviceDescriptor* descriptor
 );
 
 

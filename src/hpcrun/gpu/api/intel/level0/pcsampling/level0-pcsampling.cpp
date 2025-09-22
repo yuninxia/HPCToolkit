@@ -8,7 +8,6 @@
 // system includes
 //*****************************************************************************
 
-#include <iostream>
 #include <pthread.h>
 
 
@@ -70,7 +69,7 @@ disableProfiling
 )
 {
   if (metric_profiler != nullptr) {
-    delete metric_profiler;
+    ZeMetricProfiler::Destroy(metric_profiler);
     metric_profiler = nullptr;
   }
 }
@@ -141,7 +140,7 @@ level0PCSamplingFini
     
     // Clean up collector resources
     if (ze_collector != nullptr) {
-      delete ze_collector;
+      ZeCollector::Destroy(ze_collector);
       ze_collector = nullptr;
     }
     

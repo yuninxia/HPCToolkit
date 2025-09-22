@@ -8,8 +8,9 @@
 // system includes
 //*****************************************************************************
 
-#include <iostream>
 #include <chrono>
+#include <thread>
+#include <new>
 
 //*****************************************************************************
 // local includes
@@ -28,6 +29,14 @@
 //******************************************************************************
 // private methods
 //******************************************************************************
+
+namespace {
+
+struct MetricProfilingThreadArgs {
+  ZeMetricProfiler* profiler;
+  ZeDeviceDescriptor* descriptor;
+  const struct hpcrun_foil_appdispatch_level0* dispatch;
+};
 
 static void
 FinalizeKernelProcessing
@@ -111,6 +120,23 @@ ProcessMetricData
     pcsampling::freeActivity(activity);
   }
   return true;
+}
+
+} // namespace
+
+void*
+ZeMetricProfiler::ThreadMain
+(
+  void* arg
+)
+{
+  MetricProfilingThreadArgs* args = static_cast<MetricProfilingThreadArgs*>(arg);
+  ZeMetricProfiler* profiler = args->profiler;
+  ZeDeviceDescriptor* desc = args->descriptor;
+  const struct hpcrun_foil_appdispatch_level0* dispatch = args->dispatch;
+  pcsampling::freeMemory(args);
+  MetricProfilingThread(profiler, desc, dispatch);
+  return nullptr;
 }
 
 void
@@ -220,13 +246,22 @@ ZeMetricProfiler::Create
   const struct hpcrun_foil_appdispatch_level0* dispatch
 )
 {
+  void* raw = pcsampling::allocMemory(sizeof(ZeMetricProfiler));
+  if (!raw) {
+    std::cerr << "[ERROR] Failed to allocate memory for ZeMetricProfiler" << std::endl;
+    return nullptr;
+  }
+
+  ZeMetricProfiler* profiler = static_cast<ZeMetricProfiler*>(raw);
+
   try {
-    ZeMetricProfiler* profiler = new ZeMetricProfiler(dispatch);
-    
+    new (profiler) ZeMetricProfiler(dispatch);
     profiler->StartProfilingMetrics(dispatch);
     return profiler;
   } catch (const std::exception& e) {
     std::cerr << "[ERROR] Exception in ZeMetricProfiler::Create: " << e.what() << std::endl;
+    profiler->~ZeMetricProfiler();
+    pcsampling::freeMemory(profiler);
     return nullptr;
   }
 }
@@ -245,6 +280,17 @@ ZeMetricProfiler::~ZeMetricProfiler()
 }
 
 void
+ZeMetricProfiler::Destroy
+(
+  ZeMetricProfiler* profiler
+)
+{
+  if (!profiler) return;
+  profiler->~ZeMetricProfiler();
+  pcsampling::freeMemory(profiler);
+}
+
+void
 ZeMetricProfiler::StartProfilingMetrics
 (
   const struct hpcrun_foil_appdispatch_level0* dispatch
@@ -255,10 +301,29 @@ ZeMetricProfiler::StartProfilingMetrics
       // Skip subdevices
       continue;
     }
+    auto args = static_cast<MetricProfilingThreadArgs*>(pcsampling::allocMemory(sizeof(MetricProfilingThreadArgs)));
+    if (!args) {
+      pcsampling::warn("Failed to allocate thread args for profiling thread");
+      it->second->UpdateProfilerState(PROFILER_DISABLED);
+      continue;
+    }
+
+    args->profiler = this;
+    args->descriptor = it->second;
+    args->dispatch = dispatch;
+
     pcsampling::disableNewThreads();
-    it->second->profiling_thread_ = new std::thread(MetricProfilingThread, this, it->second, dispatch);
+    int thread_id = pcsampling::createProfilingThread(ZeMetricProfiler::ThreadMain, args, "pcsampling");
     pcsampling::enableNewThreads();
-    // Wait until profiling is enabled before continuing
+
+    if (thread_id < 0) {
+      pcsampling::warn("Failed to start profiling thread");
+      pcsampling::freeMemory(args);
+      it->second->UpdateProfilerState(PROFILER_DISABLED);
+      continue;
+    }
+
+    it->second->profiling_thread_id_ = thread_id;
     while (!it->second->IsProfilerInitialized()) {
       std::this_thread::sleep_for(std::chrono::milliseconds(1));
     }
@@ -281,16 +346,9 @@ ZeMetricProfiler::StopProfilingMetrics
     it->second->UpdateProfilerState(PROFILER_DISABLED);
     
     // Join the profiling thread if it exists
-    if (it->second->profiling_thread_ != nullptr) {
-      try {
-        if (it->second->profiling_thread_->joinable()) {
-          it->second->profiling_thread_->join();
-        }
-        delete it->second->profiling_thread_;
-        it->second->profiling_thread_ = nullptr;
-      } catch (const std::exception& e) {
-        std::cerr << "[WARNING] Error joining profiling thread: " << e.what() << std::endl;
-      }
+    if (it->second->profiling_thread_id_ >= 0) {
+      pcsampling::joinProfilingThread(it->second->profiling_thread_id_);
+      it->second->profiling_thread_id_ = -1;
     }
   }
 

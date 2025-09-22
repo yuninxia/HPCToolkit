@@ -35,7 +35,8 @@
 
 class ZeCollector {
  public:
-  static ZeCollector* Create(const struct hpcrun_foil_appdispatch_level0* dispatch);
+ static ZeCollector* Create(const struct hpcrun_foil_appdispatch_level0* dispatch);
+  static void Destroy(ZeCollector* collector);
   ZeCollector(const ZeCollector& that) = delete;
   ZeCollector& operator=(const ZeCollector& that) = delete;
   ~ZeCollector();

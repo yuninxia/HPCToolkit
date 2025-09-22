@@ -109,7 +109,7 @@ level0InsertDeviceDescriptor
   if (device == nullptr) {
     std::cerr << "[WARNING] Null device handle passed to level0InsertDeviceDescriptor" << std::endl;
     if (descriptor != nullptr) {
-      delete descriptor;  // Prevent memory leak
+      level0DestroyDeviceDescriptor(descriptor);
     }
     return;
   }
@@ -125,7 +125,7 @@ level0InsertDeviceDescriptor
   // Check if device already exists and clean up old descriptor if needed
   auto it = device_descriptors_.find(device);
   if (it != device_descriptors_.end() && it->second != nullptr) {
-    delete it->second;  // Delete old descriptor
+    level0DestroyDeviceDescriptor(it->second);
   }
 
   device_descriptors_[device] = descriptor;
@@ -143,7 +143,7 @@ level0CleanupDeviceDescriptors
   // Delete all device descriptors
   for (auto& [device, descriptor] : device_descriptors_) {
     if (descriptor != nullptr) {
-      delete descriptor;
+      level0DestroyDeviceDescriptor(descriptor);
     }
   }
 

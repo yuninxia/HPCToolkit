@@ -162,7 +162,6 @@ create_profiling_thread_wrapper(void* (*func)(void*), void* arg, const char* nam
         pthread_mutex_unlock(&thread_registry_mutex);
         monitor_enable_new_threads();
 
-        TMSG(LEVEL0, "Created PC sampling thread %d: %s", entry->id, entry->name);
         return entry->id;
     }
 
@@ -537,7 +536,12 @@ pcsampling_shutdown(void)
         return init_result;
     }
 
-    // Join all remaining threads
+    pcsampling_result_t result = PCSAMPLING_ERROR_NOT_SUPPORTED;
+    if (pcsampling_shutdown_fn) {
+        result = pcsampling_shutdown_fn();
+    }
+
+    // Join any threads that might remain registered after the library shutdown
     pthread_mutex_lock(&thread_registry_mutex);
     while (thread_registry) {
         thread_registry_entry* entry = thread_registry;
@@ -545,19 +549,13 @@ pcsampling_shutdown(void)
         pthread_mutex_unlock(&thread_registry_mutex);
 
         pthread_join(entry->thread, NULL);
-        // Memory from hpcrun_malloc cannot be freed individually
-        // It's reclaimed when the pool is reclaimed
-        (void)entry;
+        (void)entry;  // hpcrun_malloc memory reclaimed when pool resets
 
         pthread_mutex_lock(&thread_registry_mutex);
     }
     pthread_mutex_unlock(&thread_registry_mutex);
 
-    if (pcsampling_shutdown_fn) {
-        return pcsampling_shutdown_fn();
-    }
-
-    return PCSAMPLING_ERROR_INIT_FAILED;
+    return result;
 }
 
 
