@@ -17,6 +17,7 @@
 //*****************************************************************************
 
 #include "level0-activity-generate.hpp"
+#include "pcsampling-api-receiver.hpp"
 
 
 //******************************************************************************
@@ -167,7 +168,7 @@ level0GenerateActivities
 
   // Clean up any existing activities before clearing
   for (auto activity : activities) {
-    delete activity;
+    pcsampling::freeActivity(activity);
   }
   activities.clear();
 

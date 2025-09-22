@@ -8,8 +8,9 @@
 // system includes
 //*****************************************************************************
 
-#include <memory>
+#include <iostream>
 #include <vector>
+#include <new>
 
 
 //*****************************************************************************
@@ -18,6 +19,7 @@
 
 #include "level0-device.hpp"
 #include "level0-cmdlist-device-map.hpp"
+#include "pcsampling-api-receiver.hpp"
 
 
 //******************************************************************************
@@ -32,46 +34,66 @@ std::map<ze_device_handle_t, ZeDevice>* devices_ = nullptr;
 //******************************************************************************
 
 static ZeDeviceDescriptor*
+allocateDeviceDescriptor()
+{
+  void* raw = pcsampling::allocMemory(sizeof(ZeDeviceDescriptor));
+  if (!raw) {
+    std::cerr << "[ERROR] Failed to allocate memory for ZeDeviceDescriptor" << std::endl;
+    return nullptr;
+  }
+  return new (raw) ZeDeviceDescriptor();
+}
+
+static void
+initializeDescriptorCommon
+(
+  ZeDeviceDescriptor* desc
+)
+{
+  desc->profiling_thread_id_ = -1;
+  desc->UpdateProfilerState(PROFILER_DISABLED);
+  desc->running_kernel_      = nullptr;
+  desc->running_kernel_end_  = nullptr;
+  desc->SetKernelStarted(false);
+  desc->SetSerialDataReady(false);
+  mcs_init(&desc->kernel_launch_lock);
+}
+
+static ZeDeviceDescriptor*
 createDeviceDescriptor
 (
-  ze_device_handle_t device, 
-  int32_t did, 
-  ze_driver_handle_t driver, 
-  ze_context_handle_t context, 
-  bool stall_sampling, 
+  ze_device_handle_t device,
+  int32_t did,
+  ze_driver_handle_t driver,
+  ze_context_handle_t context,
+  bool stall_sampling,
   const std::string& metric_group,
   const struct hpcrun_foil_appdispatch_level0* dispatch
-) 
+)
 {
-  try {
-    auto desc = std::make_unique<ZeDeviceDescriptor>();
+  ZeDeviceDescriptor* desc = allocateDeviceDescriptor();
+  if (!desc) return nullptr;
 
+  try {
     desc->stall_sampling_      = stall_sampling;
     desc->device_              = device;
     desc->device_id_           = did;
-    desc->parent_device_id_    = -1;    // No parent device
+    desc->parent_device_id_    = -1;
     desc->parent_device_       = nullptr;
-    desc->subdevice_id_        = -1;    // Not a subdevice
+    desc->subdevice_id_        = -1;
     desc->num_sub_devices_     = level0GetSubDeviceCount(device, dispatch);
     desc->driver_              = driver;
     desc->context_             = context;
     desc->correlation_id_      = 0;
-    
-    // Set the metric group based on the provided metric_group string
+
     level0GetMetricGroup(device, metric_group, desc->metric_group_, dispatch);
-    
-    desc->profiling_thread_    = nullptr;
-    desc->UpdateProfilerState(PROFILER_DISABLED);
-    desc->running_kernel_      = nullptr;
-    desc->running_kernel_end_  = nullptr;
-    desc->SetKernelStarted(false);
-    desc->SetSerialDataReady(false);
 
-    mcs_init(&desc->kernel_launch_lock);
+    initializeDescriptorCommon(desc);
 
-    return desc.release();
+    return desc;
   } catch (const std::exception& e) {
     std::cerr << "[ERROR] Exception in createDeviceDescriptor: " << e.what() << std::endl;
+    level0DestroyDeviceDescriptor(desc);
     return nullptr;
   }
 }
@@ -89,9 +111,10 @@ createSubDeviceDescriptor
     return nullptr;
   }
 
-  try {
-    auto sub_desc = std::make_unique<ZeDeviceDescriptor>();
+  ZeDeviceDescriptor* sub_desc = allocateDeviceDescriptor();
+  if (!sub_desc) return nullptr;
 
+  try {
     sub_desc->stall_sampling_   = parent_desc->stall_sampling_;
     sub_desc->device_           = sub_device;
     sub_desc->device_id_        = parent_desc->device_id_;
@@ -102,16 +125,13 @@ createSubDeviceDescriptor
     sub_desc->driver_           = parent_desc->driver_;
     sub_desc->context_          = parent_desc->context_;
     sub_desc->metric_group_     = parent_desc->metric_group_;
-    sub_desc->profiling_thread_ = nullptr;
-    sub_desc->UpdateProfilerState(PROFILER_DISABLED);
-    sub_desc->SetKernelStarted(false);
-    sub_desc->SetSerialDataReady(false);
 
-    mcs_init(&sub_desc->kernel_launch_lock);
-    
-    return sub_desc.release();
+    initializeDescriptorCommon(sub_desc);
+
+    return sub_desc;
   } catch (const std::exception& e) {
     std::cerr << "[ERROR] Exception in createSubDeviceDescriptor: " << e.what() << std::endl;
+    level0DestroyDeviceDescriptor(sub_desc);
     return nullptr;
   }
 }
@@ -276,7 +296,12 @@ level0EnumerateAndSetupDevices
 )
 {
   if (devices_ == nullptr) {
-    devices_ = new std::map<ze_device_handle_t, ZeDevice>;
+    void* raw = pcsampling::allocMemory(sizeof(std::map<ze_device_handle_t, ZeDevice>));
+    if (!raw) {
+      std::cerr << "[ERROR] Failed to allocate device map" << std::endl;
+      return;
+    }
+    devices_ = new (raw) std::map<ze_device_handle_t, ZeDevice>();
   }
 
   std::vector<ze_driver_handle_t> drivers = level0GetDrivers(dispatch);
@@ -300,4 +325,15 @@ level0EnumerateAndSetupDevices
       ++did;
     }
   }
+}
+
+void
+level0DestroyDeviceDescriptor
+(
+  ZeDeviceDescriptor* descriptor
+)
+{
+  if (!descriptor) return;
+  descriptor->~ZeDeviceDescriptor();
+  pcsampling::freeMemory(descriptor);
 }

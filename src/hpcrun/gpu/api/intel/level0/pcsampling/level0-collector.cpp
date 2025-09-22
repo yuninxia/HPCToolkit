@@ -5,11 +5,16 @@
 // -*-Mode: C++;-*-
 
 //*****************************************************************************
+// system includes
+
+#include <new>
+
 // local includes
 //*****************************************************************************
 
 #include "level0-collector.hpp"
 #include "level0-tracing-callbacks.hpp"
+#include "pcsampling-api-receiver.hpp"
 
 extern "C" {
 #include "../../../../../messages/messages.h"
@@ -32,25 +37,23 @@ ZeCollector::Create
     return nullptr;
   }
 
-  // Create a new collector instance
-  std::unique_ptr<ZeCollector> collector(new ZeCollector(dispatch));
-  if (!collector) {
+  void* raw = pcsampling::allocMemory(sizeof(ZeCollector));
+  if (!raw) {
     EEMSG("Level0: Failed to allocate memory for ZeCollector");
     return nullptr;
   }
 
-  // Notes(Yuning): Here we have two seperate mechanisms for callbacks
-  // Create the tracer associated with the collector
-  if (!level0CreateTracer(collector.get(), dispatch)) {
+  ZeCollector* collector = new (raw) ZeCollector(dispatch);
+
+  if (!level0CreateTracer(collector, dispatch)) {
     EEMSG("Level0: Failed to create tracer for collector");
-    // If tracer creation fails, the collector is automatically deleted
+    ZeCollector::Destroy(collector);
     return nullptr;
   }
-  
+
   level0InitializeKernelBaseAddressFunction(dispatch);
 
-  // Release ownership and return the raw pointer to the collector.
-  return collector.release();
+  return collector;
 }
 
 ZeCollector::ZeCollector
@@ -69,4 +72,15 @@ ZeCollector::~ZeCollector()
   
   // Dump collected kernel profiles
   level0DumpKernelProfiles();
+}
+
+void
+ZeCollector::Destroy
+(
+  ZeCollector* collector
+)
+{
+  if (!collector) return;
+  collector->~ZeCollector();
+  pcsampling::freeMemory(collector);
 }
