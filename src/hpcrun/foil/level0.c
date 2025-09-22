@@ -42,6 +42,12 @@ ze_result_t f_zeDriverGet(uint32_t* pCount, ze_driver_handle_t* phDrivers,
   return dispatch->zeDriverGet(pCount, phDrivers);
 }
 
+ze_result_t f_zeDriverGetExtensionFunctionAddress(ze_driver_handle_t hDriver, const char* name,
+                                                  void** ppFunctionAddress,
+                                                  const struct hpcrun_foil_appdispatch_level0* dispatch) {
+  return dispatch->zeDriverGetExtensionFunctionAddress(hDriver, name, ppFunctionAddress);
+}
+
 ze_result_t f_zeDeviceGet(ze_driver_handle_t hDriver, uint32_t* pCount,
                           ze_device_handle_t* phDevices,
                           const struct hpcrun_foil_appdispatch_level0* dispatch) {

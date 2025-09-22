@@ -19,6 +19,8 @@ struct hpcrun_foil_appdispatch_level0;
 ze_result_t f_zeInit(ze_init_flag_t, const struct hpcrun_foil_appdispatch_level0*);
 ze_result_t f_zeDriverGet(uint32_t*, ze_driver_handle_t*,
                           const struct hpcrun_foil_appdispatch_level0*);
+ze_result_t f_zeDriverGetExtensionFunctionAddress(ze_driver_handle_t, const char*, void**,
+                                                  const struct hpcrun_foil_appdispatch_level0*);
 ze_result_t f_zeDeviceGet(ze_driver_handle_t, uint32_t*, ze_device_handle_t*,
                           const struct hpcrun_foil_appdispatch_level0*);
 ze_result_t f_zeDeviceGetProperties(ze_device_handle_t, ze_device_properties_t*,
