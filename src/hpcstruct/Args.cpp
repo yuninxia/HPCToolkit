@@ -163,15 +163,17 @@ Options: Override structure recovery defaults
                        Loop nesting structure is only useful with
                        instruction-level measurements collected using PC
                        sampling or instrumentation. {no}
-  -x <lib>, --exclude <lib>
-                       Don't analyze libraries matching regex pattern <lib>.
-                       Useful if <lib> takes too long to analyze.
+  -x <file>, --exclude <file>
+                       Do not analyze module files matching <file>.
+                       Useful if <file> takes too long to analyze.
+                       Specify <file> as either basename or full path name.
                        May be used multiple times.
-  -i <lib>, --include <lib>
-                       Do analyze libraries matching <lib>.
+  -i <file>, --include <file>
+                       Do analyze module files matching <file>.
                        Include overrides exclude.
                        May be used multiple times.
-  --show-libs          Display libraries that will be analyzed and exit.
+  --show-files         Display module files that will be analyzed and exit.
+                       May be used with --include and --exclude.
   --clean              Remove hpcstruct files from measurements directory.
 
 Options: Specify output file when analyzing a single binary
@@ -224,7 +226,7 @@ CmdLineParser::OptArgDesc Args::optArgs[] = {
      NULL },
   { 'x', "exclude",       CLP::ARG_REQ,  CLP::DUPOPT_CAT,  " -x ", NULL },
   { 'i', "include",       CLP::ARG_REQ,  CLP::DUPOPT_CAT,  " -i ", NULL },
-  {  0,  "show-libs",     CLP::ARG_NONE, CLP::DUPOPT_CLOB,  NULL,  NULL },
+  {  0,  "show-files",    CLP::ARG_NONE, CLP::DUPOPT_CLOB,  NULL,  NULL },
   {  0,  "clean",         CLP::ARG_NONE, CLP::DUPOPT_CLOB,  NULL,  NULL },
 
   // Output options
@@ -283,7 +285,7 @@ Args::Ctor()
   compute_gpu_cfg = false;
   exclude_str = "";
   include_str = "";
-  show_libs = false;
+  show_files = false;
   make_clean = false;
   meas_dir = "";
   is_from_makefile = false;
@@ -472,8 +474,8 @@ Args::parse(int argc, const char* const argv[])
       include_str = " -i " + arg;
     }
 
-    if (parser.isOpt("show-libs")) {
-      show_libs = true;
+    if (parser.isOpt("show-files")) {
+      show_files = true;
     }
 
     if (parser.isOpt("clean")) {

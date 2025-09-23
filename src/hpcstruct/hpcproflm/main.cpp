@@ -15,6 +15,7 @@
 #include <string>
 #include <unordered_set>
 #include <vector>
+#include <string.h>
 
 
 //****************************************************************************
@@ -53,7 +54,7 @@ enum {
 static const char *filter_strings[] = {
   "logical/",
   "kernel_symbols/",
-  "/opt/aurora/.*/libmpi.so",
+  "/opt/aurora/.*/libmpi.*",
   0
 };
 
@@ -66,7 +67,7 @@ static std::vector <std::string> excludeVec;
 //****************************************************************************
 
 //
-// Append builtin filter_strings with command-line --exclude options.
+// Make string vectors for --include and --exclude.
 //
 static void
 makeFilterVec(Args & args)
@@ -76,10 +77,6 @@ makeFilterVec(Args & args)
 
   StrUtil::tokenize_str(args.include_string, CLP_SEPARATOR, includeVec);
   StrUtil::tokenize_str(args.exclude_string, CLP_SEPARATOR, excludeVec);
-
-  for (int i = 0; filter_strings[i]; i++) {
-    excludeVec.push_back(std::string(filter_strings[i]));
-  }
 }
 
 
@@ -93,17 +90,23 @@ skipLoadMapEntry(loadmap_entry_t* x)
   // ignore empty names
   if (x->name == NULL) return LM_SKIP_NULL;
 
-  // check include list first, this wins over exclude
+  // check user --include list first, this wins over exclude
   for (unsigned int i = 0; i < includeVec.size(); i++) {
-    auto patn = std::regex{".*" + includeVec[i] + ".*"};
-    if (std::regex_match(x->name, patn)) {
+    if (strstr(x->name, includeVec[i].c_str()) != NULL) {
       return LM_KEEP;
     }
   }
 
-  // finally, exclude list
+  // user --exclude list
   for (unsigned int i = 0; i < excludeVec.size(); i++) {
-    auto patn = std::regex{".*" + excludeVec[i] + ".*"};
+    if (strstr(x->name, excludeVec[i].c_str()) != NULL) {
+      return LM_SKIP_FILTER;
+    }
+  }
+
+  // finally, builtin filter_strings, match via regex
+  for (int i = 0; filter_strings[i]; i++) {
+    auto patn = std::regex{filter_strings[i]};
     if (std::regex_match(x->name, patn)) {
       return LM_SKIP_FILTER;
     }
@@ -244,9 +247,9 @@ processMeasurementsDirectory(Args &args)
       std::sort(filterNamesVec.begin(), filterNamesVec.end(), std::less<std::string>());
 
       //--------------------------------------------------
-      // show-libs: display analyzed and filter libs on stdout and exit
+      // show-files: display analyzed and filter files on stdout and exit
       //--------------------------------------------------
-      if (args.show_libs) {
+      if (args.show_files) {
         std::cout << "INFO: modules that will be analyzed\n";
         for (const auto& lm: loadNamesVec) {
           std::cout << lm << "\n";

@@ -58,11 +58,11 @@ static const char* usage_details =
      "in a measurement directory\n"
      "\n"
      "Options:\n"
-     "  -V, --version        Print version information.\n"
-     "  -h, --help           Print this help.\n"
-     "  -x, --exclude <lib>  Don't analyze libraries matching <lib>.\n"
-     "  -i, --include <lib>  Do analyze libraries matching <lib>.\n"
-     "  --show-libs          Display libraries that will be analyzed and exit.\n"
+     "  -V, --version         Print version information.\n"
+     "  -h, --help            Print this help.\n"
+     "  -x, --exclude <file>  Don't analyze files matching <file>.\n"
+     "  -i, --include <file>  Do analyze files matching <file>.\n"
+     "  --show-files          Display files that will be analyzed and exit.\n"
      ;
 
 #define CLP CmdLineParser
@@ -78,7 +78,7 @@ CmdLineParser::OptArgDesc Args::optArgs[] = {
      NULL },
   { 'i', "include",         CLP::ARG_REQ,  CLP::DUPOPT_CAT,  CLP_SEPARATOR,
      NULL },
-  {  0,  "show-libs",       CLP::ARG_NONE, CLP::DUPOPT_CLOB,  NULL,  NULL },
+  {  0,  "show-files",      CLP::ARG_NONE, CLP::DUPOPT_CLOB,  NULL,  NULL },
   CmdLineParser_OptArgDesc_NULL_MACRO // SGI's compiler requires this version
 };
 
@@ -99,7 +99,7 @@ Args::Args(int argc, const char* const argv[])
   measurements_directory = "";
   exclude_string = "";
   include_string = "";
-  show_libs = false;
+  show_files = false;
 
   parse(argc, argv);
 }
@@ -159,8 +159,8 @@ Args::parse(int argc, const char* const argv[])
       include_string = parser.getOptArg("include");
     }
 
-    if (parser.isOpt("show-libs")) {
-      show_libs = true;
+    if (parser.isOpt("show-files")) {
+      show_files = true;
     }
 
     // Check for required arguments

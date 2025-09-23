@@ -273,7 +273,7 @@ $(STRUCTS_DIR)/%-gpucfg-$(GPUBIN_CFG).hpcstruct: $(GPUBIN_DIR)/%
 # analyze files to create structure files
 #-------------------------------------------------------------------------------
 
-.PHONY: all analyze clean show-libs
+.PHONY: all analyze clean show-files
 
 DOMAKE=1
 
@@ -285,8 +285,8 @@ endif
 
 analyze: $(GS) $(CS)
 
-show-libs:
-	$(PROFLM) --show-libs $(EXCL_LIST) $(MEAS_DIR)
+show-files:
+	$(PROFLM) --show-files $(EXCL_LIST) $(MEAS_DIR)
 
 #-------------------------------------------------------------------------------
 # remove all generated files
@@ -439,13 +439,13 @@ doMeasurementsDir
   }
 
   //--------------------------------------------------
-  // show libraries that will be analyzed and exit
+  // show module files that will be analyzed and exit
   //--------------------------------------------------
-  if (args.show_libs) {
-    make_cmd += " show-libs";
+  if (args.show_files) {
+    make_cmd += " show-files";
 
     if (system(make_cmd.c_str()) != 0) {
-      DIAG_EMsg("make show-libs failed");
+      DIAG_EMsg("make show-files failed");
       exit(1);
     }
     exit(0);
