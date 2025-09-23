@@ -431,8 +431,9 @@ init(void)
     pcsampling_hpcrun_api.tmsg = NULL;
 
     // Determine namespace scope based on environment variable
-    // Following GTPin pattern from the conversation
-    Lmid_t scope = getenv("HPCRUN_PCSAMPLING_SANDBOX") ? LM_ID_NEWLM : LM_ID_BASE;
+    // Following GTPin pattern: default to isolation (LM_ID_NEWLM)
+    // Use shared namespace (LM_ID_BASE) only when explicitly requested
+    Lmid_t scope = getenv("HPCRUN_L0_PCSAMPLING_VISIBLE") ? LM_ID_BASE : LM_ID_NEWLM;
 
     // Load PC sampling library
     pcsampling_lib_handle = dlmopen(scope, HPCRUN_PCSAMPLING_CXX_SO, RTLD_LOCAL | RTLD_LAZY);
