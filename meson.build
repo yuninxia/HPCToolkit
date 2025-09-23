@@ -418,6 +418,19 @@ if mpi_dep.found()
 endif
 
 
+# For testing hpcprof-mpi, we also need mpiexec to actually launch the tool.
+mpiexec = find_program(
+  'mpiexec',
+  required: get_option('hpcprof_mpi_tests').require(
+    mpi_dep.found(),
+    error_message: 'hpcprof-mpi tests enabled but MPI was either disabled or not found',
+  ),
+)
+if mpiexec.found()
+  mpiexec_cmd = [mpiexec.full_path(), '-host', 'localhost:1000', '-n']
+endif
+
+
 # Find support for CUDA performance monitoring
 #
 # NB: The CUDA dependency expects to be used with (implicit) `link_language: 'cuda'`, but we link

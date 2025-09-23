@@ -22,6 +22,12 @@ option(
 )
 
 option('hpcprof_mpi', type: 'feature', description: 'Build hpcprof-mpi')
+option(
+  'hpcprof_mpi_tests',
+  type: 'feature',
+  description: 'Enable tests for hpcprof-mpi, which requires a working MPI launcher (mpiexec)',
+  value: 'disabled',
+)
 
 option('python', type: 'feature', description: 'Enable Python unwinder (experimental)')
 
