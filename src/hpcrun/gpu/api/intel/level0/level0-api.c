@@ -21,7 +21,7 @@
 //******************************************************************************
 
 #include "level0-api.h"
-#include "pcsampling-shim.h"
+#include "level0-pc-shim.h"
 #include "level0-binary.h"
 #include "level0-command-list-map.h"
 #include "level0-command-list-context-map.h"
@@ -33,7 +33,7 @@
 #include "level0-fence-map.h"
 #include "level0-id-map.h"
 #include "level0-kernel-module-map.h"
-#include "pcsampling/level0-pcsampling.hpp"
+#include "pcsampling/level0-pc.hpp"
 
 #include "../../../../utilities/linuxtimer.h"
 

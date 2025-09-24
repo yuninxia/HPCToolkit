@@ -8,8 +8,8 @@
 #include <level_zero/zet_api.h>
 #include <level_zero/layers/zel_tracing_api.h>
 
-#include "../pcsampling-hpcrun-api.h"
-#include "pcsampling-api-receiver.hpp"
+#include "../level0-pc-hpcrun-api.h"
+#include "level0-pc-api-receiver.hpp"
 
 namespace {
 

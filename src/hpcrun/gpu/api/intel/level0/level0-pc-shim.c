@@ -20,7 +20,7 @@
 // local includes
 //******************************************************************************
 
-#include "pcsampling-shim.h"
+#include "level0-pc-shim.h"
 #include "../hpcrun-sonames.h"
 #include "../../../../messages/messages.h"
 #include "../../../../safe-sampling.h"

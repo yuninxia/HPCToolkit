@@ -20,7 +20,7 @@
 // local includes
 //*****************************************************************************
 
-#include "../pcsampling-hpcrun-api.h"
+#include "../level0-pc-hpcrun-api.h"
 #include "../../../../../../common/lean/mcs-lock.h"
 
 

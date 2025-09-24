@@ -16,7 +16,7 @@
 //*****************************************************************************
 
 #include "level0-tracing-callback-methods.hpp"
-#include "pcsampling-api-receiver.hpp"
+#include "level0-pc-api-receiver.hpp"
 #include "level0-kernel-properties-cache.hpp"
 
 

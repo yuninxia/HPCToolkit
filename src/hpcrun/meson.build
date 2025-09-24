@@ -494,15 +494,15 @@ if level0_dep.found()
     'gpu/api/intel/level0/pcsampling/level0-metric-streamer.cpp',
     'gpu/api/intel/level0/pcsampling/level0-metric.cpp',
     'gpu/api/intel/level0/pcsampling/level0-module.cpp',
-    'gpu/api/intel/level0/pcsampling/level0-pcsampling.cpp',
+    'gpu/api/intel/level0/pcsampling/level0-pc.cpp',
     'gpu/api/intel/level0/pcsampling/level0-timestamp.cpp',
     'gpu/api/intel/level0/pcsampling/level0-tracing-callback-methods.cpp',
     'gpu/api/intel/level0/pcsampling/level0-tracing-callbacks.cpp',
     'gpu/api/intel/level0/pcsampling/level0-tracing.cpp',
     'gpu/api/intel/level0/pcsampling/level0-unique-id.cpp',
-    'gpu/api/intel/level0/pcsampling/pcsampling-api-receiver.cpp',
-    'gpu/api/intel/level0/pcsampling/pcsampling-main.cpp',
-    'gpu/api/intel/level0/pcsampling/pcsampling-level0-stubs.cpp',
+    'gpu/api/intel/level0/pcsampling/level0-pc-api-receiver.cpp',
+    'gpu/api/intel/level0/pcsampling/level0-pc-main.cpp',
+    'gpu/api/intel/level0/pcsampling/level0-pc-stubs.cpp',
   )
 
   level0_pc_cxx_lib = shared_library(
@@ -527,7 +527,7 @@ if level0_dep.found()
   )
   libs += level0_pc_cxx_lib
 
-  srcs += files('gpu/api/intel/level0/pcsampling-shim.c')
+  srcs += files('gpu/api/intel/level0/level0-pc-shim.c')
 endif
 
 if gtpin_dep.found()
