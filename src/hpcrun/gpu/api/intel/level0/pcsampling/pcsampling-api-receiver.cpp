@@ -28,7 +28,7 @@
 //*****************************************************************************
 
 // Global API pointer - received from libhpcrun
-static pcsampling_hpcrun_api_t* hpcrun_api = nullptr;
+static level0_pc_hpcrun_api_t* hpcrun_api = nullptr;
 
 // Initialization state
 static std::atomic<bool> api_initialized(false);
@@ -38,8 +38,8 @@ static std::atomic<bool> api_initialized(false);
 // capabilities definition
 //*****************************************************************************
 
-static const pcsampling_capabilities_t pcsampling_capabilities = {
-    .api_version = PCSAMPLING_API_VERSION,
+static const level0_pc_capabilities_t level0_pc_capabilities = {
+    .api_version = LEVEL0_PC_API_VERSION,
     .supports_stall_sampling = true,
     .supports_instruction_sampling = false,  // Not yet implemented
     .max_buffer_size = 1024 * 1024  // 1MB default buffer size
@@ -54,25 +54,25 @@ extern "C" {
 
 __attribute__((visibility("default")))
 uint32_t
-pcsampling_get_api_version(void)
+level0_pc_get_api_version(void)
 {
-    return PCSAMPLING_API_VERSION;
+    return LEVEL0_PC_API_VERSION;
 }
 
 
 __attribute__((visibility("default")))
-const pcsampling_capabilities_t*
-pcsampling_get_capabilities(void)
+const level0_pc_capabilities_t*
+level0_pc_get_capabilities(void)
 {
-    return &pcsampling_capabilities;
+    return &level0_pc_capabilities;
 }
 
 
 __attribute__((visibility("default")))
 void
-pcsampling_hpcrun_api_set(pcsampling_hpcrun_api_t* api)
+level0_pc_hpcrun_api_set(level0_pc_hpcrun_api_t* api)
 {
-    if (api && api->api_version == PCSAMPLING_API_VERSION) {
+    if (api && api->api_version == LEVEL0_PC_API_VERSION) {
         hpcrun_api = api;
         api_initialized = true;
     }
@@ -93,7 +93,7 @@ isInitialized()
     return api_initialized.load() && hpcrun_api != nullptr;
 }
 
-pcsampling_hpcrun_api_t*
+level0_pc_hpcrun_api_t*
 getHpcrunApi()
 {
     return hpcrun_api;
@@ -216,7 +216,7 @@ enableNewThreads()
 //-----------------------------------------------------------------------------
 
 void
-reportError(pcsampling_result_t error_code, const char* message,
+reportError(level0_pc_result_t error_code, const char* message,
             const char* file, int line)
 {
     if (hpcrun_api && hpcrun_api->error_handler) {

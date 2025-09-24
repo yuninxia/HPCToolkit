@@ -32,12 +32,12 @@ extern "C" {
 static ZeCollector* ze_collector = nullptr;
 static ZeMetricProfiler* metric_profiler = nullptr;
 
-static pthread_once_t level0_pcsampling_init_once = PTHREAD_ONCE_INIT;
-static std::string level0_pcsampling_enabled_str = (std::getenv("ZET_ENABLE_METRICS") ? std::getenv("ZET_ENABLE_METRICS") : "");
+static pthread_once_t level0_pc_init_once = PTHREAD_ONCE_INIT;
+static std::string level0_pc_enabled_str = (std::getenv("ZET_ENABLE_METRICS") ? std::getenv("ZET_ENABLE_METRICS") : "");
 
 // Thread-safe dispatch pointer for initialization
 static const struct hpcrun_foil_appdispatch_level0* saved_dispatch = nullptr;
-static bool pcsampling_init_succeeded = false;
+static bool level0_pc_init_succeeded = false;
 
 
 //******************************************************************************
@@ -50,7 +50,7 @@ isPcSamplingEnabled
   void
 )
 {
-  return level0_pcsampling_enabled_str == "1";
+  return level0_pc_enabled_str == "1";
 }
 
 static void
@@ -86,9 +86,9 @@ pcSamplingEnableHelper
     EEMSG("Level0: Failed to create ZeCollector instance");
     // Disable profiling since we couldn't initialize collector
     disableProfiling();
-    pcsampling_init_succeeded = false;
+    level0_pc_init_succeeded = false;
   } else {
-    pcsampling_init_succeeded = true;
+    level0_pc_init_succeeded = true;
   }
 }
 
@@ -113,7 +113,7 @@ level0PCSamplingInit
   if (isPcSamplingEnabled()) {
     // Save the dispatch pointer in a static variable for use in the lambda
     saved_dispatch = dispatch;
-    pthread_once(&level0_pcsampling_init_once, []() { pcSamplingEnableHelper(saved_dispatch); });
+    pthread_once(&level0_pc_init_once, []() { pcSamplingEnableHelper(saved_dispatch); });
   } else {
     TMSG(LEVEL0, "PC sampling is not enabled in the current configuration");
   }
@@ -126,7 +126,7 @@ level0PCSamplingFini
 )
 {
   // Only cleanup if PC sampling was enabled AND successfully initialized
-  if (isPcSamplingEnabled() && pcsampling_init_succeeded) {
+  if (isPcSamplingEnabled() && level0_pc_init_succeeded) {
     // Export cache statistics if in debug mode
     if (std::getenv("HPCTOOLKIT_LEVEL0_DEBUG_CACHE")) {
       auto stats = KernelPropertiesCache::getInstance().getStats();
@@ -149,7 +149,7 @@ level0PCSamplingFini
     
     // Reset initialization flag to allow re-initialization if needed
     pthread_once_t once_init = PTHREAD_ONCE_INIT;
-    level0_pcsampling_init_once = once_init;
+    level0_pc_init_once = once_init;
   }
 }
 
@@ -159,5 +159,5 @@ level0PCSamplingIsReady
   void
 )
 {
-  return pcsampling_init_succeeded && isPcSamplingEnabled();
+  return level0_pc_init_succeeded && isPcSamplingEnabled();
 }

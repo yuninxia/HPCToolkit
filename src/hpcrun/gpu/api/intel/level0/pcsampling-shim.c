@@ -42,8 +42,8 @@
 //******************************************************************************
 
 static pthread_once_t once_control = PTHREAD_ONCE_INIT;
-static pcsampling_result_t init_result = PCSAMPLING_ERROR_INIT_FAILED;
-static void* pcsampling_lib_handle = NULL;
+static level0_pc_result_t init_result = LEVEL0_PC_ERROR_INIT_FAILED;
+static void* level0_pc_lib_handle = NULL;
 
 static ze_result_t
 zeDriverGetExtensionFunctionAddress_wrapper(ze_driver_handle_t hDriver, const char* name,
@@ -54,15 +54,15 @@ zeDriverGetExtensionFunctionAddress_wrapper(ze_driver_handle_t hDriver, const ch
 }
 
 // Function pointers to PC sampling library
-static uint32_t (*pcsampling_get_api_version_fn)(void);
-static const pcsampling_capabilities_t* (*pcsampling_get_capabilities_fn)(void);
-static void (*pcsampling_hpcrun_api_set_fn)(pcsampling_hpcrun_api_t*);
-static pcsampling_result_t (*pcsampling_init_fn)(const struct hpcrun_foil_appdispatch_level0*, char*, size_t);
-static pcsampling_result_t (*pcsampling_shutdown_fn)(void);
-static bool (*pcsampling_enabled_fn)(void);
-static void* (*pcsampling_profiler_create_fn)(const struct hpcrun_foil_appdispatch_level0*, pcsampling_result_t*);
-static void (*pcsampling_profiler_destroy_fn)(void*);
-static void (*pcsampling_update_correlation_id_fn)(uint64_t, gpu_activity_channel_t*, void*);
+static uint32_t (*level0_pc_get_api_version_fn)(void);
+static const level0_pc_capabilities_t* (*level0_pc_get_capabilities_fn)(void);
+static void (*level0_pc_hpcrun_api_set_fn)(level0_pc_hpcrun_api_t*);
+static level0_pc_result_t (*level0_pc_init_fn)(const struct hpcrun_foil_appdispatch_level0*, char*, size_t);
+static level0_pc_result_t (*level0_pc_shutdown_fn)(void);
+static bool (*level0_pc_enabled_fn)(void);
+static void* (*level0_pc_profiler_create_fn)(const struct hpcrun_foil_appdispatch_level0*, level0_pc_result_t*);
+static void (*level0_pc_profiler_destroy_fn)(void*);
+static void (*level0_pc_update_correlation_id_fn)(uint64_t, gpu_activity_channel_t*, void*);
 
 
 //******************************************************************************
@@ -162,7 +162,7 @@ create_profiling_thread_wrapper(void* (*func)(void*), void* arg, const char* nam
     int ret = pthread_create(&entry->thread, NULL, func, arg);
     if (ret == 0) {
         entry->id = next_thread_id++;
-        strncpy(entry->name, name ? name : "pcsampling", sizeof(entry->name) - 1);
+        strncpy(entry->name, name ? name : "level0_pc", sizeof(entry->name) - 1);
         entry->name[sizeof(entry->name) - 1] = '\0';
         entry->next = thread_registry;
         thread_registry = entry;
@@ -310,8 +310,8 @@ hpcrun_getenv_wrapper(const char* name)
 }
 
 
-static pcsampling_hpcrun_api_t pcsampling_hpcrun_api = {
-    .api_version = PCSAMPLING_API_VERSION,
+static level0_pc_hpcrun_api_t level0_pc_hpcrun_api = {
+    .api_version = LEVEL0_PC_API_VERSION,
 
     // Memory management
     .gpu_activity_alloc = gpu_activity_alloc_wrapper,
@@ -328,7 +328,7 @@ static pcsampling_hpcrun_api_t pcsampling_hpcrun_api = {
 
     // Error handling
     .error_handler = error_handler_wrapper,
-    .warning_handler = (pcsampling_warning_handler_t)EMSG,
+    .warning_handler = (level0_pc_warning_handler_t)EMSG,
 
     // Safe entry/exit
     .safe_enter = hpcrun_safe_enter_noinline,
@@ -427,48 +427,48 @@ init(void)
 
     // Note: EEMSG and TMSG are macros that can't be used as function pointers
     // These will be set to NULL and PC sampling library should use its own logging
-    pcsampling_hpcrun_api.messages_error = NULL;
-    pcsampling_hpcrun_api.tmsg = NULL;
+    level0_pc_hpcrun_api.messages_error = NULL;
+    level0_pc_hpcrun_api.tmsg = NULL;
 
     // Determine namespace scope based on environment variable
     // Following GTPin pattern: default to isolation (LM_ID_NEWLM)
     // Use shared namespace (LM_ID_BASE) only when explicitly requested
-    Lmid_t scope = getenv("HPCRUN_L0_PCSAMPLING_VISIBLE") ? LM_ID_BASE : LM_ID_NEWLM;
+    Lmid_t scope = getenv("HPCRUN_LEVEL0_PC_VISIBLE") ? LM_ID_BASE : LM_ID_NEWLM;
 
     // Load PC sampling library
-    pcsampling_lib_handle = dlmopen(scope, HPCRUN_PCSAMPLING_CXX_SO, RTLD_LOCAL | RTLD_LAZY);
+    level0_pc_lib_handle = dlmopen(scope, HPCRUN_LEVEL0_PC_CXX_SO, RTLD_LOCAL | RTLD_LAZY);
 
-    if (pcsampling_lib_handle == NULL) {
-        EEMSG("Unable to load PC sampling library %s: %s", HPCRUN_PCSAMPLING_CXX_SO, dlerror());
-        init_result = PCSAMPLING_ERROR_LIBRARY_LOAD;
+    if (level0_pc_lib_handle == NULL) {
+        EEMSG("Unable to load PC sampling library %s: %s", HPCRUN_LEVEL0_PC_CXX_SO, dlerror());
+        init_result = LEVEL0_PC_ERROR_LIBRARY_LOAD;
         return;
     }
 
     // Check API version first
-    pcsampling_get_api_version_fn = dlsym(pcsampling_lib_handle, "pcsampling_get_api_version");
-    if (!pcsampling_get_api_version_fn) {
-        EEMSG("PC sampling library missing pcsampling_get_api_version function");
-        init_result = PCSAMPLING_ERROR_VERSION_MISMATCH;
-        dlclose(pcsampling_lib_handle);
-        pcsampling_lib_handle = NULL;
+    level0_pc_get_api_version_fn = dlsym(level0_pc_lib_handle, "level0_pc_get_api_version");
+    if (!level0_pc_get_api_version_fn) {
+        EEMSG("PC sampling library missing level0_pc_get_api_version function");
+        init_result = LEVEL0_PC_ERROR_VERSION_MISMATCH;
+        dlclose(level0_pc_lib_handle);
+        level0_pc_lib_handle = NULL;
         return;
     }
 
-    uint32_t lib_version = pcsampling_get_api_version_fn();
-    if (lib_version != PCSAMPLING_API_VERSION) {
+    uint32_t lib_version = level0_pc_get_api_version_fn();
+    if (lib_version != LEVEL0_PC_API_VERSION) {
         EEMSG("PC sampling library API version mismatch: expected %d, got %d",
-              PCSAMPLING_API_VERSION, lib_version);
-        init_result = PCSAMPLING_ERROR_VERSION_MISMATCH;
-        dlclose(pcsampling_lib_handle);
-        pcsampling_lib_handle = NULL;
+              LEVEL0_PC_API_VERSION, lib_version);
+        init_result = LEVEL0_PC_ERROR_VERSION_MISMATCH;
+        dlclose(level0_pc_lib_handle);
+        level0_pc_lib_handle = NULL;
         return;
     }
 
     // Get capabilities and check if required features are supported
-    pcsampling_get_capabilities_fn = dlsym(pcsampling_lib_handle, "pcsampling_get_capabilities");
-    if (pcsampling_get_capabilities_fn) {
-        const pcsampling_capabilities_t* caps = pcsampling_get_capabilities_fn();
-        if (getenv("HPCRUN_PCSAMPLING_STALL") && !caps->supports_stall_sampling) {
+    level0_pc_get_capabilities_fn = dlsym(level0_pc_lib_handle, "level0_pc_get_capabilities");
+    if (level0_pc_get_capabilities_fn) {
+        const level0_pc_capabilities_t* caps = level0_pc_get_capabilities_fn();
+        if (getenv("HPCRUN_LEVEL0_PC_STALL") && !caps->supports_stall_sampling) {
             EMSG("Stall sampling requested but not supported by PC sampling library");
         }
         TMSG(LEVEL0, "PC Sampling capabilities: stall=%d, instruction=%d, max_buffer=%zu",
@@ -477,36 +477,36 @@ init(void)
     }
 
     // Set API for PC sampling library
-    pcsampling_hpcrun_api_set_fn = dlsym(pcsampling_lib_handle, "pcsampling_hpcrun_api_set");
-    if (!pcsampling_hpcrun_api_set_fn) {
-        EEMSG("Unable to find pcsampling_hpcrun_api_set in PC sampling library");
-        init_result = PCSAMPLING_ERROR_INIT_FAILED;
-        dlclose(pcsampling_lib_handle);
-        pcsampling_lib_handle = NULL;
+    level0_pc_hpcrun_api_set_fn = dlsym(level0_pc_lib_handle, "level0_pc_hpcrun_api_set");
+    if (!level0_pc_hpcrun_api_set_fn) {
+        EEMSG("Unable to find level0_pc_hpcrun_api_set in PC sampling library");
+        init_result = LEVEL0_PC_ERROR_INIT_FAILED;
+        dlclose(level0_pc_lib_handle);
+        level0_pc_lib_handle = NULL;
         return;
     }
 
     // Pass the API table to the PC sampling library
-    pcsampling_hpcrun_api_set_fn(&pcsampling_hpcrun_api);
+    level0_pc_hpcrun_api_set_fn(&level0_pc_hpcrun_api);
 
     // Bind exported functions
-    pcsampling_init_fn = dlsym(pcsampling_lib_handle, "pcsampling_init");
-    pcsampling_shutdown_fn = dlsym(pcsampling_lib_handle, "pcsampling_shutdown");
-    pcsampling_enabled_fn = dlsym(pcsampling_lib_handle, "pcsampling_enabled");
-    pcsampling_profiler_create_fn = dlsym(pcsampling_lib_handle, "pcsampling_profiler_create");
-    pcsampling_profiler_destroy_fn = dlsym(pcsampling_lib_handle, "pcsampling_profiler_destroy");
-    pcsampling_update_correlation_id_fn = dlsym(pcsampling_lib_handle, "pcsampling_update_correlation_id");
+    level0_pc_init_fn = dlsym(level0_pc_lib_handle, "level0_pc_init");
+    level0_pc_shutdown_fn = dlsym(level0_pc_lib_handle, "level0_pc_shutdown");
+    level0_pc_enabled_fn = dlsym(level0_pc_lib_handle, "level0_pc_enabled");
+    level0_pc_profiler_create_fn = dlsym(level0_pc_lib_handle, "level0_pc_profiler_create");
+    level0_pc_profiler_destroy_fn = dlsym(level0_pc_lib_handle, "level0_pc_profiler_destroy");
+    level0_pc_update_correlation_id_fn = dlsym(level0_pc_lib_handle, "level0_pc_update_correlation_id");
 
     // Check that essential functions are present
-    if (!pcsampling_init_fn || !pcsampling_shutdown_fn || !pcsampling_enabled_fn) {
+    if (!level0_pc_init_fn || !level0_pc_shutdown_fn || !level0_pc_enabled_fn) {
         EEMSG("PC sampling library missing essential functions");
-        init_result = PCSAMPLING_ERROR_INIT_FAILED;
-        dlclose(pcsampling_lib_handle);
-        pcsampling_lib_handle = NULL;
+        init_result = LEVEL0_PC_ERROR_INIT_FAILED;
+        dlclose(level0_pc_lib_handle);
+        level0_pc_lib_handle = NULL;
         return;
     }
 
-    init_result = PCSAMPLING_SUCCESS;
+    init_result = LEVEL0_PC_SUCCESS;
     TMSG(LEVEL0, "PC Sampling: Library loaded successfully");
 }
 
@@ -515,39 +515,39 @@ init(void)
 // public interface functions
 //******************************************************************************
 
-pcsampling_result_t
-pcsampling_init(const struct hpcrun_foil_appdispatch_level0* dispatch, char* error_buffer, size_t error_buffer_size)
+level0_pc_result_t
+level0_pc_init(const struct hpcrun_foil_appdispatch_level0* dispatch, char* error_buffer, size_t error_buffer_size)
 {
     pthread_once(&once_control, init);
 
-    if (init_result != PCSAMPLING_SUCCESS) {
+    if (init_result != LEVEL0_PC_SUCCESS) {
         return init_result;
     }
 
-    if (pcsampling_init_fn) {
-        pcsampling_result_t result = pcsampling_init_fn(dispatch, error_buffer, error_buffer_size);
-        if (result != PCSAMPLING_SUCCESS && error_buffer && error_buffer_size > 0) {
+    if (level0_pc_init_fn) {
+        level0_pc_result_t result = level0_pc_init_fn(dispatch, error_buffer, error_buffer_size);
+        if (result != LEVEL0_PC_SUCCESS && error_buffer && error_buffer_size > 0) {
             EEMSG("PC sampling initialization failed: %s", error_buffer);
         }
         return result;
     }
 
-    return PCSAMPLING_ERROR_INIT_FAILED;
+    return LEVEL0_PC_ERROR_INIT_FAILED;
 }
 
 
-pcsampling_result_t
-pcsampling_shutdown(void)
+level0_pc_result_t
+level0_pc_shutdown(void)
 {
     pthread_once(&once_control, init);
 
-    if (init_result != PCSAMPLING_SUCCESS) {
+    if (init_result != LEVEL0_PC_SUCCESS) {
         return init_result;
     }
 
-    pcsampling_result_t result = PCSAMPLING_ERROR_NOT_SUPPORTED;
-    if (pcsampling_shutdown_fn) {
-        result = pcsampling_shutdown_fn();
+    level0_pc_result_t result = LEVEL0_PC_ERROR_NOT_SUPPORTED;
+    if (level0_pc_shutdown_fn) {
+        result = level0_pc_shutdown_fn();
     }
 
     // Join any threads that might remain registered after the library shutdown
@@ -569,12 +569,12 @@ pcsampling_shutdown(void)
 
 
 bool
-pcsampling_enabled(void)
+level0_pc_enabled(void)
 {
     pthread_once(&once_control, init);
 
-    if (init_result == PCSAMPLING_SUCCESS && pcsampling_enabled_fn) {
-        return pcsampling_enabled_fn();
+    if (init_result == LEVEL0_PC_SUCCESS && level0_pc_enabled_fn) {
+        return level0_pc_enabled_fn();
     }
 
     return false;
@@ -582,41 +582,41 @@ pcsampling_enabled(void)
 
 
 void*
-pcsampling_profiler_create(const struct hpcrun_foil_appdispatch_level0* dispatch, pcsampling_result_t* result)
+level0_pc_profiler_create(const struct hpcrun_foil_appdispatch_level0* dispatch, level0_pc_result_t* result)
 {
     pthread_once(&once_control, init);
 
-    if (init_result != PCSAMPLING_SUCCESS) {
+    if (init_result != LEVEL0_PC_SUCCESS) {
         if (result) *result = init_result;
         return NULL;
     }
 
-    if (pcsampling_profiler_create_fn) {
-        return pcsampling_profiler_create_fn(dispatch, result);
+    if (level0_pc_profiler_create_fn) {
+        return level0_pc_profiler_create_fn(dispatch, result);
     }
 
-    if (result) *result = PCSAMPLING_ERROR_INIT_FAILED;
+    if (result) *result = LEVEL0_PC_ERROR_INIT_FAILED;
     return NULL;
 }
 
 
 void
-pcsampling_profiler_destroy(void* profiler)
+level0_pc_profiler_destroy(void* profiler)
 {
     pthread_once(&once_control, init);
 
-    if (init_result == PCSAMPLING_SUCCESS && pcsampling_profiler_destroy_fn) {
-        pcsampling_profiler_destroy_fn(profiler);
+    if (init_result == LEVEL0_PC_SUCCESS && level0_pc_profiler_destroy_fn) {
+        level0_pc_profiler_destroy_fn(profiler);
     }
 }
 
 
 void
-pcsampling_update_correlation_id(uint64_t cid, gpu_activity_channel_t* channel, void* context)
+level0_pc_update_correlation_id(uint64_t cid, gpu_activity_channel_t* channel, void* context)
 {
     pthread_once(&once_control, init);
 
-    if (init_result == PCSAMPLING_SUCCESS && pcsampling_update_correlation_id_fn) {
-        pcsampling_update_correlation_id_fn(cid, channel, context);
+    if (init_result == LEVEL0_PC_SUCCESS && level0_pc_update_correlation_id_fn) {
+        level0_pc_update_correlation_id_fn(cid, channel, context);
     }
 }

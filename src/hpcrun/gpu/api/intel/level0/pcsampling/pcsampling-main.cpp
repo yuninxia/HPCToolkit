@@ -26,7 +26,7 @@
 // local data
 //*****************************************************************************
 
-static bool pcsampling_initialized = false;
+static bool level0_pc_initialized = false;
 
 
 //*****************************************************************************
@@ -35,12 +35,12 @@ static bool pcsampling_initialized = false;
 
 extern "C" {
 
-// NOTE: pcsampling_hpcrun_api_set, pcsampling_get_api_version, and
-// pcsampling_get_capabilities are implemented in pcsampling-api-receiver.cpp.
+// NOTE: level0_pc_hpcrun_api_set, level0_pc_get_api_version, and
+// level0_pc_get_capabilities are implemented in pcsampling-api-receiver.cpp.
 
 __attribute__((visibility("default")))
-pcsampling_result_t
-pcsampling_init(
+level0_pc_result_t
+level0_pc_init(
   const struct hpcrun_foil_appdispatch_level0* dispatch,
   char* error_buffer,
   size_t error_buffer_size
@@ -51,15 +51,15 @@ pcsampling_init(
       std::strncpy(error_buffer, "PC sampling API not initialized", error_buffer_size - 1);
       error_buffer[error_buffer_size - 1] = '\0';
     }
-    return PCSAMPLING_ERROR_INIT_FAILED;
+    return LEVEL0_PC_ERROR_INIT_FAILED;
   }
 
-  if (pcsampling_initialized) {
+  if (level0_pc_initialized) {
     if (error_buffer && error_buffer_size > 0) {
       std::strncpy(error_buffer, "PC sampling already initialized", error_buffer_size - 1);
       error_buffer[error_buffer_size - 1] = '\0';
     }
-    return PCSAMPLING_SUCCESS;
+    return LEVEL0_PC_SUCCESS;
   }
 
   level0PCSamplingInit(dispatch);
@@ -69,31 +69,31 @@ pcsampling_init(
       std::strncpy(error_buffer, "Level Zero PC sampling initialization failed", error_buffer_size - 1);
       error_buffer[error_buffer_size - 1] = '\0';
     }
-    return PCSAMPLING_ERROR_INIT_FAILED;
+    return LEVEL0_PC_ERROR_INIT_FAILED;
   }
 
-  pcsampling_initialized = true;
-  return PCSAMPLING_SUCCESS;
+  level0_pc_initialized = true;
+  return LEVEL0_PC_SUCCESS;
 }
 
 
 __attribute__((visibility("default")))
-pcsampling_result_t
-pcsampling_shutdown(void)
+level0_pc_result_t
+level0_pc_shutdown(void)
 {
-  if (!pcsampling_initialized) {
-    return PCSAMPLING_SUCCESS;
+  if (!level0_pc_initialized) {
+    return LEVEL0_PC_SUCCESS;
   }
 
   level0PCSamplingFini();
-  pcsampling_initialized = false;
-  return PCSAMPLING_SUCCESS;
+  level0_pc_initialized = false;
+  return LEVEL0_PC_SUCCESS;
 }
 
 
 __attribute__((visibility("default")))
 bool
-pcsampling_enabled(void)
+level0_pc_enabled(void)
 {
   return level0PCSamplingIsReady();
 }
@@ -101,25 +101,25 @@ pcsampling_enabled(void)
 
 __attribute__((visibility("default")))
 void*
-pcsampling_profiler_create(
+level0_pc_profiler_create(
   const struct hpcrun_foil_appdispatch_level0* dispatch,
-  pcsampling_result_t* result
+  level0_pc_result_t* result
 )
 {
   (void)dispatch;
-  if (!pcsampling_initialized) {
-    if (result) *result = PCSAMPLING_ERROR_INIT_FAILED;
+  if (!level0_pc_initialized) {
+    if (result) *result = LEVEL0_PC_ERROR_INIT_FAILED;
     return nullptr;
   }
 
-  if (result) *result = PCSAMPLING_SUCCESS;
+  if (result) *result = LEVEL0_PC_SUCCESS;
   return reinterpret_cast<void*>(0x1);
 }
 
 
 __attribute__((visibility("default")))
 void
-pcsampling_profiler_destroy(void* profiler)
+level0_pc_profiler_destroy(void* profiler)
 {
   (void)profiler;
 }
@@ -127,7 +127,7 @@ pcsampling_profiler_destroy(void* profiler)
 
 __attribute__((visibility("default")))
 void
-pcsampling_update_correlation_id(
+level0_pc_update_correlation_id(
   uint64_t cid,
   gpu_activity_channel_t* channel,
   void* context

@@ -4,8 +4,8 @@
 
 // -*-Mode: C++;-*-
 
-#ifndef _PCSAMPLING_API_RECEIVER_HPP_
-#define _PCSAMPLING_API_RECEIVER_HPP_
+#ifndef _LEVEL0_PC_API_RECEIVER_HPP_
+#define _LEVEL0_PC_API_RECEIVER_HPP_
 
 //*****************************************************************************
 // system includes
@@ -36,7 +36,7 @@ namespace pcsampling {
 
 // Check if API has been initialized
 bool isInitialized();
-pcsampling_hpcrun_api_t* getHpcrunApi();
+level0_pc_hpcrun_api_t* getHpcrunApi();
 
 //-----------------------------------------------------------------------------
 // Memory management wrappers
@@ -63,12 +63,12 @@ void enableNewThreads();
 // Error handling wrappers
 //-----------------------------------------------------------------------------
 
-void reportError(pcsampling_result_t error_code, const char* message,
+void reportError(level0_pc_result_t error_code, const char* message,
                 const char* file, int line);
 void reportWarning(const char* fmt, ...);
 
 // Macro for easier error reporting
-#define PCSAMPLING_ERROR(code, msg) \
+#define LEVEL0_PC_ERROR(code, msg) \
     pcsampling::reportError(code, msg, __FILE__, __LINE__)
 
 //-----------------------------------------------------------------------------
@@ -243,4 +243,4 @@ size_t lookupKernelSize(const char* kernel_name);
 
 } // namespace pcsampling
 
-#endif // _PCSAMPLING_API_RECEIVER_HPP_
+#endif // _LEVEL0_PC_API_RECEIVER_HPP_
