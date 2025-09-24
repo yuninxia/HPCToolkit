@@ -241,8 +241,32 @@ rocm_agent_op
   rocm_agent_sampling_config_apply
     (agent, rocm_agent_sampling_config_op, &sampling_config);
 
-  const rocprofiler_pc_sampling_configuration_t *config =
-    CHOOSE_CONFIG(&sampling_config);
+  const rocprofiler_pc_sampling_configuration_t *config;
+
+  if (gpu_monitoring_instruction_sampling_is_enabled(GPU_INSTRUCTION_SAMPLING_SW)) {
+    if (sampling_config.host_trap) {
+      config = sampling_config.host_trap;
+    } else {
+      fprintf(stderr, "FATAL: hpcrun: ROCm: software PC sampling selected (pc=sw) but unavailable.\n");
+      exit(-1);
+    }
+  } else if (gpu_monitoring_instruction_sampling_is_enabled(GPU_INSTRUCTION_SAMPLING_HW)) {
+     if (sampling_config.stochastic) {
+      config = sampling_config.stochastic;
+    } else {
+      fprintf(stderr, "FATAL: hpcrun: ROCm: hardware PC sampling selected (pc=hw) but unavailable.\n");
+      exit(-1);
+    }
+  } else if (gpu_monitoring_instruction_sampling_is_enabled(GPU_INSTRUCTION_SAMPLING_UNSPECIFIED)) {
+    if (sampling_config.stochastic) {
+      config = sampling_config.stochastic;
+    } else if (sampling_config.host_trap) {
+      config = sampling_config.host_trap;
+    } else {
+      fprintf(stderr, "FATAL: hpcrun: ROCm: PC sampling selected but unavailable.\n");
+      exit(-1);
+    }
+  }
 
   PRINT("  rocm_agent_op: choose config: stochastic=0x%p, host_trap=0x%p, choice=0x%p\n",
         sampling_config.stochastic, sampling_config.host_trap, config);
@@ -270,8 +294,9 @@ rocm_sampling_init
   rocprofiler_context_id_t context_id
 )
 {
-  uint32_t sample_period = gpu_monitoring_instruction_sample_period_get();
-  if (sample_period == -1) return;
+  uint32_t sample_period = gpu_monitoring_instruction_sampling_period_get();
+
+  if (sample_period == GPU_SAMPLING_PERIOD_UNSPECIFIED) return;
 
   setenv("ROCPROFILER_PC_SAMPLING_BETA_ENABLED", "1", 1);
 

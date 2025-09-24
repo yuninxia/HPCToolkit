@@ -96,12 +96,12 @@ typedef uint64_t rocprofiler_pc_t;
 #define CONFIGURE_PC_SAMPLING_SERVICE_FLAG_VALUE , 0
 #endif
 
-#if ((ROCPROFILER_VERSION_MAJOR == 0 && ROCPROFILER_VERSION_MINOR > 5) ||              \
-     (ROCPROFILER_VERSION_MAJOR == 1))
-#define loaded_code_object_id code_object_id
-#define loaded_code_object_offset code_object_offset
-#define ROCPROFILER_OMPT_AVAILABLE
-#undef ROCPROFILER_PAGE_MIGRATION_AVAILABLE
+#if (ROCPROFILER_VERSION_MAJOR == 0 && ROCPROFILER_VERSION_MINOR == 4)
+#define PC_FORMAT "(%p)"
+#define PC_VALUE(pc) (void*)(pc)
+#else
+#define PC_FORMAT "pc=(co_id=%lu, offset=0x%lx)"
+#define PC_VALUE(pc) pc.loaded_code_object_id, pc.loaded_code_object_offset
 #endif
 
 #if (ROCPROFILER_VERSION_MAJOR == 0 && ROCPROFILER_VERSION_MINOR > 5)
@@ -112,12 +112,12 @@ typedef uint64_t rocprofiler_pc_t;
 #define ROCM_AGENT_VISIBLE(agent) 1
 #endif
 
-#if (ROCPROFILER_VERSION_MAJOR == 0 && ROCPROFILER_VERSION_MINOR == 4)
-#define PC_FORMAT "(%p)"
-#define PC_VALUE(pc) (void*)(pc)
-#else
-#define PC_FORMAT "pc=(co_id=%lu, offset=0x%lx)"
-#define PC_VALUE(pc) pc.loaded_code_object_id, pc.loaded_code_object_offset
+#if ((ROCPROFILER_VERSION_MAJOR == 0 && ROCPROFILER_VERSION_MINOR > 5) ||              \
+     (ROCPROFILER_VERSION_MAJOR == 1))
+#define loaded_code_object_id code_object_id
+#define loaded_code_object_offset code_object_offset
+#define ROCPROFILER_OMPT_AVAILABLE
+#define ROCPROFILER_PAGE_MIGRATION_AVAILABLE
 #endif
 
 //******************************************************************************
