@@ -34,6 +34,9 @@
 #include "../../common/diagnostics.h"
 #include "../../common/CmdLineParser.hpp"
 
+#define CLP_SEPARATOR "!!!"
+
+
 //*************************** Forward Declarations **************************
 
 //***************************************************************************
@@ -83,6 +86,9 @@ public:
 
 public:
   std::string measurements_directory;
+  std::string exclude_string;
+  std::string include_string;
+  bool show_files;
 
 private:
   static CmdLineParser::OptArgDesc optArgs[];

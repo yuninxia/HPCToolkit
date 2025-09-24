@@ -13,6 +13,7 @@ using std::cerr;
 using std::endl;
 
 #include <dlfcn.h>
+#include <errno.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <fstream>
@@ -28,6 +29,7 @@ using std::endl;
 
 #include "hpcstruct.hpp"
 
+#include "../common/diagnostics.h"
 #include "../common/lean/cpuset_hwthreads.h"
 #include "../common/lean/gpu-binary-naming.h"
 #include "../common/lean/hpcio.h"
@@ -93,7 +95,7 @@ endif
 $(MEAS_DIR)/all.lm:
 	@echo INFO: identifying load modules that need binary analysis
 	@echo
-	$(PROFLM) $(MEAS_DIR) > $(MEAS_DIR)/all.lm
+	$(PROFLM) $(EXCL_LIST) $(MEAS_DIR) > $(MEAS_DIR)/all.lm
 
 
 #*******************************************************************************
@@ -270,6 +272,9 @@ $(STRUCTS_DIR)/%-gpucfg-$(GPUBIN_CFG).hpcstruct: $(GPUBIN_DIR)/%
 #-------------------------------------------------------------------------------
 # analyze files to create structure files
 #-------------------------------------------------------------------------------
+
+.PHONY: all analyze clean show-files
+
 DOMAKE=1
 
 ifeq ($(DOMAKE),1)
@@ -279,6 +284,9 @@ all: $(CPUBIN_DIR) $(GPUBIN_USED_DIR)
 endif
 
 analyze: $(GS) $(CS)
+
+show-files:
+	$(PROFLM) --show-files $(EXCL_LIST) $(MEAS_DIR)
 
 #-------------------------------------------------------------------------------
 # remove all generated files
@@ -301,7 +309,6 @@ clean:
 // For a measurements directory, write a Makefile and launch hpcstruct
 // to analyze CPU and GPU binaries associated with the measurements
 //
-
 
 void
 doMeasurementsDir
@@ -406,31 +413,66 @@ doMeasurementsDir
            << "LJOBS = "        << jobs/pthreads << "\n"
            << "LTHREADS = "     << pthreads << "\n"
            << "PROFLM = "       << hpcproflm_path << "\n"
-           << "STRUCT= "        << hpcstruct_path << "\n";
-
-  if (!cache_path.empty()) {
-    makefile << "CACHE= "       << cache_path << "\n";
-  } else {
-    makefile << "CACHE= " << "\n";
-  }
+           << "STRUCT = "       << hpcstruct_path << "\n"
+           << "EXCL_LIST = "    << args.exclude_str << " " << args.include_str << "\n"
+           << "CACHE = "        << cache_path << "\n";
 
   makefile << analysis_makefile << endl;
-
   makefile.close();
 
-  // Construct the make command to invoke it
+  // Construct the make command (without the target)
   string make_cmd = string("make -C ") + structs_dir + " -k --silent "
-      + " --no-print-directory all";
+      + " --no-print-directory";
 
-  // Describe the parallelism and concurrency used
-  cout << "INFO: Using a pool of " << jobs << " threads to analyze binaries in a measurement directory" << endl;
-  cout << "INFO: Analyzing each large binary of >= " << args.parallel_analysis_threshold << " bytes in parallel using " << pthreads
-       << " threads" << endl;
-  cout << "INFO: Analyzing each small binary using " << small_threads <<
-    " thread" << ((small_threads > 1) ? "s" : "") <<  "\n" << endl;
+  //--------------------------------------------------
+  // make clean on measurements directory and exit
+  //--------------------------------------------------
+  if (args.make_clean) {
+    cout << "INFO: Cleaning measurements directory" << endl;
+    make_cmd += " clean";
 
-  // Run the make command
+    if (system(make_cmd.c_str()) != 0) {
+      DIAG_EMsg("make clean failed");
+      exit(1);
+    }
+    exit(0);
+  }
+
+  //--------------------------------------------------
+  // show module files that will be analyzed and exit
+  //--------------------------------------------------
+  if (args.show_files) {
+    make_cmd += " show-files";
+
+    if (system(make_cmd.c_str()) != 0) {
+      DIAG_EMsg("make show-files failed");
+      exit(1);
+    }
+    exit(0);
+  }
+
+  //--------------------------------------------------
+  // make all: analyze binaries to make struct files
+  //--------------------------------------------------
+  cout << "INFO: Using a pool of " << jobs
+       << " threads to analyze binaries in a measurement directory\n"
+       << "INFO: Analyzing each large binary of >= " << args.parallel_analysis_threshold
+       << " bytes in parallel using " << pthreads << " threads\n"
+       << "INFO: Analyzing each small binary using " << small_threads
+       << " thread" << ((small_threads > 1) ? "s" : "") << "\n" << endl;
+
+  // Now that hpcstruct allows --exclude files, must regen all.lm in
+  // case using different exclude files.
   //
+  string all_lm_file = measurements_dir + "/all.lm";
+
+  int ret = unlink(all_lm_file.c_str());
+  if (ret < 0 && errno != ENOENT) {
+    DIAG_EMsg("unable to unlink all.lm: " << strerror(errno));
+  }
+
+  make_cmd += " all";
+
   if (system(make_cmd.c_str()) != 0) {
     DIAG_EMsg("Running make to generate hpcstruct files for measurement directory failed.");
     exit(1);

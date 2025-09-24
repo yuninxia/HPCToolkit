@@ -8,11 +8,14 @@
 // system include files
 //****************************************************************************
 
-#include <iostream>
+#include <algorithm>
 #include <exception>
+#include <iostream>
+#include <regex>
 #include <string>
 #include <unordered_set>
-
+#include <vector>
+#include <string.h>
 
 
 //****************************************************************************
@@ -24,6 +27,7 @@
 #include "../../hpcprof/stdshim/filesystem.hpp"
 #include "../../common/lean/hpcrun-fmt.h"
 #include "../../common/diagnostics.h"
+#include "../../common/StrUtil.hpp"
 
 
 namespace fs = hpctoolkit::stdshim::filesystem;
@@ -40,33 +44,75 @@ namespace fs = hpctoolkit::stdshim::filesystem;
 // local data
 //****************************************************************************
 
+enum {
+  LM_KEEP = 0,
+  LM_SKIP_NO_ANALYZE,
+  LM_SKIP_NULL,
+  LM_SKIP_FILTER,
+};
+
 static const char *filter_strings[] = {
   "logical/",
   "kernel_symbols/",
+  "/opt/aurora/.*/libmpi.*",
   0
 };
 
+static std::vector <std::string> includeVec;
+static std::vector <std::string> excludeVec;
 
 
 //****************************************************************************
 // internal operations
 //****************************************************************************
 
-static bool
+//
+// Make string vectors for --include and --exclude.
+//
+static void
+makeFilterVec(Args & args)
+{
+  includeVec.clear();
+  excludeVec.clear();
+
+  StrUtil::tokenize_str(args.include_string, CLP_SEPARATOR, includeVec);
+  StrUtil::tokenize_str(args.exclude_string, CLP_SEPARATOR, excludeVec);
+}
+
+
+// Return reason for skip so we can inform the user.
+static int
 skipLoadMapEntry(loadmap_entry_t* x)
 {
   // if this load map entry doesn't need to be analyzed
-  if (!(x->flags & LOADMAP_ENTRY_ANALYZE)) return true;
+  if (!(x->flags & LOADMAP_ENTRY_ANALYZE)) return LM_SKIP_NO_ANALYZE;
 
   // ignore empty names
-  if (x->name == NULL) return true;
+  if (x->name == NULL) return LM_SKIP_NULL;
 
-  bool result = false;
-  for (int i = 0; filter_strings[i]; i++) {
-    result |= strstr(x->name, filter_strings[i]) != 0;
+  // check user --include list first, this wins over exclude
+  for (unsigned int i = 0; i < includeVec.size(); i++) {
+    if (strstr(x->name, includeVec[i].c_str()) != NULL) {
+      return LM_KEEP;
+    }
   }
 
-  return result;
+  // user --exclude list
+  for (unsigned int i = 0; i < excludeVec.size(); i++) {
+    if (strstr(x->name, excludeVec[i].c_str()) != NULL) {
+      return LM_SKIP_FILTER;
+    }
+  }
+
+  // finally, builtin filter_strings, match via regex
+  for (int i = 0; filter_strings[i]; i++) {
+    auto patn = std::regex{filter_strings[i]};
+    if (std::regex_match(x->name, patn)) {
+      return LM_SKIP_FILTER;
+    }
+  }
+
+  return LM_KEEP;
 }
 
 
@@ -97,7 +143,9 @@ readFooter(FILE* fs, hpcrun_fmt_footer_t &footer)
 
 
 static bool
-readLoadmap(FILE *infs, hpcrun_fmt_footer_t &footer, std::unordered_set<std::string> &loadModules)
+readLoadmap(FILE *infs, hpcrun_fmt_footer_t &footer,
+            std::unordered_set<std::string> &loadModules,
+            std::unordered_set<std::string> &filterModules)
 {
   fseek(infs, footer.loadmap_start, SEEK_SET);
 
@@ -109,9 +157,15 @@ readLoadmap(FILE *infs, hpcrun_fmt_footer_t &footer, std::unordered_set<std::str
 
   for (uint32_t i = 0; i < loadmap_tbl.len; i++) {
     loadmap_entry_t* x = &loadmap_tbl.lst[i];
-    if (skipLoadMapEntry(x)) continue;
     std::string name = getLoadModuleName(x);
-    loadModules.insert(name);
+    int skip = skipLoadMapEntry(x);
+
+    if (skip == LM_KEEP) {
+      loadModules.insert(name);
+    }
+    else if (skip == LM_SKIP_FILTER) {
+      filterModules.insert(name);
+    }
   }
 
   return true;
@@ -119,7 +173,8 @@ readLoadmap(FILE *infs, hpcrun_fmt_footer_t &footer, std::unordered_set<std::str
 
 
 static void
-processProfile(const fs::path &path, std::unordered_set<std::string> &loadModules)
+processProfile(const fs::path &path, std::unordered_set<std::string> &loadModules,
+               std::unordered_set<std::string> &filterModules)
 {
    std::string filename = path;
    const char *fnm = filename.c_str();
@@ -129,7 +184,7 @@ processProfile(const fs::path &path, std::unordered_set<std::string> &loadModule
     hpcrun_fmt_footer_t footer;
     bool status = readFooter(fs, footer);
     if (status) {
-      status = readLoadmap(fs, footer, loadModules);
+      status = readLoadmap(fs, footer, loadModules, filterModules);
     }
     DIAG_WMsgIf(status == false, "unable to extract loadmap from profile " << filename);
     fclose(fs);
@@ -159,18 +214,72 @@ processMeasurementsDirectory(Args &args)
       status = 1;
     } else {
       std::unordered_set<std::string> loadModules;
-      #pragma omp parallel shared(loadModules)
+      std::unordered_set<std::string> filterModules;
+
+      #pragma omp parallel shared(loadModules, filterModules)
       {
         std::unordered_set<std::string> privateLoadModules;
+        std::unordered_set<std::string> privateFilterModules;
+
         #pragma omp for
         for (size_t i = 0; i < hpcrunFiles.size(); i++) {
-          processProfile(hpcrunFiles[i], privateLoadModules);
+          processProfile(hpcrunFiles[i], privateLoadModules, privateFilterModules);
         }
         #pragma omp critical
-        loadModules.merge(std::move(privateLoadModules));
+        {
+          loadModules.merge(std::move(privateLoadModules));
+          filterModules.merge(std::move(privateFilterModules));
+        }
       }
+
+      // sort the loadModules and filterModules names
+      std::vector <std::string> loadNamesVec;
+      std::vector <std::string> filterNamesVec;
+
       for (const auto& lm: loadModules) {
+        loadNamesVec.push_back(lm);
+      }
+      std::sort(loadNamesVec.begin(), loadNamesVec.end(), std::less<std::string>());
+
+      for (const auto& lm: filterModules) {
+        filterNamesVec.push_back(lm);
+      }
+      std::sort(filterNamesVec.begin(), filterNamesVec.end(), std::less<std::string>());
+
+      //--------------------------------------------------
+      // show-files: display analyzed and filter files on stdout and exit
+      //--------------------------------------------------
+      if (args.show_files) {
+        std::cout << "INFO: modules that will be analyzed\n";
+        for (const auto& lm: loadNamesVec) {
+          std::cout << lm << "\n";
+        }
+        std::cout << std::endl;
+
+        if (! filterNamesVec.empty()) {
+          std::cout << "INFO: modules that will NOT be analyzed\n";
+          for (const auto& lm: filterNamesVec) {
+            std::cout << lm << "\n";
+          }
+          std::cout << std::endl;
+        }
+        return status;
+      }
+
+      //--------------------------------------------------
+      // all: write load module names to stdout (and into all.lm)
+      //--------------------------------------------------
+      for (const auto& lm: loadNamesVec) {
         std::cout << lm << "\n";
+      }
+
+      // display the filtered names on stderr, if any
+      if (! filterNamesVec.empty()) {
+        std::cerr << "INFO: modules NOT analyzed\n";
+        for (const auto& lm: filterNamesVec) {
+          std::cerr << lm << "\n";
+        }
+        std::cerr << std::endl;
       }
     }
   }
@@ -191,6 +300,7 @@ main(int argc, char* const* argv)
 
   try {
     Args args(argc, argv);  // exits if error on command line
+    makeFilterVec(args);
     ret = processMeasurementsDirectory(args);
   }
   catch (const Diagnostics::Exception& x) {

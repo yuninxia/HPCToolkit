@@ -58,8 +58,11 @@ static const char* usage_details =
      "in a measurement directory\n"
      "\n"
      "Options:\n"
-     "  -V, --version        Print version information.\n"
-     "  -h, --help           Print this help.\n"
+     "  -V, --version         Print version information.\n"
+     "  -h, --help            Print this help.\n"
+     "  -x, --exclude <file>  Don't analyze files matching <file>.\n"
+     "  -i, --include <file>  Do analyze files matching <file>.\n"
+     "  --show-files          Display files that will be analyzed and exit.\n"
      ;
 
 #define CLP CmdLineParser
@@ -71,6 +74,11 @@ CmdLineParser::OptArgDesc Args::optArgs[] = {
      NULL },
   { 'h', "help",            CLP::ARG_NONE, CLP::DUPOPT_CLOB, NULL,
      NULL },
+  { 'x', "exclude",         CLP::ARG_REQ,  CLP::DUPOPT_CAT,  CLP_SEPARATOR,
+     NULL },
+  { 'i', "include",         CLP::ARG_REQ,  CLP::DUPOPT_CAT,  CLP_SEPARATOR,
+     NULL },
+  {  0,  "show-files",      CLP::ARG_NONE, CLP::DUPOPT_CLOB,  NULL,  NULL },
   CmdLineParser_OptArgDesc_NULL_MACRO // SGI's compiler requires this version
 };
 
@@ -88,6 +96,11 @@ Args::Args()
 
 Args::Args(int argc, const char* const argv[])
 {
+  measurements_directory = "";
+  exclude_string = "";
+  include_string = "";
+  show_files = false;
+
   parse(argc, argv);
 }
 
@@ -136,6 +149,18 @@ Args::parse(int argc, const char* const argv[])
     if (parser.isOpt("help")) {
       printUsage(std::cerr);
       exit(1);
+    }
+
+    if (parser.isOpt("exclude")) {
+      exclude_string = parser.getOptArg("exclude");
+    }
+
+    if (parser.isOpt("include")) {
+      include_string = parser.getOptArg("include");
+    }
+
+    if (parser.isOpt("show-files")) {
+      show_files = true;
     }
 
     // Check for required arguments

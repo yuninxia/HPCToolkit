@@ -163,7 +163,18 @@ Options: Override structure recovery defaults
                        Loop nesting structure is only useful with
                        instruction-level measurements collected using PC
                        sampling or instrumentation. {no}
-
+  -x <file>, --exclude <file>
+                       Do not analyze module files matching <file>.
+                       Useful if <file> takes too long to analyze.
+                       Specify <file> as either basename or full path name.
+                       May be used multiple times.
+  -i <file>, --include <file>
+                       Do analyze module files matching <file>.
+                       Include overrides exclude.
+                       May be used multiple times.
+  --show-files         Display module files that will be analyzed and exit.
+                       May be used with --include and --exclude.
+  --clean              Remove hpcstruct files from measurements directory.
 
 Options: Specify output file when analyzing a single binary
   -o <file>, --output <file>
@@ -209,12 +220,14 @@ CmdLineParser::OptArgDesc Args::optArgs[] = {
   {  0 ,  "gpucfg",       CLP::ARG_REQ,  CLP::DUPOPT_CLOB,  NULL,  NULL },
   {  1 ,  "gpu",          CLP::ARG_REQ,  CLP::DUPOPT_CLOB,  NULL,  NULL },
   {  1 ,  "cpu",          CLP::ARG_REQ,  CLP::DUPOPT_CLOB,  NULL,  NULL },
-  { 'I', "include",       CLP::ARG_REQ,  CLP::DUPOPT_CAT,  ":",
-     NULL },
   { 'R', "replace-path",  CLP::ARG_REQ,  CLP::DUPOPT_CAT,  CLP_SEPARATOR,
      NULL},
   {  0 , "show-gaps",     CLP::ARG_NONE, CLP::DUPOPT_CLOB, NULL,
      NULL },
+  { 'x', "exclude",       CLP::ARG_REQ,  CLP::DUPOPT_CAT,  " -x ", NULL },
+  { 'i', "include",       CLP::ARG_REQ,  CLP::DUPOPT_CAT,  " -i ", NULL },
+  {  0,  "show-files",    CLP::ARG_NONE, CLP::DUPOPT_CLOB,  NULL,  NULL },
+  {  0,  "clean",         CLP::ARG_NONE, CLP::DUPOPT_CLOB,  NULL,  NULL },
 
   // Output options
   { 'o', "output",        CLP::ARG_REQ , CLP::DUPOPT_CLOB, NULL,
@@ -270,6 +283,10 @@ Args::Ctor()
   show_gaps = false;
   nocache = false;
   compute_gpu_cfg = false;
+  exclude_str = "";
+  include_str = "";
+  show_files = false;
+  make_clean = false;
   meas_dir = "";
   is_from_makefile = false;
   cache_stat = CACHE_DISABLED;
@@ -445,6 +462,24 @@ Args::parse(int argc, const char* const argv[])
       bool no = strcasecmp("no", arg.c_str()) == 0;
       if (!yes && !no) ARG_ERROR("cpu argument must be 'yes' or 'no'.");
       analyze_cpu_binaries = yes;
+    }
+
+    if (parser.isOpt("exclude")) {
+      const string & arg = parser.getOptArg("exclude");
+      exclude_str = " -x " + arg;
+    }
+
+    if (parser.isOpt("include")) {
+      const string & arg = parser.getOptArg("include");
+      include_str = " -i " + arg;
+    }
+
+    if (parser.isOpt("show-files")) {
+      show_files = true;
+    }
+
+    if (parser.isOpt("clean")) {
+      make_clean = true;
     }
 
     if (parser.isOpt("meas_dir")) {
