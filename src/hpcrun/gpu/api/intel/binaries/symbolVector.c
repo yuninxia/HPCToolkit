@@ -55,23 +55,6 @@ symbolVectorAppend
 (
   SymbolVector *v,
   const char *symbolName,
-  unsigned long symbolValue
-)
-{
-  unsigned int i = v->nsymbols;
-
-  v->symbolValue[i] = symbolValue;
-  v->symbolName[i] = strdup(symbolName);
-
-  v->nsymbols++;
-}
-
-
-void
-symbolVectorAppendLevel0
-(
-  SymbolVector *v,
-  const char *symbolName,
   unsigned long symbolValue,
   unsigned long symbolSize
 )

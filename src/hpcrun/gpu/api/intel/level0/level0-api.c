@@ -33,7 +33,7 @@
 #include "level0-fence-map.h"
 #include "level0-id-map.h"
 #include "level0-kernel-module-map.h"
-#include "pcsampling/level0-pc.hpp"
+#include "pcsampling/level0-pc-manager.hpp"
 
 #include "../../../../utilities/linuxtimer.h"
 

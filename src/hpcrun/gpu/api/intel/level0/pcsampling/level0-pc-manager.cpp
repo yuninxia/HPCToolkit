@@ -15,7 +15,7 @@
 // local includes
 //*****************************************************************************
 
-#include "level0-pc.hpp"
+#include "level0-pc-manager.hpp"
 #include "level0-tracing-callbacks.hpp"
 #include "level0-metric-profiler.hpp"
 #include "level0-kernel-properties-cache.hpp"
