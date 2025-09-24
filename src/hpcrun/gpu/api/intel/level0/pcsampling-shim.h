@@ -2,8 +2,8 @@
 //
 // SPDX-License-Identifier: BSD-3-Clause
 
-#ifndef _PCSAMPLING_SHIM_H_
-#define _PCSAMPLING_SHIM_H_
+#ifndef _LEVEL0_PC_SHIM_H_
+#define _LEVEL0_PC_SHIM_H_
 
 #include "pcsampling-hpcrun-api.h"
 
@@ -13,4 +13,4 @@
  * type information. No additional declarations are required here.
  */
 
-#endif // _PCSAMPLING_SHIM_H_
+#endif // _LEVEL0_PC_SHIM_H_

@@ -86,7 +86,7 @@ ze_device_handle_t hDevice = NULL;
 uint64_t clock_offset_ns_from_level0 = 0;
 
 static bool gtpin_instrumentation = false;
-static bool level0_pcsampling = false;
+static bool level0_metrics_env = false;
 
 //******************************************************************************
 // private operations
@@ -590,7 +590,7 @@ hpcrun_zeInit
   // Exit action
   get_gpu_driver_and_device(dispatch);
 
-  pcsampling_init(dispatch, NULL, 0);
+  level0_pc_init(dispatch, NULL, 0);
 
   PRINT("hpcrun_zeInit: exit\n");
 
@@ -624,7 +624,7 @@ hpcrun_zeCommandListAppendLaunchKernel
     new_event_handle, numWaitEvents, phWaitEvents, dispatch);
 
 #if 0
-  if (level0_pcsampling_enabled()) {
+  if (level0_metrics_requested()) {
     f_zeEventHostSynchronize(new_event_handle, UINT64_MAX - 1, dispatch);
   }
 #endif
@@ -1030,9 +1030,9 @@ level0_init
 #endif
   }
 
-  const char* is_level0_pcsampling_enabled  = getenv("ZET_ENABLE_METRICS");
-  if (is_level0_pcsampling_enabled != NULL && strcmp(is_level0_pcsampling_enabled, "1") == 0) {
-    level0_pcsampling = true;
+  const char* is_level0_pc_enabled  = getenv("ZET_ENABLE_METRICS");
+  if (is_level0_pc_enabled != NULL && strcmp(is_level0_pc_enabled, "1") == 0) {
+    level0_metrics_env = true;
   }
 
   if (!gtpin_instrumentation) {
@@ -1051,7 +1051,7 @@ level0_fini
     GPU_FLUSH_ALARM_SET("hpcrun: warning: some Level 0 events not marked"
                         " complete; some GPU event data may be lost.");
 
-    pcsampling_shutdown();
+    level0_pc_shutdown();
 
     GPU_FLUSH_ALARM_TEST();
     GPU_FLUSH_ALARM_CLEAR(); 
@@ -1118,10 +1118,10 @@ level0_timestamp_to_realtime
 }
 
 bool
-level0_pcsampling_enabled
+level0_metrics_requested
 (
   void
 )
 {
-  return level0_pcsampling;
+  return level0_metrics_env;
 }

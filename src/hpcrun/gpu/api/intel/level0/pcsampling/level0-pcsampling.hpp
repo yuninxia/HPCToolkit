@@ -4,8 +4,8 @@
 
 // -*-Mode: C++;-*-
 
-#ifndef LEVEL0_PCSAMPLING_H
-#define LEVEL0_PCSAMPLING_H
+#ifndef LEVEL0_PC_H
+#define LEVEL0_PC_H
 
 //******************************************************************************
 // interface operations
@@ -50,4 +50,4 @@ level0PCSamplingIsReady
 }
 #endif
 
-#endif // LEVEL0_PCSAMPLING_H
+#endif // LEVEL0_PC_H

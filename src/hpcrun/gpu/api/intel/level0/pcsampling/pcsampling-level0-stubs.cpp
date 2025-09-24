@@ -13,7 +13,7 @@
 
 namespace {
 
-inline pcsampling_hpcrun_api_t* api()
+inline level0_pc_hpcrun_api_t* api()
 {
   return pcsampling::getHpcrunApi();
 }

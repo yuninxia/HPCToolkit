@@ -231,7 +231,7 @@ level0_command_begin
     } else
 #endif  // ENABLE_GTPIN
     {
-      if (level0_pcsampling_enabled()) {
+      if (level0_metrics_requested()) {
         kernel_ip = level0_func_ip_resolve(kernel, command_node->dispatch);
       } else {
         kernel_ip = gpu_kernel_table_get(kernel_name, LOGICAL_MANGLING_CPP);
@@ -246,7 +246,7 @@ level0_command_begin
   gpu_cid_map_insert(correlation_id, api_node, kernel_ip);
 
   // Send correlation ID to PC sampling thread for kernel launches
-  if (command_node->type == LEVEL0_KERNEL && level0_pcsampling_enabled()) {
+  if (command_node->type == LEVEL0_KERNEL && level0_metrics_requested()) {
     gpu_activity_channel_t *channel = gpu_activity_channel_get_local();
     gpu_correlation_channel_send(1, correlation_id, channel);
   }

@@ -237,7 +237,7 @@ level0_timestamp_to_realtime
 );
 
 bool
-level0_pcsampling_enabled
+level0_metrics_requested
 (
   void
 );

@@ -472,7 +472,7 @@ if level0_dep.found()
     'sample-sources/level0.c',
   )
 
-  pcsampling_cpp_srcs = files(
+  level0_pc_cpp_srcs = files(
     'gpu/api/intel/level0/pcsampling/level0-activity-generate.cpp',
     'gpu/api/intel/level0/pcsampling/level0-activity-send.cpp',
     'gpu/api/intel/level0/pcsampling/level0-activity-translate.cpp',
@@ -505,9 +505,9 @@ if level0_dep.found()
     'gpu/api/intel/level0/pcsampling/pcsampling-level0-stubs.cpp',
   )
 
-  pcsampling_cxx_lib = shared_library(
-    'hpcrun_pcsampling_cxx',
-    pcsampling_cpp_srcs,
+  level0_pc_cxx_lib = shared_library(
+    'hpcrun_level0_pc_cxx',
+    level0_pc_cpp_srcs,
     gnu_symbol_visibility: 'hidden',
     implicit_include_directories: false,
     override_options: ['b_lundef=false'],
@@ -522,10 +522,10 @@ if level0_dep.found()
     install: true,
   )
   hpcrun_sonames.set_quoted(
-    'HPCRUN_PCSAMPLING_CXX_SO',
-    fs.name(pcsampling_cxx_lib.full_path()),
+    'HPCRUN_LEVEL0_PC_CXX_SO',
+    fs.name(level0_pc_cxx_lib.full_path()),
   )
-  libs += pcsampling_cxx_lib
+  libs += level0_pc_cxx_lib
 
   srcs += files('gpu/api/intel/level0/pcsampling-shim.c')
 endif

@@ -2,8 +2,8 @@
 //
 // SPDX-License-Identifier: BSD-3-Clause
 
-#ifndef _PCSAMPLING_HPCRUN_API_H_
-#define _PCSAMPLING_HPCRUN_API_H_
+#ifndef _LEVEL0_PC_HPCRUN_API_H_
+#define _LEVEL0_PC_HPCRUN_API_H_
 
 //******************************************************************************
 // system includes
@@ -25,7 +25,6 @@
 // forward declarations
 //******************************************************************************
 
-// Forward declare these types - they'll be properly included in the implementation
 typedef struct gpu_activity_t gpu_activity_t;
 typedef struct gpu_activity_channel_t gpu_activity_channel_t;
 typedef struct zebin_id_map_entry_s zebin_id_map_entry_t;
@@ -36,7 +35,7 @@ struct hpcrun_foil_appdispatch_level0;
 // macros
 //******************************************************************************
 
-#define PCSAMPLING_API_VERSION 1
+#define LEVEL0_PC_API_VERSION 1
 
 
 //******************************************************************************
@@ -45,32 +44,32 @@ struct hpcrun_foil_appdispatch_level0;
 
 // Error codes for proper error propagation
 typedef enum {
-    PCSAMPLING_SUCCESS = 0,
-    PCSAMPLING_ERROR_INIT_FAILED = -1,
-    PCSAMPLING_ERROR_LIBRARY_LOAD = -2,
-    PCSAMPLING_ERROR_LEVEL0_API = -3,
-    PCSAMPLING_ERROR_RESOURCE_EXHAUSTED = -4,
-    PCSAMPLING_ERROR_VERSION_MISMATCH = -5,
-    PCSAMPLING_ERROR_NOT_SUPPORTED = -6
-} pcsampling_result_t;
+    LEVEL0_PC_SUCCESS = 0,
+    LEVEL0_PC_ERROR_INIT_FAILED = -1,
+    LEVEL0_PC_ERROR_LIBRARY_LOAD = -2,
+    LEVEL0_PC_ERROR_LEVEL0_API = -3,
+    LEVEL0_PC_ERROR_RESOURCE_EXHAUSTED = -4,
+    LEVEL0_PC_ERROR_VERSION_MISMATCH = -5,
+    LEVEL0_PC_ERROR_NOT_SUPPORTED = -6
+} level0_pc_result_t;
 
 // Capabilities for feature negotiation
-typedef struct pcsampling_capabilities_t {
+typedef struct level0_pc_capabilities_t {
     uint32_t api_version;
     bool supports_stall_sampling;
     bool supports_instruction_sampling;
     size_t max_buffer_size;
-} pcsampling_capabilities_t;
+} level0_pc_capabilities_t;
 
 // Function pointer types for cleaner API definition
-typedef void (*pcsampling_error_handler_t)(int error_code, const char* message,
+typedef void (*level0_pc_error_handler_t)(int error_code, const char* message,
                                           const char* file, int line);
-typedef void (*pcsampling_warning_handler_t)(const char* fmt, ...);
-typedef void (*pcsampling_cleanup_handler_t)(void* arg);
+typedef void (*level0_pc_warning_handler_t)(const char* fmt, ...);
+typedef void (*level0_pc_cleanup_handler_t)(void* arg);
 typedef void (*correlation_handler_fn_t)(uint64_t, gpu_activity_channel_t*, void*);
 
 // API structure for functions PC sampling needs from libhpcrun
-typedef struct pcsampling_hpcrun_api_t {
+typedef struct level0_pc_hpcrun_api_t {
     // API version for compatibility checking
     uint32_t api_version;
 
@@ -90,8 +89,8 @@ typedef struct pcsampling_hpcrun_api_t {
     void (*join_profiling_thread)(int thread_id);
 
     // Error handling - No exit() calls allowed
-    pcsampling_error_handler_t error_handler;
-    pcsampling_warning_handler_t warning_handler;
+    level0_pc_error_handler_t error_handler;
+    level0_pc_warning_handler_t warning_handler;
 
     // Safe entry/exit
     int (*safe_enter)(void);
@@ -139,7 +138,7 @@ typedef struct pcsampling_hpcrun_api_t {
                                       char* out, unsigned int out_len);
 
     // Cleanup registration
-    int (*register_cleanup_handler)(pcsampling_cleanup_handler_t handler, void* arg);
+    int (*register_cleanup_handler)(level0_pc_cleanup_handler_t handler, void* arg);
 
     // Zebin ID map operations
     zebin_id_map_entry_t* (*zebin_id_map_lookup)(uint32_t id);
@@ -289,7 +288,7 @@ typedef struct pcsampling_hpcrun_api_t {
                                            const struct hpcrun_foil_appdispatch_level0* dispatch);
     ze_result_t (*f_zelTracerSetEnabled)(zel_tracer_handle_t hTracer, ze_bool_t enable,
                                          const struct hpcrun_foil_appdispatch_level0* dispatch);
-} pcsampling_hpcrun_api_t;
+} level0_pc_hpcrun_api_t;
 
 
 //******************************************************************************
@@ -301,35 +300,35 @@ extern "C" {
 #endif
 
 // Version and capability checking
-uint32_t pcsampling_get_api_version(void);
-const pcsampling_capabilities_t* pcsampling_get_capabilities(void);
+uint32_t level0_pc_get_api_version(void);
+const level0_pc_capabilities_t* level0_pc_get_capabilities(void);
 
 // Set the API table from hpcrun
-void pcsampling_hpcrun_api_set(pcsampling_hpcrun_api_t* api);
+void level0_pc_hpcrun_api_set(level0_pc_hpcrun_api_t* api);
 
 // Initialization with error propagation
-pcsampling_result_t pcsampling_init(
+level0_pc_result_t level0_pc_init(
     const struct hpcrun_foil_appdispatch_level0* dispatch,
     char* error_buffer,
     size_t error_buffer_size
 );
 
-pcsampling_result_t pcsampling_shutdown(void);
-bool pcsampling_enabled(void);
+level0_pc_result_t level0_pc_shutdown(void);
+bool level0_pc_enabled(void);
 
 // Context-based profiler creation
-void* pcsampling_profiler_create(
+void* level0_pc_profiler_create(
     const struct hpcrun_foil_appdispatch_level0* dispatch,
-    pcsampling_result_t* result
+    level0_pc_result_t* result
 );
 
-void pcsampling_profiler_destroy(void* profiler);
+void level0_pc_profiler_destroy(void* profiler);
 
 // Correlation ID management
-void pcsampling_update_correlation_id(uint64_t cid, gpu_activity_channel_t* channel, void* context);
+void level0_pc_update_correlation_id(uint64_t cid, gpu_activity_channel_t* channel, void* context);
 
 #ifdef __cplusplus
 }
 #endif
 
-#endif // _PCSAMPLING_HPCRUN_API_H_
+#endif // _LEVEL0_PC_HPCRUN_API_H_

@@ -139,7 +139,7 @@ static void load_core_foil() {
   // library's malloc. we have observed this causing frees to the wrong heap,
   // which causes corruption leading to a fatal error.
 
-  h = dlopen(HPCRUN_SO, RTLD_NOW | RTLD_LOCAL); // FIXME: might need to be RTLD_LAZY
+  h = dlopen(HPCRUN_SO, RTLD_NOW | RTLD_LOCAL);
 
   // Signed: Jonathon Anderson and John Mellor-Crummey
   // ^^^^^^^^^^^^^^^^^ WARNING: THIS IS EXTREMELY SUBTLE CODE ^^^^^^^^^^^^^^^^^
