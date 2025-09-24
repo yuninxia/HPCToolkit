@@ -14,7 +14,7 @@
 
 #include "level0-collector.hpp"
 #include "level0-tracing-callbacks.hpp"
-#include "pcsampling-api-receiver.hpp"
+#include "level0-pc-api-receiver.hpp"
 
 extern "C" {
 #include "../../../../../messages/messages.h"

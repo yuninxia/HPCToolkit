@@ -5,7 +5,7 @@
 #ifndef _LEVEL0_PC_SHIM_H_
 #define _LEVEL0_PC_SHIM_H_
 
-#include "pcsampling-hpcrun-api.h"
+#include "level0-pc-hpcrun-api.h"
 
 /*
  * The shim header deliberately reuses the shared PC sampling API definitions so
