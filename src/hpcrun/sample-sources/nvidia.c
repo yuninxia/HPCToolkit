@@ -67,10 +67,10 @@ static device_finalizer_fn_entry_t device_trace_finalizer_shutdown;
 static long trace_period = -1;
 static long trace_period_default = -1;
 
-// -1: disabled, 5-31: 2^period
+// -1: disabled, 5-31: period = 2^(period_log)
 static long pc_sampling_period = -1;
 static long pc_sampling_period_log = -1;
-static long pc_sampling_period_default = 12;
+static long pc_sampling_period_log_default = 12;
 
 static int cupti_enabled_activities = 0;
 
@@ -225,23 +225,26 @@ METHOD_FN(process_event_list)
   // only one event is allowed
   char* evlist = METHOD_CALL(self, get_event_str);
   char* event = start_tok(evlist);
-  long int period = 0;
-  int period_default = -1;
 
-  hpcrun_extract_ev_thresh(event, sizeof(nvidia_name), nvidia_name, &period,
-                           period_default);
+  long int value = 0;
+
+  hpcrun_extract_ev_thresh(event, sizeof(nvidia_name), nvidia_name, &value,
+                           GPU_SAMPLING_PERIOD_UNSPECIFIED);
 
   for (; event != NULL; event = next_tok()) {
     if (hpcrun_ev_is(event, NVIDIA_CUDA)) {
       trace_period =
-          (period == period_default) ? trace_period_default : period;
-      gpu_monitoring_trace_sample_period_set(trace_period);
+          (value == GPU_SAMPLING_PERIOD_UNSPECIFIED) ? trace_period_default : value;
+      gpu_monitoring_trace_sampling_period_set(trace_period);
     } else if (hpcrun_ev_is(event, NVIDIA_CUDA_PC_SAMPLING)) {
+
       pc_sampling_period_log =
-          (period == period_default) ? pc_sampling_period_default : period;
+          (value == GPU_SAMPLING_PERIOD_UNSPECIFIED) ?
+          pc_sampling_period_log_default : value;
+
       pc_sampling_period = 1 << pc_sampling_period_log;
 
-      gpu_monitoring_instruction_sample_period_set(pc_sampling_period);
+      gpu_monitoring_instruction_sampling_period_set(pc_sampling_period);
 
       gpu_metrics_GPU_INST_enable(); // instruction counts
 

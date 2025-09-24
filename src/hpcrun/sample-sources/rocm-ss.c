@@ -29,7 +29,7 @@
 //******************************************************************************
 
 #define AMD_ROCM "gpu=rocm"
-#define AMD_ROCM_PC_SAMPLING "gpu=rocm,pc"
+#define AMD_ROCM_GPU_INSTRUCTION_SAMPLING "gpu=rocm,pc"
 #define ROCM_CTR_PREFIX "rocm::"
 
 
@@ -49,9 +49,7 @@ static device_finalizer_fn_entry_t device_trace_finalizer_shutdown;
 static long trace_period = -1;
 static long trace_period_default = -1;
 
-// -1: disabled, otherwise period
-static long pc_sampling_period = -1;
-static long pc_sampling_period_default = 10000;
+static long instruction_sampling_period_default = 10000;
 
 gpu_counter_set_t *rocm_counter_names = 0;
 
@@ -117,8 +115,7 @@ static bool
 METHOD_FN(supports_event, const char *ev_str)
 {
   bool is_rocm_counter = strncmp(ev_str, ROCM_CTR_PREFIX, strlen(ROCM_CTR_PREFIX)) == 0;
-  return hpcrun_ev_is(ev_str, AMD_ROCM) ||
-    hpcrun_ev_is(ev_str, AMD_ROCM_PC_SAMPLING) || is_rocm_counter;
+  return (strncmp(ev_str, AMD_ROCM, strlen(AMD_ROCM)) == 0) || is_rocm_counter;
 }
 
 
@@ -139,9 +136,9 @@ METHOD_FN(process_event_list)
   char* evlist = METHOD_CALL(self, get_event_str);
   char* event = start_tok(evlist);
   long int period = 0;
-  int period_default = -1;
+  int period_default = GPU_SAMPLING_PERIOD_UNSPECIFIED;
 
-  bool pc_sampling_requested = false;
+  bool instruction_sampling_requested = false;
   bool hardware_counters_requested = false;
 
   for (; event != NULL; event = next_tok()) {
@@ -150,19 +147,32 @@ METHOD_FN(process_event_list)
         &period, period_default);
     if (hpcrun_ev_is(event, AMD_ROCM)) {
       trace_period =
-          (period == period_default) ? trace_period_default : period;
-      gpu_monitoring_trace_sample_period_set(trace_period);
-    } else if (hpcrun_ev_is(event, AMD_ROCM_PC_SAMPLING)) {
-      pc_sampling_requested = true;
+          (period == GPU_SAMPLING_PERIOD_UNSPECIFIED) ? trace_period_default : period;
+      gpu_monitoring_trace_sampling_period_set(trace_period);
+    } else if (strncmp(event, AMD_ROCM_GPU_INSTRUCTION_SAMPLING,
+                       strlen(AMD_ROCM_GPU_INSTRUCTION_SAMPLING)) == 0) {
 
-      pc_sampling_period =
-          (period == period_default) ? pc_sampling_period_default : period;
+      // attempt to set flags and period
+      gpu_monitoring_instruction_sampling_flags_set(event, AMD_ROCM);
 
-      gpu_monitoring_instruction_sample_period_set(pc_sampling_period);
+      // if PC sampling of any kind is enabled
+      if (gpu_monitoring_instruction_sampling_is_enabled(GPU_INSTRUCTION_SAMPLING_ANY)) {
+        instruction_sampling_requested = true;
 
-      gpu_metrics_GPU_INST_enable(); // instruction counts
+        long sampling_period =
+          (period == GPU_SAMPLING_PERIOD_UNSPECIFIED) ?
+          instruction_sampling_period_default : period;
 
-      gpu_metrics_GPU_INST_STALL_enable(); // stall metrics
+        gpu_monitoring_instruction_sampling_period_set(sampling_period);
+
+        gpu_metrics_GPU_INST_enable(); // instruction counts
+
+        if (gpu_monitoring_instruction_sampling_is_enabled(GPU_INSTRUCTION_SAMPLING_HW)) {
+          // only enable stall metrics if using HW support for PC sampling.
+          // they are unavailable with host_trap SW support.
+          gpu_metrics_GPU_INST_STALL_enable(); // stall metrics
+        }
+      }
     } else {
       if (strncmp(rocm_event_name, ROCM_CTR_PREFIX, strlen(ROCM_CTR_PREFIX)) == 0) {
         hardware_counters_requested = true;
@@ -171,7 +181,7 @@ METHOD_FN(process_event_list)
     }
   }
 
-  if (hardware_counters_requested && pc_sampling_requested) {
+  if (hardware_counters_requested && instruction_sampling_requested) {
     fprintf(stderr, "ERROR: "
       "hpcrun: rocprofiler-sdk does not support use of PC sampling "
       "and hardware counters in the same execution\n");
@@ -228,11 +238,14 @@ METHOD_FN(display_events)
     "Collect timing information on GPU kernel invocations, "
     "memory copies, etc..");
 
-  display_event_info(stdout, AMD_ROCM_PC_SAMPLING,
+  display_event_info(stdout, AMD_ROCM_GPU_INSTRUCTION_SAMPLING "[={hw,sw}]",
     "Comprehensive operation-level monitoring on an AMD GPU "
     "as described above with the addition of PC sampling. "
     "On some AMD GPUs, hardware support for PC sampling "
-    "attributes STALL reasons to individual GPU instructions.");
+    "attributes STALL reasons to individual GPU instructions. "
+    "Either hardware (hw), referred to by AMD as 'STOCHASTIC', "
+    "or software (sw), referred to by AMD as 'HOST_TRAP', support "
+    "for PC sampling can be selected.");
 
   display_header(stdout, "Available hardware counters for monitoring GPU kernels on AMD GPUs");
 
