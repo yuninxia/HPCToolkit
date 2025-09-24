@@ -43,15 +43,6 @@ symbolVectorAppend
 (
   SymbolVector *v,
   const char *symbolName,
-  unsigned long symbolValue
-);
-
-
-void
-symbolVectorAppendLevel0
-(
-  SymbolVector *v,
-  const char *symbolName,
   unsigned long symbolValue,
   unsigned long symbolSize
 );

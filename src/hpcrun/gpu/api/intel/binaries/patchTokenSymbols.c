@@ -113,7 +113,7 @@ collectPatchTokenSymbols
       cursor += sizeof(IntelPatchTokenKernelHeader);
 
       // add kernel name to symbol table
-      symbolVectorAppend(symbols, cursor, 0);
+      symbolVectorAppend(symbols, cursor, 0, 0);
 
       // skip past kernel name
       cursor += computeKernelNameSize(kernel_header->kernelNameLength);

@@ -19,7 +19,7 @@
 #include "../level0-pc-hpcrun-api.h"
 #include "level0-pc-api-receiver.hpp"
 #include "level0-correlation-id.hpp"
-#include "level0-pc.hpp"
+#include "level0-pc-manager.hpp"
 
 
 //*****************************************************************************
