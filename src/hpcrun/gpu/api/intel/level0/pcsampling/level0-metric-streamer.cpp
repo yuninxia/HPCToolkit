@@ -86,6 +86,10 @@ closeMetricStreamer
   const struct hpcrun_foil_appdispatch_level0* dispatch
 )
 {
+  if (streamer == nullptr) {
+    return;
+  }
+
   ze_result_t status = pcsampling::callZetMetricStreamerClose(streamer, dispatch);
   level0_check_result(status, __LINE__);
 }
@@ -118,6 +122,8 @@ level0InitializeMetricStreamer
 
   if (streamer == nullptr) {
     pcsampling::error("Failed to initialize metric streamer");
+    // Revert the activation so callers do not leak state on failure.
+    activateMetricGroup(context, device, group, 0, dispatch);
   }
 }
 

@@ -111,7 +111,6 @@ void unlockMutex(void* mutex);
 uint64_t nanotime();
 void warn(const char* fmt, ...);
 void error(const char* fmt, ...);
-void trace(int level, const char* fmt, ...);
 const char* getEnvironmentVariable(const char* name);
 int computeHashString(const void* data, size_t size, char* out, unsigned int out_len);
 void mcsLock(mcs_lock_t* lock, mcs_node_t* node);
@@ -126,8 +125,10 @@ ze_result_t callZeDriverGet(uint32_t* pCount, ze_driver_handle_t* phDrivers,
 ze_result_t callZeDriverGetApiVersion(ze_driver_handle_t hDriver, ze_api_version_t* version,
                                      const struct hpcrun_foil_appdispatch_level0* dispatch);
 ze_result_t callZeContextCreate(ze_driver_handle_t hDriver, const ze_context_desc_t* desc,
-                               ze_context_handle_t* phContext,
-                               const struct hpcrun_foil_appdispatch_level0* dispatch);
+                                ze_context_handle_t* phContext,
+                                const struct hpcrun_foil_appdispatch_level0* dispatch);
+ze_result_t callZeContextDestroy(ze_context_handle_t hContext,
+                                 const struct hpcrun_foil_appdispatch_level0* dispatch);
 ze_result_t callZeDeviceGet(ze_driver_handle_t hDriver, uint32_t* pCount,
                            ze_device_handle_t* phDevices,
                            const struct hpcrun_foil_appdispatch_level0* dispatch);

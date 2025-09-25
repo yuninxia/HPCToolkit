@@ -14,6 +14,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <stdint.h>
+#include <stdarg.h>
 
 
 //******************************************************************************
@@ -44,6 +45,31 @@
 static pthread_once_t once_control = PTHREAD_ONCE_INIT;
 static level0_pc_result_t init_result = LEVEL0_PC_ERROR_INIT_FAILED;
 static void* level0_pc_lib_handle = NULL;
+
+static void
+messages_error_wrapper(const char* fmt, ...)
+{
+    if (!fmt) return;
+
+    char buffer[1024];
+    va_list args;
+    va_start(args, fmt);
+    int written = vsnprintf(buffer, sizeof(buffer), fmt, args);
+    va_end(args);
+
+    if (written < 0) return;
+
+    if ((size_t)written >= sizeof(buffer)) {
+        static const char suffix[] = " ...";
+        size_t suffix_len = sizeof(suffix) - 1;
+        if (suffix_len < sizeof(buffer)) {
+            memcpy(buffer + sizeof(buffer) - suffix_len - 1, suffix, suffix_len);
+            buffer[sizeof(buffer) - 1] = '\0';
+        }
+    }
+
+    EEMSG("%s", buffer);
+}
 
 static ze_result_t
 zeDriverGetExtensionFunctionAddress_wrapper(ze_driver_handle_t hDriver, const char* name,
@@ -361,8 +387,8 @@ static level0_pc_hpcrun_api_t level0_pc_hpcrun_api = {
     // Other utilities
     .hpcrun_nanotime = hpcrun_nanotime,
     .messages_warn = (void (*)(const char*, ...))EMSG,
-    .messages_error = NULL,  // EEMSG is a macro, can't be used as function pointer
-    .tmsg = NULL,  // TMSG is a macro, can't be used as function pointer
+    .messages_error = messages_error_wrapper,
+    .tmsg = NULL,
     .getenv = hpcrun_getenv_wrapper,
     .crypto_compute_hash_string = crypto_compute_hash_string,
 
@@ -427,7 +453,7 @@ init(void)
 
     // Note: EEMSG and TMSG are macros that can't be used as function pointers
     // These will be set to NULL and PC sampling library should use its own logging
-    level0_pc_hpcrun_api.messages_error = NULL;
+    level0_pc_hpcrun_api.messages_error = messages_error_wrapper;
     level0_pc_hpcrun_api.tmsg = NULL;
 
     // Determine namespace scope based on environment variable
