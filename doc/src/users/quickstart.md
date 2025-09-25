@@ -131,8 +131,14 @@ From a measurement directory,
 `hpcstruct` processes each of CPU and GPU binary and records information about its program structure into the *measurements directory*.
 Program structure for a binary includes information about its source files, procedures, inlined code, loop nests, and statements.
 
-When applied to a measurements directory, `hpcstruct` analyzes multiple binaries concurrently by default.
+When applied to a measurements directory, `hpcstruct` analyzes multiple binaries concurrently.
 It analyzes each small binary using a few threads and each large binary using more threads.
+Normally, `hpcstruct` uses a pool of threads equal to half of the available hardware threads.
+If you want to adjust this value (higher or lower), use the `-j|--jobs` option.
+
+```
+hpcstruct -j <num-jobs> measurements-directory
+```
 
 Although not usually necessary, one can apply `hpcstruct` to recover program structure information for a single CPU or GPU binary.
 To recover static program structure for a single binary `b`, use the command:
@@ -142,6 +148,64 @@ hpcstruct b
 ```
 
 This command analyzes the binary and saves this information in a file named `b.hpcstruct`.
+
+```{tip}
+On rare occasions, there may be a module file for which `hpcstruct`
+takes an excessive amount of time to analyze.
+For example, on Aurora at ALCF, the `libmpi.so.12.5.0` library takes
+30-40 minutes to analyze and the older `libmpi.so.12.4.3` takes about 2 hours.
+
+When this happens, if the module file is not essential to understanding the
+application's performance, you can skip that module with the `-x|--exclude` option.
+Specify the module's path name or file name.
+For example:
+
+`hpcstruct -x /path/to/file-name measurements-directory`  
+`hpcstruct -x file-name measurements-directory`
+
+By default, `hpcstruct` skips certain known files.
+If you need to include such a file, use the `-i|--include` option.
+
+`hpcstruct -i file-name measurements-directory`
+
+You can see a list of all modules from the measurements directory
+with the `--show-files` option.
+
+`hpcstruct --show-files measurements-directory`
+
+In practice, most modules are analyzed in less than a minute,
+so these options are normally not needed.
+```
+
+#### Caching Structure Results
+
+`Hpcstruct` can cache the results of the structure files.
+This can be useful if you profile your application multiple times but
+most of its module files are unchanged.
+
+The simplest way to use the cache is to set the `HPCTOOLKIT_HPCSTRUCT_CACHE`
+environment variable to a directory where you want to store the cache.
+For example (using `bash`),
+
+```
+export HPCTOOLKIT_HPCSTRUCT_CACHE=/path/to/cache/directory
+```
+
+You can also specify the cache directory on the command line with the
+`-c|--cache` option.
+Maybe you're profiling several applications and want to keep a
+separate cache for each app.
+
+```
+hpcstruct -c /path/to/cache/directory measurements-directory
+```
+
+```{warning}
+Caching the structure files involves copying the CPU and GPU binaries
+and libraries into the cache directory.
+If your application has restricted access, be careful where you put
+the cache directory and be sure to restrict the directory permissions.
+```
 
 ### Attributing Measurements to Source Code
 
