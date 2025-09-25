@@ -347,6 +347,7 @@ name: amd-options
 | `-e gpu=rocm -t`            | coarse-grain profiling and tracing of AMD GPU operations                                        |
 | `-e gpu=rocm,pc`            | coarse-grain profiling of GPU operations; fine-grain profiling of GPU kernels using PC sampling |
 ```
+
 <!--
 | `-e gpu=rocm,pc[={sw,hw}]`  | coarse-grain profiling of GPU operations; fine-grain profiling of GPU kernels using PC sampling |
 -->
@@ -375,7 +376,7 @@ Specifying simply `-e gpu=rocm,pc` will default to software-based host-trap samp
 Periods for hardware stochastic sampling are measured in GPU cycles and the minimum is 256; periods must be a power of 2.
 Periods for host-trap based sampling are measured in units of the minimum sampling period and the minimum is 1.
 To provide a consistent interface and guarantee that periods are a power of 2, periods for PC sampling will be interpreted as the log of the period.
-Thus, the minimum for hardward stochastic sampling is 8 (log2 of 256) and the minimum for software host-trap sampling is 0 (log2 of 1).
+Thus, the minimum for hardware stochastic sampling is 8 (log2 of 256) and the minimum for software host-trap sampling is 0 (log2 of 1).
 The default periods used for each are 11 and 3 -- 8x the minimum period for each.
 
 Using AMD's Rocprofiler-sdk monitoring infrastructure, HPCToolkit collects a histogram of samples for each instruction in each kernel that an application executes.

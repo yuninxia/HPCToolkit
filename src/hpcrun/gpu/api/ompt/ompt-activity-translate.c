@@ -65,7 +65,7 @@ static const char *
 data_optype_string
 (
   int optype
-) __attribute__ ((unused)); 
+) __attribute__ ((unused));
 
 
 
