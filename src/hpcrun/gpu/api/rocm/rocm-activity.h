@@ -41,7 +41,8 @@ rocm_activity_send
 
 /// @brief Processes a ROCm activity record.
 /// @param rocprofiler_record A pointer to the ROCprofiler record header.
-void
+/// @return Correlation id (0 if nothing useful)
+uint64_t
 rocm_activity_process
 (
  rocprofiler_record_header_t *rocprofiler_record

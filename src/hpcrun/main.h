@@ -14,6 +14,8 @@
 
 extern bool hpcrun_is_initialized();
 
+extern int hpcrun_process_exit_how();
+
 extern bool hpcrun_is_safe_to_sync(const char* fn);
 extern void hpcrun_set_safe_to_sync(void);
 
