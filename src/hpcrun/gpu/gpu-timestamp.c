@@ -33,7 +33,7 @@ static uint64_t clock_offset_ns;
 // debugging support
 //******************************************************************************
 
-#define DEBUG 1
+#define DEBUG 0
 
 #include "common/gpu-print.h"
 

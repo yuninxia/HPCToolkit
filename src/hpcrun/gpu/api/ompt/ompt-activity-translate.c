@@ -35,7 +35,7 @@
 // macros
 //******************************************************************************
 
-#define OMPT_ACTIVITY_DEBUG 1
+#define OMPT_ACTIVITY_DEBUG 0
 
 #if OMPT_ACTIVITY_DEBUG
 #define PRINT(...) fprintf(stderr, __VA_ARGS__)
@@ -54,6 +54,18 @@
   macro(ompt_target_data_transfer_from_device_async) \
   macro(ompt_target_data_alloc_async) \
   macro(ompt_target_data_delete_async)
+
+
+//******************************************************************************
+// forward declarations
+//******************************************************************************
+
+// unused unless OMPT_ACTIVITY_DEBUG is non-zero
+static const char *
+data_optype_string
+(
+  int optype
+) __attribute__ ((unused)); 
 
 
 
