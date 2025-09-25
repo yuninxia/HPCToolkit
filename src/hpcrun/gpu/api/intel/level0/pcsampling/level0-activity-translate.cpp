@@ -25,20 +25,50 @@
 // private operations
 //******************************************************************************
 
-// FIXME(Yuning): stall reasons are not accurately mapped
-// Map stall types to reasons
+// Map Intel Level Zero EU stall types to HPCToolkit stall reasons
+// HPCToolkit stall categories are based on NVIDIA CUPTI's PC sampling stall reasons.
+//
+// Following AMD ROCm's conservative approach: only map stalls with clear semantic
+// equivalence. Intel stalls that don't have exact NVIDIA counterparts are mapped
+// to NONE to avoid misleading users about the actual stall cause.
+//
+// Complete Intel EU stall reasons list:
+// - EuStalls::active_    → (not a stall, indicates active cycles)
+// - EuStalls::control_   → GPU_INST_STALL_NONE (control flow: branches, jumps, predication)
+// - EuStalls::pipe_      → GPU_INST_STALL_PIPE_BUSY (pipeline/ALU execution units busy)
+// - EuStalls::send_      → GPU_INST_STALL_NONE (send messages: memory, sampler, URB, etc.)
+// - EuStalls::dist_      → GPU_INST_STALL_NONE (thread distribution/dispatch stalls)
+// - EuStalls::sbid_      → GPU_INST_STALL_IDEPEND (scoreboard: RAW/WAW/WAR dependencies)
+// - EuStalls::sync_      → GPU_INST_STALL_SYNC (synchronization: barriers, fences, atomics)
+// - EuStalls::insfetch_  → GPU_INST_STALL_IFETCH (instruction fetch/cache miss)
+// - EuStalls::other_     → GPU_INST_STALL_OTHER (uncategorized stalls)
+//
+// Available HPCToolkit stall reasons (from NVIDIA CUPTI):
+// - GPU_INST_STALL_NONE: No stall
+// - GPU_INST_STALL_IFETCH: Instruction fetch stall
+// - GPU_INST_STALL_IDEPEND: Instruction dependency stall
+// - GPU_INST_STALL_GMEM: Global memory stall
+// - GPU_INST_STALL_TMEM: Texture memory stall
+// - GPU_INST_STALL_SYNC: Synchronization stall
+// - GPU_INST_STALL_CMEM: Constant memory stall
+// - GPU_INST_STALL_PIPE_BUSY: Pipeline busy stall
+// - GPU_INST_STALL_MEM_THROTTLE: Memory throttle stall
+// - GPU_INST_STALL_NOT_SELECTED: Warp not selected for issue
+// - GPU_INST_STALL_OTHER: Other/unknown stall
+// - GPU_INST_STALL_SLEEP: Sleep/wait stall
+// - GPU_INST_STALL_INVALID: Invalid/error stall
 static const struct {
   uint64_t EuStalls::* stall_value;
   gpu_inst_stall_t reason;
 } stall_mappings[] = {
-    {&EuStalls::control_,   GPU_INST_STALL_NOT_SELECTED}, // Control flow stalls
-    {&EuStalls::pipe_,      GPU_INST_STALL_PIPE_BUSY},    // Pipeline stalls
-    {&EuStalls::send_,      GPU_INST_STALL_GMEM},         // Send operation waits on memory
-    {&EuStalls::dist_,      GPU_INST_STALL_MEM_THROTTLE}, // Dispatch throttling
-    {&EuStalls::sbid_,      GPU_INST_STALL_IDEPEND},      // Scoreboard dependency
-    {&EuStalls::sync_,      GPU_INST_STALL_SYNC},         // Synchronization stalls
-    {&EuStalls::insfetch_,  GPU_INST_STALL_IFETCH},       // Instruction fetch stalls
-    {&EuStalls::other_,     GPU_INST_STALL_OTHER}         // Other stalls
+    {&EuStalls::control_,   GPU_INST_STALL_NONE},      // No NVIDIA equivalent
+    {&EuStalls::pipe_,      GPU_INST_STALL_PIPE_BUSY}, // Exact match
+    {&EuStalls::send_,      GPU_INST_STALL_NONE},      // Too broad to map accurately
+    {&EuStalls::dist_,      GPU_INST_STALL_NONE},      // Different semantics
+    {&EuStalls::sbid_,      GPU_INST_STALL_IDEPEND},   // Exact match
+    {&EuStalls::sync_,      GPU_INST_STALL_SYNC},      // Exact match
+    {&EuStalls::insfetch_,  GPU_INST_STALL_IFETCH},    // Exact match
+    {&EuStalls::other_,     GPU_INST_STALL_OTHER}      // Exact match
 };
 
 static void
