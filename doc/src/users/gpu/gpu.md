@@ -345,8 +345,11 @@ name: amd-options
 | :-------------------------- | :---------------------------------------------------------------------------------------------- |
 | `-e gpu=rocm`               | coarse-grain profiling of AMD GPU operations                                                    |
 | `-e gpu=rocm -t`            | coarse-grain profiling and tracing of AMD GPU operations                                        |
-| `-e gpu=rocm,pc[={sw,hw}]`  | coarse-grain profiling of GPU operations; fine-grain profiling of GPU kernels using PC sampling |
+| `-e gpu=rocm,pc`            | coarse-grain profiling of GPU operations; fine-grain profiling of GPU kernels using PC sampling |
 ```
+<!--
+| `-e gpu=rocm,pc[={sw,hw}]`  | coarse-grain profiling of GPU operations; fine-grain profiling of GPU kernels using PC sampling |
+-->
 
 ### PC Sampling on AMD GPUs
 
@@ -360,11 +363,25 @@ You can check whether one or both kinds of PC sampling are available for your GP
 PC sampling on AMD GPUs is a device-wide activity for both host-trap (software-based) sampling and stochastic (hardware-based) sampling.
 When using host-trap (software-based) PC sampling, the GPU device driver periodically halts the GPU and reads the PC out of each wave in an active compute unit. Samples collected using host-trap sampling may suffer from "skid", where a sample may be attributed to an instruction up to two instructions away from a source of latency. When using stochastic (hardware-based) PC sampling, each compute unit periodically chooses an active wave on the compute unit and records its PC. Over time, each compute unit samples waves in a round robin fashion.
 
-To select software-based host-trap PC sampling, specify `-e gpu=rocm,pc=sw`. To select hardware-based stochastic PC sampling, specify `-e gpu=rocm,pc=hw`. Specifying simply `-e gpu=rocm,pc` will select hardware-based stochastic sampling if available and software-based host-trap sampling otherwise.
+Currently only host-trap based sampling is enabled in HPCToolkit while we wait for AMD to resolve problems that occur when enabling stochastic sampling.
+To select software-based host-trap PC sampling, specify `-e gpu=rocm,pc`. In HPCToolkit, the default PC sampling frequency for software-based host-trap sampling is 100us.
+There is currently no mechanism to change the default.
+
+<!--
+To select software-based host-trap PC sampling, specify `-e gpu=rocm,pc=sw`.
+To select hardware-based stochastic PC sampling, specify `-e gpu=rocm,pc=hw`.
+Specifying simply `-e gpu=rocm,pc` will default to software-based host-trap sampling.
+
+Periods for hardware stochastic sampling are measured in GPU cycles and the minimum is 256; periods must be a power of 2.
+Periods for host-trap based sampling are measured in units of the minimum sampling period and the minimum is 1.
+To provide a consistent interface and guarantee that periods are a power of 2, periods for PC sampling will be interpreted as the log of the period.
+Thus, the minimum for hardward stochastic sampling is 8 (log2 of 256) and the minimum for software host-trap sampling is 0 (log2 of 1).
+The default periods used for each are 11 and 3 -- 8x the minimum period for each.
 
 Using AMD's Rocprofiler-sdk monitoring infrastructure, HPCToolkit collects a histogram of samples for each instruction in each kernel that an application executes.
 For stochastic (hardware-based) samples, a sample contains more than a GPU program counter value.
 A stochastic sample also indicates whether the instruction represented by the sample's PC value is stalled or not. If so, it provides a reason why the instruction is stalled.
+-->
 
 In post-mortem analysis with `hpcprof`, HPCToolkit maps instruction-level samples and stall reasons (if any) back to source lines using information about how GPU machine instructions relate back to application source code using line mappings and inlining information recorded by compilers. If all PC samples in a kernel map to line 0, there are two possibilities: (1) the AMD GPU binaries used by your application don't contain line mapping information for that kernel because you didn't pass a `-g` to the compiler when generating its code, or (2) don't you didn't analyze line mapping information AMD GPU binaries by using `hpcstruct --gpucfg yes <measurement-directory>`.
 

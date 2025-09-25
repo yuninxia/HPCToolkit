@@ -32,6 +32,13 @@
 #define AMD_ROCM_GPU_INSTRUCTION_SAMPLING "gpu=rocm,pc"
 #define ROCM_CTR_PREFIX "rocm::"
 
+// minimum period = 256; one of every 8 minimum periods
+#define ROCM_PC_SAMPLING_STOCHASTIC_PERIOD_LOG_DEFAULT (8 + 3 + 4)
+
+// minimum period 1; one out of every X unit time periods (us), for
+// the value of X specified below
+#define ROCM_PC_SAMPLING_HOST_TRAP_PERIOD_LOG_DEFAULT 100
+
 
 
 //******************************************************************************
@@ -48,8 +55,6 @@ static device_finalizer_fn_entry_t device_trace_finalizer_shutdown;
 // -1: disabled, >0: x ms per activity
 static long trace_period = -1;
 static long trace_period_default = -1;
-
-static long instruction_sampling_period_default = 10000;
 
 gpu_counter_set_t *rocm_counter_names = 0;
 
@@ -135,7 +140,7 @@ METHOD_FN(process_event_list)
   // only one event is allowed
   char* evlist = METHOD_CALL(self, get_event_str);
   char* event = start_tok(evlist);
-  long int period = 0;
+  long int value = 0;
   int period_default = GPU_SAMPLING_PERIOD_UNSPECIFIED;
 
   bool instruction_sampling_requested = false;
@@ -144,10 +149,10 @@ METHOD_FN(process_event_list)
   for (; event != NULL; event = next_tok()) {
     static char rocm_event_name[128]; // buffer for parsing event name
     hpcrun_extract_ev_thresh(event, sizeof(rocm_event_name), rocm_event_name,
-        &period, period_default);
+        &value, period_default);
     if (hpcrun_ev_is(event, AMD_ROCM)) {
       trace_period =
-          (period == GPU_SAMPLING_PERIOD_UNSPECIFIED) ? trace_period_default : period;
+          (value == GPU_SAMPLING_PERIOD_UNSPECIFIED) ? trace_period_default : value;
       gpu_monitoring_trace_sampling_period_set(trace_period);
     } else if (strncmp(event, AMD_ROCM_GPU_INSTRUCTION_SAMPLING,
                        strlen(AMD_ROCM_GPU_INSTRUCTION_SAMPLING)) == 0) {
@@ -159,11 +164,25 @@ METHOD_FN(process_event_list)
       if (gpu_monitoring_instruction_sampling_is_enabled(GPU_INSTRUCTION_SAMPLING_ANY)) {
         instruction_sampling_requested = true;
 
-        long sampling_period =
-          (period == GPU_SAMPLING_PERIOD_UNSPECIFIED) ?
-          instruction_sampling_period_default : period;
+        // NOTE: rocprofiler-sdk stochastic PC sampling requires sampling periods to be a power
+        // of two. enforce that for host trap sampling so that periods are always specified
+        // in a consistent fashion.
 
-        gpu_monitoring_instruction_sampling_period_set(sampling_period);
+        // for stochastic sampling, the period unit is GPU cycles (minimum = 256)
+        // for host-trap sampling, the unit is an unspecified time unit (minimum = 1)
+
+        long sampling_period_log;
+
+        if (value != GPU_SAMPLING_PERIOD_UNSPECIFIED) {
+          sampling_period_log = value;
+        } else {
+          sampling_period_log =
+            gpu_monitoring_instruction_sampling_is_enabled(GPU_INSTRUCTION_SAMPLING_HW) ?
+            ROCM_PC_SAMPLING_STOCHASTIC_PERIOD_LOG_DEFAULT :
+            ROCM_PC_SAMPLING_HOST_TRAP_PERIOD_LOG_DEFAULT;
+        }
+
+        gpu_monitoring_instruction_sampling_period_set(1 << sampling_period_log);
 
         gpu_metrics_GPU_INST_enable(); // instruction counts
 
@@ -238,6 +257,7 @@ METHOD_FN(display_events)
     "Collect timing information on GPU kernel invocations, "
     "memory copies, etc..");
 
+#if STOCHASTIC_SAMPLING
   display_event_info(stdout, AMD_ROCM_GPU_INSTRUCTION_SAMPLING "[={hw,sw}]",
     "Comprehensive operation-level monitoring on an AMD GPU "
     "as described above with the addition of PC sampling. "
@@ -246,6 +266,14 @@ METHOD_FN(display_events)
     "Either hardware (hw), referred to by AMD as 'STOCHASTIC', "
     "or software (sw), referred to by AMD as 'HOST_TRAP', support "
     "for PC sampling can be selected.");
+#else
+  display_event_info(stdout, AMD_ROCM_GPU_INSTRUCTION_SAMPLING,
+    "Comprehensive operation-level monitoring on an AMD GPU "
+    "as described above with the addition of PC sampling. "
+    "Currently, only software-based (host-trap) support for PC "
+    "sampling while issues with hardware-based (stochastic) PC "
+    "sampling are resolved with AMD.");
+#endif
 
   display_header(stdout, "Available hardware counters for monitoring GPU kernels on AMD GPUs");
 

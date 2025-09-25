@@ -187,6 +187,7 @@ static hpcrun_aux_cleanup_t * hpcrun_aux_cleanup_free_list_head = NULL;
 static char execname[PATH_MAX + 1] = {'\0'};
 
 static int monitor_fini_process_how = 0;
+static int monitor_process_exit_how = 0;
 static atomic_int ms_init_started = 0;
 static atomic_int ms_init_completed = 0;
 
@@ -735,6 +736,14 @@ hpcrun_fini_internal()
 }
 
 
+int
+hpcrun_process_exit_how()
+{
+  return monitor_process_exit_how;
+}
+
+
+
 //------------------------------------
 // thread level
 //------------------------------------
@@ -1067,6 +1076,7 @@ monitor_fini_process(int how, void* data)
 void
 monitor_begin_process_exit(int how)
 {
+  monitor_process_exit_how = how;
 }
 
 static fork_data_t from_fork;

@@ -6,6 +6,8 @@
 // hpctoolkit includes
 //******************************************************************************
 
+#include "../../../libmonitor/monitor.h"
+#include "../../../main.h"
 #include "../../gpu-application-thread-api.h"
 
 #include "rocm-buffer.h"
@@ -89,7 +91,11 @@ rocm_interface_flush
 {
   if (rocm_enabled == false) return;
 
-  rocm_buffer_flush_all();
+  if (hpcrun_process_exit_how() != MONITOR_EXIT_SIGNAL) {
+    // only flush if not abnormal termination
+    rocm_buffer_flush_all();
+  }
+
   gpu_application_thread_process_activities();
 }
 
@@ -102,6 +108,18 @@ rocm_interface_fini
 )
 {
   if (rocm_enabled == false) return;
+
+  if (hpcrun_process_exit_how() == MONITOR_EXIT_SIGNAL) {
+    // the ROCm API does not handle abnormal termination
+    // well. rather than try to clean up and hang, don't
+    // attempt to clean up at all.
+
+    // only attempt to process any performance data already
+    // delivered to this thread.
+    gpu_application_thread_process_activities();
+
+    return;
+  }
 
   rocm_configure_fini();
   rocm_interface_flush(args, how);

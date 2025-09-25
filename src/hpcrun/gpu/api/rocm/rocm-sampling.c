@@ -258,12 +258,10 @@ rocm_agent_op
       exit(-1);
     }
   } else if (gpu_monitoring_instruction_sampling_is_enabled(GPU_INSTRUCTION_SAMPLING_UNSPECIFIED)) {
-    if (sampling_config.stochastic) {
-      config = sampling_config.stochastic;
-    } else if (sampling_config.host_trap) {
+    if (sampling_config.host_trap) {
       config = sampling_config.host_trap;
     } else {
-      fprintf(stderr, "FATAL: hpcrun: ROCm: PC sampling selected but unavailable.\n");
+      fprintf(stderr, "FATAL: hpcrun: ROCm: default PC sampling selected but (pc=sw) unavailable.\n");
       exit(-1);
     }
   }

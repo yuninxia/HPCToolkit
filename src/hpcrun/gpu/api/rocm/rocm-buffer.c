@@ -123,6 +123,8 @@ rocm_buffer_process
     return;
   }
 
+  long invalid = 0;
+  long valid = 0;
   // iterate over records
   for(size_t i = 0; i < num_headers; ++i) {
     rocprofiler_record_header_t *header = headers[i];
@@ -131,9 +133,12 @@ rocm_buffer_process
     } else if (header_is_invalid(header)) {
       TMSG(ROCM, "rocprofiler: bad header hash.");
     } else {
-      record_process(header);
+      uint64_t cid = record_process(header);
+      if (cid == 0) invalid++;
+      else valid++;
     }
   }
+  PRINT("rocm_buffer_process: valid=%ld invalid=%ld\n", valid, invalid);
 }
 
 

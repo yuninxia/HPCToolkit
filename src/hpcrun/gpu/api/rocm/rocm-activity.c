@@ -541,7 +541,7 @@ convert_sync
 static gpu_inst_stall_t
 convert_stall_type
 (
- rocprofiler_pc_sampling_record_t *pcs
+ rocprofiler_pc_sampling_record_hw_t *pcs
 )
 {
   return GPU_INST_STALL_NONE;
@@ -549,10 +549,75 @@ convert_stall_type
 
 
 static uint64_t
-convert_pc_sampling
+convert_pc_sampling_sw
 (
  gpu_activity_t *ga,
- rocprofiler_pc_sampling_record_t *pcs
+ rocprofiler_pc_sampling_record_sw_t *pcs
+)
+{
+  PRINT("PC sampling: sample(" PC_FORMAT ", ts=%ld, exec_mask=0x%16lx, "
+      "wgid=(x=%d, y=%d, z=%d), wave_id=%u, icid=0x%lx ecid=0x%lx)\n",
+      PC_VALUE(pcs->pc), pcs->timestamp, pcs->exec_mask, pcs->workgroup_id.x,
+      pcs->workgroup_id.y, pcs->workgroup_id.z, pcs->wave_in_group,
+      pcs->correlation_id.internal, pcs->correlation_id.external.value);
+
+  ga->kind = GPU_ACTIVITY_PC_SAMPLING;
+
+  ip_normalized_t pc = rocm_codeobject_map_normalize(pcs->pc);
+
+  uint64_t cid = pcs->correlation_id.external.value;
+
+#if TEST_ANONYMOUS_KERNEL
+  pc = gpu_op_placeholder_ip(gpu_placeholder_type_kernel_anon);
+#endif
+
+#if TEST_NO_LOCATION
+  cid = 0;
+#endif
+
+  if (cid == 0) {
+    if (pc.lm_id == 0) {
+      // <gpu kernel anonymous> goes under <gpu runtime>
+      cid = GPU_RUNTIME_PH_CID;
+    } else {
+      // known kernels go under <partial callpaths>
+      cid = PARTIAL_UNWIND_PH_CID;
+    }
+  }
+
+  PRINT("PC sample IP = [%d, 0x%lx]\n", pc.lm_id, pc.lm_ip);
+
+  // if a sample has no correlation id, then we assign it a
+  // correlation id saying it is a sample in the gpu runtime.
+  if (cid == 0) {
+    cid = GPU_RUNTIME_PH_CID;
+  }
+
+  ga->details.instruction.correlation_id = cid;
+
+  ga->details.instruction.pc = pc;
+
+  ga->details.pc_sampling.stallReason = GPU_INST_STALL_NONE;
+  ga->details.pc_sampling.samples = 1;
+  ga->details.pc_sampling.latencySamples = 0;
+
+  PRINT("PC sample GA: pc [0x%d, 0x%lx], corr 0x%lx, "
+        "samples %u, latencySamples %u, stallReason %u\n",
+        ga->details.instruction.pc.lm_id, ga->details.instruction.pc.lm_ip,
+        ga->details.instruction.correlation_id,
+        ga->details.pc_sampling.samples,
+        ga->details.pc_sampling.latencySamples,
+        ga->details.pc_sampling.stallReason);
+
+  return cid;
+}
+
+
+static uint64_t
+convert_pc_sampling_hw
+(
+ gpu_activity_t *ga,
+ rocprofiler_pc_sampling_record_hw_t *pcs
 )
 {
   PRINT("PC sampling: sample(" PC_FORMAT ", ts=%ld, exec_mask=0x%16lx, "
@@ -773,11 +838,19 @@ rocm_activity_translate_pc_sampling
 
   switch (header->kind) {
     case ROCPROFILER_PC_SAMPLING_RECORD_HOST: {
-      DECL_INIT_CAST(rocprofiler_pc_sampling_record_t *, pcs,
+      DECL_INIT_CAST(rocprofiler_pc_sampling_record_sw_t *, pcs,
                      header->payload);
-      cid = convert_pc_sampling(ga, pcs);
+      cid = convert_pc_sampling_sw(ga, pcs);
       break;
     }
+    case ROCPROFILER_PC_SAMPLING_RECORD_STOCHASTIC: {
+      DECL_INIT_CAST(rocprofiler_pc_sampling_record_hw_t *, pcs,
+                     header->payload);
+      cid = convert_pc_sampling_hw(ga, pcs);
+      break;
+    }
+    case ROCPROFILER_PC_SAMPLING_RECORD_INVALID_SAMPLE:
+      break;
 #ifdef ROCPROFILER_PC_SAMPLING_RECORD_CODE_OBJECT_LOAD_MARKER
     case ROCPROFILER_PC_SAMPLING_RECORD_CODE_OBJECT_LOAD_MARKER:
     case ROCPROFILER_PC_SAMPLING_RECORD_CODE_OBJECT_UNLOAD_MARKER:
@@ -906,7 +979,7 @@ rocm_activity_send
 }
 
 
-void
+uint64_t
 rocm_activity_process
 (
  rocprofiler_record_header_t *rocprofiler_record
@@ -940,11 +1013,12 @@ rocm_activity_process
   uint64_t correlation_id =
     rocm_activity_translate(&gpu_activity, rocprofiler_record);
 
-  if (gpu_activity.kind == GPU_ACTIVITY_UNKNOWN) return;
+  if (gpu_activity.kind == GPU_ACTIVITY_UNKNOWN) return 0;
 
   rocm_activity_send(correlation_id, &gpu_activity);
 
 #if TEST_SCRATCH
   send_fake_scratch_activities();
 #endif
+  return correlation_id;
 }

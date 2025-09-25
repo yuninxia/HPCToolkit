@@ -22,7 +22,7 @@
 
 /// @brief Type for processing a ROCm record.
 /// @param header The header of the ROCm record to process.
-typedef void (*rocm_record_process_op_t)
+typedef uint64_t (*rocm_record_process_op_t)
 (
   rocprofiler_record_header_t *header
 );

@@ -87,7 +87,8 @@ typedef uint64_t rocprofiler_pc_t;
   ROCPROFILER_PC_SAMPLING_RECORD_HOST_TRAP_V0_SAMPLE
 #define ROCPROFILER_PC_SAMPLING_RECORD_STOCHASTIC                                      \
   ROCPROFILER_PC_SAMPLING_RECORD_STOCHASTIC_V0_SAMPLE
-#define rocprofiler_pc_sampling_record_t rocprofiler_pc_sampling_record_host_trap_v0_t
+#define rocprofiler_pc_sampling_record_sw_t rocprofiler_pc_sampling_record_host_trap_v0_t
+#define rocprofiler_pc_sampling_record_hw_t rocprofiler_pc_sampling_record_stochastic_v0_t
 #define CONFIGURE_PC_SAMPLING_SERVICE_FLAG_PARAM flags
 #define CONFIGURE_PC_SAMPLING_SERVICE_FLAG_ARG                                         \
   , CONFIGURE_PC_SAMPLING_SERVICE_FLAG_PARAM
@@ -117,7 +118,7 @@ typedef uint64_t rocprofiler_pc_t;
 #define loaded_code_object_id code_object_id
 #define loaded_code_object_offset code_object_offset
 #define ROCPROFILER_OMPT_AVAILABLE
-#define ROCPROFILER_PAGE_MIGRATION_AVAILABLE
+// #define ROCPROFILER_PAGE_MIGRATION_AVAILABLE
 #endif
 
 //******************************************************************************
