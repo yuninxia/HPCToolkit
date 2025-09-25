@@ -7,6 +7,8 @@
 #ifndef LEVEL0_METRIC_PROFILER_H_
 #define LEVEL0_METRIC_PROFILER_H_
 
+struct hpcrun_foil_appdispatch_level0;
+
 //*****************************************************************************
 // system includes
 //*****************************************************************************
@@ -69,11 +71,11 @@ class ZeMetricProfiler {
   ZeMetricProfiler(const ZeMetricProfiler& that) = delete;
   ZeMetricProfiler& operator=(const ZeMetricProfiler& that) = delete;
 
-  static void* ThreadMain(void* arg);
+ static void* ThreadMain(void* arg);
 
  private:
   ZeMetricProfiler(const struct hpcrun_foil_appdispatch_level0* dispatch);
-  void StartProfilingMetrics(const struct hpcrun_foil_appdispatch_level0* dispatch);
+  void StartProfilingMetrics();
   void StopProfilingMetrics();
 
   static void MetricProfilingThread(ZeMetricProfiler* profiler, ZeDeviceDescriptor *desc, const struct hpcrun_foil_appdispatch_level0* dispatch);
@@ -81,6 +83,7 @@ class ZeMetricProfiler {
   static void CollectAndProcessMetrics(ZeDeviceDescriptor* desc, zet_metric_streamer_handle_t& streamer, std::vector<uint8_t>& raw_metrics, std::vector<std::string>& metric_list, const struct hpcrun_foil_appdispatch_level0* dispatch);
 
  private: // Data
+  const struct hpcrun_foil_appdispatch_level0* dispatch_;
   std::vector<ze_context_handle_t> metric_contexts_;
 };
 

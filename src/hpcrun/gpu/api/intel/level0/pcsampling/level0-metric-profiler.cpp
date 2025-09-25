@@ -101,7 +101,11 @@ ProcessMetricData
   std::vector<zet_typed_value_t> metrics;
   level0MetricGroupCalculateMultipleMetricValuesExp(desc->metric_group_, raw_size, raw_metrics,
                                                   samples, metrics, dispatch);
-  if (samples.empty() || metrics.empty()) return false;
+  if (samples.empty() || metrics.empty()) {
+    pcsampling::warn("No metric samples decoded for device %d; raw buffer size=%" PRIu64,
+                     desc->device_id_, raw_size);
+    return false;
+  }
 
   // Process the metric values into stall counts
   std::map<uint64_t, EuStalls> eustalls;
@@ -256,7 +260,7 @@ ZeMetricProfiler::Create
 
   try {
     new (profiler) ZeMetricProfiler(dispatch);
-    profiler->StartProfilingMetrics(dispatch);
+    profiler->StartProfilingMetrics();
     return profiler;
   } catch (const std::exception& e) {
     pcsampling::error("Exception in ZeMetricProfiler::Create: %s", e.what());
@@ -270,8 +274,9 @@ ZeMetricProfiler::ZeMetricProfiler
 (
   const struct hpcrun_foil_appdispatch_level0* dispatch
 )
+  : dispatch_(dispatch)
 {
-  level0EnumerateDevices(device_descriptors_, metric_contexts_, dispatch);
+  level0EnumerateDevices(device_descriptors_, metric_contexts_, dispatch_);
 }
 
 ZeMetricProfiler::~ZeMetricProfiler() 
@@ -293,7 +298,7 @@ ZeMetricProfiler::Destroy
 void
 ZeMetricProfiler::StartProfilingMetrics
 (
-  const struct hpcrun_foil_appdispatch_level0* dispatch
+  void
 )
 {
   for (auto it = device_descriptors_.begin(); it != device_descriptors_.end(); ++it) {
@@ -310,7 +315,7 @@ ZeMetricProfiler::StartProfilingMetrics
 
     args->profiler = this;
     args->descriptor = it->second;
-    args->dispatch = dispatch;
+    args->dispatch = dispatch_;
 
     pcsampling::disableNewThreads();
     int thread_id = pcsampling::createProfilingThread(ZeMetricProfiler::ThreadMain, args, "pcsampling");
@@ -355,4 +360,14 @@ ZeMetricProfiler::StopProfilingMetrics
   // Clean up all device descriptors and free memory
   level0CleanupDeviceDescriptors();
   device_descriptors_.clear();
+
+  for (auto& context : metric_contexts_) {
+    if (context != nullptr) {
+      ze_result_t status = pcsampling::callZeContextDestroy(context, dispatch_);
+      if (status != ZE_RESULT_SUCCESS) {
+        pcsampling::warn("Failed to destroy Level Zero context: %d", int(status));
+      }
+    }
+  }
+  metric_contexts_.clear();
 }

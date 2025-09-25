@@ -87,6 +87,40 @@ level0_pc_hpcrun_api_set(level0_pc_hpcrun_api_t* api)
 
 namespace pcsampling {
 
+namespace {
+
+constexpr size_t kMessageBufferSize = 1024;
+
+void emitFormattedMessage(void (*fn)(const char*, ...), const char* fmt, va_list args)
+{
+    if (!fn || !fmt) {
+        return;
+    }
+
+    char buffer[kMessageBufferSize];
+    va_list copy;
+    va_copy(copy, args);
+    int written = vsnprintf(buffer, sizeof(buffer), fmt, copy);
+    va_end(copy);
+
+    if (written < 0) {
+        return;
+    }
+
+    if (static_cast<size_t>(written) >= sizeof(buffer)) {
+        constexpr char kTruncatedSuffix[] = " ...";
+        size_t suffix_len = sizeof(kTruncatedSuffix) - 1;
+        if (suffix_len < sizeof(buffer)) {
+            std::memcpy(buffer + sizeof(buffer) - suffix_len - 1, kTruncatedSuffix, suffix_len);
+            buffer[sizeof(buffer) - 1] = '\0';
+        }
+    }
+
+    fn("%s", buffer);
+}
+
+} // namespace
+
 bool
 isInitialized()
 {
@@ -419,36 +453,24 @@ mcsUnlock(mcs_lock_t* lock, mcs_node_t* node)
 void
 warn(const char* fmt, ...)
 {
-    if (hpcrun_api && hpcrun_api->messages_warn) {
-        va_list args;
-        va_start(args, fmt);
-        hpcrun_api->messages_warn(fmt, args);
-        va_end(args);
-    }
+    if (!hpcrun_api || !hpcrun_api->messages_warn) return;
+
+    va_list args;
+    va_start(args, fmt);
+    emitFormattedMessage(hpcrun_api->messages_warn, fmt, args);
+    va_end(args);
 }
 
 
 void
 error(const char* fmt, ...)
 {
-    if (hpcrun_api && hpcrun_api->messages_error) {
-        va_list args;
-        va_start(args, fmt);
-        hpcrun_api->messages_error(fmt, args);
-        va_end(args);
-    }
-}
+    if (!hpcrun_api || !hpcrun_api->messages_error) return;
 
-
-void
-trace(int level, const char* fmt, ...)
-{
-    if (hpcrun_api && hpcrun_api->tmsg) {
-        va_list args;
-        va_start(args, fmt);
-        hpcrun_api->tmsg(level, fmt, args);
-        va_end(args);
-    }
+    va_list args;
+    va_start(args, fmt);
+    emitFormattedMessage(hpcrun_api->messages_error, fmt, args);
+    va_end(args);
 }
 
 
@@ -490,11 +512,21 @@ callZeDriverGetApiVersion(ze_driver_handle_t hDriver, ze_api_version_t* version,
 
 ze_result_t
 callZeContextCreate(ze_driver_handle_t hDriver, const ze_context_desc_t* desc,
-                   ze_context_handle_t* phContext,
-                   const struct hpcrun_foil_appdispatch_level0* dispatch)
+                    ze_context_handle_t* phContext,
+                    const struct hpcrun_foil_appdispatch_level0* dispatch)
 {
     if (hpcrun_api && hpcrun_api->f_zeContextCreate) {
         return hpcrun_api->f_zeContextCreate(hDriver, desc, phContext, dispatch);
+    }
+    return ZE_RESULT_ERROR_UNINITIALIZED;
+}
+
+ze_result_t
+callZeContextDestroy(ze_context_handle_t hContext,
+                     const struct hpcrun_foil_appdispatch_level0* dispatch)
+{
+    if (hpcrun_api && hpcrun_api->f_zeContextDestroy) {
+        return hpcrun_api->f_zeContextDestroy(hContext, dispatch);
     }
     return ZE_RESULT_ERROR_UNINITIALIZED;
 }
