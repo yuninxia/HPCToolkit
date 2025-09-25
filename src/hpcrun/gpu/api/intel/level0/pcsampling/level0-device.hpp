@@ -44,7 +44,8 @@ extern "C" {
 enum ZeProfilerState {
   PROFILER_UNKNOWN = -1,
   PROFILER_DISABLED = 0,
-  PROFILER_ENABLED = 1
+  PROFILER_ENABLED = 1,
+  PROFILER_ERROR = 2
 };
 
 struct ZeDeviceDescriptor {
@@ -88,6 +89,18 @@ struct ZeDeviceDescriptor {
 
   bool IsProfilerInitialized() const { // Check if specifically set to ENABLED
     return profiling_state_.load(std::memory_order_acquire) == PROFILER_ENABLED;
+  }
+
+  bool IsProfilerError() const {
+    return profiling_state_.load(std::memory_order_acquire) == PROFILER_ERROR;
+  }
+
+  bool IsProfilerReady() const { // Check if initialization completed (either success or error)
+    int state = profiling_state_.load(std::memory_order_acquire);
+    // Only ready when moved away from UNKNOWN state to a terminal state
+    // PROFILER_DISABLED is a terminal state (explicitly set on failure or shutdown)
+    // PROFILER_UNKNOWN means still initializing
+    return state != PROFILER_UNKNOWN;
   }
 
   void SetKernelStarted(bool started) {

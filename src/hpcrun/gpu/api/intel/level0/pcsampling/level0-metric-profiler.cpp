@@ -162,11 +162,18 @@ ZeMetricProfiler::MetricProfilingThread
   zet_metric_streamer_handle_t streamer = nullptr;
 
   level0InitializeMetricStreamer(context, device, group, streamer, dispatch);
+  if (streamer == nullptr) {
+    // Initialization failed, set error state
+    desc->UpdateProfilerState(PROFILER_ERROR);
+    return;
+  }
 
   // Get the list of metrics
   std::vector<std::string> metric_list;
   level0GetMetricList(group, metric_list, dispatch);
   if (!level0IsValidMetricList(metric_list)) {
+    // Set error state before returning
+    desc->UpdateProfilerState(PROFILER_ERROR);
     // Clean up streamer before returning
     level0CleanupMetricStreamer(context, device, group, streamer, dispatch);
     return;
@@ -175,6 +182,12 @@ ZeMetricProfiler::MetricProfilingThread
   RunProfilingLoop(desc, streamer, metric_list, dispatch);
 
   level0CleanupMetricStreamer(context, device, group, streamer, dispatch);
+
+  // Ensure we're in a terminal state when thread exits
+  // If still UNKNOWN, set to DISABLED (thread exited without setting a state)
+  if (desc->profiling_state_.load(std::memory_order_acquire) == PROFILER_UNKNOWN) {
+    desc->UpdateProfilerState(PROFILER_DISABLED);
+  }
 }
 
 void 
@@ -341,8 +354,13 @@ ZeMetricProfiler::StartProfilingMetrics
     }
 
     it->second->profiling_thread_id_ = thread_id;
-    while (!it->second->IsProfilerInitialized()) {
+    // Wait for profiler initialization to complete (either success or error)
+    while (!it->second->IsProfilerReady()) {
       std::this_thread::sleep_for(std::chrono::milliseconds(1));
+    }
+    // Check if initialization failed
+    if (it->second->IsProfilerError()) {
+      pcsampling::warn("Profiler initialization failed for device %d", it->second->device_id_);
     }
   }
 }

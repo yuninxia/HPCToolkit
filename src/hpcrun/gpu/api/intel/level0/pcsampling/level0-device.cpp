@@ -52,7 +52,7 @@ initializeDescriptorCommon
 )
 {
   desc->profiling_thread_id_ = -1;
-  desc->UpdateProfilerState(PROFILER_DISABLED);
+  desc->UpdateProfilerState(PROFILER_UNKNOWN);  // Start with UNKNOWN state
   desc->running_kernel_      = nullptr;
   desc->running_kernel_end_  = nullptr;
   desc->SetKernelStarted(false);
