@@ -81,6 +81,14 @@ pcSamplingEnableHelper
 )
 {
   enableProfiling(dispatch);
+
+  // Check if profiler was created successfully
+  if (metric_profiler == nullptr) {
+    EEMSG("Level0: Failed to create ZeMetricProfiler instance");
+    level0_pc_init_succeeded = false;
+    return;
+  }
+
   ze_collector = ZeCollector::Create(dispatch);
   if (ze_collector == nullptr) {
     EEMSG("Level0: Failed to create ZeCollector instance");
@@ -146,7 +154,11 @@ level0PCSamplingFini
     
     // Clean up profiler resources
     disableProfiling();
-    
+
+    // Reset initialization state
+    level0_pc_init_succeeded = false;
+    saved_dispatch = nullptr;
+
     // Reset initialization flag to allow re-initialization if needed
     pthread_once_t once_init = PTHREAD_ONCE_INIT;
     level0_pc_init_once = once_init;
