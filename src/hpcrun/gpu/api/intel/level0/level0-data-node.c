@@ -44,6 +44,7 @@ level0_data_node_new
   }
 
   memset(first, 0, sizeof(level0_data_node_t));
+  first->device_id = -1;
 
   return first;
 }

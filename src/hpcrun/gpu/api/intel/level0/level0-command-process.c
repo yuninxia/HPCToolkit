@@ -43,6 +43,11 @@
 
 #include "../../../../libmonitor/monitor.h"
 
+#include "../../../activity/correlation/gpu-channel-common.h"
+#include "pcsampling/level0-correlation-channels.h"
+
+#include <inttypes.h>
+
 
 
 //*****************************************************************************
@@ -248,7 +253,14 @@ level0_command_begin
   // Send correlation ID to PC sampling thread for kernel launches
   if (command_node->type == LEVEL0_KERNEL && level0_metrics_requested()) {
     gpu_activity_channel_t *channel = gpu_activity_channel_get_local();
-    gpu_correlation_channel_send(1, correlation_id, channel);
+    int32_t device_id = command_node->device_id;
+    uint64_t channel_idx = level0CorrelationChannelIndex(device_id);
+    if (channel_idx >= GPU_CHANNEL_TOTAL) {
+      TMSG(LEVEL0, "Correlation channel index %" PRIu64 " exceeds limit %d; falling back to base channel",
+           channel_idx, GPU_CHANNEL_TOTAL);
+      channel_idx = LEVEL0_CORRELATION_CHANNEL_BASE;
+    }
+    gpu_correlation_channel_send(channel_idx, correlation_id, channel);
   }
 
   gpu_application_thread_process_activities();

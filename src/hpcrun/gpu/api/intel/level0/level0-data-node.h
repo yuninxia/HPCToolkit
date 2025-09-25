@@ -62,6 +62,7 @@ typedef struct level0_data_node {
   cct_node_t *kernel;
   atomic_int *pending_operations;
   uint64_t submit_time;
+  int32_t device_id;
   level0_detail_entry_t details;
   uint64_t correlation_id;
   struct level0_data_node *next;

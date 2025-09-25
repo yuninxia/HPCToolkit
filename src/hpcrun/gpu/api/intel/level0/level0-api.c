@@ -33,6 +33,7 @@
 #include "level0-fence-map.h"
 #include "level0-id-map.h"
 #include "level0-kernel-module-map.h"
+#include "pcsampling/level0-correlation-device-map.h"
 #include "pcsampling/level0-pc-manager.hpp"
 
 #include "../../../../utilities/linuxtimer.h"
@@ -327,14 +328,17 @@ level0_command_list_append_launch_kernel_entry
 
   // Lookup the command list and append the kernel launch to the command list
   level0_data_node_t ** command_list_data_head = level0_commandlist_map_lookup(command_list);
+  int32_t device_id = hpcrun_level0_cmdlist_device_lookup(command_list);
   if (command_list_data_head != NULL) {
     level0_data_node_t * data_for_kernel = level0_commandlist_append_kernel(command_list_data_head, kernel, event, event_pool, dispatch);
+    data_for_kernel->device_id = device_id;
     // Associate the data entry with the event
     level0_event_map_insert(event, data_for_kernel);
   } else {
     // Cannot find command list.
     // This means we are dealing with an immediate command list
-    level0_data_node_t * data_for_kernel = level0_commandlist_alloc_kernel(kernel, event, event_pool, dispatch);;
+    level0_data_node_t * data_for_kernel = level0_commandlist_alloc_kernel(kernel, event, event_pool, dispatch);
+    data_for_kernel->device_id = device_id;
     // Associate the data entry with the event
     level0_event_map_insert(event, data_for_kernel);
 #if LATE_BEGIN == 0
@@ -375,14 +379,17 @@ level0_command_list_append_launch_memcpy_entry
 
   // Lookup the command list and append the mempcy to the command list
   level0_data_node_t ** command_list_data_head = level0_commandlist_map_lookup(command_list);
+  int32_t device_id = hpcrun_level0_cmdlist_device_lookup(command_list);
   if (command_list_data_head != NULL) {
     level0_data_node_t * data_for_memcpy = level0_commandlist_append_memcpy(command_list_data_head, src_type, dst_type, mem_copy_size, event, event_pool, dispatch);
+    data_for_memcpy->device_id = device_id;
     // Associate the data entry with the event
     level0_event_map_insert(event, data_for_memcpy);
   } else {
     // Cannot find command list.
     // This means we are dealing with an immediate command list
     level0_data_node_t * data_for_memcpy = level0_commandlist_alloc_memcpy(src_type, dst_type, mem_copy_size, event, event_pool, dispatch);
+    data_for_memcpy->device_id = device_id;
     // Associate the data entry with the event
     level0_event_map_insert(event, data_for_memcpy);
 #if LATE_BEGIN == 0
@@ -400,6 +407,7 @@ level0_command_list_create_exit
 (
   ze_command_list_handle_t handle,
   ze_context_handle_t hContext,
+  ze_device_handle_t hDevice,
   int isImmediateList
 )
 {
@@ -412,6 +420,8 @@ level0_command_list_create_exit
   }
   // command list context map: command list handle -> context handle
   level0_commandlist_context_map_insert(handle, hContext);
+
+  hpcrun_level0_cmdlist_device_register_with_device(handle, hDevice);
 }
 
 
@@ -689,7 +699,7 @@ hpcrun_zeCommandListCreate
   ze_result_t ret = f_zeCommandListCreate(hContext, hDevice, desc, phCommandList, dispatch);
 
   // Exit action
-  level0_command_list_create_exit(*phCommandList, hContext, 0);
+  level0_command_list_create_exit(*phCommandList, hContext, hDevice, 0);
 
   PRINT("hpcrun_zeCommandListCreate exit\n");
 
@@ -721,7 +731,7 @@ hpcrun_zeCommandListCreateImmediate
   ze_result_t ret = f_zeCommandListCreateImmediate(hContext, hDevice, altdesc, phCommandList, dispatch);
 
   // Exit action
-  level0_command_list_create_exit(*phCommandList, hContext, 1);
+  level0_command_list_create_exit(*phCommandList, hContext, hDevice, 1);
 
   PRINT("hpcrun_zeCommandListCreateImmediate exit\n");
 

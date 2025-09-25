@@ -18,6 +18,8 @@
 
 #include "level0-device.hpp"
 #include "level0-cmdlist-device-map.hpp"
+#include "level0-correlation-device-map.h"
+#include "level0-correlation-device-map.h"
 #include "level0-pc-api-receiver.hpp"
 
 
@@ -333,6 +335,7 @@ level0DestroyDeviceDescriptor
 )
 {
   if (!descriptor) return;
+  hpcrun_level0_device_unregister(descriptor->device_);
   descriptor->~ZeDeviceDescriptor();
   pcsampling::freeMemory(descriptor);
 }

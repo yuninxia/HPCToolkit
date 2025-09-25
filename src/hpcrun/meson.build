@@ -462,6 +462,7 @@ if level0_dep.found()
     'gpu/api/intel/level0/level0-command-list-map.c',
     'gpu/api/intel/level0/level0-command-process.c',
     'gpu/api/intel/level0/level0-command-queue-map.c',
+    'gpu/api/intel/level0/level0-correlation-device-map.c',
     'gpu/api/intel/level0/level0-data-node.c',
     'gpu/api/intel/level0/level0-debug.c',
     'gpu/api/intel/level0/level0-event-map.c',
@@ -473,6 +474,7 @@ if level0_dep.found()
   )
 
   level0_pc_cpp_srcs = files(
+    'gpu/api/intel/level0/level0-correlation-device-map.c',
     'gpu/api/intel/level0/pcsampling/level0-activity-generate.cpp',
     'gpu/api/intel/level0/pcsampling/level0-activity-send.cpp',
     'gpu/api/intel/level0/pcsampling/level0-activity-translate.cpp',
