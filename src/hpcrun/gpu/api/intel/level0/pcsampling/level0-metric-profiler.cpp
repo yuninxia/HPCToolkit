@@ -50,6 +50,7 @@ FinalizeKernelProcessing
 )
 {
   desc->running_kernel_ = nullptr;
+  desc->running_kernel_end_ = nullptr;
   desc->SetKernelStarted(false);
   desc->SetSerialDataReady(true);
 }
@@ -75,6 +76,12 @@ WaitForNextInterval
   ze_result_t& status
 )
 {
+  // If no signal event was provided, consider kernel as immediately finished
+  if (desc->running_kernel_end_ == nullptr) {
+    status = ZE_RESULT_SUCCESS;
+    return true;
+  }
+
   while (true) {
     status = pcsampling::callZeEventQueryStatus(desc->running_kernel_end_, dispatch);
     if (status == ZE_RESULT_SUCCESS) return true;
