@@ -286,7 +286,7 @@ consume_trace_item(gpu_trace_item_t *trace_item, thread_data_t *thread_data, voi
 
   start = gpu_trace_start_adjust(thread_data, start, end);
 
-  uint32_t period = gpu_monitoring_trace_sample_period_get();
+  uint32_t period = gpu_monitoring_trace_sampling_period_get();
 
   bool append = false;
 

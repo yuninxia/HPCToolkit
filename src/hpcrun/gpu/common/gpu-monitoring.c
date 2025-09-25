@@ -99,7 +99,7 @@ gpu_monitoring_trace_sampling_period_set
 
 
 uint32_t
-gpu_monitoring_trace_sample_period_get
+gpu_monitoring_trace_sampling_period_get
 (
  void
 )
