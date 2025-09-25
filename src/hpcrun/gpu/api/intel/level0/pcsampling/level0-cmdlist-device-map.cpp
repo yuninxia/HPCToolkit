@@ -18,6 +18,7 @@
 //*****************************************************************************
 
 #include "level0-cmdlist-device-map.hpp"
+#include "level0-correlation-device-map.h"
 #include "level0-pc-api-receiver.hpp"
 
 
@@ -77,6 +78,7 @@ level0InsertCmdListDeviceMap
 
   std::lock_guard<std::mutex> lock(cmdlist_device_map_mutex_);
   cmdlist_device_map_[cmdList] = device;
+  hpcrun_level0_cmdlist_device_register_with_device(cmdList, device);
 }
 
 ze_device_handle_t
@@ -125,10 +127,12 @@ level0InsertDeviceDescriptor
   // Check if device already exists and clean up old descriptor if needed
   auto it = device_descriptors_.find(device);
   if (it != device_descriptors_.end() && it->second != nullptr) {
+    hpcrun_level0_device_unregister(device);
     level0DestroyDeviceDescriptor(it->second);
   }
 
   device_descriptors_[device] = descriptor;
+  hpcrun_level0_device_register(device, descriptor->device_id_);
 }
 
 void
@@ -143,6 +147,7 @@ level0CleanupDeviceDescriptors
   // Delete all device descriptors
   for (auto& [device, descriptor] : device_descriptors_) {
     if (descriptor != nullptr) {
+      hpcrun_level0_device_unregister(device);
       level0DestroyDeviceDescriptor(descriptor);
     }
   }

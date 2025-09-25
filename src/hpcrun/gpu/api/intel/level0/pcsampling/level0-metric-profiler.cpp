@@ -18,6 +18,11 @@
 
 #include "level0-metric-profiler.hpp"
 #include "level0-pc-api-receiver.hpp"
+#include "level0-correlation-channels.h"
+
+#include "../../../../activity/correlation/gpu-channel-common.h"
+
+#include <inttypes.h>
 
 
 //******************************************************************************
@@ -192,7 +197,14 @@ ZeMetricProfiler::RunProfilingLoop
     if (!WaitForKernelStart(desc)) return;
 
     // Update correlation ID
-    pcsampling::receiveCorrelationChannel(1, level0UpdateCorrelationId, desc);
+    int32_t device_id = desc->device_id_;
+    uint64_t channel_idx = level0CorrelationChannelIndex(device_id);
+    if (channel_idx >= GPU_CHANNEL_TOTAL) {
+      pcsampling::warn("Correlation channel index %" PRIu64 " exceeds limit %d; falling back to base channel",
+                       channel_idx, GPU_CHANNEL_TOTAL);
+      channel_idx = LEVEL0_CORRELATION_CHANNEL_BASE;
+    }
+    pcsampling::receiveCorrelationChannel(channel_idx, level0UpdateCorrelationId, desc);
 
     // Wait for the next sampling interval; continuously collect metrics until the event is signaled
     if (!WaitForNextInterval(desc, dispatch, status)) return; // Rename to WaitForKernelEnd
