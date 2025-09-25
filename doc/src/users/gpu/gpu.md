@@ -360,7 +360,7 @@ You can check whether one or both kinds of PC sampling are available for your GP
 PC sampling on AMD GPUs is a device-wide activity for both host-trap (software-based) sampling and stochastic (hardware-based) sampling.
 When using host-trap (software-based) PC sampling, the GPU device driver periodically halts the GPU and reads the PC out of each wave in an active compute unit. Samples collected using host-trap sampling may suffer from "skid", where a sample may be attributed to an instruction up to two instructions away from a source of latency. When using stochastic (hardware-based) PC sampling, each compute unit periodically chooses an active wave on the compute unit and records its PC. Over time, each compute unit samples waves in a round robin fashion.
 
-To select software-based host-trap PC sampling, specify `-e gpu=rocm,pc=sw`. To select hardware-based stocastic PC sampling, specify `-e gpu=rocm,pc=hw`. Specifying simply `-e gpu=rocm,pc` will select hardware-based stochastic sampling if available and software-based host-trap sampling otherwise.
+To select software-based host-trap PC sampling, specify `-e gpu=rocm,pc=sw`. To select hardware-based stochastic PC sampling, specify `-e gpu=rocm,pc=hw`. Specifying simply `-e gpu=rocm,pc` will select hardware-based stochastic sampling if available and software-based host-trap sampling otherwise.
 
 Using AMD's Rocprofiler-sdk monitoring infrastructure, HPCToolkit collects a histogram of samples for each instruction in each kernel that an application executes.
 For stochastic (hardware-based) samples, a sample contains more than a GPU program counter value.
