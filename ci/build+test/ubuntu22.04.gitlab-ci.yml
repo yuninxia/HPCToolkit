@@ -16,6 +16,14 @@
     - cd builddir/
     - meson test --print-errorlogs 'hpctoolkit:*'
 
+.ubuntu22.04:compile+test:
+  extends: .compile+test
+  script:
+    - meson setup builddir/ -Dwerror=true -Ddyninst:werror=false -Dxed:werror=false -Dlibunwind:werror=false
+    - cd builddir/
+    - meson test --print-errorlogs 'hpctoolkit:*'
+    - meson compile
+
 ubuntu22.04 amd64:compile:
   extends: .ubuntu22.04:compile
   rules:
@@ -52,33 +60,20 @@ ubuntu22.04 arm64:test cpu:
   tags: [$GITLAB_SAAS_LINUX_MAX_ARM64]
   image: *image_arm64
 
-ubuntu22.04 ppc64le:compile:
-  extends: .ubuntu22.04:compile
+# NB: Current GPU vendor runtimes don't support ppc64le, so we use a merged compile/test
+# architecture for better performance.
+ubuntu22.04 ppc64le:test:
+  extends: .ubuntu22.04:compile+test
   rules:
     - if: $HPCTOOLKIT_LINUX_MAX_PPC64LE
   tags: [$HPCTOOLKIT_LINUX_MAX_PPC64LE]
-  image: &image_ppc64le
+  image:
     name: registry.gitlab.com/hpctoolkit/rtt-images:1.0.0-ubuntu22.04
     docker:
       platform: linux/ppc64le
 
-ubuntu22.04 ppc64le:compile:hpsf:
-  extends: ubuntu22.04 ppc64le:compile
+ubuntu22.04 ppc64le:test:hpsf:
+  extends: ubuntu22.04 ppc64le:test
   rules:
     - if: &on_hpsf $CI_SERVER_FQDN == "gitlab.spack.io"
-  tags: [hpsf-ppc64le]
-
-ubuntu22.04 ppc64le:test cpu:
-  extends: .ubuntu22.04:test cpu
-  needs: [ubuntu22.04 ppc64le:compile]
-  rules:
-    - if: $HPCTOOLKIT_LINUX_MAX_PPC64LE
-  tags: [$HPCTOOLKIT_LINUX_MAX_PPC64LE]
-  image: *image_ppc64le
-
-ubuntu22.04 ppc64le:test cpu:hpsf:
-  extends: ubuntu22.04 ppc64le:test cpu
-  needs: [ubuntu22.04 ppc64le:compile:hpsf]
-  rules:
-    - if: *on_hpsf
   tags: [hpsf-ppc64le]

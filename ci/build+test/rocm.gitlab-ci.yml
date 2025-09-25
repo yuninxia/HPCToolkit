@@ -22,12 +22,6 @@
     - meson test --print-errorlogs 'hpctoolkit:*' --no-suite level0 --no-suite rocm
     - meson compile
 
-.rocm amd64:compile:hpsf:
-  extends: .rocm amd64:compile
-  rules:
-    - if: &on_hpsf $CI_SERVER_FQDN == "gitlab.spack.io"
-  tags: [hpsf-x86_64]
-
 .rocm amd64:test amd gpu:
   extends: .test
   rules:
@@ -37,14 +31,27 @@
     - cd builddir/
     - meson test --print-errorlogs 'hpctoolkit:*' --suite opencl --suite rocm
 
-.rocm amd64:test amd gpu:hpsf:
-  extends: .rocm amd64:test amd gpu
+# NB: HPSF CI uses a merged compile/test architecture. Unlike GitLab.com, there are
+# limited generic-hardware runners available, so a merged architecture works better.
+.rocm amd64:test:hpsf:
+  extends: .compile+test
   rules:
-    - if: *on_hpsf
+    - if: &on_hpsf $CI_SERVER_FQDN == "gitlab.spack.io"
   tags: [hpsf-gpu, x86_64-amdgpu, amd-$AMD_GPU_ARCH]
   parallel:
     matrix:
       - AMD_GPU_ARCH: [mi210, mi300]
+  script:
+    - >-
+      meson setup builddir/ -Dwerror=true -Ddyninst:werror=false -Dxed:werror=false -Dlibunwind:werror=false
+      -Drocm=enabled
+    - cd builddir/
+    # FIXME: Tests that use Level Zero fail on systems that don't have a suitable GPU attached.
+    # This should be fixed, but for now don't try to run any of the affected tests.
+    # FIXME: The ROCm-enabled tests FAIL instead of SKIP if there is no AMD hardware available to run the test.
+    # For now, disable these tests to allow the CI job to pass
+    - meson test --print-errorlogs 'hpctoolkit:*' --no-suite level0 --no-suite rocm
+    - meson compile
 
 rocm6.3 amd64:compile:
   extends: .rocm amd64:compile
@@ -53,16 +60,11 @@ rocm6.3 amd64:compile:
     docker:
       platform: linux/amd64
 
-rocm6.3 amd64:compile:hpsf:
-  extends: .rocm amd64:compile:hpsf
-  image: *image_rocm6_3_amd64
-
 rocm6.3 amd64:test amd gpu:
   extends: .rocm amd64:test amd gpu
   needs: [rocm6.3 amd64:compile]
   image: *image_rocm6_3_amd64
 
-rocm6.3 amd64:test amd gpu:hpsf:
-  extends: .rocm amd64:test amd gpu:hpsf
-  needs: [rocm6.3 amd64:compile:hpsf]
+rocm6.3 amd64:test:hpsf:
+  extends: .rocm amd64:test:hpsf
   image: *image_rocm6_3_amd64

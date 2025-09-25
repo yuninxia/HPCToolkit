@@ -15,12 +15,6 @@
     - meson test --print-errorlogs 'hpctoolkit:*'
     - meson compile
 
-.cuda amd64:compile:hpsf:
-  extends: .cuda amd64:compile
-  rules:
-    - if: &on_hpsf $CI_SERVER_FQDN == "gitlab.spack.io"
-  tags: [hpsf-x86_64]
-
 .cuda amd64:test nvidia gpu:
   extends: .test
   rules:
@@ -33,14 +27,23 @@
     - meson configure -Dcuda_args=-arch=native
     - meson test --print-errorlogs 'hpctoolkit:*' --suite opencl --suite cuda --suite hpcstruct
 
-.cuda amd64:test nvidia gpu:hpsf:
-  extends: .cuda amd64:test nvidia gpu
+# NB: HPSF CI uses a merged compile/test architecture. Unlike GitLab.com, there are
+# limited generic-hardware runners available, so a merged architecture works better.
+.cuda amd64:test:hpsf:
+  extends: .compile+test
   rules:
-    - if: *on_hpsf
+    - if: &on_hpsf $CI_SERVER_FQDN == "gitlab.spack.io"
   tags: [hpsf-gpu, x86_64-nvidiagpu, nvidia-$NVIDIA_GPU_ARCH]
   parallel:
     matrix:
       - NVIDIA_GPU_ARCH: [a100]
+  script:
+    - >-
+      meson setup builddir/ -Dwerror=true -Ddyninst:werror=false -Dxed:werror=false -Dlibunwind:werror=false
+      -Dcuda=enabled
+    - cd builddir/
+    - meson test --print-errorlogs 'hpctoolkit:*'
+    - meson compile
 
 cuda12.0 amd64:compile:
   extends: .cuda amd64:compile
@@ -49,18 +52,13 @@ cuda12.0 amd64:compile:
     docker:
       platform: linux/amd64
 
-cuda12.0 amd64:compile:hpsf:
-  extends: .cuda amd64:compile:hpsf
-  image: *image_cuda12_0_amd64
-
 cuda12.0 amd64:test nvidia gpu:
   extends: .cuda amd64:test nvidia gpu
   needs: [cuda12.0 amd64:compile]
   image: *image_cuda12_0_amd64
 
-cuda12.0 amd64:test nvidia gpu:hpsf:
-  extends: .cuda amd64:test nvidia gpu:hpsf
-  needs: [cuda12.0 amd64:compile:hpsf]
+cuda12.0 amd64:test:hpsf:
+  extends: .cuda amd64:test:hpsf
   image: *image_cuda12_0_amd64
 
 cuda12.1 amd64:compile:
@@ -70,18 +68,13 @@ cuda12.1 amd64:compile:
     docker:
       platform: linux/amd64
 
-cuda12.1 amd64:compile:hpsf:
-  extends: .cuda amd64:compile:hpsf
-  image: *image_cuda12_1_amd64
-
 cuda12.1 amd64:test nvidia gpu:
   extends: .cuda amd64:test nvidia gpu
   needs: [cuda12.1 amd64:compile]
   image: *image_cuda12_1_amd64
 
-cuda12.1 amd64:test nvidia gpu:hpsf:
-  extends: .cuda amd64:test nvidia gpu:hpsf
-  needs: [cuda12.1 amd64:compile:hpsf]
+cuda12.1 amd64:test:hpsf:
+  extends: .cuda amd64:test:hpsf
   image: *image_cuda12_1_amd64
 
 cuda12.2 amd64:compile:
@@ -91,18 +84,13 @@ cuda12.2 amd64:compile:
     docker:
       platform: linux/amd64
 
-cuda12.2 amd64:compile:hpsf:
-  extends: .cuda amd64:compile:hpsf
-  image: *image_cuda12_2_amd64
-
 cuda12.2 amd64:test nvidia gpu:
   extends: .cuda amd64:test nvidia gpu
   needs: [cuda12.2 amd64:compile]
   image: *image_cuda12_2_amd64
 
-cuda12.2 amd64:test nvidia gpu:hpsf:
-  extends: .cuda amd64:test nvidia gpu:hpsf
-  needs: [cuda12.2 amd64:compile:hpsf]
+cuda12.2 amd64:test:hpsf:
+  extends: .cuda amd64:test:hpsf
   image: *image_cuda12_2_amd64
 
 cuda12.4 amd64:compile:
@@ -112,18 +100,13 @@ cuda12.4 amd64:compile:
     docker:
       platform: linux/amd64
 
-cuda12.4 amd64:compile:hpsf:
-  extends: .cuda amd64:compile:hpsf
-  image: *image_cuda12_4_amd64
-
 cuda12.4 amd64:test nvidia gpu:
   extends: .cuda amd64:test nvidia gpu
   needs: [cuda12.4 amd64:compile]
   image: *image_cuda12_4_amd64
 
-cuda12.4 amd64:test nvidia gpu:hpsf:
-  extends: .cuda amd64:test nvidia gpu:hpsf
-  needs: [cuda12.4 amd64:compile:hpsf]
+cuda12.4 amd64:test:hpsf:
+  extends: .cuda amd64:test:hpsf
   image: *image_cuda12_4_amd64
 
 cuda12.5 amd64:compile:
@@ -133,16 +116,11 @@ cuda12.5 amd64:compile:
     docker:
       platform: linux/amd64
 
-cuda12.5 amd64:compile:hpsf:
-  extends: .cuda amd64:compile:hpsf
-  image: *image_cuda12_5_amd64
-
 cuda12.5 amd64:test nvidia gpu:
   extends: .cuda amd64:test nvidia gpu
   needs: [cuda12.5 amd64:compile]
   image: *image_cuda12_5_amd64
 
-cuda12.5 amd64:test nvidia gpu:hpsf:
-  extends: .cuda amd64:test nvidia gpu:hpsf
-  needs: [cuda12.5 amd64:compile:hpsf]
+cuda12.5 amd64:test:hpsf:
+  extends: .cuda amd64:test:hpsf
   image: *image_cuda12_5_amd64

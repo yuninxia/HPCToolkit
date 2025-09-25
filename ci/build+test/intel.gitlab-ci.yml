@@ -24,13 +24,6 @@ intel amd64:compile:
     docker:
       platform: linux/amd64
 
-intel amd64:compile:hpsf:
-  extends: .intel:compile
-  rules:
-    - if: &on_hpsf $CI_SERVER_FQDN == "gitlab.spack.io"
-  tags: [hpsf-x86_64]
-  image: *image_amd64
-
 intel amd64:test cpu:
   extends: .test
   needs: [intel amd64:compile]
@@ -44,19 +37,24 @@ intel amd64:test cpu:
     # This should be fixed, but for now don't try to run any of the affected tests.
     - meson test --print-errorlogs 'hpctoolkit:*' --no-suite level0
 
-intel amd64:test cpu:hpsf:
-  extends: .test
-  needs: [intel amd64:compile:hpsf]
+# NB: HPSF CI uses a merged compile/test architecture. Unlike GitLab.com, there are
+# limited generic-hardware runners available, so a merged architecture works better.
+intel amd64:test:hpsf:
+  extends: .compile+test
   rules:
-    - if: *on_hpsf
+    - if: &on_hpsf $CI_SERVER_FQDN == "gitlab.spack.io"
   tags: [hpsf-gpu, x86_64-intelgpu, intel-$INTEL_GPU_ARCH]
   parallel:
     matrix:
       - INTEL_GPU_ARCH: [data-center-max-1100]
   image: *image_amd64
   script:
+    - >-
+      meson setup builddir/ -Dwerror=true -Ddyninst:werror=false -Dxed:werror=false -Dlibunwind:werror=false
+      -Dlevel0=enabled -Dgtpin=enabled
     - cd builddir/
-    - meson test --print-errorlogs 'hpctoolkit:*' --suite opencl --suite level0
+    - meson test --print-errorlogs 'hpctoolkit:*'
+    - meson compile
 
 intel:compile icx:
   extends: .intel:compile
