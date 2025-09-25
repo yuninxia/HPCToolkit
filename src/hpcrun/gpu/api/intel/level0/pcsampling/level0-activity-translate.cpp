@@ -102,8 +102,11 @@ fillPCSamplingActivityFields
   activity->details.pc_sampling.correlation_id = correlation_id;
   activity->details.pc_sampling.samples = stall_count;
 
-  // FIXME(Yuning): latencySamples may not be accurate
-  activity->details.pc_sampling.latencySamples = stall_count;
+  // Intel Level Zero doesn't provide latency-weighted samples like NVIDIA CUPTI.
+  // Following AMD ROCm's approach, set latencySamples to 0 to indicate unavailable.
+  // NVIDIA CUPTI provides both samples (count) and latencySamples (latency-weighted),
+  // but Intel only provides stall counts from EU performance counters.
+  activity->details.pc_sampling.latencySamples = 0;
   activity->details.pc_sampling.stallReason = stall_reason;
 }
 
