@@ -288,12 +288,30 @@ level0DeviceGetRootDevice
   return (rootDevice != nullptr) ? rootDevice : device;
 }
 
-// FIXME(Yuning): Separate the two mechanisms.
-// Fixme(Yuning)(Optional): To use a design like rocm_agent_apply_helper for device setup.
-void
-level0EnumerateAndSetupDevices
+// Device enumeration helper callback type
+typedef void (*level0_device_op_t)(
+    ze_device_handle_t device,
+    ze_driver_handle_t driver,
+    int32_t device_id,
+    int32_t parent_device_id,
+    ze_device_handle_t parent_device,
+    int32_t subdevice_id,
+    void* user_data
+);
+
+// Helper structure for device enumeration
+struct level0_device_apply_helper_state {
+  level0_device_op_t op;
+  const struct hpcrun_foil_appdispatch_level0* dispatch;
+  void* user_data;
+  int32_t* device_counter;
+};
+
+// Internal: Initialize device map if needed
+static void
+level0InitializeDeviceMapIfNeeded
 (
-  const struct hpcrun_foil_appdispatch_level0* dispatch
+  void
 )
 {
   if (devices_ == nullptr) {
@@ -304,28 +322,88 @@ level0EnumerateAndSetupDevices
     }
     devices_ = new (raw) std::map<ze_device_handle_t, ZeDevice>();
   }
+}
 
-  std::vector<ze_driver_handle_t> drivers = level0GetDrivers(dispatch);
+// Internal: Apply operation to device and its sub-devices
+static void
+level0ApplyToDeviceAndSubdevices
+(
+  ze_device_handle_t device,
+  ze_driver_handle_t driver,
+  int32_t device_id,
+  level0_device_apply_helper_state* state
+)
+{
+  // Apply operation to root device
+  state->op(device, driver, device_id, -1, nullptr, -1, state->user_data);
 
-  int32_t did = 0;
-  for (auto driver : drivers) {
-    std::vector<ze_device_handle_t> devices = level0GetDevices(driver, dispatch);
-    
-    for (auto device : devices) {
-      // Set up the root device.
-      SetupDevice(device, driver, did, -1, nullptr, -1, dispatch);
-      
-      // Set up any sub-devices.
-      uint32_t num_sub_devices = level0GetSubDeviceCount(device, dispatch);
-      if (num_sub_devices > 0) {
-        std::vector<ze_device_handle_t> sub_devices = level0GetSubDevices(device, num_sub_devices, dispatch);
-        for (uint32_t j = 0; j < num_sub_devices; j++) {
-          SetupDevice(sub_devices[j], driver, did, did, device, j, dispatch);
-        }
-      }
-      ++did;
+  // Apply operation to sub-devices if any
+  uint32_t num_sub_devices = level0GetSubDeviceCount(device, state->dispatch);
+  if (num_sub_devices > 0) {
+    std::vector<ze_device_handle_t> sub_devices = level0GetSubDevices(device, num_sub_devices, state->dispatch);
+    for (uint32_t j = 0; j < num_sub_devices; j++) {
+      state->op(sub_devices[j], driver, device_id, device_id, device, j, state->user_data);
     }
   }
+}
+
+// ROCm-style helper: Apply operation to all devices
+static void
+level0DeviceApplyHelper
+(
+  level0_device_op_t device_op,
+  const struct hpcrun_foil_appdispatch_level0* dispatch,
+  void* user_data
+)
+{
+  std::vector<ze_driver_handle_t> drivers = level0GetDrivers(dispatch);
+
+  int32_t device_counter = 0;
+  level0_device_apply_helper_state state = {
+    .op = device_op,
+    .dispatch = dispatch,
+    .user_data = user_data,
+    .device_counter = &device_counter
+  };
+
+  for (auto driver : drivers) {
+    std::vector<ze_device_handle_t> devices = level0GetDevices(driver, dispatch);
+    for (auto device : devices) {
+      level0ApplyToDeviceAndSubdevices(device, driver, device_counter, &state);
+      ++device_counter;
+    }
+  }
+}
+
+// Device setup operation callback
+static void
+level0DeviceSetupOp
+(
+  ze_device_handle_t device,
+  ze_driver_handle_t driver,
+  int32_t device_id,
+  int32_t parent_device_id,
+  ze_device_handle_t parent_device,
+  int32_t subdevice_id,
+  void* user_data
+)
+{
+  const struct hpcrun_foil_appdispatch_level0* dispatch =
+    static_cast<const struct hpcrun_foil_appdispatch_level0*>(user_data);
+  SetupDevice(device, driver, device_id, parent_device_id, parent_device, subdevice_id, dispatch);
+}
+
+// Public API: Enumerate and setup all devices
+void
+level0EnumerateAndSetupDevices
+(
+  const struct hpcrun_foil_appdispatch_level0* dispatch
+)
+{
+  level0InitializeDeviceMapIfNeeded();
+
+  // Use the helper pattern to enumerate and setup devices
+  level0DeviceApplyHelper(level0DeviceSetupOp, dispatch, const_cast<void*>(static_cast<const void*>(dispatch)));
 }
 
 void
