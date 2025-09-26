@@ -85,8 +85,12 @@ typedef uint64_t rocprofiler_pc_t;
 #else
 #define ROCPROFILER_PC_SAMPLING_RECORD_HOST                                            \
   ROCPROFILER_PC_SAMPLING_RECORD_HOST_TRAP_V0_SAMPLE
+#if (ROCPROFILER_VERSION_MAJOR == 1)
 #define ROCPROFILER_PC_SAMPLING_RECORD_STOCHASTIC                                      \
   ROCPROFILER_PC_SAMPLING_RECORD_STOCHASTIC_V0_SAMPLE
+#define ROCPROFILER_PC_SAMPLING_RECORD_INVALID                                         \
+  ROCPROFILER_PC_SAMPLING_RECORD_INVALID_SAMPLE
+#endif
 #define rocprofiler_pc_sampling_record_sw_t                                            \
   rocprofiler_pc_sampling_record_host_trap_v0_t
 #define rocprofiler_pc_sampling_record_hw_t                                            \
@@ -107,7 +111,7 @@ typedef uint64_t rocprofiler_pc_t;
 #define PC_VALUE(pc) pc.loaded_code_object_id, pc.loaded_code_object_offset
 #endif
 
-#if (ROCPROFILER_VERSION_MAJOR == 0 && ROCPROFILER_VERSION_MINOR > 5)
+#if (ROCPROFILER_VERSION_MAJOR == 0 && ROCPROFILER_VERSION_MINOR > 6)
 #define ROCM_AGENT_VISIBLE(agent) (agent)->runtime_visibility.hsa
 #define ROCPROFILER_BUFFER_TRACING_MEMORY_ALLOCATION                                   \
   ROCPROFILER_BUFFER_TRACING_MEMORY_ALLOCATION
