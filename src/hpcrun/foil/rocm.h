@@ -77,8 +77,7 @@ typedef uint64_t rocprofiler_pc_t;
 // PC sampling record kinds
 #if (ROCPROFILER_VERSION_MAJOR == 0 && ROCPROFILER_VERSION_MINOR < 6)
 #define ROCPROFILER_PC_SAMPLING_RECORD_HOST ROCPROFILER_PC_SAMPLING_RECORD_SAMPLE
-#define rocprofiler_pc_sampling_record_sw_t                                            \
-  rocprofiler_pc_sampling_record_t
+#define rocprofiler_pc_sampling_record_sw_t rocprofiler_pc_sampling_record_t
 #define wave_in_group wave_id                    // rocm 6.4 changed the field name
 #define CONFIGURE_PC_SAMPLING_SERVICE_FLAG_PARAM // none
 #define CONFIGURE_PC_SAMPLING_SERVICE_FLAG_ARG   // none
