@@ -613,6 +613,7 @@ convert_pc_sampling_hw
 }
 #endif
 
+#ifdef ROCPROFILER_PC_SAMPLING_RECORD_HOST
 static uint64_t
 convert_pc_sampling_sw
 (
@@ -676,7 +677,7 @@ convert_pc_sampling_sw
 
   return cid;
 }
-
+#endif
 
 static void
 convert_unknown
@@ -837,12 +838,14 @@ rocm_activity_translate_pc_sampling
   uint64_t cid = 0;
 
   switch (header->kind) {
+#ifdef ROCPROFILER_PC_SAMPLING_RECORD_HOST
     case ROCPROFILER_PC_SAMPLING_RECORD_HOST: {
       DECL_INIT_CAST(rocprofiler_pc_sampling_record_sw_t *, pcs,
                      header->payload);
       cid = convert_pc_sampling_sw(ga, pcs);
       break;
     }
+#endif
 #ifdef ROCPROFILER_PC_SAMPLING_RECORD_STOCHASTIC
     case ROCPROFILER_PC_SAMPLING_RECORD_STOCHASTIC: {
       DECL_INIT_CAST(rocprofiler_pc_sampling_record_hw_t *, pcs,
