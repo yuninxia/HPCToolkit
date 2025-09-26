@@ -51,8 +51,7 @@ FinalizeKernelProcessing
 {
   desc->running_kernel_ = nullptr;
   desc->running_kernel_end_ = nullptr;
-  desc->SetKernelStarted(false);
-  desc->SetSerialDataReady(true);
+  desc->profiler_ResetKernelState();
 }
 
 static bool
@@ -62,8 +61,8 @@ WaitForKernelStart
 )
 {
   while (true) {
-    if (desc->IsKernelStarted()) return true;
-    if (desc->IsProfilerDisabled()) return false;
+    if (desc->profiler_IsKernelStarted()) return true;
+    if (desc->profiler_IsDisabled()) return false;
     std::this_thread::yield();
   }
 }
@@ -85,7 +84,7 @@ WaitForNextInterval
   while (true) {
     status = pcsampling::callZeEventQueryStatus(desc->running_kernel_end_, dispatch);
     if (status == ZE_RESULT_SUCCESS) return true;
-    if (desc->IsProfilerDisabled()) return false;
+    if (desc->profiler_IsDisabled()) return false;
     std::this_thread::yield();
   }
 }
@@ -171,7 +170,7 @@ ZeMetricProfiler::MetricProfilingThread
   level0InitializeMetricStreamer(context, device, group, streamer, dispatch);
   if (streamer == nullptr) {
     // Initialization failed, set error state
-    desc->UpdateProfilerState(PROFILER_ERROR);
+    desc->profiler_UpdateState(PROFILER_ERROR);
     return;
   }
 
@@ -180,7 +179,7 @@ ZeMetricProfiler::MetricProfilingThread
   level0GetMetricList(group, metric_list, dispatch);
   if (!level0IsValidMetricList(metric_list)) {
     // Set error state before returning
-    desc->UpdateProfilerState(PROFILER_ERROR);
+    desc->profiler_UpdateState(PROFILER_ERROR);
     // Clean up streamer before returning
     level0CleanupMetricStreamer(context, device, group, streamer, dispatch);
     return;
@@ -193,7 +192,7 @@ ZeMetricProfiler::MetricProfilingThread
   // Ensure we're in a terminal state when thread exits
   // If still UNKNOWN, set to DISABLED (thread exited without setting a state)
   if (desc->profiling_state_.load(std::memory_order_acquire) == PROFILER_UNKNOWN) {
-    desc->UpdateProfilerState(PROFILER_DISABLED);
+    desc->profiler_UpdateState(PROFILER_DISABLED);
   }
 }
 
@@ -207,11 +206,11 @@ ZeMetricProfiler::RunProfilingLoop
 )
 {
   std::vector<uint8_t> raw_metrics(MAX_METRIC_BUFFER + 512);
-  desc->UpdateProfilerState(PROFILER_ENABLED);
+  desc->profiler_UpdateState(PROFILER_ENABLED);
   ze_result_t status;
 
   // Continue while profiling is enabled
-  while (desc->IsProfilerActive()) {
+  while (desc->profiler_IsActive()) {
 
     // Wait for the kernel to start running
     if (!WaitForKernelStart(desc)) return;
@@ -231,8 +230,7 @@ ZeMetricProfiler::RunProfilingLoop
 
     while (status != ZE_RESULT_SUCCESS) {
       CollectAndProcessMetrics(desc, streamer, raw_metrics, metric_list, dispatch);
-      // FIXME(Yuning): We can a seperate function devicePCSamplingStatus
-      if (desc->IsProfilerDisabled()) return;
+      if (desc->profiler_IsDisabled()) return;
       if (!WaitForNextInterval(desc, dispatch, status)) return;
     }
 
@@ -264,7 +262,7 @@ ZeMetricProfiler::CollectAndProcessMetrics
 
   // Continuously process metric data while profiling is enabled
   // This ensures we drain all available data from the streamer buffer
-  while (desc->IsProfilerActive()) {
+  while (desc->profiler_IsActive()) {
     // FIXME(Yuning): To check the status of the streamer whether it is empty.
     if (!ProcessMetricData(desc, streamer, raw_metrics, metric_list, kprops, dispatch))
       break;  // No more data available
@@ -341,7 +339,7 @@ ZeMetricProfiler::StartProfilingMetrics
     auto args = static_cast<MetricProfilingThreadArgs*>(pcsampling::allocMemory(sizeof(MetricProfilingThreadArgs)));
     if (!args) {
       pcsampling::warn("Failed to allocate thread args for profiling thread");
-      it->second->UpdateProfilerState(PROFILER_DISABLED);
+      it->second->app_DisableProfiler();
       continue;
     }
 
@@ -356,17 +354,17 @@ ZeMetricProfiler::StartProfilingMetrics
     if (thread_id < 0) {
       pcsampling::warn("Failed to start profiling thread");
       pcsampling::freeMemory(args);
-      it->second->UpdateProfilerState(PROFILER_DISABLED);
+      it->second->app_DisableProfiler();
       continue;
     }
 
     it->second->profiling_thread_id_ = thread_id;
     // Wait for profiler initialization to complete (either success or error)
-    while (!it->second->IsProfilerReady()) {
+    while (!it->second->app_IsProfilerReady()) {
       std::this_thread::sleep_for(std::chrono::milliseconds(1));
     }
     // Check if initialization failed
-    if (it->second->IsProfilerError()) {
+    if (it->second->app_IsProfilerError()) {
       pcsampling::warn("Profiler initialization failed for device %d", it->second->device_id_);
     }
   }
@@ -385,7 +383,7 @@ ZeMetricProfiler::StopProfilingMetrics
     }
     
     // Signal the profiling thread to stop
-    it->second->UpdateProfilerState(PROFILER_DISABLED);
+    it->second->app_DisableProfiler();
     
     // Join the profiling thread if it exists
     if (it->second->profiling_thread_id_ >= 0) {
