@@ -292,7 +292,7 @@ OnEnterCommandListAppendLaunchKernel
     pcsampling::mcsLock(&desc->kernel_launch_lock, &pc_monitoring_node);
     desc->running_kernel_ = hKernel;
     desc->running_kernel_end_ = hSignalEvent;
-    desc->SetKernelStarted(true);
+    desc->app_SetKernelStarted(true);
   }
 }
 
@@ -319,7 +319,7 @@ OnExitCommandListAppendLaunchKernel
   ZeDeviceDescriptor* desc = getDeviceDescriptor(hDevice);
   if (desc) {
     waitForEventReady(desc->serial_data_ready_, dispatch);
-    desc->SetSerialDataReady(false);
+    desc->app_SetSerialDataReady(false);
     pcsampling::mcsUnlock(&desc->kernel_launch_lock, &pc_monitoring_node);
   }
 }

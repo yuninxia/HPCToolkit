@@ -52,11 +52,11 @@ initializeDescriptorCommon
 )
 {
   desc->profiling_thread_id_ = -1;
-  desc->UpdateProfilerState(PROFILER_UNKNOWN);  // Start with UNKNOWN state
+  desc->profiler_UpdateState(PROFILER_UNKNOWN);  // Start with UNKNOWN state
   desc->running_kernel_      = nullptr;
   desc->running_kernel_end_  = nullptr;
-  desc->SetKernelStarted(false);
-  desc->SetSerialDataReady(false);
+  desc->app_SetKernelStarted(false);
+  desc->app_SetSerialDataReady(false);
   mcs_init(&desc->kernel_launch_lock);
 }
 

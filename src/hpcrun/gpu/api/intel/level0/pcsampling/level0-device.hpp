@@ -71,51 +71,85 @@ struct ZeDeviceDescriptor {
   std::atomic<bool> serial_data_ready_{false};
   mcs_lock_t kernel_launch_lock;
 
-  // FIXME(Yuning)
-  // application_UpdateProfilerState
-  // profiler_XXX
+  // ========================================================================
+  // Profiler State Management
+  //
+  // These methods manage the profiler state machine and synchronization
+  // between the application thread and profiling thread.
+  //
+  // Thread ownership convention:
+  // - profiler_* : Called by profiling thread
+  // - app_*      : Called by application/main thread
+  // - query_*    : Read-only, safe from any thread
+  // ========================================================================
 
-  void UpdateProfilerState(int state) {
+  // Called by profiling thread to update its state
+  void profiler_UpdateState(int state) {
     profiling_state_.store(state, std::memory_order_release);
   }
 
-  bool IsProfilerActive() const {
+  // Called by profiling thread to check if it should continue running
+  bool profiler_IsActive() const {
     return profiling_state_.load(std::memory_order_acquire) != PROFILER_DISABLED;
   }
 
-  bool IsProfilerDisabled() const {
+  // Called by profiling thread to check if shutdown requested
+  bool profiler_IsDisabled() const {
     return profiling_state_.load(std::memory_order_acquire) == PROFILER_DISABLED;
   }
 
-  bool IsProfilerInitialized() const { // Check if specifically set to ENABLED
-    return profiling_state_.load(std::memory_order_acquire) == PROFILER_ENABLED;
-  }
-
-  bool IsProfilerError() const {
-    return profiling_state_.load(std::memory_order_acquire) == PROFILER_ERROR;
-  }
-
-  bool IsProfilerReady() const { // Check if initialization completed (either success or error)
+  // Called by application thread to wait for profiler initialization
+  bool app_IsProfilerReady() const {
     int state = profiling_state_.load(std::memory_order_acquire);
-    // Only ready when moved away from UNKNOWN state to a terminal state
-    // PROFILER_DISABLED is a terminal state (explicitly set on failure or shutdown)
-    // PROFILER_UNKNOWN means still initializing
+    // Ready when moved from UNKNOWN to any terminal state (ENABLED, DISABLED, or ERROR)
     return state != PROFILER_UNKNOWN;
   }
 
-  void SetKernelStarted(bool started) {
+  // Called by application thread to check for initialization errors
+  bool app_IsProfilerError() const {
+    return profiling_state_.load(std::memory_order_acquire) == PROFILER_ERROR;
+  }
+
+  // Called by application thread to signal profiler shutdown
+  void app_DisableProfiler() {
+    profiling_state_.store(PROFILER_DISABLED, std::memory_order_release);
+  }
+
+  // Read-only queries safe from any thread
+  bool query_IsProfilerEnabled() const {
+    return profiling_state_.load(std::memory_order_acquire) == PROFILER_ENABLED;
+  }
+
+  // ========================================================================
+  // Kernel Execution State
+  //
+  // Manages kernel launch synchronization between application callbacks
+  // and the profiling thread.
+  // ========================================================================
+
+  // Called by application thread (tracing callbacks) to signal kernel launch
+  void app_SetKernelStarted(bool started) {
     kernel_started_.store(started, std::memory_order_release);
   }
 
-  bool IsKernelStarted() const {
+  // Called by profiling thread to check for kernel launches
+  bool profiler_IsKernelStarted() const {
     return kernel_started_.load(std::memory_order_acquire);
   }
 
-  void SetSerialDataReady(bool ready) {
+  // Called by application thread to signal serial data availability
+  void app_SetSerialDataReady(bool ready) {
     serial_data_ready_.store(ready, std::memory_order_release);
   }
 
-  bool IsSerialDataReady() const {
+  // Called by profiling thread to reset kernel state after processing
+  void profiler_ResetKernelState() {
+    kernel_started_.store(false, std::memory_order_release);
+    serial_data_ready_.store(true, std::memory_order_release);
+  }
+
+  // Read-only query safe from any thread
+  bool query_IsSerialDataReady() const {
     return serial_data_ready_.load(std::memory_order_acquire);
   }
 };
