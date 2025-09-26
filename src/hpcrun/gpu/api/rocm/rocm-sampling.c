@@ -241,7 +241,7 @@ rocm_agent_op
   rocm_agent_sampling_config_apply
     (agent, rocm_agent_sampling_config_op, &sampling_config);
 
-  const rocprofiler_pc_sampling_configuration_t *config;
+  const rocprofiler_pc_sampling_configuration_t *config = 0;
 
   if (gpu_monitoring_instruction_sampling_is_enabled(GPU_INSTRUCTION_SAMPLING_SW)) {
     if (sampling_config.host_trap) {
