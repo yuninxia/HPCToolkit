@@ -149,7 +149,7 @@ hpcstruct b
 
 This command analyzes the binary and saves this information in a file named `b.hpcstruct`.
 
-```{tip}
+````{tip}
 On rare occasions, there may be a module file for which `hpcstruct`
 takes an excessive amount of time to analyze.
 For example, on Aurora at ALCF, the `libmpi.so.12.5.0` library takes
@@ -160,22 +160,28 @@ application's performance, you can skip that module with the `-x|--exclude` opti
 Specify the module's path name or file name.
 For example:
 
-`hpcstruct -x /path/to/file-name measurements-directory`  
-`hpcstruct -x file-name measurements-directory`
+```
+hpcstruct -x /path/to/file-name measurements-directory
+hpcstruct -x file-name measurements-directory
+```
 
 By default, `hpcstruct` skips certain known files.
 If you need to include such a file, use the `-i|--include` option.
 
-`hpcstruct -i file-name measurements-directory`
+```
+hpcstruct -i file-name measurements-directory
+```
 
 You can see a list of all modules from the measurements directory
 with the `--show-files` option.
 
-`hpcstruct --show-files measurements-directory`
+```
+hpcstruct --show-files measurements-directory
+```
 
 In practice, most modules are analyzed in less than a minute,
 so these options are normally not needed.
-```
+````
 
 #### Caching Structure Results
 
