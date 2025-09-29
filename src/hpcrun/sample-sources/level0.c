@@ -168,7 +168,10 @@ METHOD_FN(process_event_list)
     &th, NO_THRESHOLD);
 
   if (hpcrun_ev_is(event, LEVEL0_PC_SAMPLING)) {
-    // FIXME(Yuning): the unit of pc sampling metric is the count of collected samples
+    // Intel Level Zero returns actual stall counts from hardware counters, not sample counts.
+    // Setting sample_period to 0 means multiplier = 1 << 0 = 1, preserving the raw counts
+    // when gpu-metrics.c:1203 calculates: stall_count = latencySamples * sample_period.
+    // This differs from NVIDIA/AMD which return sample counts that need period-based scaling.
     gpu_monitoring_instruction_sample_period_set(0);
 
     gpu_metrics_GPU_INST_enable(); // instruction counts
