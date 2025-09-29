@@ -32,9 +32,12 @@ std::map<ze_module_handle_t, ZeModule> modules_on_devices_;
 // local variables
 //******************************************************************************
 
-/* Mutex protecting access to the global device handle map (devices_) */
-/* FIXME(Yuning): Consider if this mutex is still needed or if access patterns allow removal */
-static std::shared_mutex devices_mutex_;
+/*
+ * NOTE: devices_mutex_ has been removed as it was redundant.
+ * The devices_ map is initialized once during startup (single-threaded)
+ * and only accessed for read operations afterward. std::map::find() is
+ * thread-safe for concurrent read-only access when the map is not modified.
+ */
 
 /* 
  * Thread-local storage for the MCS lock node. Each application thread
@@ -256,12 +259,12 @@ OnExitKernelCreate
 
   int device_id = -1;
   if (device != nullptr) {
-    devices_mutex_.lock_shared();
+    // No mutex needed: devices_ is only modified during initialization
+    // and read-only access to std::map is thread-safe
     auto dit = devices_->find(device);
     if (dit != devices_->end()) {
       device_id = dit->second.id_;
-    } 
-    devices_mutex_.unlock_shared();
+    }
   }
   ze_kernel_handle_t kernel = **(params->pphKernel);
   ZeKernelCommandProperties desc = extractKernelProperties(kernel, module_id, mod, aot, device_id, device, dispatch);
