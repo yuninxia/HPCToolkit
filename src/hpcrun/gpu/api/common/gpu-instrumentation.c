@@ -37,7 +37,7 @@
 #define INST_SIMD     "simd"
 #define INST_SILENT   "silent"
 
-#define PC_SAMPLING "pc"
+#define PC_SAMPLING   "pc"
 
 #define ENABLE_SIMD_ANALYSIS 0
 #define ENABLE_LATENCY_ANALYSIS 1

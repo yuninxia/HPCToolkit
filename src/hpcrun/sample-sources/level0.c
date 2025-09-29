@@ -152,8 +152,17 @@ METHOD_FN(shutdown)
 static bool
 METHOD_FN(supports_event, const char *ev_str)
 {
-  return hpcrun_ev_is(ev_str, INTEL_LEVEL0) ||
-         hpcrun_ev_is(ev_str, INTEL_LEVEL0_PC_SAMPLING);
+  if (hpcrun_ev_is(ev_str, INTEL_LEVEL0) ||
+      hpcrun_ev_is(ev_str, INTEL_LEVEL0_PC_SAMPLING)) {
+    return true;
+  }
+
+#ifdef ENABLE_GTPIN
+  return strncmp(ev_str, INTEL_LEVEL0,
+                 strlen(INTEL_LEVEL0)) == 0;
+#else
+  return false;
+#endif
 }
 
 static void
@@ -173,11 +182,12 @@ METHOD_FN(process_event_list)
   if (hpcrun_ev_is(event, INTEL_LEVEL0_PC_SAMPLING)) {
     pc_sampling_enabled = true;
 
-    // Intel Level Zero returns actual stall counts from hardware counters, not sample counts.
-    // Setting sample_period to 0 means multiplier = 1 << 0 = 1, preserving the raw counts
-    // when gpu-metrics.c:1203 calculates: stall_count = latencySamples * sample_period.
-    // This differs from NVIDIA/AMD which return sample counts that need period-based scaling.
-    gpu_monitoring_instruction_sample_period_set(0);
+    // Intel Level Zero reports true stall counts. Before the monitoring refactor
+    // hpcrun stored the log2(period) and later computed 1 << log, so we passed 0
+    // (log2(1)) and downstream saw a multiplier of 1. The refactored API now
+    // stores the multiplier directly; providing 1 preserves the previous behaviour,
+    // whereas keeping the old 0 would make the multiplier zero out all samples.
+    gpu_monitoring_instruction_sampling_period_set(1);
 
     gpu_metrics_GPU_INST_enable(); // instruction counts
     gpu_metrics_GPU_INST_STALL_enable();
