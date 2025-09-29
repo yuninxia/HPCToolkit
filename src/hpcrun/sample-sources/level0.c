@@ -74,8 +74,8 @@
 // macros
 //******************************************************************************
 
-#define LEVEL0 "gpu=level0"
-#define LEVEL0_PC_SAMPLING "gpu=level0,pc"
+#define INTEL_LEVEL0 "gpu=level0"
+#define INTEL_LEVEL0_PC_SAMPLING "gpu=level0,pc"
 
 #define NO_THRESHOLD  1L
 
@@ -108,34 +108,35 @@ METHOD_FN(init)
 static void
 METHOD_FN(thread_init)
 {
-  TMSG(CUDA, "thread_init");
+  TMSG(LEVEL0, "thread_init");
 }
 
 
 static void
 METHOD_FN(thread_init_action)
 {
-  TMSG(CUDA, "thread_init_action");
+  TMSG(LEVEL0, "thread_init_action");
 }
 
-// FIXME(Yuning): The start and stop are not supported for Level0.
 static void
 METHOD_FN(start)
 {
-  TMSG(CUDA, "start");
+  TMSG(LEVEL0, "start");
+  TD_GET(ss_state)[self->sel_idx] = START;
 }
 
 
 static void
 METHOD_FN(thread_fini_action)
 {
-  TMSG(CUDA, "thread_fini_action");
+  TMSG(LEVEL0, "thread_fini_action");
 }
 
 
 static void
 METHOD_FN(stop)
 {
+  TMSG(LEVEL0, "stop");
   hpcrun_get_thread_data();
   TD_GET(ss_state)[self->sel_idx] = STOP;
 }
@@ -151,7 +152,8 @@ METHOD_FN(shutdown)
 static bool
 METHOD_FN(supports_event, const char *ev_str)
 {
-  return strncmp(ev_str, LEVEL0, strlen(LEVEL0)) == 0;
+  return hpcrun_ev_is(ev_str, INTEL_LEVEL0) ||
+         hpcrun_ev_is(ev_str, INTEL_LEVEL0_PC_SAMPLING);
 }
 
 static void
@@ -167,7 +169,10 @@ METHOD_FN(process_event_list)
   hpcrun_extract_ev_thresh(event, sizeof(event_name), event_name,
     &th, NO_THRESHOLD);
 
-  if (hpcrun_ev_is(event, LEVEL0_PC_SAMPLING)) {
+  bool pc_sampling_enabled = false;
+  if (hpcrun_ev_is(event, INTEL_LEVEL0_PC_SAMPLING)) {
+    pc_sampling_enabled = true;
+
     // Intel Level Zero returns actual stall counts from hardware counters, not sample counts.
     // Setting sample_period to 0 means multiplier = 1 << 0 = 1, preserving the raw counts
     // when gpu-metrics.c:1203 calculates: stall_count = latencySamples * sample_period.
@@ -178,7 +183,10 @@ METHOD_FN(process_event_list)
     gpu_metrics_GPU_INST_STALL_enable();
   }
 
-  gpu_instrumentation_options_set(event_name, LEVEL0, &level0_instrumentation_options);
+  // Store PC sampling state for later use in level0_init
+  level0_instrumentation_options.pc_sampling = pc_sampling_enabled;
+
+  gpu_instrumentation_options_set(event_name, INTEL_LEVEL0, &level0_instrumentation_options);
   if (gpu_instrumentation_enabled(&level0_instrumentation_options)) {
      gpu_metrics_GPU_INST_enable();
   }
@@ -217,6 +225,11 @@ METHOD_FN(display_events)
   printf("gpu=level0\tOperation-level monitoring for GPU-accelerated applications\n"
          "\t\trunning atop Intel's Level Zero runtime. Collect timing \n"
          "\t\tinformation for GPU kernel invocations, memory copies, etc.\n"
+         "\n");
+  printf("gpu=level0,pc\tComprehensive monitoring on an Intel GPU as described above\n"
+         "\t\twith the addition of PC sampling. PC sampling attributes\n"
+         "\t\tSTALL reasons to individual GPU instructions and provides\n"
+         "\t\tperformance counter data for GPU kernel execution analysis.\n"
          "\n");
 #ifdef ENABLE_GTPIN
   printf("gpu=level0,inst=<comma-separated list of options>\n"
