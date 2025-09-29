@@ -140,6 +140,9 @@ typedef struct instruction_metrics_t {
   macro(GPU_INST_METRIC_NAME ":STL_IDEP", GPU_INST_STALL_IDEPEND,       \
         "GPU instruction stalls: await satisfaction of instruction "    \
         "input dependence")                                             \
+  macro(GPU_INST_METRIC_NAME ":STL_MEM", GPU_INST_STALL_MEM,            \
+        "GPU instruction stalls: await completion of a kind of memory " \
+        "access")                                                       \
   macro(GPU_INST_METRIC_NAME ":STL_GMEM", GPU_INST_STALL_GMEM,          \
         "GPU instruction stalls: await completion of global memory "    \
         "access")                                                       \

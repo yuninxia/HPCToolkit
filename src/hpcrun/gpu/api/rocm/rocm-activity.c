@@ -544,7 +544,45 @@ convert_stall_type
  rocprofiler_pc_sampling_record_hw_t *pcs
 )
 {
-  return GPU_INST_STALL_NONE;
+  gpu_inst_stall_t stall = GPU_INST_STALL_NONE;
+
+  switch(pcs->snapshot.reason_not_issued) {
+    case ROCPROFILER_PC_SAMPLING_INSTRUCTION_NOT_ISSUED_REASON_NONE:
+      stall = GPU_INST_STALL_NONE;
+      break;
+    case ROCPROFILER_PC_SAMPLING_INSTRUCTION_NOT_ISSUED_REASON_NO_INSTRUCTION_AVAILABLE:
+      stall = GPU_INST_STALL_IFETCH;
+      break;
+    case ROCPROFILER_PC_SAMPLING_INSTRUCTION_NOT_ISSUED_REASON_ALU_DEPENDENCY:
+      stall = GPU_INST_STALL_IDEPEND;
+      break;
+    case ROCPROFILER_PC_SAMPLING_INSTRUCTION_NOT_ISSUED_REASON_WAITCNT:
+      stall = GPU_INST_STALL_MEM;
+      break;
+    case ROCPROFILER_PC_SAMPLING_INSTRUCTION_NOT_ISSUED_REASON_INTERNAL_INSTRUCTION:
+      stall = GPU_INST_STALL_OTHER;
+      break;
+    case ROCPROFILER_PC_SAMPLING_INSTRUCTION_NOT_ISSUED_REASON_BARRIER_WAIT:
+      stall = GPU_INST_STALL_SYNC;
+      break;
+    case ROCPROFILER_PC_SAMPLING_INSTRUCTION_NOT_ISSUED_REASON_ARBITER_NOT_WIN:
+      stall = GPU_INST_STALL_NOT_SELECTED;
+      break;
+    case ROCPROFILER_PC_SAMPLING_INSTRUCTION_NOT_ISSUED_REASON_ARBITER_WIN_EX_STALL:
+      stall = GPU_INST_STALL_PIPE_BUSY;
+      break;
+    case ROCPROFILER_PC_SAMPLING_INSTRUCTION_NOT_ISSUED_REASON_OTHER_WAIT:
+      stall = GPU_INST_STALL_OTHER;
+      break;
+    case ROCPROFILER_PC_SAMPLING_INSTRUCTION_NOT_ISSUED_REASON_SLEEP_WAIT:
+      stall = GPU_INST_STALL_SLEEP;
+      break;
+    case ROCPROFILER_PC_SAMPLING_INSTRUCTION_NOT_ISSUED_REASON_LAST:
+      stall = GPU_INST_STALL_INVALID;
+      break;
+  }
+
+  return stall;
 }
 
 
@@ -597,9 +635,10 @@ convert_pc_sampling_hw
 
   ga->details.instruction.pc = pc;
 
-  ga->details.pc_sampling.stallReason = convert_stall_type(pcs);
+  gpu_inst_stall_t stall = convert_stall_type(pcs);
+  ga->details.pc_sampling.stallReason = stall;
   ga->details.pc_sampling.samples = 1;
-  ga->details.pc_sampling.latencySamples = 0;
+  ga->details.pc_sampling.latencySamples = stall != GPU_INST_STALL_NONE;
 
   PRINT("PC sample GA: pc [0x%d, 0x%lx], corr 0x%lx, "
         "samples %u, latencySamples %u, stallReason %u\n",

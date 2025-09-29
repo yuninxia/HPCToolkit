@@ -33,11 +33,11 @@
 #define ROCM_CTR_PREFIX "rocm::"
 
 // minimum period = 256; one of every 8 minimum periods
-#define ROCM_PC_SAMPLING_STOCHASTIC_PERIOD_LOG_DEFAULT (8 + 3 + 4)
+#define ROCM_PC_SAMPLING_STOCHASTIC_PERIOD_LOG_DEFAULT 20
 
 // minimum period 1; one out of every X unit time periods (us), for
 // the value of X specified below
-#define ROCM_PC_SAMPLING_HOST_TRAP_PERIOD_LOG_DEFAULT 100
+#define ROCM_PC_SAMPLING_HOST_TRAP_PERIOD_LOG_DEFAULT 7
 
 
 
@@ -156,7 +156,6 @@ METHOD_FN(process_event_list)
       gpu_monitoring_trace_sampling_period_set(trace_period);
     } else if (strncmp(event, AMD_ROCM_GPU_INSTRUCTION_SAMPLING,
                        strlen(AMD_ROCM_GPU_INSTRUCTION_SAMPLING)) == 0) {
-
       // attempt to set flags and period
       gpu_monitoring_instruction_sampling_flags_set(event, AMD_ROCM);
 
@@ -192,11 +191,13 @@ METHOD_FN(process_event_list)
           gpu_metrics_GPU_INST_STALL_enable(); // stall metrics
         }
       }
-    } else {
-      if (strncmp(rocm_event_name, ROCM_CTR_PREFIX, strlen(ROCM_CTR_PREFIX)) == 0) {
+    } else if (strncmp(rocm_event_name, ROCM_CTR_PREFIX, strlen(ROCM_CTR_PREFIX)) == 0) {
         hardware_counters_requested = true;
         gpu_counter_set_insert(rocm_counter_names, rocm_event_name + strlen(ROCM_CTR_PREFIX));
-      }
+    } else {
+      fprintf(stderr, "ERROR: hpcrun: unrecognized suffix in ROCm monitoring specification '%s'\n",
+        rocm_event_name + strlen(AMD_ROCM));
+      exit(-1);
     }
   }
 
