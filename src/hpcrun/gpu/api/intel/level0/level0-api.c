@@ -88,6 +88,9 @@ uint64_t clock_offset_ns_from_level0 = 0;
 
 static bool gtpin_instrumentation = false;
 static bool level0_metrics_env = false;
+static bool level0_pc_sampling_requested = false;  // Track if PC sampling was requested via event
+static bool level0_pc_sampling_initialized = false; // Track if PC sampling library was initialized
+static const struct hpcrun_foil_appdispatch_level0* saved_dispatch = NULL; // Save dispatch for deferred init
 
 //******************************************************************************
 // private operations
@@ -600,7 +603,23 @@ hpcrun_zeInit
   // Exit action
   get_gpu_driver_and_device(dispatch);
 
-  level0_pc_init(dispatch, NULL, 0);
+  // Save dispatch pointer for potential later use
+  saved_dispatch = dispatch;
+
+  // Initialize PC sampling if it was requested and not yet initialized
+  // This handles the case where zeInit is called after level0_init (normal case)
+  if (level0_pc_sampling_requested && !level0_pc_sampling_initialized) {
+    char error_buffer[256] = {0};  // Initialize to avoid reading garbage
+    level0_pc_result_t result = level0_pc_init(dispatch, error_buffer, sizeof(error_buffer));
+    if (result == LEVEL0_PC_SUCCESS) {
+      level0_pc_sampling_initialized = true;
+      TMSG(LEVEL0, "PC sampling initialized successfully");
+    } else {
+      // Log the failure but don't set initialized flag, allowing retry
+      EMSG("Failed to initialize Intel Level Zero PC sampling: %s (error code: %d)",
+           error_buffer[0] ? error_buffer : "unknown error", result);
+    }
+  }
 
   PRINT("hpcrun_zeInit: exit\n");
 
@@ -1040,9 +1059,33 @@ level0_init
 #endif
   }
 
-  const char* is_level0_pc_enabled  = getenv("ZET_ENABLE_METRICS");
-  if (is_level0_pc_enabled != NULL && strcmp(is_level0_pc_enabled, "1") == 0) {
+  // Update PC sampling request state based on current event configuration
+  // This ensures the flag is properly reset when PC sampling is not requested
+  level0_pc_sampling_requested = (inst_options && inst_options->pc_sampling);
+
+  // Check if PC sampling was requested through the event (e.g., gpu=level0,pc)
+  if (level0_pc_sampling_requested) {
     level0_metrics_env = true;
+    // Set the environment variable for Level Zero metrics if not already set
+    setenv("ZET_ENABLE_METRICS", "1", 0);  // 0 means don't overwrite if exists
+
+    // If zeInit was already called (saved_dispatch != NULL), initialize PC sampling now
+    // This handles the case where zeInit is called before level0_init (static constructor case)
+    if (saved_dispatch && !level0_pc_sampling_initialized) {
+      char error_buffer[256] = {0};  // Initialize to avoid reading garbage
+      level0_pc_result_t result = level0_pc_init(saved_dispatch, error_buffer, sizeof(error_buffer));
+      if (result == LEVEL0_PC_SUCCESS) {
+        level0_pc_sampling_initialized = true;
+        TMSG(LEVEL0, "PC sampling initialized successfully (deferred)");
+      } else {
+        // Log the failure but don't set initialized flag, allowing retry
+        EMSG("Failed to initialize Intel Level Zero PC sampling (deferred): %s (error code: %d)",
+             error_buffer[0] ? error_buffer : "unknown error", result);
+      }
+    }
+  } else {
+    // PC sampling not requested for this run
+    level0_metrics_env = false;
   }
 
   if (!gtpin_instrumentation) {
@@ -1061,10 +1104,14 @@ level0_fini
     GPU_FLUSH_ALARM_SET("hpcrun: warning: some Level 0 events not marked"
                         " complete; some GPU event data may be lost.");
 
-    level0_pc_shutdown();
+    // Only shutdown PC sampling if it was initialized
+    if (level0_pc_sampling_initialized) {
+      level0_pc_shutdown();
+      level0_pc_sampling_initialized = false;
+    }
 
     GPU_FLUSH_ALARM_TEST();
-    GPU_FLUSH_ALARM_CLEAR(); 
+    GPU_FLUSH_ALARM_CLEAR();
   }
 
   // even if this is not normal exit, gpu-trace-fini will behave as if it is a normal exit
