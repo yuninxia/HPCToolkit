@@ -116,6 +116,14 @@ gpu_monitoring_instruction_sampling_flags_set
 )
 {
   char *opt = strdup(arg_string); // writable copy of arg_string
+
+  // if there is a frequency specifier, e.g. -e gpu=rocm,pc=sw@25
+  // clip off the frequency specifier
+  char *at = strchr(opt, '@'); // look for frequency suffix
+  if (at) {
+    *at = 0; // clip the suffix of the string beginning at the @ sign
+  }
+
   char *ostr = 0;
 
   int len = strlen(opt);

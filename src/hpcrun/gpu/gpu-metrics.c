@@ -266,8 +266,7 @@ static void
 gpu_metrics_attribute_pc_sampling(
     gpu_activity_t *activity)
 {
-  uint64_t sample_period =
-    1 << gpu_monitoring_instruction_sampling_period_get();
+  uint64_t sample_period = gpu_monitoring_instruction_sampling_period_get();
 
   gpu_pc_sampling_t *sinfo = &(activity->details.pc_sampling);
   cct_node_t *cct_node = activity->cct_node;
