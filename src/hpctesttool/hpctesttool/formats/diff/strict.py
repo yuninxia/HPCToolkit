@@ -217,6 +217,9 @@ class StrictDiff(DiffStrategy):
     def _set(self, a: SValT, b: SValT):
         """Define without a shadow of a doubt that a == b."""
         for c in self._contexts:
+            assert (
+                b not in c.values()
+            ), f"Mapping already exists for {b!r}, from {{k for k, v in c.items() if v == b}}"
             c[a] = b
             assert len(c) == len(set(c.values()))
 
@@ -950,26 +953,28 @@ class StrictAccuracy(AccuracyStrategy):
     @property
     def inaccuracy(self) -> float:
         if self.total_cnt == 0:
-            return 1
+            return 0
         if self.failed_cnt == 0:
             return 0
         return self.failed_cnt / self.total_cnt
 
     def render(self, out: typing.TextIO):
+        if self.total_cnt == 0:
+            print("No values compared", file=out)
+            return
+
         print(
-            f"Identified {self.inaccuracy*100:.2f}% inaccuracies in {self.total_cnt:d} values",
+            f"{self.inaccuracy*100:.2f}% out of {self.total_cnt:d} values had significant differences",
             file=out,
         )
-        if self.total_cnt == 0:
-            print("  No values were compared!", file=out)
-        elif self.failed_cnt > 0:
+        if self.failed_cnt > 0:
             fails = sorted(self.failures, key=lambda x: x[2], reverse=True)
             suffix = " (of first 1000 encountered)" if self.failed_cnt >= 1000 else ""
             if len(fails) <= 30:
-                print(f"  Details of failures{suffix} (expected != got):", file=out)
+                print(f"  Details of differences{suffix} (lhs -> rhs):", file=out)
             else:
                 print(
-                    f"  Details of 30 worst failures{suffix} (expected != got):",
+                    f"  Details of 30 largest differences{suffix} (lhs -> rhs):",
                     file=out,
                 )
             for key in fails[:30]:
@@ -993,7 +998,7 @@ class StrictAccuracy(AccuracyStrategy):
                 else:
                     raise AssertionError(f"Invalid diff value: {diff!r}")
 
-                print(f"  - {a:f} != {b:f}: {why} (abs diff {abs(a-b):f})", file=out)
+                print(f"  - {a:f} -> {b:f}: {why} (abs diff {abs(a-b):f})", file=out)
                 print(
                     "   At: "
                     + "\n".join(

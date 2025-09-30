@@ -61,7 +61,6 @@ foreach _name, _features : _databases
       depends: [_stamp],
       command: [
         hpctesttool,
-        'test',
         'yaml',
         meson.current_build_dir() / f'@_name@.d',
         '@OUTPUT@',
