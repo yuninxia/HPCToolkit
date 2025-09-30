@@ -166,20 +166,21 @@ hpcstruct -x file-name measurements-directory
 ```
 
 By default, `hpcstruct` skips certain known files.
-If you need to include such a file, use the `-i|--include` option.
+If you need detailed analysis of a binary that would otherwise be skipped,
+use the `-i|--include` option.
 
 ```
 hpcstruct -i file-name measurements-directory
 ```
 
-You can see a list of all modules from the measurements directory
-with the `--show-files` option.
+You can see a list of all binaries associated with an execution's
+measurements directory with the `--show-files` option.
 
 ```
 hpcstruct --show-files measurements-directory
 ```
 
-In practice, most modules are analyzed in less than a minute,
+In practice, `hpcstruct` analyzes most CPU or GPU binaries in less than a minute,
 so these options are normally not needed.
 ````
 
@@ -197,10 +198,18 @@ For example (using `bash`),
 export HPCTOOLKIT_HPCSTRUCT_CACHE=/path/to/cache/directory
 ```
 
+While caching structure results is useful to avoid repeating analysis
+of common files and we recommend this for all users, note that
+`hpcstruct` does not have a default location for `HPCTOOLKIT_HPCSTRUCT_CACHE`.
+This is to avoid inadvertently capturing information about
+applications with restricted access (e.g. export controlled codes) and
+saving it to an inappropriate location in the filesystem.
+
 You can also specify the cache directory on the command line with the
 `-c|--cache` option.
-Maybe you're profiling several applications and want to keep a
-separate cache for each app.
+This option might be attractive if you are analyzing measurement data
+for an application with restricted access and want to control where
+information about it is saved.
 
 ```
 hpcstruct -c /path/to/cache/directory measurements-directory
