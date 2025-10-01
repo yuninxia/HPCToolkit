@@ -135,12 +135,14 @@ updateExistingEuStalls
 // Intel GPU kernel address space constants
 constexpr uint64_t GPU_KERNEL_BASE = 0x800000000000ULL;  // Intel GPU kernel address base
 constexpr uint32_t GPU_OFFSET_MASK = 0xFFFFFFFF;         // 32-bit offset within kernel space
+constexpr uint64_t TILE_ID_SHIFT = 48;                   // Use bits 48-63 for tile ID (IP uses bits 0-47)
 
 static void
 processMetricSample
 (
   const zet_typed_value_t* value,
-  std::map<uint64_t, EuStalls>& eustalls
+  std::map<uint64_t, EuStalls>& eustalls,
+  uint32_t tile_index
 )
 {
   // Process a single metric sample and update the EuStalls map accordingly
@@ -148,9 +150,9 @@ processMetricSample
   uint64_t low_ip = (value[0].value.ui64 << 3);
   if (low_ip == 0) return;
 
-  // Combine base address with offset to form full GPU kernel IP
-  uint64_t full_ip = GPU_KERNEL_BASE | (low_ip & GPU_OFFSET_MASK);
-  if (full_ip == 0) return;
+  // Combine base address with offset and encode tile index in high bits
+  // Bits 0-47: actual IP address, Bits 48-63: tile index
+  uint64_t full_ip = GPU_KERNEL_BASE | (low_ip & GPU_OFFSET_MASK) | ((uint64_t)tile_index << TILE_ID_SHIFT);
 
   EuStalls stall = createEuStalls(value);
   auto [it, inserted] = eustalls.try_emplace(full_ip, stall);
@@ -172,6 +174,17 @@ calculateMetricValues
 {
   uint32_t num_samples = 0;
   uint32_t num_metrics = 0;
+
+  // IMPORTANT: The num_samples value returned by
+  // callZetMetricGroupCalculateMultipleMetricValuesExp depends on the device
+  // hierarchy configuration:
+  // - Explicit scaling (ZE_FLAT_DEVICE_HIERARCHY=flat):
+  //   num_samples = 1
+  //   Each tile is an independent device with its own metric streamer
+  // - Implicit scaling (ZE_FLAT_DEVICE_HIERARCHY=composite or unset):
+  //   num_samples = number of tiles per GPU
+  //   Each root device's metric streamer collects data from all its tiles
+  //   samples[0] contains data from tile 0, samples[1] from tile 1, etc.
 
   // First call: get the number of samples and metrics.
   ze_result_t status = pcsampling::callZetMetricGroupCalculateMultipleMetricValuesExp(
@@ -209,12 +222,13 @@ processSampleBlock
   const zet_typed_value_t* sample_data,
   uint32_t sample_size,
   uint32_t metrics_per_sample,
-  std::map<uint64_t, EuStalls>& eustalls
+  std::map<uint64_t, EuStalls>& eustalls,
+  uint32_t tile_index  // Tile index for attribution
 )
 {
   // Process a block of metric samples for a single sample set
   for (uint32_t j = 0; j < sample_size; j += metrics_per_sample) {
-    processMetricSample(sample_data + j, eustalls);
+    processMetricSample(sample_data + j, eustalls, tile_index);
   }
 }
 
@@ -306,16 +320,27 @@ level0ProcessMetrics
   const std::vector<std::string>& metric_list,
   const std::vector<uint32_t>& samples,
   const std::vector<zet_typed_value_t>& metrics,
-  std::map<uint64_t, EuStalls>& eustalls
+  std::map<uint64_t, EuStalls>& eustalls,
+  uint32_t gpu_id  // GPU ID for computing global tile ID
 )
 {
   // Process the raw metric values and update the EuStalls map
-  // The function iterates over each sample block and processes individual metric samples
+  // The samples array structure depends on device hierarchy:
+  // - Explicit scaling (ZE_FLAT_DEVICE_HIERARCHY=flat): samples.size()=1, all data in samples[0]
+  //   Global tile ID = gpu_id (since each tile is its own device)
+  // - Implicit scaling: samples.size()=tiles_per_gpu, samples[i] contains data from tile i
+  //   Global tile ID = gpu_id * tiles_per_gpu + sample_index
   const zet_typed_value_t* value = metrics.data();
   uint32_t metrics_per_sample = static_cast<uint32_t>(metric_list.size());
+  uint32_t tiles_per_gpu = static_cast<uint32_t>(samples.size());
+
   for (uint32_t i = 0; i < samples.size(); ++i) {
     uint32_t sample_size = samples[i];
-    processSampleBlock(value, sample_size, metrics_per_sample, eustalls);
+    // Calculate global tile ID:
+    // - Implicit scaling: gpu_id * tiles_per_gpu + tile_index_within_gpu
+    // - Explicit scaling: gpu_id (each tile is its own device)
+    uint32_t global_tile_id = (tiles_per_gpu > 1) ? (gpu_id * tiles_per_gpu + i) : gpu_id;
+    processSampleBlock(value, sample_size, metrics_per_sample, eustalls, global_tile_id);
     value += sample_size;
   }
 }
