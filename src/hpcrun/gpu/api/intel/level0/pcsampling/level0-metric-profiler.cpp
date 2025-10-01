@@ -19,6 +19,7 @@
 #include "level0-metric-profiler.hpp"
 #include "level0-pc-api-receiver.hpp"
 #include "level0-correlation-channels.h"
+#include "level0-module.hpp"
 
 #include "../../../../activity/correlation/gpu-channel-common.h"
 
@@ -120,7 +121,7 @@ ProcessMetricData
 
   // Process the metric values into stall counts
   std::map<uint64_t, EuStalls> eustalls;
-  level0ProcessMetrics(metric_list, samples, metrics, eustalls);
+  level0ProcessMetrics(metric_list, samples, metrics, eustalls, desc->device_id_);
   if (eustalls.empty()) return false;
 
   // Generate GPU activities based on the processed metrics and kernel properties,

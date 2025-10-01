@@ -89,7 +89,8 @@ level0ProcessMetrics
   const std::vector<std::string>& metric_list,
   const std::vector<uint32_t>& samples,
   const std::vector<zet_typed_value_t>& metrics,
-  std::map<uint64_t, EuStalls>& eustalls
+  std::map<uint64_t, EuStalls>& eustalls,
+  uint32_t gpu_id = 0  // Default: samples will be attributed to GPU 0's tiles if not specified
 );
 
 

@@ -105,13 +105,31 @@ pcSamplingEnableHelper
 // interface operations
 //******************************************************************************
 
-// device 1 - process 1 - thread 1
-// device 2 - process 2 - thread 2
-// FIXME(Yuning): How to collect data when using implicit scaling? multiple tiles under the same rank?
-//                To check whether it is necessary to support this right now.
-// TODO(Yuning): To put a runtime check for one tile per process.
-// TODO(Yuning): To check the env var ZE_FLAT_DEVICE_HIERARCHY and implicit scaling. (quit)
-// TODO(Yuning): The whole process maybe should be like: init, start, pause, resume, stop.
+// PC Sampling Tile Attribution in Intel Level Zero:
+//
+// The behavior depends on the ZE_FLAT_DEVICE_HIERARCHY environment variable:
+//
+// 1. Explicit Scaling (ZE_FLAT_DEVICE_HIERARCHY=flat):
+//    - Each tile appears as an independent device
+//    - Each device has its own metric streamer
+//    - callZetMetricGroupCalculateMultipleMetricValuesExp returns num_samples=1
+//    - Simple 1:1 mapping between device and tile
+//
+// 2. Implicit Scaling (ZE_FLAT_DEVICE_HIERARCHY=composite or unset):
+//    - Root devices manage multiple tiles (typically 2 per GPU)
+//    - One metric streamer per root device collects data from all tiles
+//    - callZetMetricGroupCalculateMultipleMetricValuesExp returns num_samples=<tile_count>
+//    - The samples array index corresponds to tile index within the GPU:
+//      * samples[0] = data from tile 0 of the GPU
+//      * samples[1] = data from tile 1 of the GPU
+//    - Actual tile ID = gpu_id * tiles_per_gpu + sample_index
+//
+// Tile attribution for PC sampling:
+//    - Implicit scaling: samples array index maps to tile (samples[0]=tile0, samples[1]=tile1)
+//    - Global tile ID = gpu_id * tiles_per_gpu + sample_index
+//    - Tile info is preserved by encoding tile ID in IP address bits 48-63
+//    - This allows accurate per-tile PC sample attribution in both scaling modes
+//
 void
 level0PCSamplingInit
 (
