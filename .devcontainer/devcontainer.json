@@ -14,9 +14,6 @@
         "mesonbuild.mesonbuild"
       ],
       "settings": {
-        "clangd.arguments": [
-          "--compile-commands-dir=${config:mesonbuild.buildFolder}"
-        ],
         "mesonbuild.buildFolder": "builddir",
         "mesonbuild.configureOnOpen": true
       }
@@ -33,8 +30,15 @@
       "source": "ccache-${devcontainerId}",
       "target": "/var/cache/ccache",
       "type": "volume"
+    },
+    {
+      "target": "${containerWorkspaceFolder}/.cache",
+      "type": "volume"
     }
   ],
+  "onCreateCommand": {
+    "compile_commands.json": "[ -e '${containerWorkspaceFolder}'/compile_commands.json ] && [ \"$(readlink '${containerWorkspaceFolder}'/compile_commands.json)\" = builddir/compile_commands.json ] || ln -sb builddir/compile_commands.json '${containerWorkspaceFolder}'/compile_commands.json"
+  },
   "remoteEnv": {
     "CCACHE_DIR": "/var/cache/ccache"
   }
