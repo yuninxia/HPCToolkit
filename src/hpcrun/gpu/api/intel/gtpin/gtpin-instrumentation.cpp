@@ -39,7 +39,7 @@
 // gtpin include files
 //*****************************************************************************
 
-#include <api/gtpin_api.h>
+#include <gtpin_api.h>
 
 
 

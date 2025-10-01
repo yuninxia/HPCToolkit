@@ -834,16 +834,16 @@ if iga_dep.found()
   add_project_arguments('-DENABLE_IGA', language: ['c', 'cpp'])
 endif
 
-# GTPin is a snowflake of a case, it only comes in a binary tarball with non-standard names for
-# all the paths like `Include` and `Lib`. This means we can't use CMake to find it, the user
-# *has* to provide it through `cpp_args` and `cpp_link_args`.
-# But since that's way too much trouble in most cases, we also support pulling it from a wrap,
-# when the feature is explicitly requested.
+# GTPin is a snowflake of a case, it only comes in a binary tarball with non-standard
+# names for all the paths like `Include/api` and `Lib/intel64`. This means we can't use
+# CMake to find it, the user *has* to provide it through `cpp_args` and `cpp_link_args`.
+# But since that's way too much trouble in most cases, we also support pulling it from a
+# wrap, when the feature is explicitly requested.
 gtpin_dep = dependency('', required: false)
 if _gtpin_f.allowed()
   gtpin_dep = cpp.find_library(
     'gtpin',
-    has_headers: ['api/gtpin_api.h', 'ged.h'],
+    has_headers: ['gtpin_api.h', 'ged.h'],
     required: false,
   )
   if gtpin_dep.found()

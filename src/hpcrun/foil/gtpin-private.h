@@ -8,7 +8,7 @@
 
 #include "common.h"
 
-#include <api/gtpin_api.h>
+#include <gtpin_api.h>
 
 struct hpcrun_foil_appdispatch_gtpin {
   gtpin::IGtCore* (*GTPin_GetCore)() = &gtpin::GTPin_GetCore;
