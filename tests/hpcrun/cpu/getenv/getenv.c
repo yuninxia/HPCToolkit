@@ -14,6 +14,7 @@
 
 #include <dlfcn.h>
 #include <stdatomic.h>
+#include <stdbool.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -38,7 +39,10 @@ static atomic_int calls = 0; // application getenv hasn't been called yet
 // private operations
 //******************************************************************************
 
-static int doprint() { return strstr(environ[0], "getenv") != 0; }
+// while the predicate below returns true, it is useful to keep the abstraction
+// because it enables printing to be turned off (if desired in the future)
+// without editing at the point of each fprintf
+static bool doprint() { return true; }
 
 static void print(const char* where, const char* val) {
   if (doprint()) {
@@ -47,17 +51,17 @@ static void print(const char* where, const char* val) {
 }
 
 __attribute__((constructor)) static void init() {
-  char* val = 0;
+  char* val = NULL;
   print("in init before call", val);
 
-  val = getenv("FOO");
+  val = getenv("GETENV_TEST_KEY");
   print("in init after call", val);
 }
 
 static char* real_getenv(const char* key) {
-  static getenv_t libc_getenv_fn = 0;
+  static getenv_t libc_getenv_fn = NULL;
 
-  if (libc_getenv_fn == 0) {
+  if (libc_getenv_fn == NULL) {
     libc_getenv_fn = (getenv_t)dlsym(RTLD_NEXT, "getenv");
   }
 
@@ -83,18 +87,18 @@ char* getenv(const char* key) {
 
   calls++; // note if application getenv is called
 
-  if (strcmp(key, "FOO") == 0)
-    return (char*)"BAR";
+  if (strcmp(key, "GETENV_TEST_KEY") == 0)
+    return (char*)"GETENV_TEST_VALUE";
   else
     return 0;
 }
 
 int main(int argc, char** argv) {
-  char* val = 0;
+  char* val = NULL;
 
   print("in main before call", val);
 
-  val = getenv("FOO");
+  val = getenv("GETENV_TEST_KEY");
 
   print("in main after call", val);
 

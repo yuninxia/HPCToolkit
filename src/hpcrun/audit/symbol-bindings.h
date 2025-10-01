@@ -1,6 +1,6 @@
 // SPDX-FileCopyrightText: Contributors to the HPCToolkit Project
 //
-// SPDX-License-Identifier: BSD-3-Clause
+// SPDX-License-Identifier: Apache-2.0
 
 // -*-Mode: C++;-*- // technically C99
 
@@ -8,19 +8,13 @@
 #define AUDIT_SYMBOL_BINDINGS_H
 
 //***************************************************************************
-// system includes
-//***************************************************************************
-
-#include <stdbool.h>
-#include <stdint.h>
-
-
-
-//***************************************************************************
-// hpctoolkit includes
+// include files
 //***************************************************************************
 
 #include "audit-api.h"
+
+#include <stdbool.h>
+#include <stdint.h>
 
 
 

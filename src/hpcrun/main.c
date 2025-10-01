@@ -1370,26 +1370,24 @@ static const auditor_hooks_t auditor_hooks = {
 static const auditor_exports_t* auditor_exports_cache = NULL;
 
 static void load_exports() {
-  // vvvvvvvvvvvvvvvvv WARNING: THIS IS EXTREMELY SUBTLE CODE vvvvvvvvvvvvvvvvv
+  // vvvvvvvvvvvvvvvvvvvvvvv WARNING: THIS IS SUBTLE CODE vvvvvvvvvvvvvvvvvvvvvvvv
   // When not auditing, we don't want to find the symbol hpcrun_connect_to_auditor
-  // in libhpcrun.so. Since we load libhpcrun.so with DEEPBIND in
-  // common-preload.c, by default, it will be the first thing searched. Here, we
-  // dlopen the main program with dlopen(NULL,...) and then dlsym causes a search
-  // for a symbol in the main program, followed by all shared objects loaded at
-  // program startup, and then all shared objects loaded by dlopen() with the
-  // flag RTLD_GLOBAL. This will cause us to see the definition in
-  // libdl-preload.c, which supports the fake auditor.
+  // in libhpcrun.so.  Here, we dlopen the main program with dlopen(NULL,...) and
+  // then dlsym causes a search for a symbol in the main program, followed by all
+  // shared objects loaded at program startup, and then all shared objects loaded
+  // by dlopen() with the flag RTLD_GLOBAL. This will cause us to see the
+  // definition in libdl-preload.c, which supports the fake auditor.
   //
       void *handle = dlopen(NULL, RTLD_LAZY | RTLD_NOLOAD); // handle for main pgm
       pfn_connect_to_auditor connect =
         dlsym(handle, "hpcrun_connect_to_auditor");
   //
   // Signed: Jonathon Anderson and John Mellor-Crummey
-  // ^^^^^^^^^^^^^^^^^ WARNING: THIS IS EXTREMELY SUBTLE CODE ^^^^^^^^^^^^^^^^^
+  // ^^^^^^^^^^^^^^^^^^^^^^^ WARNING: THIS IS SUBTLE CODE ^^^^^^^^^^^^^^^^^^^^^^^^
 
   if (connect == NULL) {
-    // vvvvvvvvvvvvvvvv WARNING: THIS IS EXTREMELY SUBTLE CODE vvvvvvvvvvvvvvvv
-    // The code and comment above was not the end of the tale. When hpcrun's auditor
+    // vvvvvvvvvvvvvvvvvvvvvvv WARNING: THIS IS SUBTLE CODE vvvvvvvvvvvvvvvvvvvvvvvv
+    // The code and comment above is not the end of the tale. When hpcrun's auditor
     // is enabled, we won't find the symbol hpcrun_connect_to_auditor when searching
     // from the position of the main program in the link map. If connect == NULL
     // here, we assume that this is why. To address this case, we search the
@@ -1404,7 +1402,7 @@ static void load_exports() {
         connect = dlsym(RTLD_DEFAULT, "hpcrun_connect_to_auditor");
     //
     // Signed: Jonathon Anderson and John Mellor-Crummey
-    // ^^^^^^^^^^^^^^^^^ WARNING: THIS IS EXTREMELY SUBTLE CODE ^^^^^^^^^^^^^^^^^
+    // ^^^^^^^^^^^^^^^^^^^^^^^ WARNING: THIS IS SUBTLE CODE ^^^^^^^^^^^^^^^^^^^^^^^^
   }
 
   if (connect == NULL) {

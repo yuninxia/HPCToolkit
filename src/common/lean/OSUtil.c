@@ -86,8 +86,8 @@ static const struct envvar_rank_entry envvars_rank[] = {
 
 static pthread_once_t once_control = PTHREAD_ONCE_INIT;
 
-static const char *memoized_jobid = 0;
-static const char *memoized_local_rank = 0;
+static const char *memoized_jobid = NULL;
+static const char *memoized_local_rank = NULL;
 static long long memoized_rank = -1;
 static uint32_t memoized_hostid = 0;
 

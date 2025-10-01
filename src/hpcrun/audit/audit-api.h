@@ -74,7 +74,8 @@ typedef struct auditor_exports_t {
   int (*pthread_setcancelstate)(int, int*);
   char *(*getenv)(const char *);
 
-  // control temporary wrapping of libc exports
+  // enable/disable temporary overrides for libc symbols in the
+  // application's namespace
   void (*begin_initialization)(void);
   void (*end_initialization)(void);
 } auditor_exports_t;

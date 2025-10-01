@@ -1,28 +1,25 @@
 // SPDX-FileCopyrightText: Contributors to the HPCToolkit Project
 //
-// SPDX-License-Identifier: BSD-3-Clause
+// SPDX-License-Identifier: Apache-2.0
+
 
 // -*-Mode: C++;-*- // technically C99
 
 //***************************************************************************
-// system includes
+// include files
 //***************************************************************************
 
 #define _GNU_SOURCE
+
+#include "audit-api.h"
+
 #include <dlfcn.h>  // for dlopen, dlsym, and RTLD_LAZY
 
 #include <stdatomic.h> // for atomic_compare_exchange_strong
 #include <stdlib.h> // for exit and getenv
 #include <stdio.h>  // for fprintf
 #include <string.h> // for strcmp
-
-
-
-//***************************************************************************
-// hpctoolkit includes
-//***************************************************************************
-
-#include "audit-api.h"
+#include <threads.h> // for thread_local
 
 
 
@@ -96,7 +93,7 @@ auditor_getenv
   const char *key
 )
 {
-  static __thread int in_auditor_getenv = 0; // > 0 means recursive invocation
+  static thread_local int in_auditor_getenv = 0; // > 0 means recursive invocation
 
   static getenv_t libc_getenv_fn = &getenv;
 
