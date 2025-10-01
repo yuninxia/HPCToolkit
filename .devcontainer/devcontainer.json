@@ -31,8 +31,11 @@
     },
     {
       "source": "ccache-${devcontainerId}",
-      "target": "/root/.ccache",
+      "target": "/var/cache/ccache",
       "type": "volume"
     }
-  ]
+  ],
+  "remoteEnv": {
+    "CCACHE_DIR": "/var/cache/ccache"
+  }
 }
