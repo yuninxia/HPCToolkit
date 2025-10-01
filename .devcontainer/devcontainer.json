@@ -43,6 +43,7 @@
     "compile_commands.json": "[ -e '${containerWorkspaceFolder}'/compile_commands.json ] && [ \"$(readlink '${containerWorkspaceFolder}'/compile_commands.json)\" = builddir/compile_commands.json ] || ln -sb builddir/compile_commands.json '${containerWorkspaceFolder}'/compile_commands.json"
   },
   "remoteEnv": {
-    "CCACHE_DIR": "/var/cache/ccache"
+    "CCACHE_DIR": "/var/cache/ccache",
+    "SHELL": "/usr/bin/bash"
   }
 }
