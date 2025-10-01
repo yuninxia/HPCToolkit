@@ -11,7 +11,10 @@
   "customizations": {
     "vscode": {
       "extensions": [
-        "mesonbuild.mesonbuild"
+        "EditorConfig.EditorConfig",
+        "llvm-vs-code-extensions.vscode-clangd",
+        "mesonbuild.mesonbuild",
+        "ms-python.black-formatter"
       ],
       "settings": {
         "mesonbuild.buildFolder": "builddir",
