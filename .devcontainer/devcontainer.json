@@ -17,7 +17,7 @@
         "clangd.arguments": [
           "--compile-commands-dir=${config:mesonbuild.buildFolder}"
         ],
-        "mesonbuild.buildFolder": ".devcontainer/builddir-${devcontainerId}",
+        "mesonbuild.buildFolder": "builddir",
         "mesonbuild.configureOnOpen": true
       }
     }
@@ -25,13 +25,14 @@
   "image": "registry.gitlab.com/hpctoolkit/rtt-images:1.0.0-aio",
   "mounts": [
     {
+      "source": "hpctoolkit-builddir-${devcontainerId}",
+      "target": "${containerWorkspaceFolder}/builddir",
+      "type": "volume"
+    },
+    {
       "source": "ccache-${devcontainerId}",
       "target": "/root/.ccache",
       "type": "volume"
     }
-  ],
-  "remoteEnv": {
-    "BUILDDIR": "${containerWorkspaceFolder}/.devcontainer/builddir-${devcontainerId}",
-    "builddir": "${containerWorkspaceFolder}/.devcontainer/builddir-${devcontainerId}"
-  }
+  ]
 }
