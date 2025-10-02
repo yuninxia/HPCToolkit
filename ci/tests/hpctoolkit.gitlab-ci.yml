@@ -81,11 +81,3 @@ cuda12.5 amd64:
     TEST_ARGS: >-
       --suite opencl
       --suite rocm
-dev rocm amd64:
-  extends: .individual test job rocm
-  needs: []
-  image: registry.gitlab.com/hpctoolkit/rtt-images:1.0.0-aio@sha256:aed3071b8690dbdf3e2b4fec2071b47680c0be171e1a5613e43f425b55b67c2c
-rocm6.1 amd64:
-  extends: .individual test job rocm
-  needs: []
-  image: registry.gitlab.com/hpctoolkit/rtt-images:1.0.0-rocm6.1@sha256:f2acf840fcfd4ba867cc9b0beb951a33e1c5da2a462bb086e44ed4bd2bab2bc6

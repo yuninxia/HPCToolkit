@@ -557,7 +557,6 @@ rocm_dep = declare_dependency(
   dependencies: _rocm_subdeps,
   # version: hip_dep.version(),
 )
-rocprofiler_path = disabler()
 foreach dep : _rocm_subdeps
   if not dep.found()
     rocm_dep = dependency('', required: false)

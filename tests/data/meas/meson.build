@@ -64,19 +64,17 @@ _measurements += {
   },
   'loops-cuda-nvidia-t': {
     'tag': 'nvidia',
-    'tail': ['-e', 'gpu=nvidia', '-t', _exe_loops_cuda],
+    'tail': ['-e', 'gpu=cuda', '-t', _exe_loops_cuda],
   },
   'loops-cuda-nvidiapc-t': {
     'tag': 'nvidia',
-    'tail': ['-e', 'gpu=nvidia,pc', '-t', _exe_loops_cuda],
+    'tail': ['-e', 'gpu=cuda,pc', '-t', _exe_loops_cuda],
   },
   'loops-hip-amd-t': {
     'tag': 'amd',
     'tail': [
-      '--rocprofiler-path',
-      rocprofiler_path,
       '-e',
-      'gpu=amd',
+      'gpu=rocm',
       '-t',
       _exe_loops_hip,
     ],
@@ -87,7 +85,7 @@ _measurements += {
 _measurements += {
   'recursion-cuda-nvidiapc-t': {
     'tag': 'nvidia',
-    'tail': ['-e', 'gpu=nvidia,pc', '-t', _exe_recursion_cuda],
+    'tail': ['-e', 'gpu=cuda,pc', '-t', _exe_recursion_cuda],
   },
 }
 
