@@ -15,11 +15,12 @@
 
 #include <dlfcn.h>  // for dlopen, dlsym, and RTLD_LAZY
 
+#include <pthread.h> // for pthread mutex
+
 #include <stdatomic.h> // for atomic_compare_exchange_strong
 #include <stdlib.h> // for exit and getenv
 #include <stdio.h>  // for fprintf
 #include <string.h> // for strcmp
-#include <threads.h> // for thread_local
 
 
 
@@ -93,9 +94,19 @@ auditor_getenv
   const char *key
 )
 {
-  static thread_local int in_auditor_getenv = 0; // > 0 means recursive invocation
+  // using a thread local variable for in_auditor_getenv to detect recursion causes
+  // SEGV in glibc 2.28
+  //
+  // as an alternative, use a recursive mutex so that only one thread can use
+  // in_auditor_getenv at a time. while this eliminates thread-level parallelism,
+  // the only case where this comes into play is if many threads are simultaneously
+  // calling getenv. that is extremely unlikely!
+  static pthread_mutex_t getenv_recursive_mutex = PTHREAD_RECURSIVE_MUTEX_INITIALIZER_NP;
+  static int in_auditor_getenv = 0; // > 0 means recursive invocation
 
   static getenv_t libc_getenv_fn = &getenv;
+
+  pthread_mutex_lock(&getenv_recursive_mutex);
 
   // (1) during libhpcrun.so initialization, use glibc getenv
   // (2) if in_auditor_getenv > 0, auditor_getenv was invoked recursively.
@@ -116,6 +127,8 @@ auditor_getenv
   if (verbose) {
     fprintf(stderr, "auditor_getenv(%s)=%s\n", key, val);
   }
+
+  pthread_mutex_unlock(&getenv_recursive_mutex);
 
   return val;
 }
