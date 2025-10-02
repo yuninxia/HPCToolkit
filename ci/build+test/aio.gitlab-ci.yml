@@ -15,7 +15,7 @@ aio amd64:compile:
     # NB: We compile for MI100, MI210, and MI300. More GPUs may become relevant later, but for now this
     # set covers what we have available in CI.
     - >-
-      meson setup builddir/ -Dwerror=true -Ddyninst:werror=false -Dxed:werror=false -Doptimization=2 -Ddebug=false -Db_ndebug=false
+      meson setup builddir/ -Dwerror=true -Doptimization=2 -Ddebug=false -Db_ndebug=false
       -Dhip_args="['--offload-arch=gfx908,gfx90a,gfx942']"
       -Dcuda=enabled -Drocm=enabled -Dlevel0=enabled -Dgtpin=enabled
     - cd builddir/

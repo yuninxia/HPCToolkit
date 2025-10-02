@@ -11,7 +11,7 @@
     # NB: We compile for MI100, MI210, and MI300. More GPUs may become relevant later, but for now this
     # set covers what we have available in CI.
     - >-
-      meson setup builddir/ -Dwerror=true -Ddyninst:werror=false -Dxed:werror=false -Dlibunwind:werror=false -Doptimization=2 -Ddebug=false -Db_ndebug=false
+      meson setup builddir/ -Dwerror=true -Doptimization=2 -Ddebug=false -Db_ndebug=false
       -Dhip_args="['--offload-arch=gfx908,gfx90a,gfx942']"
       -Drocm=enabled
     - cd builddir/
@@ -43,7 +43,7 @@
       - AMD_GPU_ARCH: [mi210, mi300]
   script:
     - >-
-      meson setup builddir/ -Dwerror=true -Ddyninst:werror=false -Dxed:werror=false -Dlibunwind:werror=false -Dbuildtype=debugoptimized
+      meson setup builddir/ -Dwerror=true -Dbuildtype=debugoptimized
       -Drocm=enabled
     - cd builddir/
     # FIXME: Tests that use Level Zero fail on systems that don't have a suitable GPU attached.
