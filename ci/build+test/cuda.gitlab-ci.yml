@@ -9,7 +9,7 @@
   tags: [$GITLAB_SAAS_LINUX_MAX_AMD64]
   script:
     - >-
-      meson setup builddir/ -Dwerror=true -Ddyninst:werror=false -Dxed:werror=false -Dlibunwind:werror=false
+      meson setup builddir/ -Dwerror=true -Ddyninst:werror=false -Dxed:werror=false -Dlibunwind:werror=false -Doptimization=2 -Ddebug=false -Db_ndebug=false
       -Dcuda=enabled
     - cd builddir/
     - meson test --print-errorlogs 'hpctoolkit:*'
@@ -39,7 +39,7 @@
       - NVIDIA_GPU_ARCH: [a100]
   script:
     - >-
-      meson setup builddir/ -Dwerror=true -Ddyninst:werror=false -Dxed:werror=false -Dlibunwind:werror=false
+      meson setup builddir/ -Dwerror=true -Ddyninst:werror=false -Dxed:werror=false -Dlibunwind:werror=false -Dbuildtype=debugoptimized
       -Dcuda=enabled
     - cd builddir/
     - meson test --print-errorlogs 'hpctoolkit:*'

@@ -6,7 +6,7 @@
   extends: .compile
   script:
     - >-
-      meson setup builddir/ -Dwerror=true -Ddyninst:werror=false -Dxed:werror=false -Dlibunwind:werror=false
+      meson setup builddir/ -Dwerror=true -Ddyninst:werror=false -Dxed:werror=false -Dlibunwind:werror=false -Doptimization=2 -Ddebug=false -Db_ndebug=false
       -Dlevel0=enabled -Dgtpin=enabled
     - cd builddir/
     # FIXME: Tests that use Level Zero fail on systems that don't have a suitable GPU attached.
@@ -50,7 +50,7 @@ intel amd64:test:hpsf:
   image: *image_amd64
   script:
     - >-
-      meson setup builddir/ -Dwerror=true -Ddyninst:werror=false -Dxed:werror=false -Dlibunwind:werror=false
+      meson setup builddir/ -Dwerror=true -Ddyninst:werror=false -Dxed:werror=false -Dlibunwind:werror=false -Dbuildtype=debugoptimized
       -Dlevel0=enabled -Dgtpin=enabled
     - cd builddir/
     - meson test --print-errorlogs 'hpctoolkit:*'
@@ -71,7 +71,7 @@ intel:compile icx:
     # See https://github.com/mesonbuild/meson/issues/13516.
     # Until this is fixed, disable werror for this compiler specifically.
     - >-
-      meson setup builddir/ -Dwerror=false
+      meson setup builddir/ -Dwerror=false -Doptimization=2 -Ddebug=false -Db_ndebug=false
       -Dlevel0=enabled -Dgtpin=enabled
     - cd builddir/
     # FIXME: Tests that use Level Zero fail on systems that don't have a suitable GPU attached.

@@ -8,7 +8,7 @@
     # FIXME: This particular combination of PAPI et al. seems to cause hpcrun to hang, always.
     # Disable PAPI in the build until a proper investigation can be carried out.
     - >-
-      meson setup builddir/ -Dwerror=true -Ddyninst:werror=false -Dxed:werror=false -Delfutils:werror=false -Dlibunwind:werror=false
+      meson setup builddir/ -Dwerror=true -Ddyninst:werror=false -Dxed:werror=false -Delfutils:werror=false -Dlibunwind:werror=false -Doptimization=2 -Ddebug=false -Db_ndebug=false
       -Dpapi=disabled
     - cd builddir/
     - meson test --print-errorlogs 'hpctoolkit:*'

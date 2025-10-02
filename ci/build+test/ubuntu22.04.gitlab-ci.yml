@@ -5,7 +5,7 @@
 .ubuntu22.04:compile:
   extends: .compile
   script:
-    - meson setup builddir/ -Dwerror=true -Ddyninst:werror=false -Dxed:werror=false -Dlibunwind:werror=false
+    - meson setup builddir/ -Dwerror=true -Ddyninst:werror=false -Dxed:werror=false -Dlibunwind:werror=false -Doptimization=2 -Ddebug=false -Db_ndebug=false
     - cd builddir/
     - meson test --print-errorlogs 'hpctoolkit:*'
     - meson compile
@@ -19,7 +19,7 @@
 .ubuntu22.04:compile+test:
   extends: .compile+test
   script:
-    - meson setup builddir/ -Dwerror=true -Ddyninst:werror=false -Dxed:werror=false -Dlibunwind:werror=false
+    - meson setup builddir/ -Dwerror=true -Ddyninst:werror=false -Dxed:werror=false -Dlibunwind:werror=false -Dbuildtype=debugoptimized
     - cd builddir/
     - meson test --print-errorlogs 'hpctoolkit:*'
     - meson compile
