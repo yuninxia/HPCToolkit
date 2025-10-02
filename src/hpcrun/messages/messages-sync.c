@@ -43,6 +43,7 @@
 //*****************************************************************************
 
 #include "../disabled.h"
+#include "../libc-functions.h"
 #include "../fname_max.h"
 #include "../files.h"
 #include "../name.h"
@@ -110,7 +111,7 @@ messages_logfile_create()
   if (hpcrun_get_disabled()) return;
 
   // open log file
-  if (getenv("HPCRUN_LOG_STDERR") != NULL) {
+  if (libc_getenv("HPCRUN_LOG_STDERR") != NULL) {
     // HPCRUN_LOG_STDERR variable set ==> log goes to stderr
     log_file_fd = STDERR_FD;
   }

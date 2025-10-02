@@ -26,6 +26,8 @@
 //******************************************************************************
 // local include files
 //******************************************************************************
+
+#include "libc-functions.h"
 #include "threadmgr.h"
 #include "thread_data.h"
 #include "tls_specific.h"
@@ -222,7 +224,7 @@ hpcrun_threadMgr_compact_thread()
     return compact_thread;
   }
 
-  char *env_option = getenv(HPCRUN_OPTION_MERGE_THREAD);
+  char *env_option = libc_getenv(HPCRUN_OPTION_MERGE_THREAD);
   if (env_option) {
     compact_thread = atoi(env_option);
     EMSG("hpcrun compact thread: %d", compact_thread);

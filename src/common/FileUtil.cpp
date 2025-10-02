@@ -325,7 +325,7 @@ mkdirUnique(const char* dirnm)
       std::vector<string> dirnmVec;
 
       // qualifier 1: jobid
-      const char* jobid_cstr = OSUtil_jobid();
+      const char* jobid_cstr = OSUtil_jobid(getenv);
       if (jobid_cstr) {
         string dirnm1 = string(dirnm) + "-" + string(jobid_cstr);
         dirnmVec.push_back(dirnm1);

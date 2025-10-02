@@ -19,6 +19,7 @@
 // local includes
 //*****************************************************************************
 
+#include "libc-functions.h"
 #include "fname_max.h"
 #include "unwind/common/backtrace.h"
 #include "files.h"
@@ -127,7 +128,7 @@ lazy_open_data_file(core_profile_trace_data_t *cptd)
 
   const unsigned int bufSZ = 32; // sufficient to hold a 64-bit integer in base 10
 
-  const char *jobIdStr = OSUtil_jobid();
+  const char *jobIdStr = OSUtil_jobid(libc_getenv);
   if (!jobIdStr)
   {
     jobIdStr = "";
@@ -141,7 +142,7 @@ lazy_open_data_file(core_profile_trace_data_t *cptd)
   snprintf(tidStr, bufSZ, "%d", cptd->id);
 
   char hostidStr[bufSZ];
-  snprintf(hostidStr, bufSZ, "%x", OSUtil_hostid());
+  snprintf(hostidStr, bufSZ, "%x", OSUtil_hostid(libc_getenv));
 
   char pidStr[bufSZ];
   snprintf(pidStr, bufSZ, "%u", OSUtil_pid());
@@ -163,7 +164,7 @@ lazy_open_data_file(core_profile_trace_data_t *cptd)
   hpcrun_fmt_hdr_fwrite(fs,
                         HPCRUN_FMT_NV_prog, hpcrun_files_executable_name(),
                         HPCRUN_FMT_NV_progPath, hpcrun_files_executable_pathname(),
-                        HPCRUN_FMT_NV_envPath, getenv("PATH"),
+                        HPCRUN_FMT_NV_envPath, libc_getenv("PATH"),
                         HPCRUN_FMT_NV_jobId, jobIdStr,
                         HPCRUN_FMT_NV_mpiRank, mpiRankStr,
                         HPCRUN_FMT_NV_tid, tidStr,

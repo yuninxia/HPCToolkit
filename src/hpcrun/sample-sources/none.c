@@ -33,6 +33,7 @@
  * local includes
  *****************************************************************************/
 
+#include "../libc-functions.h"
 #include "../hpcrun_options.h"
 #include "../disabled.h"
 #include "../metrics.h"
@@ -169,7 +170,7 @@ hpcrun_process_sample_source_none(void)
 
   METHOD_CALL(none, process_event_list);
 
-  if (getenv("SHOW_NONE") && hpcrun_get_disabled()) {
+  if (libc_getenv("SHOW_NONE") && hpcrun_get_disabled()) {
     static char none_msg[] = "NOTE: sample source NONE is specified\n";
     write(2, none_msg, strlen(none_msg));
   }

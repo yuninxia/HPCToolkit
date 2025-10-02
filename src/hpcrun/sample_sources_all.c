@@ -27,6 +27,7 @@
 #include "sample_sources_all.h"
 #include "sample_sources_registered.h"
 
+#include "libc-functions.h"
 #include "thread_data.h"
 #include "sample-sources/simple_oo.h"
 #include "sample-sources/sample_source_obj.h"
@@ -114,7 +115,7 @@ ignore_this_thread()
   if (*ignore_thread == THREAD_DOINIT) {
     *ignore_thread = THREAD_SAMPLING;
 
-    char *string = getenv("HPCRUN_IGNORE_THREAD");
+    char *string = libc_getenv("HPCRUN_IGNORE_THREAD");
     if (string) {
 
       // eliminate special cases by adding comma delimiters at front and back

@@ -36,6 +36,7 @@
 #include "audit-api.h"
 
 #include "binding.h"
+#include "symbol-bindings.h"
 
 
 //******************************************************************************
@@ -599,7 +600,7 @@ static void mainlib_connected(const char* vdso_path, const auditor_hooks_t* new_
     fprintf(stderr, "[audit] Auditor is now connected\n");
 }
 
-static const auditor_exports_t* hpcrun_connect_to_auditor_p() {
+const auditor_exports_t* hpcrun_connect_to_auditor_p() {
   static const auditor_exports_t exports = {
     .mainlib_connected = mainlib_connected,
     .mainlib_disconnect = mainlib_disconnect,
@@ -610,6 +611,9 @@ static const auditor_exports_t* hpcrun_connect_to_auditor_p() {
     .pthread_self = pthread_self,
     .pthread_kill = pthread_kill,
     .pthread_setcancelstate = pthread_setcancelstate,
+    .getenv = getenv,
+    .begin_initialization = libhpcrun_initialization_begin,
+    .end_initialization = libhpcrun_initialization_end,
   };
   return &exports;
 }
@@ -620,18 +624,24 @@ uintptr_t la_symbind32(Elf32_Sym *sym, unsigned int ndx,
                        unsigned int *flags, const char *symname) {
   if(*refcook != 0 && dl_runtime_resolver_ptr != 0)
     optimize_object_plt((object_t*)*refcook);
-  if(strcmp(symname, "hpcrun_connect_to_auditor") == 0)
-    return (uintptr_t)&hpcrun_connect_to_auditor_p;
+
+  uintptr_t binding = sym->st_value;
+  if (audit_symbol_binding(symname, &binding)) return binding;
+
   return sym->st_value;
 }
+
+
 __attribute__((visibility("default")))
 uintptr_t la_symbind64(Elf64_Sym *sym, unsigned int ndx,
                        uintptr_t *refcook, uintptr_t *defcook,
                        unsigned int *flags, const char *symname) {
   if(*refcook != 0 && dl_runtime_resolver_ptr != 0)
     optimize_object_plt((object_t*)*refcook);
-  if(strcmp(symname, "hpcrun_connect_to_auditor") == 0)
-    return (uintptr_t)&hpcrun_connect_to_auditor_p;
+
+  uintptr_t binding = sym->st_value;
+  if (audit_symbol_binding(symname, &binding)) return binding;
+
   return sym->st_value;
 }
 

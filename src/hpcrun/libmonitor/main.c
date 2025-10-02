@@ -33,6 +33,7 @@
 #include "pthread_h.h"
 #include "../audit/audit-api.h"
 #include "../env.h"
+#include "../libc-functions.h"
 
 int monitor_debug = 0;
 
@@ -97,8 +98,10 @@ monitor_early_init(void)
 {
     MONITOR_RUN_ONCE(early_init);
 
+    auditor_exports()->begin_initialization();
+
     if (! monitor_debug) {
-        if (getenv("MONITOR_DEBUG") != NULL)
+        if (libc_getenv("MONITOR_DEBUG") != NULL)
             monitor_debug = 1;
     }
     MONITOR_DEBUG1("\n");

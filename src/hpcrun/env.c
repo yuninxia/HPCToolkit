@@ -4,10 +4,22 @@
 
 // -*-Mode: C++;-*- // technically C99
 
+//***************************************************************************
+// include files
+//***************************************************************************
+
 #define _GNU_SOURCE
 
-#include <stdbool.h>
+#include "env.h"
+#include "libc-functions.i"
+
 #include <stdlib.h>
+
+
+
+//***************************************************************************
+// global variables
+//***************************************************************************
 
 // Names for option environment variables
 const char* HPCRUN_OUT_PATH        = "HPCRUN_OUT_PATH";
@@ -21,6 +33,12 @@ const char* HPCRUN_LOW_MEMSIZE     = "HPCRUN_LOW_MEMSIZE";
 
 const char* HPCRUN_ABORT_LIBC      = "HPCRUN_ABORT_LIBC";
 
+
+
+//***************************************************************************
+// interface operations
+//***************************************************************************
+
 //
 // Returns: true if 'name' is in the environment and set to a true
 // (non-zero) value.
@@ -30,7 +48,7 @@ hpcrun_get_env_bool(const char *name)
 {
   if (name == NULL) { return false; }
 
-  char * str = getenv(name);
+  char * str = libc_getenv(name);
 
   // not in environment
   if (str == NULL) { return false; }
@@ -38,12 +56,13 @@ hpcrun_get_env_bool(const char *name)
   return (atoi(str) != 0);
 }
 
+
 bool
 hpcrun_get_env_int(const char *name, int *result)
 {
   if (name == NULL) { return false; }
 
-  char * str = getenv(name);
+  char * str = libc_getenv(name);
 
   // not in environment
   if (str == NULL) { return false; }

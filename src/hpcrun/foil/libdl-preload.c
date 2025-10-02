@@ -4,6 +4,10 @@
 
 // -*-Mode: C++;-*- // technically C99
 
+//***************************************************************************
+// include files
+//***************************************************************************
+
 #define _GNU_SOURCE
 
 #include "../audit/audit-api.h"
@@ -207,8 +211,8 @@ const auditor_exports_t* hpcrun_connect_to_auditor() {
   }
   export_symbols(&exports);
 
-  verbose = getenv("HPCRUN_AUDIT_DEBUG");
-  vdso_path = "[vdso]"; // Set later to something more reasonable.
+  verbose = getenv("HPCRUN_AUDIT_DEBUG"); // invokes libc getenv
+  vdso_path = "[vdso]";                   // Set later to something more reasonable.
 
   return &exports;
 }

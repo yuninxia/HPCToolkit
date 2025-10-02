@@ -7,7 +7,17 @@
 #ifndef hpcrun_env_h
 #define hpcrun_env_h
 
+//***************************************************************************
+// system operations
+//***************************************************************************
+
 #include <stdbool.h>
+
+
+
+//***************************************************************************
+// global variables
+//***************************************************************************
 
 // Names for option environment variables
 extern const char* HPCRUN_OUT_PATH;
@@ -19,6 +29,12 @@ extern const char* HPCRUN_MEMSIZE;
 extern const char* HPCRUN_LOW_MEMSIZE;
 
 extern const char* HPCRUN_ABORT_LIBC;
+
+
+
+//***************************************************************************
+// interface operations
+//***************************************************************************
 
 bool hpcrun_get_env_bool(const char *);
 

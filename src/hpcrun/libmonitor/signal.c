@@ -22,6 +22,7 @@
 #include "monitor.h"
 #include "spinlock.h"
 #include "../audit/audit-api.h"
+#include "../libc-functions.h"
 
 #define MONITOR_CHOOSE_SHOOTDOWN_EARLY  1
 
@@ -426,7 +427,7 @@ monitor_choose_shootdown_early(void)
      * Allow MONITOR_SHOOTDOWN_SIGNAL to set the shootdown signal.
      * If set, this always has first priority.
      */
-    shootdown_str = getenv("MONITOR_SHOOTDOWN_SIGNAL");
+    shootdown_str = libc_getenv("MONITOR_SHOOTDOWN_SIGNAL");
     if (shootdown_str != NULL) {
         if (sscanf(shootdown_str, "%d", &sig) == 1
             && sig > 0 && sig < MONITOR_NSIG

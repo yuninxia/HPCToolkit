@@ -85,6 +85,7 @@
 #include "env.h"
 #include "disabled.h"
 #include "files.h"
+#include "libc-functions.h"
 #include "messages/messages.h"
 #include "thread_data.h"
 #include "loadmap.h"
@@ -162,7 +163,7 @@ hpcrun_files_init(void)
   if (mypid != cur_pid) {
     mypid = cur_pid;
     earlyid.done = 0;
-    earlyid.host = OSUtil_hostid();
+    earlyid.host = OSUtil_hostid(libc_getenv);
     earlyid.gen = 0;
     lateid = earlyid;
     log_done = 0;
@@ -361,11 +362,11 @@ hpcrun_files_executable_name()
 void
 hpcrun_files_set_directory()
 {
-  char *path = getenv(HPCRUN_OUT_PATH);
+  char *path = libc_getenv(HPCRUN_OUT_PATH);
 
   // compute path for default measurement directory
   if (path == NULL || strlen(path) == 0) {
-    const char *jid = OSUtil_jobid();
+    const char *jid = OSUtil_jobid(libc_getenv);
     int pathlen;
 
     if (jid == NULL) {

@@ -35,6 +35,7 @@
 //*****************************************************************************
 
 #include "debug-flag.h"
+#include "../libc-functions.h"
 #include "../utilities/tokenize.h"
 #include "../audit/audit-api.h"
 
@@ -152,7 +153,7 @@ static const char *debug_flag_name_get(int i);
 
 void debug_flag_init()
 {
-  char *df_trace = getenv("HPCRUN_DEBUG_FLAGS_DEBUG");
+  char *df_trace = libc_getenv("HPCRUN_DEBUG_FLAGS_DEBUG");
   int debug_mode_only = (df_trace == 0) ? 0 : 1;
 
   debug_flag_set_all(0);
@@ -271,7 +272,7 @@ debug_flag_process_string(char *in, int debug_initialization)
 static void
 debug_flag_process_env(int debug_initialization)
 {
-  char *s = getenv("HPCRUN_DEBUG_FLAGS");
+  char *s = libc_getenv("HPCRUN_DEBUG_FLAGS");
   if(s){
     debug_flag_process_string(s, debug_initialization);
   }

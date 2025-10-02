@@ -33,6 +33,7 @@
 
 #include "../../cct/cct.h"
 #include "../../control-knob.h"
+#include "../../libc-functions.h"
 #include "../../rank.h"
 #include "../../thread_data.h"
 #include "../../threadmgr.h"
@@ -42,7 +43,6 @@
 #include "../../memory/hpcrun-malloc.h"
 
 #include "../common/gpu-monitoring.h"
-
 #include "gpu-trace-api.h"
 #include "gpu-trace-item.h"
 #include "gpu-trace-channel.h"
@@ -138,7 +138,7 @@ gpu_compute_profile_name
 
   id_tuple_constructor(&id_tuple, ids, IDTUPLE_MAXTYPES);
 
-  id_tuple_push_back(&id_tuple, IDTUPLE_COMPOSE(IDTUPLE_NODE, IDTUPLE_IDS_LOGIC_LOCAL), OSUtil_hostid(), 0);
+  id_tuple_push_back(&id_tuple, IDTUPLE_COMPOSE(IDTUPLE_NODE, IDTUPLE_IDS_LOGIC_LOCAL), OSUtil_hostid(libc_getenv), 0);
 
 #if 0
   if (tag.device_id != IDTUPLE_INVALID) {

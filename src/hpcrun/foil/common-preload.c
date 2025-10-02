@@ -116,7 +116,20 @@ static void* core_dlsym(void* handle, const char* symbol) {
 
 static void load_core_foil() {
   static void* h = NULL;
+
+  // vvvvvvvvvvvvvvvvv WARNING: THIS IS EXTREMELY SUBTLE CODE vvvvvvvvvvvvvvvvv
+  // Don't use RTLD_DEEPBIND here. Using DEEPBIND is problematic when using
+  // an allocator replacement library. DEEPBIND causes all calls to malloc
+  // from libhpcrun.so to bind to libc malloc; however, calls to malloc from
+  // libc utilities, e.g. strdup, will bind to the allocator replacement
+  // library's malloc. we have observed this causing frees to the wrong heap,
+  // which causes corruption leading to a fatal error.
+
   h = dlopen(HPCRUN_SO, RTLD_NOW | RTLD_LOCAL);
+
+  // Signed: Jonathon Anderson and John Mellor-Crummey
+  // ^^^^^^^^^^^^^^^^^ WARNING: THIS IS EXTREMELY SUBTLE CODE ^^^^^^^^^^^^^^^^^
+
   if (h == NULL) {
     fprintf(stderr, "hpcrun: Error loading libhpcrun.so: %s\n", dlerror());
     abort();

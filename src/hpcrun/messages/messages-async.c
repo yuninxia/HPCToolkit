@@ -42,6 +42,7 @@
 //*****************************************************************************
 
 #include "../disabled.h"
+#include "../libc-functions.h"
 #include "messages.h"
 #include "messages-internal.h"
 #include "fmt.h"
@@ -108,7 +109,7 @@ void
 hpcrun_pmsg(const char *tag, const char *fmt, ...)
 {
 #ifdef SINGLE_THREAD_LOGGING
-  if ( getenv("O""T") && (TD_GET(core_profile_trace_data.id) != THE_THREAD)) {
+  if ( libc_getenv("O""T") && (TD_GET(core_profile_trace_data.id) != THE_THREAD)) {
     return;
   }
 #endif // SINGLE_THREAD_LOGGING
