@@ -7,7 +7,7 @@ project(
   'c',
   version: 'g72cf2cd',
   meson_version: '>=1.0.0',
-  default_options: ['c_std=c99'],
+  default_options: ['c_std=c99', 'warning_level=1'],
 )
 
 md5_lib = static_library('md5', 'md5.c', pic: true)
