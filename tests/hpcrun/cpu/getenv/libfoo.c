@@ -13,7 +13,7 @@ extern char* getenv(const char* key);
 static bool doprint() { return true; }
 
 void foo() {
-  char* val = 0;
+  char* val = NULL;
 
   if (doprint())
     fprintf(stderr, "in foo before call: val=%s\n", val);
@@ -25,7 +25,7 @@ void foo() {
 }
 
 __attribute__((constructor)) void libfoo_init() {
-  char* val = 0;
+  char* val = NULL;
 
   if (doprint())
     fprintf(stderr, "in libfoo_init before call: val=%s\n", val);
