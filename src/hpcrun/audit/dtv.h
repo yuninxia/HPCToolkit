@@ -24,12 +24,12 @@
 /// to storage allocated with rtld_malloc to realloc. Realloc fails since the
 /// pointer it was passed does not refer to heap data.
 ///
-/// This patch mitigates this bug by copying DTV storage into the heap so that if
-/// glibc later attempts to reallocate it, reallocation will succeed.
+/// The functions defined here mitigate this bug by copying DTV storage into the
+/// heap, so that if glibc later attempts to reallocate it, reallocation will
+/// succeed.
 ///
-/// WARNING: This patch relies on knowledge of glibc internals, specifically the
-/// definition of the DTV structure, knowledge of how the DTV is maintained, and
-/// where a pointer to it can be found.
+/// WARNING: this code relies upon knowledge of glibc's internal representations
+/// related to DTV management. Any changes to those will break this code.
 
 //***************************************************************************
 // public operations

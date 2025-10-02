@@ -69,13 +69,8 @@ static dtv_t* glibc_dtv_read() {
   void *dtv = NULL;
 
 #if defined(__x86_64__)
-  // retrieve the DTV pointer in tcbhead_t at %fs:8 into register %rax. copy
-  // it into variable dtv.
-  __asm__("mov %%fs:8, %%rax\n"
-          "mov %%rax, %0\n"
-          : "=r" (dtv)
-          :
-          : "rax");
+  // Retrieve the DTV pointer in tcbhead_t at %fs:8 into variable dtv.
+  __asm__("movq %%fs:8, %0" : "=r" (dtv));
 #endif
 
   return dtv;
@@ -83,31 +78,35 @@ static dtv_t* glibc_dtv_read() {
 
 static void glibc_dtv_write(dtv_t* dtv) {
 #if defined(__x86_64__)
-  // move the value of the argument dtv into register %rax. store the
-  // value of %rax info the DTV pointer in tcbhead_t at %fs:8
-  __asm__("mov %0, %%rax\n"
-          "mov %%rax, %%fs:8\n"
-          :
-          : "r" (dtv)
-          : "rax");
+  // Save the argument dtv into the DTV pointer in tcbhead_t at %fs:8
+  __asm__("mov %0, %%fs:8" : : "r" (dtv));
 #endif
 }
 
 static dtv_t* dtv_reference_to_origin(dtv_t* dtv) {
-  // the base pointer for DTV storage is 1 element
-  // to the left of the DTV pointer, before a counter
+  // On all architectures supported by Glibc, the DTV pointer in tcbhead_t points
+  // to the second element of an array of dtv_t. Thus, the storage for the DTV
+  // begins one element prior to "dtv".
+  // Note: the first element contains the current size of the array.
+  // Ref: INSTALL_DTV macro, sysdeps/*/nptl/tls.h, Glibc 2.31 source
   return dtv - 1;
 }
 
 static dtv_t* dtv_origin_to_reference(dtv_t* dtv) {
-  // the DTV pointer is 1 element to the right of the
-  // base pointer for is storage, after a counter
+  // The argument points to the start of an array of dtv_t.
+  // On all architectures supported by Glibc, the DTV pointer in tcbhead_t points
+  // to the second element in this array.
+  // Ref: INSTALL_DTV macro, sysdeps/*/nptl/tls.h, Glibc 2.31 source
   return dtv + 1;
 }
 
 size_t dtv_elements(dtv_t* dtv) {
-  // in glibc, the number of DTV elements is the counter value
-  // plus one for the counter itself and one to the right
+  // In Glibc the dtv_t array always contains two additional elements in addition to
+  // the value in DTV's counter field. The first is the counter itself. The second
+  // is a final element that is always zero.
+  // On all architectures supported by Glibc, the DTV pointer in tcbhead_t points
+  // to the second element of this array.
+  // Ref: _dl_resize_dtv, elf/dl-tls.c, Glibc 2.31 source
   size_t elements = dtv[-1].counter + 2;
   return elements;
 }
@@ -121,13 +120,13 @@ static size_t dtv_size(dtv_t* dtv) {
 static dtv_t *dtv_realloc(dtv_t* dtv, malloc_t default_alloc) {
   size_t size = dtv_size(dtv);
 
-  // allocate space in the default namespace for a copy of dtv
+  // Allocate space in the default namespace for a copy of dtv
   dtv_t* dtv_new = (dtv_t*) default_alloc(size);
 
-  // copy dtv into the heap, starting from its origin
+  // Copy dtv into the heap, starting from its origin
   memcpy(dtv_new, dtv_reference_to_origin(dtv), size);
 
-  // return a pointer to the reference location of the dtv
+  // Return a pointer to the reference location of the dtv
   return dtv_origin_to_reference(dtv_new);
 }
 
@@ -159,7 +158,7 @@ void dtv_validate(bool verbose) {
 
   dtv_t* dtv_current = glibc_dtv_read();
 
-  if (dtv_current == 0) {
+  if (dtv_current == NULL) {
     if (verbose) {
       fprintf(stderr, "[audit][dtv] glibc DTV reallocation bug unhandled for "
         "this architecture.\n");
