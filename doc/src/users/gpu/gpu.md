@@ -369,7 +369,7 @@ To select hardware-based stochastic PC sampling, specify `-e gpu=rocm,pc=hw`.
 Specifying simply `-e gpu=rocm,pc` will default to software-based host-trap sampling.
 
 Periods for hardware stochastic sampling are measured in GPU cycles and the minimum is 256; periods must be a power of 2.
-Periods for host-trap based sampling are measured in microseconds. The minimum is 1. 
+Periods for host-trap based sampling are measured in microseconds. The minimum is 1.
 The default period for stochastic sampling is currently set to 2^20. Setting the sampling period shorter than that has been observed to cause AMD's driver to fail.
 Thus, the minimum for hardware stochastic sampling is currently 2^20.
 The default period for host-trap sampling is currently 2^7. To provide a consistent interface and guarantee that periods are a power of 2, periods for PC sampling will be interpreted as the log of the period by appending @period_log, e.g. `-e gpu=rocm,pc=sw,hw@22` to select stochastic PC sampling with a period of 2^22.
