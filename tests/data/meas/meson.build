@@ -70,15 +70,7 @@ _measurements += {
     'tag': 'nvidia',
     'tail': ['-e', 'gpu=cuda,pc', '-t', _exe_loops_cuda],
   },
-  'loops-hip-amd-t': {
-    'tag': 'amd',
-    'tail': [
-      '-e',
-      'gpu=rocm',
-      '-t',
-      _exe_loops_hip,
-    ],
-  },
+  'loops-hip-amd-t': {'tag': 'amd', 'tail': ['-e', 'gpu=rocm', '-t', _exe_loops_hip]},
 }
 
 # `recursion` is a small example that has recursive properties in the GPU kernel code.
