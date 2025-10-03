@@ -186,6 +186,7 @@ name: nvidia-cuda-monitoring-options
 | :--------------------| :---------------------------------------------------------------------------------------------- |
 | `-e gpu=cuda`        | coarse-grain profiling of GPU operations                                                        |
 | `-e gpu=cuda -t`     | coarse-grain profiling and tracing of GPU operations                                            |
+| `-e gpu=cuda -tt`    | coarse-grain profiling and high-resolution tracing of GPU operations                            |
 | `-e gpu=cuda,pc`     | coarse-grain profiling of GPU operations; fine-grain profiling of GPU kernels using PC sampling |
 ```
 
@@ -345,6 +346,7 @@ name: amd-options
 | :-------------------------- | :---------------------------------------------------------------------------------------------- |
 | `-e gpu=rocm`                            | coarse-grain profiling of AMD GPU operations                                                    |
 | `-e gpu=rocm -t`                         | coarse-grain profiling and tracing of AMD GPU operations                                        |
+| `-e gpu=rocm -tt`                         | coarse-grain profiling and high-resolution tracing of AMD GPU operations                                        |
 | `-e gpu=rocm,pc[={sw,hw}][@period_log]`  | coarse-grain profiling of GPU operations; fine-grain profiling of GPU kernels using PC sampling |
 ```
 
@@ -372,7 +374,7 @@ Periods for hardware stochastic sampling are measured in GPU cycles and the mini
 Periods for host-trap based sampling are measured in microseconds. The minimum is 1.
 The default period for stochastic sampling is currently set to 2^20. Setting the sampling period shorter than that has been observed to cause AMD's driver to fail.
 Thus, the minimum for hardware stochastic sampling is currently 2^20.
-The default period for host-trap sampling is currently 2^7. To provide a consistent interface and guarantee that periods are a power of 2, periods for PC sampling will be interpreted as the log of the period by appending @period_log, e.g. `-e gpu=rocm,pc=sw,hw@22` to select stochastic PC sampling with a period of 2^22.
+The default period for host-trap sampling is currently 2^7. To provide a consistent interface and guarantee that periods are a power of 2, periods for PC sampling will be interpreted as the log of the period by appending @period_log, e.g. `-e gpu=rocm,pc=hw@22` to select stochastic PC sampling with a period of 2^22.
 
 Using AMD's Rocprofiler-sdk monitoring infrastructure, HPCToolkit collects a histogram of samples for each instruction in each kernel that an application executes.
 For stochastic (hardware-based) samples, a sample contains more than a GPU program counter value.
@@ -418,11 +420,9 @@ name: intel-level0-options
 | Argument to `hpcrun`           | What is monitored                                                                                                                                                                                                                                                                                    |
 | :----------------------------- | :--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | `-e gpu=level0`                | coarse-grain profiling of Intel GPU operations using Intel's Level Zero runtime                                                                                                                                                                                                                         |
-| `-e gpu=level0 -t`             | coarse-grain profiling and tracing of Intel GPU operations using Intel's Level Zero runtime                                                                                                                                                                                                             |
-| `-e gpu=level0,inst=count`     | coarse-grain profiling of Intel GPU operations using Intel's Level Zero runtime; fine-grain measurement of Intel GPU kernel executions using Intel's GT-Pin for instruction counting                                                                                                                    |
-| `-e gpu=level0,inst=count -t ` | coarse-grain profiling and tracing of Intel GPU operations using Intel's Level Zero runtime; fine-grain measurement of Intel GPU kernel executions using Intel's GT-Pin for instruction counting                                                                                                        |
+| `-e gpu=level0 -t`             | coarse-grain profiling and tracing of Intel Level Zero GPU operations                                                                                                                                                                                                             |
+| `-e gpu=level0 -tt`             | coarse-grain profiling and high-resolution tracing of Intel Level Zero GPU operations                                                                                                                                                                                                             |
 | `-e gpu=level0,inst=what`      | coarse-grain profiling of Intel GPU operations using Intel's Level Zero runtime; fine-grain measurement of Intel GPU kernel executions using Intel's GT-Pin support values for *what* that include a comma-separated list that may contain values drawn from the set {count, latency, simd}             |
-| `-e gpu=level0,inst=what -t `  | coarse-grain profiling and tracing of Intel GPU operations using Intel's Level Zero runtime; fine-grain measurement of Intel GPU kernel executions using Intel's GT-Pin support values for *what* that include a comma-separated list that may contain values drawn from the set {count, latency, simd} |
 ```
 
 (sec:gpu-opencl)=
