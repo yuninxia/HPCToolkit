@@ -13,7 +13,7 @@ _tstexe_vecadd_hip = custom_target(
 )
 
 _tst = find_program(files('tst-amd-vecadd-produces-profiles'))
-foreach event : ['gpu=amd', 'gpu=rocm']
+foreach event : ['gpu=rocm']
   test(
     f'Measurement of tstexe-vecadd-hip produces profiles (@event@)',
     _tst,

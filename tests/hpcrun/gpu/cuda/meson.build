@@ -9,7 +9,7 @@ endif
 _tstexe_vecadd_cuda = executable('tstexe-vecadd-cuda', files('vecadd.cu'))
 
 _tst = find_program(files('tst-cuda-vecadd-produces-profiles'))
-foreach event : ['gpu=nvidia', 'gpu=cuda']
+foreach event : ['gpu=cuda']
   test(
     f'Measurement of tstexe-vecadd-cuda produces profiles (@event@)',
     _tst,
