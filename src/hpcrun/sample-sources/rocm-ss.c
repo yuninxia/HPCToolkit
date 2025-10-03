@@ -25,6 +25,16 @@
 
 
 //******************************************************************************
+// system includes
+//******************************************************************************
+
+#include <stdio.h>    // Required for fprintf
+#include <stdbool.h>  // Required for bool
+#include <unistd.h>   // Required for access() function and F_OK constant
+
+
+
+//******************************************************************************
 // macros
 //******************************************************************************
 
@@ -38,6 +48,10 @@
 // minimum period 1; one out of every X unit time periods (us), for
 // the value of X specified below
 #define ROCM_PC_SAMPLING_HOST_TRAP_PERIOD_LOG_DEFAULT 7
+
+// The path KFD_TOPOLOGY_PATH is associated with the
+// Linux Kernel Fusion Driver (KFD) used by AMD GPUs.
+#define KFD_TOPOLOGY_PATH "/sys/class/kfd/kfd/topology/nodes"
 
 
 
@@ -57,6 +71,24 @@ static long trace_period = -1;
 static long trace_period_default = -1;
 
 gpu_counter_set_t *rocm_counter_names = 0;
+
+
+
+//******************************************************************************
+// private operations
+//******************************************************************************
+
+/// @brief  Check if KFD_TOPOLOGY_PATH needed for AMD GPUs exists in the filesystem.
+/// @return bool: true if KFD_TOPOLOGY_PATH exists, false otherwise.
+static bool
+check_kfd_topology_dir_exists()
+{
+  // access() checks file/directory permissions or existence.
+  // F_OK mode checks if the file exists.
+  // It returns 0 on success (path exists) and -1 on failure
+  // (path does not exist or permission denied).
+  return (access(KFD_TOPOLOGY_PATH, F_OK) == 0);
+}
 
 
 
@@ -119,6 +151,9 @@ METHOD_FN(shutdown)
 static bool
 METHOD_FN(supports_event, const char *ev_str)
 {
+  // only support rocm events if AMD GPU hardware is present
+  if (check_kfd_topology_dir_exists() == false) return false;
+
   bool is_rocm_counter = strncmp(ev_str, ROCM_CTR_PREFIX, strlen(ROCM_CTR_PREFIX)) == 0;
   return (strncmp(ev_str, AMD_ROCM, strlen(AMD_ROCM)) == 0) || is_rocm_counter;
 }
@@ -249,6 +284,11 @@ METHOD_FN(gen_event_set)
 static void
 METHOD_FN(display_events)
 {
+  if (check_kfd_topology_dir_exists() == false) {
+    // no KFD driver, therefore no AMD GPU options are available
+    return;
+  }
+
   display_header(stdout, "Available events for monitoring ROCM on AMD GPUs");
 
   display_header_event(stdout);
