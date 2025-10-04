@@ -1,0 +1,14 @@
+# SPDX-FileCopyrightText: Contributors to the HPCToolkit Project
+#
+# SPDX-License-Identifier: CC0-1.0
+
+[wrap-file]
+directory = boost_1_89_0
+patch_directory = boost
+source_url = https://archives.boost.io/release/1.89.0/source/boost_1_89_0.tar.gz
+source_hash = 9de758db755e8330a01d995b0a24d09798048400ac25c03fc5ea9be364b13c93
+source_filename = boost_1_89_0.tar.gz
+
+[provide]
+dependency_names = boost
+boost = boost_dep
