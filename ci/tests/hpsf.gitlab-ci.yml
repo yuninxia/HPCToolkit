@@ -66,33 +66,12 @@ cuda12.5 amd64:
     TEST_ARGS: >-
       --suite opencl
       --suite rocm
-rocm5.3 amd64:
+dev rocm amd64:
   extends: .individual test job rocm
-  image: registry.gitlab.com/hpctoolkit/rtt-images:1.0.0-rocm5.3@sha256:46c50313e82ef0f2dfb1930e55c4cec6bfb71752314936139cd3ec715b3a2b7a
-rocm5.4 amd64:
-  extends: .individual test job rocm
-  image: registry.gitlab.com/hpctoolkit/rtt-images:1.0.0-rocm5.4@sha256:34d21de2ead0d2d2d9acdba8e7bfcfbe797c7c5d247b0a4ffc0c14b59dcd7915
-rocm5.5 amd64:
-  extends: .individual test job rocm
-  image: registry.gitlab.com/hpctoolkit/rtt-images:1.0.0-rocm5.5@sha256:5738a0cf4d7b6672e6e34c99f72687c4b4e27f217f540ecf93fb0ca401a837a1
-rocm5.6 amd64:
-  extends: .individual test job rocm
-  image: registry.gitlab.com/hpctoolkit/rtt-images:1.0.0-rocm5.6@sha256:4f1767d68820076bf45e85267bfb8ce4e1c3ce738e646c3c069a039955735af0
-rocm5.7 amd64:
-  extends: .individual test job rocm
-  image: registry.gitlab.com/hpctoolkit/rtt-images:1.0.0-rocm5.7@sha256:73c4ff5959d5acdb3bb6bdde8b07177ded3ed949983a9d05d844856874ac3c8d
-rocm6.0 amd64:
-  extends: .individual test job rocm
-  image: registry.gitlab.com/hpctoolkit/rtt-images:1.0.0-rocm6.0@sha256:69d033d5b82d7d207a68431968ba2c81a6a0f76811e7119e1f25ea0240d3315e
-rocm6.1 amd64:
-  extends: .individual test job rocm
-  image: registry.gitlab.com/hpctoolkit/rtt-images:1.0.0-rocm6.1@sha256:f2acf840fcfd4ba867cc9b0beb951a33e1c5da2a462bb086e44ed4bd2bab2bc6
+  image: registry.gitlab.com/hpctoolkit/rtt-images:1.0.0-aio@sha256:aed3071b8690dbdf3e2b4fec2071b47680c0be171e1a5613e43f425b55b67c2c
 
-rocm6.0 amd64 mi300:
-  extends: rocm6.0 amd64
-  tags: [hpsf-gpu, x86_64-amdgpu, amd-mi300]
-rocm6.1 amd64 mi300:
-  extends: rocm6.1 amd64
+dev rocm amd64 mi300:
+  extends: dev rocm amd64
   tags: [hpsf-gpu, x86_64-amdgpu, amd-mi300]
 
 intel amd64:

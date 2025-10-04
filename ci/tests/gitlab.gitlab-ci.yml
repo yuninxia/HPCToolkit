@@ -13,9 +13,11 @@ aio amd64:
   needs: []
   image: registry.gitlab.com/hpctoolkit/rtt-images:1.0.0-aio@sha256:aed3071b8690dbdf3e2b4fec2071b47680c0be171e1a5613e43f425b55b67c2c
   variables:
-    # FIXME: The Level Zero-enabled tests FAIL instead of SKIP if the CUDA driver is unavailable on the
+    # FIXME: The Level Zero-enabled tests FAIL instead of SKIP if the Level Zero driver is unavailable on the
     # system. For now, disable these tests to allow the CI job to pass.
-    TEST_ARGS: --no-suite level0
+    # FIXME: The ROCm-enabled tests FAIL instead of SKIP if there is no AMD hardware available to run the test.
+    # For now, disable these tests to allow the CI job to pass
+    TEST_ARGS: --no-suite level0 --no-suite rocm
 ubuntu20.04 amd64:
   extends: .individual test job std
   needs: []

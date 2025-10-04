@@ -31,14 +31,16 @@ semifresh nvidia sw-cuda:
     SETUP_ARGS: -Dcuda_args=-arch=native
     REGEN_SUITES: nvidia sw-cuda
 
-# FIXME: ROCm 5.7 is too old for Rocprofiler-sdk
-# semifresh amd:
-#   extends: .semifresh test job
-#   needs: []
-#   image: registry.gitlab.com/hpctoolkit/rtt-images:1.0.0-rocm5.7
-#   tags: [rice-linux-large-amd64-gpu-amd]
-#   variables:
-#     REGEN_SUITES: amd
+semifresh amd:
+  extends: .semifresh test job
+  needs: []
+  image: registry.gitlab.com/hpctoolkit/rtt-images:1.0.0-aio@sha256:aed3071b8690dbdf3e2b4fec2071b47680c0be171e1a5613e43f425b55b67c2c
+  tags: [rice-linux-large-amd64-gpu-amd]
+  variables:
+    REGEN_SUITES: amd
+    # FIXME: The Level Zero-enabled tests FAIL instead of SKIP if the Level Zero driver is unavailable on the
+    # system. For now, disable these tests to allow the CI job to pass.
+    TEST_ARGS: --no-suite level0
 
 # For easy access, the regenerated test data is made available as a single job artifact archive
 fresh testdata:
@@ -47,7 +49,7 @@ fresh testdata:
   needs:
     - semifresh none cpu
     - semifresh nvidia sw-cuda
-#    - semifresh amd
+    - semifresh amd
   when: always
   script:
     - apk add git
