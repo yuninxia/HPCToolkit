@@ -108,7 +108,7 @@ boost_dep = dependency(
   'boost',
   'Boost',
   modules: ['graph'],
-  version: '>=1.66.0',
+  version: '>=1.71.0',
   include_type: 'system',
 )
 libunwind_dep = dependency(
