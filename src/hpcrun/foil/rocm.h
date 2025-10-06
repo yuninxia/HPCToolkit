@@ -112,7 +112,7 @@ typedef uint64_t rocprofiler_pc_t;
 #define PC_VALUE(pc) pc.loaded_code_object_id, pc.loaded_code_object_offset
 #endif
 
-#if (ROCPROFILER_VERSION_MAJOR == 0 && ROCPROFILER_VERSION_MINOR > 6)
+#if (ROCPROFILER_VERSION_MAJOR == 0 && ROCPROFILER_VERSION_MINOR >= 6)
 #define ROCM_AGENT_VISIBLE(agent) (agent)->runtime_visibility.hsa
 #define ROCPROFILER_BUFFER_TRACING_MEMORY_ALLOCATION                                   \
   ROCPROFILER_BUFFER_TRACING_MEMORY_ALLOCATION
