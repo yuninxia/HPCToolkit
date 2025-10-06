@@ -22,6 +22,7 @@
 
 #include <cupti_version.h>
 #include <cupti_activity.h>
+#include <cupti_pcsampling.h>
 
 
 
@@ -33,12 +34,14 @@
 #include "../../../cct/cct_addr.h"
 #include "../../../utilities/ip-normalized.h"
 #include "../../activity/gpu-activity.h"
+#include "../../api/common/gpu-kernel-table.h"
 
 #include "cuda-device-map.h"
 #include "cupti-activity-translate.h"
 #include "cupti-analysis.h"
 #include "cubin-id-map.h"
-#include "gpu-function-id-map.h"
+#include "cuda-function-id-map.h"
+#include "cuda-function-name-map.h"
 #include "cuda-correlation-id-map.h"
 #include "cuda-kernel-data-map.h"
 
@@ -53,6 +56,15 @@
 #else
 #define CUpti_ActivityPCSamplingVersion CUpti_ActivityPCSampling2
 #endif
+
+
+
+//******************************************************************************
+// debugging
+//******************************************************************************
+
+#define DEBUG 0
+#include "../../common/gpu-print.h"
 
 
 
@@ -178,18 +190,25 @@ set_gpu_instruction_fields
  uint64_t *correlation_id
 )
 {
-  uint64_t host_correlation_id;
-  if (!get_host_correlation_id(activity_correlation_id, &host_correlation_id)) {
-    hpcrun_terminate();
+  uint64_t host_correlation_id = 0;
+  bool found = get_host_correlation_id(activity_correlation_id, &host_correlation_id);
+
+  PRINT("NVIDIA set gpu inst fields: activity cid = 0x%x activity host cid = 0x%lx found=%d\n",
+    activity_correlation_id, host_correlation_id, found);
+
+  if (!found) {
+    fprintf(stderr, "WARNING: PC sample: missing correlation id 0x%x\n", activity_correlation_id);
+    // hpcrun_terminate();
   }
+
   *correlation_id = host_correlation_id;
 
-  gpu_function_id_map_entry_t *fid_map_entry =
-    gpu_function_id_map_lookup(function_id);
+  cuda_function_id_map_entry_t *fid_map_entry =
+    cuda_function_id_map_lookup(function_id);
   if (!fid_map_entry)
     hpcrun_terminate();
 
-  ip_normalized_t pc = gpu_function_id_map_entry_pc_get(fid_map_entry);
+  ip_normalized_t pc = cuda_function_id_map_entry_pc_get(fid_map_entry);
 
   // compute a normalized IP for the instruction by adding the
   // instruction's offset in the routine to the address of the routine
@@ -231,6 +250,10 @@ convert_pcsampling
     cuda_correlation_id_map_lookup(activity->correlationId);
   bool remove = cuda_correlation_id_map_entry_increment_samples(
     correlation_entry, activity->samples);
+
+  PRINT("convert_pcsampling: fid=%d offset=0x%lx " IP_NORMALIZED_PRINT_FORMAT " %d samples\n",
+    activity->functionId, activity->pcOffset, IP_NORMALIZED_PRINT_ARGS(ga->details.instruction.pc),
+    activity->samples);
 
   if (remove) {
     cuda_correlation_id_map_delete(activity->correlationId);
@@ -369,7 +392,13 @@ convert_kernel
   }
 
   uint64_t host_correlation_id;
-  if (!get_host_correlation_id(activity->correlationId, &host_correlation_id)) {
+  bool found = get_host_correlation_id(activity->correlationId, &host_correlation_id);
+
+  PRINT("NVIDIA set gpu inst fields: activity cid = 0x%x activity host cid = 0x%lx found=%d\n",
+    activity->correlationId, host_correlation_id, found);
+
+  if (!found) {
+    fprintf(stderr, "WARNING: kernel: missing correlation id 0x%x\n", activity->correlationId);
     return false;
   }
   *correlation_id = host_correlation_id;
@@ -388,18 +417,18 @@ convert_kernel
 
   uint32_t activeWarpsPerSM = 0;
   uint32_t maxActiveWarpsPerSM = 0;
-  uint32_t threadRegisters = 0;
+  uint32_t scalarRegisters = 0;
   uint32_t blockThreads = 0;
   uint32_t blockSharedMemory = 0;
   cupti_occupancy_analyze(activity, &activeWarpsPerSM, &maxActiveWarpsPerSM,
-                          &threadRegisters, &blockThreads, &blockSharedMemory);
+                          &scalarRegisters, &blockThreads, &blockSharedMemory);
 
   ga->details.kernel.activeWarpsPerSM = activeWarpsPerSM;
   ga->details.kernel.maxActiveWarpsPerSM = maxActiveWarpsPerSM;
-  ga->details.kernel.threadRegisters = threadRegisters;
+  ga->details.kernel.scalarRegisters = scalarRegisters;
   ga->details.kernel.blockThreads = blockThreads;
   ga->details.kernel.blockSharedMemory = blockSharedMemory;
-  ga->details.kernel.kernel_first_pc = ip_normalized_NULL;
+  ga->details.kernel.kernel_first_pc = cuda_function_name_map_lookup(activity->name);
 
   cuda_kernel_data_map_insert(activity->correlationId,
     (cuda_kernel_data_map_entry_value_t) {
@@ -422,10 +451,11 @@ convert_function
 {
   TMSG(CUPTI_ACTIVITY, "Function id %u", activity->id);
 
-  ip_normalized_t pc = cubin_id_transform(activity->moduleId,
-    activity->functionIndex, 0);
+  ip_normalized_t pc =
+    cubin_id_transform(activity->moduleId, activity->functionIndex, 0);
 
-  gpu_function_id_map_insert(activity->id, pc);
+  cuda_function_id_map_insert(activity->id, pc);
+  cuda_function_name_map_insert(activity->name, pc);
 
   return false;
 }
@@ -612,6 +642,10 @@ convert_memset
   if (!get_host_correlation_id(activity->correlationId, &host_correlation_id)) {
     return false;
   }
+
+  PRINT("NVIDIA memset: activity cid = 0x%x host cid = 0x%lx\n",
+    activity->correlationId, host_correlation_id);
+
   *correlation_id = host_correlation_id;
   cuda_correlation_id_map_delete(activity->correlationId);
 
@@ -646,6 +680,9 @@ convert_correlation
     TMSG(CUPTI_ACTIVITY,
       "Duplicate External CorrelationId %lu", activity->externalId);
   }
+
+  PRINT("NVIDIA External Correlation: activity cid = 0x%x activity external cid = 0x%lx\n",
+    activity->correlationId, activity->externalId);
 
   return false;
 }

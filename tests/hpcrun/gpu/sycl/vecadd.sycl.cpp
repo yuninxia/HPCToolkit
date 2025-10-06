@@ -2,9 +2,9 @@
 //
 // SPDX-License-Identifier: Apache-2.0
 
-#include <CL/sycl.hpp>
 #include <iostream>
 #include <numeric>
+#include <sycl/sycl.hpp>
 #include <vector>
 
 #define SYCL_CALL(statement, msg)                                                      \

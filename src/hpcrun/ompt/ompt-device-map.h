@@ -84,4 +84,12 @@ ompt_device_map_entry_device_get
  ompt_device_map_entry_t *entry
 );
 
+
+uint64_t
+ompt_activity_time
+(
+  ompt_device_map_entry_t *entry,
+  uint64_t t
+);
+
 #endif

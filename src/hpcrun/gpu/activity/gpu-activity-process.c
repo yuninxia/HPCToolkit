@@ -22,13 +22,14 @@
 #include "../../hpcrun_stats.h"
 #include "../../messages/messages.h"
 
-#include "gpu-op-ccts-map.h"
 #include "../trace/gpu-trace-api.h"
 #include "../trace/gpu-trace-item.h"
+#include "../api/common/gpu-cid-map.h"
 
 #include "gpu-activity.h"
 #include "gpu-activity-process.h"
 #include "gpu-event-id-map.h"
+#include "gpu-op-placeholders.h"
 
 
 //******************************************************************************
@@ -50,7 +51,7 @@
 #include "../common/gpu-print.h"
 
 #define IGNORE_IF_INVALID_INTERVAL(gi) \
-  if (gpu_interval_is_invalid((gpu_interval_t *) &(gi->details))) return
+  if (gpu_interval_is_invalid(&(gi->details.interval))) return
 
 
 
@@ -75,13 +76,14 @@ static void
 trace_item_set
 (
  gpu_trace_item_t *ti,
- gpu_activity_t *ga,
+ gpu_activity_t *activity,
  uint64_t cpu_submit_time,
  cct_node_t *call_path_leaf
 )
 {
-  gpu_trace_item_init(ti, cpu_submit_time, ga->details.interval.start,
-                      ga->details.interval.end, call_path_leaf);
+  gpu_interval_t *interval = &activity->details.interval;
+  gpu_trace_item_init(ti, cpu_submit_time, interval->start,
+    interval->end, call_path_leaf);
 }
 
 
@@ -93,16 +95,12 @@ gpu_memcpy_process
 {
   IGNORE_IF_INVALID_INTERVAL(activity);
 
-  uint64_t correlation_id = activity->details.memcpy.correlation_id;
+  gpu_memcpy_t *memcpy = &activity->details.memcpy;
 
-  gpu_op_ccts_map_entry_value_t *entry = gpu_op_ccts_map_lookup(correlation_id);
-  if (entry == NULL) {
-    TMSG(GPU, "Cannot find CCTs for correlation id %"PRId64, correlation_id);
-    return;
-  }
+  uint64_t correlation_id = memcpy->correlation_id;
 
   gpu_placeholder_type_t mct;
-  switch (activity->details.memcpy.copyKind) {
+  switch (memcpy->copyKind) {
     case GPU_MEMCPY_H2D:
       mct = gpu_placeholder_type_copyin;
       break;
@@ -114,29 +112,20 @@ gpu_memcpy_process
       break;
   }
 
-  cct_node_t *host_op_node = gpu_op_ccts_get(&entry->gpu_op_ccts, mct);
-  if (host_op_node == NULL) {
-    // If we cannot find a perfect match for the operation
-    // e.g. cuMemcpy
-    host_op_node = entry->gpu_op_ccts.ccts[gpu_placeholder_type_copy];
-  }
-
-  if (host_op_node == NULL)
-    hpcrun_terminate();
+  ip_normalized_t dummy;
+  cct_node_t *host_op_node = get_placeholder_node(correlation_id, mct, &dummy);
 
   gpu_trace_item_t entry_trace;
-  trace_item_set(&entry_trace, activity, entry->cpu_submit_time, host_op_node);
+  trace_item_set(&entry_trace, activity, memcpy->start, host_op_node);
 
   gpu_context_stream_trace
-    (activity->details.memcpy.device_id, activity->details.memcpy.context_id,
-      activity->details.memcpy.stream_id, &entry_trace);
+    (memcpy->device_id, memcpy->context_id, memcpy->stream_id, &entry_trace);
+
   activity->cct_node = host_op_node;
-  //FIXME(keren): In OpenMP, an external_id may maps to multiple cct_nodes
-  //gpu_host_correlation_map_delete(external_id);
 
   PRINT("Memcpy copy correlation_id 0x%lx\n", correlation_id);
-  PRINT("Memcpy copy kind %u\n", activity->details.memcpy.copyKind);
-  PRINT("Memcpy copy bytes %lu\n", activity->details.memcpy.bytes);
+  PRINT("Memcpy copy kind %u\n", memcpy->copyKind);
+  PRINT("Memcpy copy bytes %lu\n", memcpy->bytes);
 }
 
 
@@ -149,28 +138,31 @@ gpu_unknown_process
   PRINT("Unknown activity kind %d\n", activity->kind);
 }
 
+
 static void
 gpu_sample_process
 (
- gpu_activity_t* sample
+ gpu_activity_t *activity
 )
 {
-  uint64_t correlation_id = sample->details.pc_sampling.correlation_id;
+  gpu_pc_sampling_t *pcs = &activity->details.pc_sampling;
+  uint64_t correlation_id = pcs->correlation_id;
 
-  gpu_op_ccts_map_entry_value_t *entry = gpu_op_ccts_map_lookup(correlation_id);
-  if (entry == NULL) {
-    TMSG(GPU, "Cannot find CCTs for correlation id %"PRId64, correlation_id);
-    return;
-  }
+  ip_normalized_t ip = pcs->pc;
 
-  cct_node_t *host_op_node =
-    gpu_op_ccts_get(&entry->gpu_op_ccts, gpu_placeholder_type_kernel);
-  ip_normalized_t ip = sample->details.pc_sampling.pc;
+  gpu_placeholder_type_t pht =
+    (ip.lm_id == 0) ? gpu_placeholder_type_kernel_anon : gpu_placeholder_type_kernel;
 
-  cct_node_t *cct_child = hpcrun_cct_insert_ip_norm(host_op_node, ip, false);
-  if (cct_child) {
-    PRINT("cct_child %p\n", cct_child);
-    sample->cct_node = cct_child;
+  ip_normalized_t dummy;
+  cct_node_t *kernel_ph = get_placeholder_node(correlation_id, pht, &dummy);
+
+  cct_node_t *pc = (pht == gpu_placeholder_type_kernel_anon) ?
+    kernel_ph :
+    hpcrun_cct_insert_ip_norm(kernel_ph, ip, true);
+
+  if (pc) {
+    PRINT("pc %p\n", pc);
+    activity->cct_node = pc;
   }
 }
 
@@ -178,37 +170,23 @@ gpu_sample_process
 static void
 gpu_sampling_info_process
 (
- gpu_activity_t *sri
+ gpu_activity_t *activity
 )
 {
-  uint64_t correlation_id = sri->details.pc_sampling_info.correlation_id;
+  gpu_pc_sampling_info_t *pcs_info = &activity->details.pc_sampling_info;
 
-  gpu_op_ccts_map_entry_value_t *entry = gpu_op_ccts_map_lookup(correlation_id);
-  if (entry == NULL) {
-    TMSG(GPU, "Cannot find CCTs for correlation id %"PRId64, correlation_id);
-    return;
-  }
+  uint64_t correlation_id = pcs_info->correlation_id;
 
-  cct_node_t *func_ph =
-    gpu_op_ccts_get(&entry->gpu_op_ccts, gpu_placeholder_type_trace);
-  cct_node_t *kernel_ph =
-    gpu_op_ccts_get(&entry->gpu_op_ccts, gpu_placeholder_type_kernel);
+  ip_normalized_t kernel_ip;
+  cct_node_t *kernel_ph = get_placeholder_node(correlation_id, gpu_placeholder_type_kernel, &kernel_ip);
 
-  cct_node_t *func_node = hpcrun_cct_children(func_ph); // only child
-  cct_node_t *kernel_node;
-  if (func_node == NULL) {
-    // in case placeholder doesn't have a child
-    kernel_node = kernel_ph;
-  } else {
-    // find the proper child of kernel_ph
-    cct_addr_t *addr = hpcrun_cct_addr(func_node);
-    kernel_node = hpcrun_cct_insert_ip_norm(kernel_ph, addr->ip_norm, true);
+  cct_node_t *kernel_node = ip_normalized_eq(&kernel_ip, &ip_normalized_NULL) ? kernel_ph :
+    hpcrun_cct_insert_ip_norm(kernel_ph, kernel_ip, true);
 
-    sri->cct_node = kernel_node;
-  }
+  activity->cct_node = kernel_node;
 
-  hpcrun_stats_acc_samples_add(sri->details.pc_sampling_info.totalSamples);
-  hpcrun_stats_acc_samples_dropped_add(sri->details.pc_sampling_info.droppedSamples);
+  hpcrun_stats_acc_samples_add(pcs_info->totalSamples);
+  hpcrun_stats_acc_samples_dropped_add(pcs_info->droppedSamples);
 }
 
 
@@ -220,31 +198,31 @@ gpu_memset_process
 {
   IGNORE_IF_INVALID_INTERVAL(activity);
 
-  uint64_t correlation_id = activity->details.memset.correlation_id;
+  gpu_memset_t *memset = &activity->details.memset;
 
-  gpu_op_ccts_map_entry_value_t *entry = gpu_op_ccts_map_lookup(correlation_id);
-  if (entry == NULL) {
-    TMSG(GPU, "Cannot find CCTs for correlation id %"PRId64, correlation_id);
-    return;
-  }
+  uint64_t correlation_id = memset->correlation_id;
 
+  ip_normalized_t dummy;
   cct_node_t *host_op_node =
-    gpu_op_ccts_get(&entry->gpu_op_ccts, gpu_placeholder_type_memset);
+    get_placeholder_node(correlation_id, gpu_placeholder_type_memset, &dummy);
 
   gpu_trace_item_t entry_trace;
-  trace_item_set(&entry_trace, activity, entry->cpu_submit_time, host_op_node);
+  trace_item_set(&entry_trace, activity, memset->start, host_op_node);
 
   gpu_context_stream_trace
-    (activity->details.memset.device_id, activity->details.memset.context_id,
-      activity->details.memset.stream_id, &entry_trace);
+    (memset->device_id, memset->context_id, memset->stream_id, &entry_trace);
 
   activity->cct_node = host_op_node;
+
   //FIXME(keren): In OpenMP, an external_id may maps to multiple cct_nodes
   //gpu_host_correlation_map_delete(external_id);
 
+  TMSG(GPU, "gpu_memset_process: id: 0x%lx  memKind: %d  bytes: %lu",
+       correlation_id, memset->memKind, memset->bytes);
+
   PRINT("Memset correlation_id 0x%lx\n", correlation_id);
-  PRINT("Memset kind %u\n", activity->details.memset.memKind);
-  PRINT("Memset bytes %lu\n", activity->details.memset.bytes);
+  PRINT("Memset kind %u\n", memset->memKind);
+  PRINT("Memset bytes %lu\n", memset->bytes);
 }
 
 
@@ -256,54 +234,30 @@ gpu_kernel_process
 {
   IGNORE_IF_INVALID_INTERVAL(activity);
 
-  uint64_t correlation_id = activity->details.kernel.correlation_id;
+  gpu_kernel_t *kernel = &activity->details.kernel;
 
-  gpu_op_ccts_map_entry_value_t *entry = gpu_op_ccts_map_lookup(correlation_id);
-  if (entry == NULL) {
-    TMSG(GPU, "Cannot find CCTs for correlation id %"PRId64, correlation_id);
-    return;
+  uint64_t correlation_id = kernel->correlation_id;
+
+  ip_normalized_t kernel_ip;
+  cct_node_t *ph = get_placeholder_node(correlation_id, gpu_placeholder_type_kernel, &kernel_ip);
+
+  if (ip_normalized_eq(&kernel_ip, &ip_normalized_NULL)) {
+    kernel_ip = kernel->kernel_first_pc;
   }
 
-  cct_node_t *func_ph =
-    gpu_op_ccts_get(&entry->gpu_op_ccts, gpu_placeholder_type_trace);
-
-  cct_node_t *func_node = NULL;
-  if (!ip_normalized_eq(&(activity->details.kernel.kernel_first_pc),
-                        &ip_normalized_NULL)) {
-    // the activity record specifies the first PC for the kernel
-    func_node = hpcrun_cct_insert_ip_norm
-      (func_ph, activity->details.kernel.kernel_first_pc, true);
-  } else {
-    func_node = hpcrun_cct_children(func_ph);
-    if (func_node == NULL) {
-      // in case placeholder doesn't have a child
-      func_node = func_ph;
-    }
-  }
+  cct_node_t *kernel_node =
+    hpcrun_cct_insert_ip_norm(ph, kernel_ip, true);
 
   gpu_trace_item_t entry_trace;
-  trace_item_set(&entry_trace, activity, entry->cpu_submit_time, func_node);
+  trace_item_set(&entry_trace, activity, kernel->start, kernel_node);
 
   gpu_context_stream_trace
-    (activity->details.kernel.device_id, activity->details.kernel.context_id,
-      activity->details.kernel.stream_id, &entry_trace);
-
-  cct_node_t *kernel_ph =
-    gpu_op_ccts_get(&entry->gpu_op_ccts, gpu_placeholder_type_kernel);
-
-  cct_node_t *kernel_node;
-  if (func_node == func_ph) {
-    // in case placeholder doesn't have a child
-    kernel_node = kernel_ph;
-  } else {
-    // find the proper child of kernel_ph
-    cct_addr_t *addr = hpcrun_cct_addr(func_node);
-    kernel_node = hpcrun_cct_insert_ip_norm(kernel_ph, addr->ip_norm, true);
-  }
+    (kernel->device_id, kernel->context_id,
+      kernel->stream_id, &entry_trace);
 
   activity->cct_node = kernel_node;
 
-  PRINT("Kernel execution deviceId %u\n", activity->details.kernel.device_id);
+  PRINT("Kernel execution deviceId %u\n", kernel->device_id);
   PRINT("Kernel execution correlation_id 0x%lx\n", correlation_id);
 }
 
@@ -311,29 +265,20 @@ gpu_kernel_process
 static void
 gpu_kernel_block_process
 (
- gpu_activity_t* activity
+ gpu_activity_t *activity
 )
 {
-  uint64_t correlation_id = activity->details.kernel_block.external_id;
-  ip_normalized_t ip = activity->details.kernel_block.pc;
+  gpu_kernel_block_t *kb = &activity->details.kernel_block;
 
-  gpu_op_ccts_map_entry_value_t *entry = gpu_op_ccts_map_lookup(correlation_id);
-  if (entry == NULL) {
-    TMSG(GPU, "Cannot find CCTs for correlation id %"PRId64, correlation_id);
-    return;
-  }
+  uint64_t correlation_id = kb->correlation_id;
+  ip_normalized_t pc_ip = kb->pc;
 
-  PRINT("external_id %lu\n", correlation_id);
+  ip_normalized_t kernel_ip;
+  cct_node_t *kernel_ph =
+    get_placeholder_node(correlation_id, gpu_placeholder_type_kernel, &kernel_ip);
 
-  cct_node_t *host_op_node =
-    gpu_op_ccts_get(&entry->gpu_op_ccts, gpu_placeholder_type_kernel);
-
-  // create a child cct node that contains 2 metrics: offset of block head wrt. original binary, dynamic execution count of block
-  cct_node_t *cct_child = hpcrun_cct_insert_ip_norm(host_op_node, ip, true); // how to set the ip_norm
-  if (cct_child) {
-    PRINT("cct_child %p\n", cct_child);
-    activity->cct_node = cct_child;
-  }
+  // add the PC for the block as a child of the kernel placeholder
+  activity->cct_node = hpcrun_cct_insert_ip_norm(kernel_ph, pc_ip, true);
 }
 
 
@@ -346,27 +291,25 @@ gpu_synchronization_process
 #if TRACK_SYNCHRONIZATION
   IGNORE_IF_INVALID_INTERVAL(activity);
 
-  uint64_t correlation_id = activity->details.synchronization.correlation_id;
+  gpu_synchronization_t *sync = &activity->details.synchronization;
 
-  gpu_op_ccts_map_entry_value_t *entry = gpu_op_ccts_map_lookup(correlation_id);
-  if (entry == NULL) {
-    TMSG(GPU, "Cannot find CCTs for correlation id %"PRId64, correlation_id);
-    return;
-  }
+  uint64_t correlation_id = sync->correlation_id;
 
+  ip_normalized_t dummy;
   cct_node_t *host_op_node =
-    gpu_op_ccts_get(&entry->gpu_op_ccts, gpu_placeholder_type_sync);
+    get_placeholder_node(correlation_id, gpu_placeholder_type_sync, &dummy);
+
   activity->cct_node = host_op_node;
 
   gpu_trace_item_t entry_trace;
   trace_item_set(&entry_trace, activity, entry->cpu_submit_time, host_op_node);
 
   if (activity->kind == GPU_ACTIVITY_SYNCHRONIZATION) {
-    uint32_t context_id = activity->details.synchronization.context_id;
-    uint32_t stream_id = activity->details.synchronization.stream_id;
-    uint32_t event_id = activity->details.synchronization.event_id;
+    uint32_t context_id = sync->context_id;
+    uint32_t stream_id = sync->stream_id;
+    uint32_t event_id = sync->event_id;
 
-    switch (activity->details.synchronization.syncKind) {
+    switch (sync->syncKind) {
       case GPU_SYNC_STREAM:
       case GPU_SYNC_STREAM_EVENT_WAIT:
         // Insert a event for a specific stream
@@ -415,30 +358,23 @@ gpu_cdpkernel_process
 {
   IGNORE_IF_INVALID_INTERVAL(activity);
 
-  uint64_t correlation_id = activity->details.cdpkernel.correlation_id;
+  gpu_cdpkernel_t *cdpk = &activity->details.cdpkernel;
 
-  gpu_op_ccts_map_entry_value_t *entry = gpu_op_ccts_map_lookup(correlation_id);
-  if (entry == NULL) {
-    TMSG(GPU, "Cannot find CCTs for correlation id %"PRId64, correlation_id);
-    return;
-  }
+  uint64_t correlation_id = cdpk->correlation_id;
 
-  cct_node_t *func_ph =
-    gpu_op_ccts_get(&entry->gpu_op_ccts, gpu_placeholder_type_kernel);
+  ip_normalized_t kernel_ip;
+  cct_node_t *kernel_ph = get_placeholder_node(correlation_id, gpu_placeholder_type_kernel, &kernel_ip);
 
-  cct_node_t *func_node = hpcrun_leftmost_child(func_ph);
-  if (func_node == NULL) {
-    // in case placeholder doesn't have a child
-    func_node = func_ph;
-  }
+  cct_node_t *kernel_node = ip_normalized_eq(&kernel_ip, &ip_normalized_NULL) ? kernel_ph :
+    hpcrun_cct_insert_ip_norm(kernel_ph, kernel_ip, true);
 
   gpu_trace_item_t entry_trace;
-  trace_item_set(&entry_trace, activity, entry->cpu_submit_time, func_node);
+  trace_item_set(&entry_trace, activity, cdpk->start, kernel_node);
 
   gpu_context_stream_trace
-    (activity->details.cdpkernel.device_id, activity->details.cdpkernel.context_id,
-      activity->details.cdpkernel.stream_id, &entry_trace);
+    (cdpk->device_id, cdpk->context_id, cdpk->stream_id, &entry_trace);
 
+  activity->cct_node = kernel_node;
 
   PRINT("Cdp Kernel correlation_id 0x%lx\n", correlation_id);
 }
@@ -450,10 +386,10 @@ gpu_event_process
  gpu_activity_t *activity
 )
 {
-  uint32_t event_id = activity->details.event.event_id;
-  uint32_t context_id = activity->details.event.context_id;
-  uint32_t stream_id = activity->details.event.stream_id;
-  gpu_event_id_map_insert(event_id, context_id, stream_id);
+  gpu_event_t *event = &activity->details.event;
+
+  gpu_event_id_map_insert(event->event_id, event->context_id,
+    event->stream_id);
 
   PRINT("GPU event %u\n", event_id);
 }
@@ -477,6 +413,77 @@ gpu_memory_placeholder
 
 
 static void
+gpu_migration_process
+(
+ gpu_activity_t *activity
+)
+{
+  gpu_page_migration_t *migration = &activity->details.migration;
+
+  uint64_t correlation_id = migration->correlation_id;
+
+  ip_normalized_t dummy;
+  cct_node_t *host_op_node =
+    get_placeholder_node(correlation_id, gpu_placeholder_type_paging, &dummy);
+
+  activity->cct_node = host_op_node;
+
+  TMSG(GPU, "gpu page migration: op_type=%s trigger=%s "
+    "start=0x%lx end=0x%lx bytes: %lu",
+    gpu_page_op_type_to_string(migration->op_type),
+    gpu_page_trigger_to_string(migration->trigger), migration->start_addr,
+    migration->end_addr, migration->bytes);
+}
+
+
+static gpu_placeholder_type_t
+get_gpu_scratch_placeholder
+(
+  gpu_scratch_op_t op
+)
+{
+  gpu_placeholder_type_t ph = gpu_placeholder_type_scratch_illegal;
+
+  switch(op) {
+    case GPU_SCRATCH_MEMORY_ALLOC:
+      ph = gpu_placeholder_type_scratch_alloc;
+      break;
+    case GPU_SCRATCH_MEMORY_FREE:
+      ph = gpu_placeholder_type_scratch_free;
+      break;
+    case GPU_SCRATCH_MEMORY_ASYNC_RECLAIM:
+      ph = gpu_placeholder_type_scratch_async_reclaim;
+      break;
+    case GPU_SCRATCH_MEMORY_ILLEGAL:
+      ph = gpu_placeholder_type_scratch_illegal;
+      break;
+  }
+  return ph;
+}
+
+static void
+gpu_scratch_process
+(
+ gpu_activity_t *activity
+)
+{
+  gpu_scratch_t *scratch = &activity->details.scratch;
+  uint64_t correlation_id = scratch->correlation_id;
+
+  gpu_placeholder_type_t ph =
+    get_gpu_scratch_placeholder(scratch->op_type);
+
+  ip_normalized_t dummy;
+  cct_node_t *host_op_node =
+    get_placeholder_node(correlation_id, ph, &dummy);
+
+  activity->cct_node = host_op_node;
+
+  TMSG(GPU, "gpu scratch op: seconds %lf ",
+      (scratch->end - scratch->start) / 1000000000);
+}
+
+static void
 gpu_memory_process
 (
  gpu_activity_t *activity
@@ -484,36 +491,32 @@ gpu_memory_process
 {
   IGNORE_IF_INVALID_INTERVAL(activity);
 
-  uint64_t correlation_id = activity->details.memory.correlation_id;
+  gpu_memory_t *memory = &activity->details.memory;
 
-  gpu_op_ccts_map_entry_value_t *entry = gpu_op_ccts_map_lookup(correlation_id);
-  if (entry == NULL) {
-    TMSG(GPU, "Cannot find CCTs for correlation id %"PRId64, correlation_id);
-    return;
-  }
+  uint64_t correlation_id = memory->correlation_id;
 
   gpu_placeholder_type_t ph = gpu_memory_placeholder(activity);
-  cct_node_t *host_op_node = gpu_op_ccts_get(&entry->gpu_op_ccts, ph);
-  if (host_op_node == NULL)
-    hpcrun_terminate();
+
+  ip_normalized_t dummy;
+  cct_node_t *host_op_node = get_placeholder_node(correlation_id, ph, &dummy);
 
   // Memory allocation does not always happen on the device
   // Do not send it to trace channels
 
   gpu_trace_item_t entry_trace;
-  trace_item_set(&entry_trace, activity, entry->cpu_submit_time, host_op_node);
+  trace_item_set(&entry_trace, activity, memory->start, host_op_node);
 
   gpu_context_stream_trace
-    (activity->details.memory.device_id,
-      activity->details.memory.context_id,
-      activity->details.memory.stream_id,
-      &entry_trace);
+    (memory->device_id, memory->context_id, memory->stream_id, &entry_trace);
 
-      activity->cct_node = host_op_node;
+  activity->cct_node = host_op_node;
+
+  TMSG(GPU, "gpu_memory_process (alloc/free): id: 0x%lx  mem_op: %d  bytes: %lu",
+       correlation_id, memory->mem_op, memory->bytes);
 
   PRINT("Memory correlation_id 0x%lx\n", correlation_id);
-  PRINT("Memory kind %u\n", activity->details.memory.memKind);
-  PRINT("Memory bytes %lu\n", activity->details.memory.bytes);
+  PRINT("Memory kind %u\n", memory->memKind);
+  PRINT("Memory bytes %lu\n", memory->bytes);
 }
 
 
@@ -523,63 +526,72 @@ gpu_instruction_process
  gpu_activity_t *activity
 )
 {
-  uint64_t correlation_id = activity->details.instruction.correlation_id;
-  ip_normalized_t pc = activity->details.instruction.pc;
+  gpu_instruction_t *inst = &activity->details.instruction;
 
-  gpu_op_ccts_map_entry_value_t *entry = gpu_op_ccts_map_lookup(correlation_id);
-  if (entry == NULL) {
-    TMSG(GPU, "Cannot find CCTs for correlation id %"PRId64, correlation_id);
-    return;
+  uint64_t correlation_id = inst->correlation_id;
+  ip_normalized_t ip = inst->pc;
+
+  gpu_placeholder_type_t pht =
+    (ip.lm_id == 0) ? gpu_placeholder_type_kernel_anon : gpu_placeholder_type_kernel;
+
+  ip_normalized_t dummy;
+  cct_node_t *host_op_node = get_placeholder_node(correlation_id, pht, &dummy);
+
+  cct_node_t *inst_node =
+    hpcrun_cct_insert_ip_norm(host_op_node, ip, false);
+
+  if (inst_node != host_op_node) {
+    PRINT("inst_node %p\n", inst_node);
+    activity->cct_node = inst_node;
   }
-
-  cct_node_t *func_ph =
-    gpu_op_ccts_get(&entry->gpu_op_ccts, gpu_placeholder_type_kernel);
-
-  cct_node_t *func_ins = hpcrun_cct_insert_ip_norm(func_ph, pc, false);
-  activity->cct_node = func_ins;
 
   PRINT("Instruction correlation_id 0x%lx\n", correlation_id);
 }
 
+
 static void
-gpu_counter_process
+gpu_one_counter_process
 (
  gpu_activity_t *activity
 )
 {
-  uint32_t correlation_id = activity->details.counters.correlation_id;
+  gpu_one_counter_t *counter = &activity->details.counter;
 
-  gpu_op_ccts_map_entry_value_t *entry = gpu_op_ccts_map_lookup(correlation_id);
-  if (entry == NULL) {
-    TMSG(GPU, "Cannot find CCTs for correlation id %"PRId64, correlation_id);
-    return;
-  }
+  uint64_t correlation_id = counter->correlation_id;
 
-  gpu_placeholder_type_t ph = gpu_placeholder_type_kernel;
-  cct_node_t *host_op_node = gpu_op_ccts_get(&entry->gpu_op_ccts, ph);
-  if (host_op_node == NULL)
-    hpcrun_terminate();
+  ip_normalized_t dummy;
+  cct_node_t *ph = get_placeholder_node(correlation_id, gpu_placeholder_type_kernel, &dummy);
 
-  cct_node_t *func_node = hpcrun_cct_children(host_op_node); // only child
-  cct_node_t *kernel_node;
-  if (func_node == NULL) {
-    kernel_node = host_op_node;
-  } else {
-    cct_addr_t *addr = hpcrun_cct_addr(func_node);
-    kernel_node = hpcrun_cct_insert_ip_norm(host_op_node, addr->ip_norm, true);
-  }
+  cct_node_t *kernel_node =
+    hpcrun_cct_insert_ip_norm(ph, counter->kernel_first_pc, true);
 
-  // Memory allocation does not always happen on the device
-  // Do not send it to trace channels
+  activity->cct_node = kernel_node;
+}
+
+
+static void
+gpu_counters_process
+(
+ gpu_activity_t *activity
+)
+{
+  gpu_counter_t *counters = &activity->details.counters;
+  uint64_t correlation_id = counters->correlation_id;
+
+  ip_normalized_t dummy;
+  cct_node_t *ph = get_placeholder_node(correlation_id, gpu_placeholder_type_kernel, &dummy);
+
+  cct_node_t *kernel_node =
+    hpcrun_cct_insert_ip_norm(ph, counters->kernel_first_pc, true);
 
   activity->cct_node = kernel_node;
 
   PRINT("Counter CorrelationId %u\n", correlation_id);
 
   // FIXME(Srdjan): activity->details.counters.* missing
-  // PRINT("Counter cycles %lu\n", activity->details.counters.cycles);
-  // PRINT("Counter l2 cache hit %lu\n", activity->details.counters.l2_cache_hit);
-  // PRINT("Counter l2 cache miss %lu\n", activity->details.counters.l2_cache_miss);
+  // PRINT("Counter cycles %lu\n", counters->cycles);
+  // PRINT("Counter l2 cache hit %lu\n", counters->l2_cache_hit);
+  // PRINT("Counter l2 cache miss %lu\n", counters->l2_cache_miss);
 }
 
 
@@ -591,7 +603,7 @@ gpu_counter_process
 void
 gpu_activity_process
 (
- gpu_activity_t *ga
+ gpu_activity_t *activity
 )
 {
   typedef void (*process_fn_t)(gpu_activity_t *);
@@ -609,14 +621,17 @@ gpu_activity_process
     [GPU_ACTIVITY_BRANCH]             = gpu_instruction_process,
     [GPU_ACTIVITY_CDP_KERNEL]         = gpu_cdpkernel_process,
     [GPU_ACTIVITY_EVENT]              = gpu_event_process,
-    [GPU_ACTIVITY_COUNTER]            = gpu_counter_process,
-    [GPU_ACTIVITY_MEMCPY2]            = gpu_unknown_process
+    [GPU_ACTIVITY_COUNTERS]           = gpu_counters_process,
+    [GPU_ACTIVITY_ONE_COUNTER]        = gpu_one_counter_process,
+    [GPU_ACTIVITY_PAGE_MIGRATION]     = gpu_migration_process,
+    [GPU_ACTIVITY_MEMCPY2]            = gpu_unknown_process,
+    [GPU_ACTIVITY_SCRATCH]            = gpu_scratch_process
   };
 
   process_fn_t process_fn =
-    ga->kind < sizeof(process_fns) / sizeof(process_fns[0]) && process_fns[ga->kind]
-      ? process_fns[ga->kind]
-      : gpu_unknown_process;
+    (activity->kind < sizeof(process_fns) / sizeof(process_fns[0]) &&
+     process_fns[activity->kind]) ?
+    process_fns[activity->kind] : gpu_unknown_process;
 
-  process_fn(ga);
+  process_fn(activity);
 }

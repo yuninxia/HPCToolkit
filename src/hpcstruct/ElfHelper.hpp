@@ -52,6 +52,7 @@ public:
   std::string getFileName() { return fileName; }
   size_t getTextSection(char **text_section);
   bool isIntelGPUFile() { return intelGPU; }
+  bool isAMDGPUFile() { return amdGPU; }
   // Intel GPUs have kernel name suffix
   void setGPUKernelName(const std::string &_gpuKernel) { gpuKernel = _gpuKernel; }
   std::string getGPUKernelName() { return gpuKernel; }
@@ -62,6 +63,7 @@ private:
   size_t memLen;
   Elf *elf;
   bool intelGPU;
+  bool amdGPU;
   std::string fileName;
   std::string gpuKernel;
 };

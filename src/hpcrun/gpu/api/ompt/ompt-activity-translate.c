@@ -25,6 +25,8 @@
 #include "../../../utilities/ip-normalized.h"
 #include "../../activity/gpu-activity.h"
 
+#include "../rocm/rocm-interface.h"
+
 
 #include "ompt-activity-translate.h"
 
@@ -33,6 +35,37 @@
 // macros
 //******************************************************************************
 
+#define OMPT_ACTIVITY_DEBUG 0
+
+#if OMPT_ACTIVITY_DEBUG
+#define PRINT(...) fprintf(stderr, __VA_ARGS__)
+#else
+#define PRINT(...)
+#endif
+
+#define FORALL_DATA_OPTYPES(macro) \
+  macro(ompt_target_data_alloc) \
+  macro(ompt_target_data_transfer_from_device) \
+  macro(ompt_target_data_transfer_to_device) \
+  macro(ompt_target_data_delete) \
+  macro(ompt_target_data_associate) \
+  macro(ompt_target_data_disassociate) \
+  macro(ompt_target_data_transfer_to_device_async) \
+  macro(ompt_target_data_transfer_from_device_async) \
+  macro(ompt_target_data_alloc_async) \
+  macro(ompt_target_data_delete_async)
+
+
+//******************************************************************************
+// forward declarations
+//******************************************************************************
+
+// unused unless OMPT_ACTIVITY_DEBUG is non-zero
+static const char *
+data_optype_string
+(
+  int optype
+) __attribute__ ((unused));
 
 
 
@@ -43,6 +76,7 @@
 static void
 convert_unknown
 (
+ ompt_device_map_entry_t *device_entry,
  gpu_activity_t *ga,
  ompt_record_ompt_t *r,
  uint64_t *cid_ptr
@@ -69,6 +103,7 @@ convert_ptrop
 static void
 convert_target
 (
+ ompt_device_map_entry_t *device_entry,
  gpu_activity_t *ga,
  ompt_record_ompt_t *r,
  uint64_t *cid_ptr
@@ -167,9 +202,26 @@ convert_memcpy
 }
 
 
+static const char *
+data_optype_string
+(
+  int optype
+)
+{
+  #define RETURN_STRING(x) case x: return #x;
+  switch(optype) {
+    FORALL_DATA_OPTYPES(RETURN_STRING)
+  default:
+    return "ompt_target_data_unknown_op_type";
+  }
+  return 0;
+}
+
+
 static void
 convert_target_data_op
 (
+ ompt_device_map_entry_t *device_entry,
  gpu_activity_t *ga,
  ompt_record_ompt_t *r,
  uint64_t *cid_ptr
@@ -200,17 +252,22 @@ convert_target_data_op
     break;
 
   default:
-    convert_unknown(ga, r, cid_ptr);
+    convert_unknown(device_entry, ga, r, cid_ptr);
     break;
   }
 
-  gpu_interval_set(&ga->details.interval, r->time, d->end_time);
+  PRINT("ompt_activity_time: start =%16lx, end =%16lx optype = %s\n", r->time, d->end_time, data_optype_string(d->optype));
+
+  gpu_interval_set(&ga->details.interval,
+    ompt_activity_time(device_entry, r->time),
+    ompt_activity_time(device_entry, d->end_time));
 }
 
 
 void
 convert_target_submit
 (
+ ompt_device_map_entry_t *device_entry,
  gpu_activity_t *ga,
  ompt_record_ompt_t *r,
  uint64_t *cid_ptr
@@ -223,7 +280,11 @@ convert_target_submit
   ga->details.kernel.correlation_id = k->host_op_id;
   *cid_ptr = k->host_op_id;
 
-  gpu_interval_set(&ga->details.interval, r->time, k->end_time);
+  PRINT("ompt_activity_time: start =%16lx, end =%16lx optype = ompt_callback_target_submit_emi \n", r->time, k->end_time);
+
+  gpu_interval_set(&ga->details.interval,
+    ompt_activity_time(device_entry, r->time),
+    ompt_activity_time(device_entry, k->end_time));
 }
 
 
@@ -235,34 +296,57 @@ convert_target_submit
 void
 ompt_activity_translate
 (
+ ompt_device_map_entry_t *device_entry,
  gpu_activity_t *ga,
  ompt_record_ompt_t *r,
  uint64_t *cid_ptr
 )
 {
   memset(ga, 0, sizeof(gpu_activity_t));
+
+  #ifdef USE_ROCM
+    bool is_rocm_enabled = rocm_interface_is_enabled();
+  #else
+   bool is_rocm_enabled = false;
+  #endif
+
+  // if the rocprofiler-sdk interface is in use, it will cause problems
+  // if we watch data operations and kernel operations. they will also
+  // be reported to rocprofiler-sdk, causing us to double count operations
+  // and time. we must turn this interface off because of AMD's unfortunate
+  // design of rocprofiler-sdk.
+  //
+  // a second reason we need to skip observing data movement events with
+  // ompt when using rocprofiler-sdk is that rocprofiler-sdk 6.4 corrupts
+  // the timestamps for some OMPT data movement events. sigh.
   switch (r->type) {
 
   case ompt_callback_target:
   case ompt_callback_target_emi:
 
-    convert_target(ga,r, cid_ptr);
+    convert_target(device_entry, ga, r, cid_ptr);
     break;
 
   case ompt_callback_target_data_op:
   case ompt_callback_target_data_op_emi:
-
-    convert_target_data_op(ga,r, cid_ptr);
+    if (is_rocm_enabled) {
+      convert_unknown(device_entry, ga, r, cid_ptr);
+    } else {
+      convert_target_data_op(device_entry, ga, r, cid_ptr);
+    }
     break;
 
   case ompt_callback_target_submit:
   case ompt_callback_target_submit_emi:
-
-    convert_target_submit(ga,r, cid_ptr);
+    if (is_rocm_enabled) {
+      convert_unknown(device_entry, ga, r, cid_ptr);
+    } else {
+      convert_target_submit(device_entry, ga, r, cid_ptr);
+    }
     break;
 
   default:
-    convert_unknown(ga, r, cid_ptr);
+    convert_unknown(device_entry, ga, r, cid_ptr);
     break;
   }
 

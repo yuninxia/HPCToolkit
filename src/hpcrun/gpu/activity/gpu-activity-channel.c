@@ -14,9 +14,27 @@
 #include "../../../common/lean/collections/mpsc-queue-entry-data.h"
 
 #include "../../memory/hpcrun-malloc.h"
+#include "../../libmonitor/monitor.h"
 
 #include "gpu-activity.h"
 #include "gpu-activity-channel.h"
+
+
+//******************************************************************************
+// macros
+//******************************************************************************
+
+#define LOCAL_CHANNEL_ID_UNDEFINED -1
+
+
+
+//******************************************************************************
+// debugging
+//******************************************************************************
+
+#define DEBUG 0
+
+#include "../common/gpu-print.h"
 
 
 
@@ -64,7 +82,7 @@ typedef struct gpu_activity_channel_t {
 //******************************************************************************
 
 static atomic_uint_least32_t next_channel_id = ATOMIC_VAR_INIT(1u);
-static __thread uint32_t local_channel_id = 0;
+static __thread uint32_t local_channel_id = LOCAL_CHANNEL_ID_UNDEFINED;
 
 static ch_map_t channel_map = CONCURRENT_ID_MAP_INITIALIZER(hpcrun_malloc_safe);
 
@@ -109,11 +127,14 @@ gpu_activity_channel_generate_correlation_id
   }
 
   // Channel ID (Thread ID)
-  if (local_channel_id == 0) {
+  if (local_channel_id == LOCAL_CHANNEL_ID_UNDEFINED) {
     gpu_activity_channel_get_local();
   }
 
   uint64_t correlation_id = ((uint64_t) local_channel_id << 32) | local_thread_next_id;
+
+  PRINT("generate correlation id 0x%lx on thread %d\n", correlation_id, local_channel_id);
+
   return correlation_id;
 }
 
@@ -134,7 +155,7 @@ gpu_activity_channel_get_local
  void
 )
 {
-  if (local_channel_id == 0) {
+  if (local_channel_id == LOCAL_CHANNEL_ID_UNDEFINED) {
     local_channel_id = atomic_fetch_add(&next_channel_id, 1);
   }
 

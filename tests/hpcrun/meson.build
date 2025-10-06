@@ -2,15 +2,10 @@
 #
 # SPDX-License-Identifier: Apache-2.0
 
-_args = []
-if rocm_dep.found()
-  assert(not is_disabler(rocprofiler_path))
-  _args += ['--rocprofiler-path', rocprofiler_path]
-endif
 test(
   'Listing metrics does not error',
   hpcrun,
-  args: ['-L'] + _args,
+  args: ['-L'],
   suite: 'hpcrun',
   depends: hpcrun_test_depends,
 )
@@ -20,7 +15,7 @@ _env.prepend('PATH', fs.parent(hpcrun.full_path()))
 test(
   'Listing metrics as "hpcrun" does not error',
   find_program('env'),
-  args: ['hpcrun', '-L'] + _args,
+  args: ['hpcrun', '-L'],
   suite: 'hpcrun',
   depends: hpcrun_test_depends,
   env: _env,

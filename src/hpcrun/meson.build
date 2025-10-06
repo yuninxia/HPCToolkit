@@ -93,13 +93,14 @@ srcs = files(
   'gpu/activity/correlation/gpu-host-correlation-map.c',
   'gpu/activity/gpu-activity-channel.c',
   'gpu/activity/gpu-activity-process.c',
+  'gpu/activity/gpu-activity-send.c',
   'gpu/activity/gpu-activity.c',
   'gpu/activity/gpu-event-id-map.c',
-  'gpu/activity/gpu-op-ccts-map.c',
   'gpu/activity/gpu-op-placeholders.c',
   'gpu/api/common/gpu-binary.c',
   'gpu/api/common/gpu-cct.c',
   'gpu/api/common/gpu-channel-item-allocator.c',
+  'gpu/api/common/gpu-cid-map.c',
   'gpu/api/common/gpu-flush-alarm.c',
   'gpu/api/common/gpu-instrumentation.c',
   'gpu/api/common/gpu-kernel-table.c',
@@ -110,16 +111,13 @@ srcs = files(
   'gpu/blame-shifting/blame-kernel-map.c',
   'gpu/blame-shifting/blame-queue-map.c',
   'gpu/common/base-channel-set.c',
+  'gpu/common/gpu-counter-set.c',
   'gpu/common/gpu-monitoring.c',
   'gpu/gpu-application-thread-api.c',
   'gpu/gpu-metrics.c',
   'gpu/gpu-monitoring-thread-api.c',
   'gpu/gpu-splay-allocator.c',
-  'gpu/operation/gpu-operation-channel-set.c',
-  'gpu/operation/gpu-operation-channel.c',
-  'gpu/operation/gpu-operation-item-process.c',
-  'gpu/operation/gpu-operation-item.c',
-  'gpu/operation/gpu-operation-multiplexer.c',
+  'gpu/gpu-timestamp.c',
   'gpu/trace/gpu-context-id-map.c',
   'gpu/trace/gpu-stream-id-map.c',
   'gpu/trace/gpu-trace-api.c',
@@ -361,11 +359,6 @@ if papi_dep.found()
     srcs += files('sample-sources/papi.c')
   endif
 
-  srcs += files(
-    'gpu/api/opencl/intel/papi/papi-kernel-map.c',
-    'gpu/api/opencl/intel/papi/papi-metric-collector.c',
-  )
-
   if false  # get_option('papi_cupti')  # --enable-papi-c-cupti
     srcs += files('sample-sources/papi-c-cupti.c')
   endif
@@ -383,12 +376,13 @@ if cupti_dep.found()
     'gpu/api/nvidia/cuda-api.c',
     'gpu/api/nvidia/cuda-correlation-id-map.c',
     'gpu/api/nvidia/cuda-device-map.c',
+    'gpu/api/nvidia/cuda-function-id-map.c',
+    'gpu/api/nvidia/cuda-function-name-map.c',
     'gpu/api/nvidia/cuda-kernel-data-map.c',
     'gpu/api/nvidia/cupti-activity-translate.c',
     'gpu/api/nvidia/cupti-analysis.c',
     'gpu/api/nvidia/cupti-api.c',
     'gpu/api/nvidia/cupti-gpu-api.c',
-    'gpu/api/nvidia/gpu-function-id-map.c',
     'sample-sources/nvidia.c',
   )
 
@@ -410,29 +404,40 @@ endif
 
 if rocm_dep.found()
   srcs += files(
-    'foil/rocm-hip.c',
-    'foil/rocm-hsa.c',
-    'foil/rocprofiler.c',
-    'foil/roctracer.c',
-    'gpu/api/amd/hip-api.c',
-    'gpu/api/amd/rocprofiler-api.c',
-    'gpu/api/amd/roctracer-activity-translate.c',
-    'gpu/api/amd/roctracer-api.c',
-    'sample-sources/amd-rocprofiler.c',
-    'sample-sources/amd.c',
+    'foil/rocm.c',
+    'gpu/api/rocm/rocm-activity.c',
+    'gpu/api/rocm/rocm-agent-profile-map.c',
+    'gpu/api/rocm/rocm-agent.c',
+    'gpu/api/rocm/rocm-api.c',
+    'gpu/api/rocm/rocm-binaries.c',
+    'gpu/api/rocm/rocm-buffer.c',
+    'gpu/api/rocm/rocm-bufferset.c',
+    'gpu/api/rocm/rocm-callback.c',
+    'gpu/api/rocm/rocm-cid.c',
+    'gpu/api/rocm/rocm-codeobject-map.c',
+    'gpu/api/rocm/rocm-codeobject.c',
+    'gpu/api/rocm/rocm-configure.c',
+    'gpu/api/rocm/rocm-context.c',
+    'gpu/api/rocm/rocm-counter-set.c',
+    'gpu/api/rocm/rocm-counter-vector.c',
+    'gpu/api/rocm/rocm-counters.c',
+    'gpu/api/rocm/rocm-extid.c',
+    'gpu/api/rocm/rocm-interface.c',
+    'gpu/api/rocm/rocm-ompt.c',
+    'gpu/api/rocm/rocm-pauseresume.c',
+    'gpu/api/rocm/rocm-regex.c',
+    'gpu/api/rocm/rocm-sampling.c',
+    'gpu/api/rocm/rocm-symbol-map.c',
+    'gpu/api/rocm/rocm-threads.c',
+    'gpu/api/rocm/rocm-utils.c',
     'sample-sources/openmp-target.c',
+    'sample-sources/rocm-ss.c',
   )
 endif
 
 if opencl_dep.found()
   srcs += files(
     'foil/opencl.c',
-    'gpu/api/opencl/intel/maps/buffer-map.c',
-    'gpu/api/opencl/intel/maps/device-map.c',
-    'gpu/api/opencl/intel/maps/kernel-context-map.c',
-    'gpu/api/opencl/intel/maps/kernel-param-map.c',
-    'gpu/api/opencl/intel/maps/queue-context-map.c',
-    'gpu/api/opencl/intel/optimization-check.c',
     'gpu/api/opencl/opencl-activity-translate.c',
     'gpu/api/opencl/opencl-api.c',
     'gpu/api/opencl/opencl-context-map.c',
@@ -442,7 +447,6 @@ if opencl_dep.found()
     'gpu/api/opencl/opencl-queue-map.c',
     'gpu/blame-shifting/blame-kernel-cleanup-map.c',
     'gpu/blame-shifting/blame.c',
-    'gpu/blame-shifting/opencl/opencl-blame.c',
     'sample-sources/opencl.c',
   )
 endif
@@ -529,7 +533,8 @@ main_hpcrun_lib = shared_library(
     opencl_dep,
     papi_dep,
     perfmon_dep,
-    rocm_dep.partial_dependency(compile_args: true, includes: true),
+    rocprofiler_dep.partial_dependency(compile_args: true, includes: true),
+    #rocm_dep.partial_dependency(compile_args: true, includes: true),
     rt_dep,
     xed_dep,
     (python_inst.found() ? python_inst.dependency() : dependency('', required: false)).partial_dependency(
@@ -554,6 +559,7 @@ audit_lib = shared_library(
   'audit/auditor.c',
   'audit/dtv.c',
   'audit/private-ns.c',
+  'audit/symbol-bindings.c',
   'foil/workarounds/dl-iterate-phdr.c',
   'foil/workarounds/pthread-key.c',
   'audit/symbol-bindings.c',
@@ -753,14 +759,29 @@ preload_ga_lib = custom_target(
 hpcrun_sonames.set_quoted('HPCRUN_PRELOAD_GA_SO', preload_ga_lib_soname)
 libs += preload_ga_lib
 
-# Symbols needed for integration with ROCProfiler etc. are defined by this foil
+# Symbols needed for integration with rocprofiler-sdk are defined by this foil
 if rocm_dep.found()
+  preload_rocm_lib = shared_library(
+    'hpcrun_preload_rocm',
+    'foil/common-preload.c',
+    'foil/rocm-preload.c',
+    gnu_symbol_visibility: 'hidden',
+    implicit_include_directories: false,
+    dependencies: [
+      dl_dep,
+      rocm_dep.partial_dependency(compile_args: true, includes: true),
+      threads_dep,
+    ],
+    install: true,
+  )
+  hpcrun_sonames.set_quoted(
+    'HPCRUN_PRELOAD_ROCM_SO',
+    fs.name(preload_rocm_lib.full_path()),
+  )
+  libs += preload_rocm_lib
   dlopen_rocm_lib = shared_library(
     'hpcrun_dlopen_rocm',
-    'foil/rocm-hip-dlopen.c',
-    'foil/rocm-hsa-dlopen.c',
-    'foil/rocprofiler-dlopen.c',
-    'foil/roctracer-dlopen.c',
+    'foil/rocm-dlopen.c',
     gnu_symbol_visibility: 'hidden',
     implicit_include_directories: false,
     link_with: main_hpcrun_lib,

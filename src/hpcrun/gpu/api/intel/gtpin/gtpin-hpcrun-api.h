@@ -33,7 +33,6 @@
 #include "../../../activity/gpu-activity-channel.h"
 #include "../../common/gpu-binary.h"
 #include "../../../gpu-monitoring-thread-api.h"
-#include "../../../operation/gpu-operation-multiplexer.h"
 #include "../../../../utilities/hpcrun-nanotime.h"
 #include "../../../gpu-metrics.h"
 
@@ -66,12 +65,7 @@ typedef struct gtpin_hpcrun_api_t {
   void (*cstack_ptr_set)(s_element_ptr_t *, s_element_t *);
   gpu_activity_channel_t *(*gpu_activity_channel_get_local)(void);
 
-  void (*gpu_operation_multiplexer_push)
-  (gpu_activity_channel_t *,
-#ifdef __cplusplus
-  std::
-#endif
-  atomic_int *, gpu_activity_t *);
+  void (*gpu_activity_send)(uint64_t correlation_id, gpu_activity_t *);
 
   void (*hpcrun_thread_init_mem_pool_once)
   (int, cct_ctxt_t *, hpcrun_trace_type_t, bool);
@@ -81,8 +75,6 @@ typedef struct gtpin_hpcrun_api_t {
   void (*hpcrun_cct_walk_node_1st)(cct_node_t *, cct_op_t, cct_op_arg_t);
 
   uint64_t (*hpcrun_nanotime)(void);
-
-  cct_node_t *(*gpu_op_ccts_get)(gpu_op_ccts_t *, gpu_placeholder_type_t);
 
   int (*crypto_compute_hash_string)(const void *, size_t, char *, unsigned int);
 

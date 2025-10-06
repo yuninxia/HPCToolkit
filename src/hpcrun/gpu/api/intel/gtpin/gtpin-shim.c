@@ -40,7 +40,7 @@
 #include "../../../gpu-metrics.h"
 #include "../../../gpu-monitoring-thread-api.h"
 #include "../../../activity/gpu-op-placeholders.h"
-#include "../../../operation/gpu-operation-multiplexer.h"
+#include "../../../activity/gpu-activity-send.h"
 #include "../../../../messages/messages.h"
 #include "../../../../safe-sampling.h"
 #include "../../../../utilities/hpcrun-nanotime.h"
@@ -65,7 +65,7 @@ static gtpin_hpcrun_api_t gtpin_hpcrun_api = {
   .real_exit = my_exit,
   .binary_kind = gpu_binary_kind,
   .gpu_binary_path_generate = gpu_binary_path_generate,
-  .gpu_operation_multiplexer_push = gpu_operation_multiplexer_push,
+  .gpu_activity_send = gpu_activity_send,
   .fetch_block_metrics = fetch_block_metrics,
   .get_cct_node_id = get_cct_node_id,
   .cstack_ptr_set = cstack_ptr_set,
@@ -74,7 +74,6 @@ static gtpin_hpcrun_api_t gtpin_hpcrun_api = {
   .gpu_activity_channel_get_local = gpu_activity_channel_get_local,
   .attribute_instruction_metrics = attribute_instruction_metrics,
   .crypto_compute_hash_string = crypto_compute_hash_string,
-  .gpu_op_ccts_get = gpu_op_ccts_get,
   .gpu_binary_loadmap_insert = gpu_binary_loadmap_insert,
   .gpu_binary_store = gpu_binary_store,
   .hpcrun_cct_insert_ip_norm = hpcrun_cct_insert_ip_norm,
@@ -85,7 +84,7 @@ static gtpin_hpcrun_api_t gtpin_hpcrun_api = {
 static pthread_once_t once_control = PTHREAD_ONCE_INIT;
 
 static void (*gtpin_instrumentation_options_fn)(gpu_instrumentation_t *);
-static void (*gtpin_produce_runtime_callstack_fn)(gpu_op_ccts_t *);
+static void (*gtpin_produce_runtime_callstack_fn)(uint64_t correlation_id);
 static void (*gtpin_process_block_instructions_fn)(cct_node_t *);
 static uintptr_t (*gtpin_lookup_kernel_ip_fn)(const char *kernel_name);
 
@@ -144,11 +143,11 @@ gtpin_instrumentation_options
 void
 gtpin_produce_runtime_callstack
 (
-  gpu_op_ccts_t *op_ccts
+  uint64_t callpath_correlation_id
 )
 {
   pthread_once(&once_control, init);
-  gtpin_produce_runtime_callstack_fn(op_ccts);
+  gtpin_produce_runtime_callstack_fn(callpath_correlation_id);
 }
 
 

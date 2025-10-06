@@ -29,7 +29,7 @@
 #include "../common/uw_recipe_map.h"
 #include "../../messages/messages.h"
 
-#define UWRECIPE_DEBUG 1
+#define UWRECIPE_DEBUG 0
 
 unwind_interval*
 process_inst(xed_decoded_inst_t *xptr, interval_arg_t *iarg)
@@ -52,6 +52,8 @@ process_inst(xed_decoded_inst_t *xptr, interval_arg_t *iarg)
           bool found = uw_recipe_map_lookup(iarg->return_addr, NATIVE_UNWINDER, &unwr_info);
 #if UWRECIPE_DEBUG
           if (!found) hpcrun_terminate();
+#else
+          (void) found; // avoid unused warning
 #endif
           bitree_uwi_t *ui = unwr_info.btuwi;
 

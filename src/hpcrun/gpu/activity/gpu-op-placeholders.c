@@ -46,24 +46,6 @@ gpu_op_placeholder_flags_t gpu_op_placeholder_flags_all =
   SET_LOW_N_BITS(gpu_placeholder_type_count, gpu_op_placeholder_flags_t);
 
 
-//******************************************************************************
-// private operations
-//******************************************************************************
-
-// debugging support
-bool
-gpu_op_ccts_empty
-(
- gpu_op_ccts_t *gpu_op_ccts
-)
-{
-  int i;
-  for (i = 0; i < gpu_placeholder_type_count; i++) {
-    if (gpu_op_ccts->ccts[i] != NULL) return false;
-  }
-  return true;
-}
-
 
 
 //******************************************************************************
@@ -87,9 +69,14 @@ gpu_op_placeholder_ip
   CASE(memset)
   CASE(sync)
   CASE(trace)
+  CASE(scratch_alloc)
+  CASE(scratch_free)
+  CASE(scratch_async_reclaim)
+  CASE(scratch_illegal)
+  CASE(runtime)
+  CASE(kernel_anon)
+  CASE(paging)
   #undef CASE
-  case gpu_placeholder_type_count:
-    break;
   }
   assert(false && "Invalid GPU placeholder type!");
   hpcrun_terminate();
@@ -97,54 +84,19 @@ gpu_op_placeholder_ip
 
 
 cct_node_t *
-gpu_op_ccts_get
+get_placeholder_node
 (
- gpu_op_ccts_t *gpu_op_ccts,
- gpu_placeholder_type_t type
+  uint64_t correlation_id,
+  gpu_placeholder_type_t pht,
+  ip_normalized_t *kernel_ip
 )
 {
-  return gpu_op_ccts->ccts[type];
-}
+  gpu_cid_map_info_t *info = gpu_cid_map_find(correlation_id);
+  assert(info);
 
+  cct_node_t *ph = hpcrun_cct_insert_ip_norm(info->node, gpu_op_placeholder_ip(pht), true);
 
-void
-gpu_op_ccts_insert
-(
- cct_node_t *api_node,
- gpu_op_ccts_t *gpu_op_ccts,
- gpu_op_placeholder_flags_t flags
-)
-{
-  int i;
-  for (i = 0; i < gpu_placeholder_type_count; i++) {
-    cct_node_t *node = NULL;
+  *kernel_ip = info->kernel_ip;
 
-    if (flags & (1 << i)) {
-      node = hpcrun_cct_insert_ip_norm(api_node, gpu_op_placeholder_ip(i), true);
-    }
-
-    gpu_op_ccts->ccts[i] = node;
-  }
-}
-
-
-void
-gpu_op_placeholder_flags_set
-(
- gpu_op_placeholder_flags_t *flags,
- gpu_placeholder_type_t type
-)
-{
-  *flags |= (1 << type);
-}
-
-
-bool
-gpu_op_placeholder_flags_is_set
-(
- gpu_op_placeholder_flags_t flags,
- gpu_placeholder_type_t type
-)
-{
-  return (flags & (1 << type)) ? true : false;
+  return ph;
 }

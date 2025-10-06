@@ -54,15 +54,12 @@ SAMPLE_SOURCE_DECL_MACRO(nvidia_gpu)
 #endif
 
 #ifdef HPCRUN_SS_AMD
-SAMPLE_SOURCE_DECL_MACRO(amd_gpu)
+// this will eventually replace amd_gpu and amd_rocprof
+SAMPLE_SOURCE_DECL_MACRO(rocm_gpu)
 #endif
 
 #ifdef HPCRUN_SS_AMD
 SAMPLE_SOURCE_DECL_MACRO(openmp_gpu)
-#endif
-
-#ifdef HPCRUN_SS_AMD
-SAMPLE_SOURCE_DECL_MACRO(amd_rocprof)
 #endif
 
 #ifdef HPCRUN_SS_LEVEL0

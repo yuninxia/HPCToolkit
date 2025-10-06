@@ -12,28 +12,26 @@ _tstexe_vecadd_hip = custom_target(
   input: hip.process(files('vecadd.hip.cpp')),
 )
 
-_preargs = ['--rocprofiler-path', rocprofiler_path]
-
 _tst = find_program(files('tst-amd-vecadd-produces-profiles'))
-foreach event : ['gpu=amd', 'gpu=rocm']
+foreach event : ['gpu=rocm']
   test(
     f'Measurement of tstexe-vecadd-hip produces profiles (@event@)',
     _tst,
-    args: [hpctesttool, hpcrun, _tstexe_vecadd_hip, event, ''] + _preargs,
+    args: [hpctesttool, hpcrun, _tstexe_vecadd_hip, event, ''],
     suite: ['hpcrun', 'rocm'],
     depends: hpcrun_test_depends,
   )
   test(
     f'Measurement of tstexe-vecadd-hip with tracing produces profiles (@event@)',
     _tst,
-    args: [hpctesttool, hpcrun, _tstexe_vecadd_hip, event, '-t'] + _preargs,
+    args: [hpctesttool, hpcrun, _tstexe_vecadd_hip, event, '-t'],
     suite: ['hpcrun', 'rocm'],
     depends: hpcrun_test_depends,
   )
   test(
     f'Measurement of tstexe-vecadd-hip with boosted tracing produces profiles (@event@)',
     _tst,
-    args: [hpctesttool, hpcrun, _tstexe_vecadd_hip, event, '-tt'] + _preargs,
+    args: [hpctesttool, hpcrun, _tstexe_vecadd_hip, event, '-tt'],
     suite: ['hpcrun', 'rocm'],
     depends: hpcrun_test_depends,
   )

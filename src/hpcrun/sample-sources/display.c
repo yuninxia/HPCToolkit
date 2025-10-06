@@ -40,6 +40,18 @@ static const char *newline = "\n";
 // Local methods
 //******************************************************************************
 
+static void
+output_name_desc
+(
+  FILE *output,
+  const char *name,
+  const char *desc
+)
+{
+  fprintf(output, "%-*s %s\n", MAX_EVENT_NAME, name, desc);
+}
+
+
 static
 char *
 sanitize
@@ -51,7 +63,7 @@ sanitize
         char *result = out;
         while (*in != 0) {
           // filter out unprintable characters
-          if (isprint(*in)) *out++ = *in++;
+          if (isprint(*in) || *in == '\n') *out++ = *in++;
           else in++;
         }
         *out = 0;
@@ -91,7 +103,7 @@ printw(FILE *output, const char *name, const char *desc_unsanitized)
             name_ptr = name;
           }
         }
-        fprintf(output, "%-*s %s\n", MAX_EVENT_NAME, name_ptr, sdesc);
+        output_name_desc(output,  name_ptr, sdesc);
       }
       free(line);
       free(len);
@@ -108,34 +120,56 @@ printw(FILE *output, const char *name, const char *desc_unsanitized)
 //******************************************************************************
 
 void
-display_line_single(FILE *output)
+display_line_single
+(
+  FILE *output
+)
 {
   fprintf(output, "%s", line_single);
 }
 
+
 void
-display_line_double(FILE *output)
+display_line_double
+(
+  FILE *output
+)
 {
   fprintf(output, "%s", line_double);
 }
 
+
 void
-display_header(FILE *output, const char *title)
+display_header
+(
+  FILE *output,
+  const char *title
+)
 {
   display_line_double(output);
   fprintf(output, "%s\n", title);
   display_line_double(output);
 }
 
+
 void
-display_header_event(FILE *output)
+display_header_event
+(
+  FILE *output
+)
 {
-  fprintf(output, "Name\t\tDescription\n");
+  output_name_desc(output, "Name", "Description");
   display_line_single(output);
 }
 
+
 void
-display_event_info(FILE *output, const char *event, const char *desc)
+display_event_info
+(
+  FILE *output,
+  const char *event,
+  const char *desc
+)
 {
   printw(output, event, desc);
   fprintf(output, "%s", newline);

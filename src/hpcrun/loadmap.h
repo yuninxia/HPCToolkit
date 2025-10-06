@@ -7,6 +7,10 @@
 #ifndef LOADMAP_H
 #define LOADMAP_H
 
+#ifndef __USE_GNU
+#define __USE_GNU 0
+#endif
+
 #include <stdio.h>
 
 /* an "loadmap" is an interval of time during which no two dynamic
@@ -18,6 +22,8 @@
 */
 
 // Local includes
+
+
 
 #include "../common/lean/hpcio.h"
 #include "../common/lean/hpcfmt.h"
@@ -31,7 +37,12 @@
 
 #include "fnbounds/fnbounds.h"
 
+#ifndef __USE_GNU
+#define __USE_GNU 1
+#endif
 #include <link.h>
+
+
 
 //***************************************************************************
 // macros

@@ -5,7 +5,7 @@
 // -*-Mode: C++;-*- // technically C99
 
 //*****************************************************************************
-// local includes
+// hpctoolkit includes
 //*****************************************************************************
 
 #define _GNU_SOURCE
@@ -15,15 +15,16 @@
 #include "level0-binary.h"
 #include "level0-api.h"
 
+#include "../../../activity/gpu-activity.h"
 #include "../../../activity/gpu-activity-channel.h"
 #include "../../../activity/gpu-activity-process.h"
+#include "../../../activity/gpu-activity-send.h"
 #include "../../../activity/correlation/gpu-correlation-channel.h"
 #include "../../../api/nvidia/cuda-correlation-id-map.h"
 #include "../../../activity/correlation/gpu-host-correlation-map.h"
 #include "../../../gpu-monitoring-thread-api.h"
+#include "../../common/gpu-cid-map.h"
 #include "../../../gpu-application-thread-api.h"
-#include "../../../activity/gpu-op-placeholders.h"
-#include "../../../operation/gpu-operation-multiplexer.h"
 #include "../../common/gpu-kernel-table.h"
 
 #include "../../common/gpu-cct.h"
@@ -44,10 +45,14 @@
 
 
 
+//*****************************************************************************
+// debugging
+//*****************************************************************************
+
+#define DEBUG 0
 #include "../../../common/gpu-print.h"
 
-#include <sched.h>
-#include <time.h>
+
 
 //*****************************************************************************
 // local variables
@@ -69,12 +74,18 @@ level0_kernel_translate
   uint64_t end
 )
 {
-  PRINT("level0_kernel_translate: submit_time %llu, start %llu, end %llu\n", c->submit_time, start, end);
+  PRINT("level0_kernel_translate: submit_time %lu, start %lu, end %lu --> tstart %lu tend %lu\n",
+    c->submit_time, start, end,
+    level0_timestamp_to_realtime(c->submit_time, start),
+    level0_timestamp_to_realtime(c->submit_time, end));
+
   ga->kind = GPU_ACTIVITY_KERNEL;
   ga->details.kernel.kernel_first_pc = ip_normalized_NULL;
-  ga->details.kernel.correlation_id = (uint64_t)(c->event);
+  ga->details.kernel.correlation_id = c->correlation_id;
   ga->details.kernel.submit_time = c->submit_time;
-  gpu_interval_set(&ga->details.interval, start, end);
+  gpu_interval_set(&ga->details.interval,
+    level0_timestamp_to_realtime(c->submit_time, start),
+    level0_timestamp_to_realtime(c->submit_time, end));
 }
 
 static void
@@ -86,14 +97,17 @@ level0_memcpy_translate
   uint64_t end
 )
 {
-  PRINT("level0_memcpy_translate: src_type %d, dst_type %d, size %u\n",
+  PRINT("level0_memcpy_translate: src_type %d, dst_type %d, size %lu start %lu end %lu --> tstart %lu tend %lu\n",
     c->details.memcpy.src_type,
     c->details.memcpy.dst_type,
-    c->details.memcpy.copy_size);
+    c->details.memcpy.copy_size,
+    start, end,
+    level0_timestamp_to_realtime(c->submit_time, start),
+    level0_timestamp_to_realtime(c->submit_time, end));
 
   ga->kind = GPU_ACTIVITY_MEMCPY;
   ga->details.memcpy.bytes = c->details.memcpy.copy_size;
-  ga->details.memcpy.correlation_id = (uint64_t)(c->event);
+  ga->details.memcpy.correlation_id = c->correlation_id;
   ga->details.memcpy.submit_time = c->submit_time;
 
   // Switch on memory src and dst types
@@ -104,6 +118,7 @@ level0_memcpy_translate
         case ZE_MEMORY_TYPE_HOST:
           ga->details.memcpy.copyKind = GPU_MEMCPY_H2H;
           break;
+        case ZE_MEMORY_TYPE_UNKNOWN:
         case ZE_MEMORY_TYPE_DEVICE:
           ga->details.memcpy.copyKind = GPU_MEMCPY_H2D;
           break;
@@ -117,6 +132,7 @@ level0_memcpy_translate
     }
     case ZE_MEMORY_TYPE_DEVICE: {
       switch (c->details.memcpy.dst_type) {
+        case ZE_MEMORY_TYPE_UNKNOWN:
         case ZE_MEMORY_TYPE_HOST:
           ga->details.memcpy.copyKind = GPU_MEMCPY_D2H;
           break;
@@ -133,6 +149,7 @@ level0_memcpy_translate
     }
     case ZE_MEMORY_TYPE_SHARED: {
       switch (c->details.memcpy.dst_type) {
+        case ZE_MEMORY_TYPE_UNKNOWN:
         case ZE_MEMORY_TYPE_HOST:
           ga->details.memcpy.copyKind = GPU_MEMCPY_A2H;
           break;
@@ -147,10 +164,31 @@ level0_memcpy_translate
       }
       break;
     }
+    case ZE_MEMORY_TYPE_UNKNOWN: {
+      switch (c->details.memcpy.dst_type) {
+        case ZE_MEMORY_TYPE_HOST:
+          ga->details.memcpy.copyKind = GPU_MEMCPY_D2H;
+          break;
+        case ZE_MEMORY_TYPE_DEVICE:
+          ga->details.memcpy.copyKind = GPU_MEMCPY_H2D;
+          break;
+        case ZE_MEMORY_TYPE_SHARED:
+          ga->details.memcpy.copyKind = GPU_MEMCPY_D2A;
+          break;
+        case ZE_MEMORY_TYPE_UNKNOWN:
+          ga->details.memcpy.copyKind = GPU_MEMCPY_UNK;
+          break;
+        default:
+          break;
+      }
+      break;
+    }
     default:
       break;
   }
-  gpu_interval_set(&ga->details.interval, start, end);
+  gpu_interval_set(&ga->details.interval,
+    level0_timestamp_to_realtime(c->submit_time, start),
+    level0_timestamp_to_realtime(c->submit_time, end));
 }
 
 
@@ -170,48 +208,18 @@ level0_command_begin
   atomic_fetch_add(&level0_self_pending_operations, 1);
   command_node->pending_operations = &level0_self_pending_operations;
 
-  // Set up placeholder type
-  gpu_op_placeholder_flags_t gpu_op_placeholder_flags = 0;
-  gpu_placeholder_type_t gpu_placeholder_node = gpu_placeholder_type_count;
-  switch (command_node->type) {
-    case LEVEL0_KERNEL: {
-      gpu_op_placeholder_flags_set(&gpu_op_placeholder_flags, gpu_placeholder_type_kernel);
-      gpu_op_placeholder_flags_set(&gpu_op_placeholder_flags, gpu_placeholder_type_trace);
-      gpu_placeholder_node = gpu_placeholder_type_kernel;
-      break;
-    }
-    case LEVEL0_MEMCPY: {
-      ze_memory_type_t src_type = command_node->details.memcpy.src_type;
-      ze_memory_type_t dst_type = command_node->details.memcpy.dst_type;
+  uint64_t correlation_id = gpu_activity_channel_generate_correlation_id();
+  command_node->correlation_id = correlation_id;
 
-      // use src and dst types to distinguish copyin and copyout
-      if (src_type == ZE_MEMORY_TYPE_DEVICE && dst_type != ZE_MEMORY_TYPE_DEVICE) {
-        gpu_op_placeholder_flags_set(&gpu_op_placeholder_flags, gpu_placeholder_type_copyout);
-        gpu_placeholder_node = gpu_placeholder_type_copyout;
-      } else if (src_type != ZE_MEMORY_TYPE_DEVICE && dst_type == ZE_MEMORY_TYPE_DEVICE) {
-        gpu_op_placeholder_flags_set(&gpu_op_placeholder_flags, gpu_placeholder_type_copyin);
-        gpu_placeholder_node = gpu_placeholder_type_copyin;
-      } else {
-        gpu_op_placeholder_flags_set(&gpu_op_placeholder_flags, gpu_placeholder_type_copy);
-        gpu_placeholder_node = gpu_placeholder_type_copy;
-      }
-      break;
-    }
-    default:
-      // FIXME: need to set gpu_placeholder_node to none, but there is not a none value
-      break;
-  }
-
-  uint64_t correlation_id = (uint64_t)(command_node->event);
   cct_node_t *api_node =
     gpu_application_thread_correlation_callback(correlation_id);
 
-  gpu_op_ccts_t gpu_op_ccts;
   hpcrun_safe_enter();
-  gpu_op_ccts_insert(api_node, &gpu_op_ccts, gpu_op_placeholder_flags);
+
+  ip_normalized_t kernel_ip = ip_normalized_NULL;
 
   if (command_node->type == LEVEL0_KERNEL) {
-    ip_normalized_t kernel_ip;
+
     ze_kernel_handle_t kernel = command_node->details.kernel.kernel;
     size_t name_size = 0;
     f_zeKernelGetName(kernel, &name_size, NULL, command_node->dispatch);
@@ -226,18 +234,12 @@ level0_command_begin
       kernel_ip = gpu_kernel_table_get(kernel_name, LOGICAL_MANGLING_CPP);
     }
     free(kernel_name);
-
-    cct_node_t *kernel_ph = gpu_op_ccts_get(&gpu_op_ccts, gpu_placeholder_type_kernel);
-    command_node->kernel =
-    gpu_cct_insert_always(kernel_ph, kernel_ip);
-
-    cct_node_t *trace_ph = gpu_op_ccts_get(&gpu_op_ccts, gpu_placeholder_type_trace);
-    gpu_cct_insert(trace_ph, kernel_ip);
+    command_node->kernel = api_node;
   }
-
-  command_node->cct_node = gpu_op_ccts_get(&gpu_op_ccts, gpu_placeholder_node);
-
   hpcrun_safe_exit();
+
+  command_node->cct_node = api_node;
+  gpu_cid_map_insert(correlation_id, api_node, kernel_ip);
 
   gpu_application_thread_process_activities();
 
@@ -247,7 +249,7 @@ level0_command_begin
 #ifdef ENABLE_GTPIN
   if (command_node->type == LEVEL0_KERNEL && level0_gtpin_enabled()) {
     // Callback to produce gtpin correlation
-    gtpin_produce_runtime_callstack(&gpu_op_ccts);
+    gtpin_produce_runtime_callstack(correlation_id);
   }
 #endif
 }
@@ -280,12 +282,8 @@ level0_command_end
 
   cstack_ptr_set(&(ga->next), 0);
 
-  // Send this activity record to the hpcrun monitoring thread
-  gpu_operation_multiplexer_push(
-    command_node->initiator_channel,
-    command_node->pending_operations,
-    ga
-  );
+  atomic_fetch_add(&level0_self_pending_operations, -1);
+  gpu_activity_send(command_node->correlation_id, ga);
 }
 
 void
@@ -294,18 +292,7 @@ level0_flush_and_wait
   void
 )
 {
-  atomic_bool wait;
-  atomic_store(&wait, true);
-  gpu_activity_t gpu_activity;
-  memset(&gpu_activity, 0, sizeof(gpu_activity_t));
 
-  gpu_activity.kind = GPU_ACTIVITY_FLUSH;
-  gpu_activity.details.flush.wait = &wait;
-  gpu_operation_multiplexer_push(gpu_activity_channel_get_local(), NULL, &gpu_activity);
-
-  // Wait until operations are drained
-  // Operation channel is FIFO
-  while (atomic_load(&wait)) {}
 }
 
 void

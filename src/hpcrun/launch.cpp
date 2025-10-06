@@ -161,11 +161,6 @@ R"==(
                        procedures only instead of full calling contexts.
                        Equivalent to -a flat.
 
-  --rocprofiler-path   Path to the ROCProfiler installation. Usually, this is /opt/rocm
-                       or a versioned variant e.g. /opt/rocm-5.4.3. This should match the
-                       ROCm installation your application is running with.
-                       Defaults to the ROCM_PATH environment variable.
-
 Options to consider only when hpcrun causes an application to fail:
 
   --disable-auditor    Typically, hpcrun uses LD_AUDIT to track dynamic library
@@ -286,8 +281,6 @@ int main(int argc, char* argv[]) {
 
   std::deque<fs::path> audit_list;
   std::deque<fs::path> preload_list;
-  fs::path rocm_envs_rocprofiler_path;
-  if (auto rp = fetchenv("ROCM_PATH")) rocm_envs_rocprofiler_path = *rp;
   enum class NsDefault { single, multiple, single_if_auditing } namespace_default = NsDefault::multiple;
   bool namespace_multiple = false;
   bool namespace_single = false;
@@ -311,6 +304,16 @@ int main(int argc, char* argv[]) {
       --argc, ++argv;  // shift
       return value;
     };
+
+    // AMD GPUs need these settings to work with CPU timer interrupts
+    // These settings if you even if you don't build with ROCm support
+    // but you try to measure GPU-accelerated programs that offload onto
+    // AMD GPUs. You might inadvertently fire up ROCm if there is an AMD
+    // GPU on your system even if you are trying to run an OpenCL program
+    // on another kind of GPU. Set these variables to guard against
+    // failure if you happen to use AMD GPUs without gpu=rocm.
+    env["HSA_ENABLE_INTERRUPTS"] = "0";
+    env["ROCP_HSA_INTERCEPT"] = "1";
 
     if (strmatch(arg, {"-md", "--monitor-debug"})) {
       env["MONITOR_DEBUG"] = "1";
@@ -352,23 +355,33 @@ int main(int argc, char* argv[]) {
         preload_list.emplace_back(HPCRUN_PRELOAD_LIBC_ALLOC_SO);
       } else if (strstartswith(ev, "PTHREAD_WAIT")) {
         preload_list.emplace_back(HPCRUN_PRELOAD_LIBC_SYNC_SO);
-      } else if (ev == "gpu=amd" || (ev == "gpu=rocm") || strstartswith(ev, "rocprof::")) {
+      } else if (strstartswith(ev, "gpu=rocm") || strstartswith(ev, "gpu=amd") || strstartswith(ev, "rocm::")) {
 #ifdef USE_ROCM
-        if (ev == "gpu=rocm") { // quietly support the new syntax
-          ev.replace(4,4,"amd"); // transform it into what the software still expects
+        if (strstartswith(ev, "gpu=amd")) {
+          ev.replace(4,3,"rocm");
+          std::cerr <<
+           "hpcrun: NOTE: 'gpu=amd' is deprecated and will be removed; "
+           "'gpu=rocm' should be used instead\n";
         }
-        env["HSA_ENABLE_INTERRUPTS"] = "0";
-        env["ROCP_TOOL_LIB"] = HPCRUN_DLOPEN_ROCM_SO;
-        env["ROCP_HSA_INTERCEPT"] = "1";
-        env["AMD_DIRECT_DISPATCH"] = "0";
+        preload_list.emplace_back(HPCRUN_PRELOAD_ROCM_SO);
+        // FIXME:
+        //    The following setting is currently necessary for rocprofiler-sdk.
+        //    Otherwise, an api callback may occur on a runtime thread where
+        //    call stack unwinding when launching GPU operations is useless
+        //    (and fatal for HPCToolkit).
+        env["AMD_DIRECT_DISPATCH"] = "1";
+        env["ROCPROFILER_PC_SAMPLING_BETA_ENABLED"] = "1";
 #else
         std::cerr << "hpcrun: HPCToolkit was not compiled with AMD ROCm support enabled" << diemsg;
         return 1;
 #endif
-      } else if (strstartswith(ev, "gpu=nvidia") || strstartswith(ev, "gpu=cuda")) {
+      } else if (strstartswith(ev, "gpu=cuda") || strstartswith(ev, "gpu=nvidia")) {
 #ifdef OPT_HAVE_CUDA
-        if (strstartswith(ev, "gpu=cuda")) {  // quietly support the new syntax
-          ev.replace(4,4,"nvidia"); // transform it into what the software still expects
+        if (strstartswith(ev, "gpu=nvidia")) {
+          ev.replace(4,6,"cuda");
+          std::cerr <<
+           "hpcrun: NOTE: 'gpu=nvidia' is deprecated and will be removed; "
+           "'gpu=cuda' should be used instead\n";
         }
 #else
         std::cerr << "hpcrun: HPCToolkit was not compiled with NVIDIA CUDA support enabled" << diemsg;
@@ -407,9 +420,6 @@ int main(int argc, char* argv[]) {
       }
       env["HPCRUN_EVENT_LIST"] += std::string(env["HPCRUN_EVENT_LIST"].empty() ? "" : " ") + ev;
     } else if (strmatch(arg, {"-L", "-l", "--list-events"})) {
-#ifdef USE_ROCM
-      env["ROCP_TOOL_LIB"] = HPCRUN_DLOPEN_ROCM_SO;
-#endif
       env["HPCRUN_EVENT_LIST"] = "LIST";
     } else if (strmatch(arg, {"-ds", "--delay-sampling"})) {
       env["HPCRUN_DELAY_SAMPLING"] = "1";
@@ -434,8 +444,6 @@ int main(int argc, char* argv[]) {
       env["HPCRUN_OUT_PATH"] = popvalue();
     } else if (strmatch(arg, {"-olr", "--only-local-ranks"})) {
       env["HPCRUN_LOCAL_RANKS"] = popvalue();
-    } else if (strmatch(arg, {"--rocprofiler-path"})) {
-      rocm_envs_rocprofiler_path = popvalue();
     } else if (strmatch(arg, {"--disable-gprof"})) {
       preload_list.emplace_back(HPCRUN_PRELOAD_GPROF_SO);
     } else if (strmatch(arg, {"--omp-serial-only"})) {
@@ -509,42 +517,6 @@ int main(int argc, char* argv[]) {
       preload_list.emplace_front(HPCRUN_PRELOAD_LIBDL_DLMOPEN_SO);
     }
   }
-
-  // Set up the environment needed to monitor ROCm applications. If we can't find a file we
-  // leave the variable blank and checks in hpcrun will detect and report the error.
-#ifdef USE_ROCM
-  env["ROCP_METRICS"] = "";
-  env["HSA_TOOLS_LIB"] = "";
-
-  if (!rocm_envs_rocprofiler_path.empty()) {
-    for (const auto& trialsubpath: {
-      "metrics.xml",
-      "lib/rocprofiler/metrics.xml",
-      "lib/metrics.xml",
-      "rocprofiler/lib/metrics.xml",
-    }) {
-      fs::path trial = rocm_envs_rocprofiler_path / trialsubpath;
-      if (fs::is_regular_file(fs::status(trial))) {
-        env["ROCP_METRICS"] = trial.native();
-        break;
-      }
-    }
-
-    for (const auto& trialsubpath: {
-      "librocprofiler64.so.1",
-      "librocprofiler64.so.2",
-      "lib/librocprofiler64.so.1",
-      "lib/librocprofiler64.so.2",
-      "rocprofiler/lib/librocprofiler64.so.1",
-    }) {
-      fs::path trial = rocm_envs_rocprofiler_path / trialsubpath;
-      if (fs::is_regular_file(fs::status(trial))) {
-        env["HSA_TOOLS_LIB"] = trial.native();
-        break;
-      }
-    }
-  }
-#endif
 
   // FIXME: The original hpcrun launch script checked here that the command to execute was in fact
   // a binary of the correct bit-ness and was dynamically linked. This sanity check is reasonable

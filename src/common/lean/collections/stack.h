@@ -32,70 +32,71 @@
 
 #endif
 
+#if defined(STACK_DEFINE) || defined(STACK_DEFINE_INPLACE)
+
+#ifdef STACK_DEFINE_INPLACE
+#define STACK_FN_MOD static
+#define STATIC_FN_ATTR __attribute__((unused))
+#else
+#define STACK_FN_MOD
+#endif
+
 
 #if defined(STACK_DECLARE)
 
 void
-STACK_MEMBER(init_stack)
+STACK_FN_MOD STACK_MEMBER(init_stack)
 (
  STACK_TYPE *stack
-);
+) STATIC_FN_ATTR;
 
 
 void
-STACK_MEMBER(init_entry)
+STACK_FN_MOD STACK_MEMBER(init_entry)
 (
  STACK_ENTRY_TYPE *entry
-);
+) STATIC_FN_ATTR;
 
 
 void
-STACK_MEMBER(push)
+STACK_FN_MOD STACK_MEMBER(push)
 (
  STACK_TYPE *stack,
  STACK_ENTRY_TYPE *entry
-);
+) STATIC_FN_ATTR;
 
 
-STACK_ENTRY_TYPE *
+STACK_FN_MOD STACK_ENTRY_TYPE *
 STACK_MEMBER(pop)
 (
  STACK_TYPE *stack
-);
+) STATIC_FN_ATTR;
 
 
-STACK_ENTRY_TYPE *
+STACK_FN_MOD STACK_ENTRY_TYPE *
 STACK_MEMBER(top)
 (
  STACK_TYPE *stack
-);
+) STATIC_FN_ATTR;
 
 
-bool
+STACK_FN_MOD bool
 STACK_MEMBER(empty)
 (
  const STACK_TYPE *stack
-);
+) STATIC_FN_ATTR;
 
 
-void
+STACK_FN_MOD void
 STACK_MEMBER(for_each_entry)
 (
  STACK_TYPE *stack,
  void (*fn)(STACK_ENTRY_TYPE *, void *),
  void *arg
-);
+) STATIC_FN_ATTR;
 
 #endif
 
-
-#if defined(STACK_DEFINE) || defined(STACK_DEFINE_INPLACE)
-
-#ifdef STACK_DEFINE_INPLACE
-#define STACK_FN_MOD static
-#else
-#define STACK_FN_MOD
-#endif
 
 
 STACK_FN_MOD void

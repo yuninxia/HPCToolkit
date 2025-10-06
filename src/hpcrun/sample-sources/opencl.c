@@ -11,6 +11,7 @@
 #define _GNU_SOURCE
 
 #include "common.h"
+#include "display.h"
 
 #include "../libmonitor/monitor.h"
 #include <pthread.h>
@@ -22,7 +23,7 @@
 #include "../gpu/trace/gpu-trace-api.h"
 #include "../gpu/api/opencl/opencl-api.h"
 #include "../gpu/blame-shifting/blame.h"
-#include "../gpu/api/opencl/intel/papi/papi-metric-collector.h"
+// #include "../gpu/api/opencl/intel/papi/papi-metric-collector.h"
 #include "../thread_data.h"
 #include "../trace.h"
 
@@ -41,12 +42,6 @@
 #define OPENCL_OPTION "gpu=opencl"
 #define INTEL_OPTIMIZATION_CHECK "intel_opt_check"
 #define ENABLE_OPENCL_BLAME_SHIFTING "opencl-blame"
-#define DEFAULT_INSTRUMENTATION "gpu=opencl,inst"
-#define INSTRUMENTATION_PREFIX "gpu=opencl,inst="
-#define EXECUTION_COUNT "count"
-#define LATENCY "latency"
-#define SIMD "simd"
-#define INTEL_OPTIMIZATION_CHECK "intel_opt_check"
 #define ENABLE_INTEL_GPU_UTILIZATION "intel_gpu_util"
 #define NO_THRESHOLD  1L
 
@@ -124,6 +119,7 @@ static bool
 METHOD_FN(supports_event, const char *ev_str)
 {
 #ifdef ENABLE_OPENCL
+  // GTPin is not supported by OpenCL anymore
   return hpcrun_ev_is(ev_str, OPENCL_OPTION);
 #else
   return false;
@@ -175,17 +171,14 @@ static void
 METHOD_FN(display_events)
 {
 #ifdef ENABLE_OPENCL
-  printf("===========================================================================\n");
-  printf("Available events for monitoring GPU operations atop OpenCL\n");
-  printf("===========================================================================\n");
-  printf("Name\t\tDescription\n");
-  printf("---------------------------------------------------------------------------\n");
-  printf("gpu=opencl\tOperation-level monitoring for OpenCL on a CPU or GPU.\n"
-         "\t\tCollect timing information for GPU kernel invocations,\n"
-         "\t\tmemory copies, etc.\n"
-         "\n");
-#else
-  return;
+  display_header(stdout, "Available events for monitoring GPU operations atop OpenCL");
+
+  display_header_event(stdout);
+
+  display_event_info(stdout, "gpu=opencl",
+    "Operation-level monitoring for OpenCL on a CPU or GPU. "
+    "Collect timing information for GPU kernel invocations, "
+    "tmemory copies, etc..");
 #endif
 }
 

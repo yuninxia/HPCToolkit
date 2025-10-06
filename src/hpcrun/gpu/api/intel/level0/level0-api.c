@@ -37,10 +37,11 @@
 #include "../../../../memory/hpcrun-malloc.h"
 #include "../../../gpu-monitoring-thread-api.h"
 #include "../../../gpu-application-thread-api.h"
-#include "../../../operation/gpu-operation-multiplexer.h"
+#include "../../../trace/gpu-trace-api.h"
 #include "../../common/gpu-kernel-table.h"
 #include "../../../../foil/level0.h"
 #include "../../../../libmonitor/monitor.h"
+#include "../../../../utilities/hpcrun-nanotime.h"
 
 #ifdef ENABLE_GTPIN
 #include "../gtpin/gtpin-instrumentation.h"
@@ -51,14 +52,23 @@
 //******************************************************************************
 // macros
 //******************************************************************************
-#define DEBUG 0
-#include "../../../common/gpu-print.h"
 
 #define LATE_BEGIN 0
 
 #define GPU_FLUSH_ALARM_ENABLED 1
 #define GPU_FLUSH_ALARM_TEST_ENABLED 0
 #include "../../common/gpu-flush-alarm.h"
+
+
+
+//******************************************************************************
+// debugging support
+//******************************************************************************
+
+#define DEBUG 0
+#include "../../../common/gpu-print.h"
+
+
 
 //******************************************************************************
 // local variables
@@ -68,11 +78,34 @@
 ze_driver_handle_t hDriver = NULL;
 ze_device_handle_t hDevice = NULL;
 
+uint64_t clock_offset_ns_from_level0 = 0;
+
 static bool gtpin_instrumentation = false;
 
 //******************************************************************************
 // private operations
 //******************************************************************************
+
+static void
+compute_device_time_offset
+(
+  ze_device_handle_t hDevice,
+  const struct hpcrun_foil_appdispatch_level0 *dispatch
+)
+{
+  uint64_t hostTimestamp, deviceTimestamp;
+  f_zeDeviceGetGlobalTimestamps(hDevice, &hostTimestamp, &deviceTimestamp, dispatch);
+
+  // using the host timestamp from level0 didn't produce a useful result.
+  // try setting hostTimestamp from hpcrun's time on host instead
+  hostTimestamp = hpcrun_nanotime();
+
+  clock_offset_ns_from_level0 = hostTimestamp - deviceTimestamp;
+
+  PRINT("level0: host time %ld device time %ld offset %ld\n",
+    hostTimestamp, deviceTimestamp, clock_offset_ns_from_level0);
+}
+
 
 static void
 level0_check_result
@@ -130,10 +163,12 @@ get_gpu_driver_and_device
     }
   }
 
-  if(NULL == hDevice) {
+  if (NULL == hDevice) {
     EEMSG("hpcrun: Level Zero failed: no GPU device found");
     exit(1);
   }
+
+  compute_device_time_offset(hDevice, dispatch);
 }
 
 
@@ -526,19 +561,31 @@ hpcrun_zeInit
   const struct hpcrun_foil_appdispatch_level0* dispatch
 )
 {
+  PRINT("hpcrun_zeInit: enter\n");
+
   // programs can invoke zeInit in a static constructor before the measurement
   // subsystem has been initialized. force hpcrun initialization here if it
   // hasn't already been initialized
   monitor_initialize(); // early init necessary to set up libunwind
   hpcrun_prepare_measurement_subsystem(false); // late init for level0
 
+  // ignore any threads created by Level Zero's zeInit
+  monitor_disable_new_threads();
+
   // Entry action
   // Execute the real level0 API
   ze_result_t ret = f_zeInit(flag, dispatch);
+
+  // resume tracking thread creation
+  monitor_enable_new_threads();
+
   level0_check_result(ret, __LINE__);
 
   // Exit action
   get_gpu_driver_and_device(dispatch);
+
+  PRINT("hpcrun_zeInit: exit\n");
+
   return ret;
 }
 
@@ -556,7 +603,8 @@ hpcrun_zeCommandListAppendLaunchKernel
   const struct hpcrun_foil_appdispatch_level0* dispatch
 )
 {
-  PRINT("Enter zeCommandListAppendLaunchKernel wrapper: command list %p\n", hCommandList);
+  PRINT("hpcrun_zeCommandListAppendLaunchKernel enter: command list %p\n", hCommandList);
+
   // Entry action:
   // We need to create a new event for querying time stamps
   // if the user appends the kernel with an empty event parameter
@@ -569,6 +617,9 @@ hpcrun_zeCommandListAppendLaunchKernel
 
   // Exit action
   level0_process_immediate_command_list(new_event_handle, hCommandList, dispatch);
+
+  PRINT("hpcrun_zeCommandListAppendLaunchKernel exit\n");
+
   return ret;
 }
 
@@ -587,7 +638,8 @@ hpcrun_zeCommandListAppendMemoryCopy
   const struct hpcrun_foil_appdispatch_level0* dispatch
 )
 {
-  PRINT("Enter zeCommandListAppendMemoryCopy wrapper: command list %p\n", hCommandList);
+  PRINT("hpcrun_zeCommandListAppendMemoryCopy enter: command list %p\n", hCommandList);
+
   // Entry action:
   // We need to create a new event for querying time stamps
   // if the user appends the kernel with an empty event parameter
@@ -599,6 +651,9 @@ hpcrun_zeCommandListAppendMemoryCopy
 
   // Exit action
   level0_process_immediate_command_list(new_event_handle, hCommandList, dispatch);
+
+  PRINT("hpcrun_zeCommandListAppendMemoryCopy exit\n");
+
   return ret;
 }
 
@@ -613,14 +668,20 @@ hpcrun_zeCommandListCreate
   const struct hpcrun_foil_appdispatch_level0* dispatch
 )
 {
+  PRINT("hpcrun_zeCommandListCreate enter\n");
+
   // Entry action
   // Execute the real level0 API
   ze_result_t ret = f_zeCommandListCreate(hContext, hDevice, desc, phCommandList, dispatch);
 
   // Exit action
   level0_command_list_create_exit(*phCommandList, hContext, 0);
+
+  PRINT("hpcrun_zeCommandListCreate exit\n");
+
   return ret;
 }
+
 
 ze_result_t
 hpcrun_zeCommandListCreateImmediate
@@ -632,6 +693,8 @@ hpcrun_zeCommandListCreateImmediate
   const struct hpcrun_foil_appdispatch_level0* dispatch
 )
 {
+  PRINT("hpcrun_zeCommandListCreateImmediate enter\n");
+
   // Entry action
   // Execute the real level0 API
 
@@ -645,8 +708,12 @@ hpcrun_zeCommandListCreateImmediate
 
   // Exit action
   level0_command_list_create_exit(*phCommandList, hContext, 1);
+
+  PRINT("hpcrun_zeCommandListCreateImmediate exit\n");
+
   return ret;
 }
+
 
 ze_result_t
 hpcrun_zeCommandListDestroy
@@ -655,12 +722,16 @@ hpcrun_zeCommandListDestroy
   const struct hpcrun_foil_appdispatch_level0* dispatch
 )
 {
-  PRINT("Enter zeCommandListDestroy wrapper: command list %p\n", hCommandList);
+  PRINT("hpcrun_zeCommandListDestroy enter: command list %p\n", hCommandList);
+
   // Entry action
   level0_command_list_destroy_entry(hCommandList, dispatch);
   // Execute the real level0 API
   ze_result_t ret = f_zeCommandListDestroy(hCommandList, dispatch);
   // Exit action
+
+  PRINT("hpcrun_zeCommandListDestroy exit\n");
+
   return ret;
 }
 
@@ -672,14 +743,19 @@ hpcrun_zeCommandListReset
   const struct hpcrun_foil_appdispatch_level0* dispatch
 )
 {
-  PRINT("Enter zeCommandListReset wrapper: command list %p\n", hCommandList);
+  PRINT("hpcrun_zeCommandListReset enter: command list %p\n", hCommandList);
+
   // Entry action
   level0_command_list_reset_entry(hCommandList, dispatch);
   // Execute the real level0 API
   ze_result_t ret = f_zeCommandListReset(hCommandList, dispatch);
   // Exit action
+
+  PRINT("hpcrun_zeCommandListReset exitp\n");
+
   return ret;
 }
+
 
 ze_result_t
 hpcrun_zeCommandQueueExecuteCommandLists
@@ -692,8 +768,9 @@ hpcrun_zeCommandQueueExecuteCommandLists
   const struct hpcrun_foil_appdispatch_level0* dispatch
 )
 {
-  PRINT("Enter zeCommandQueueExecuteCommandLists wrapper: command queue %p, fence %p\n",
+  PRINT("hpcrun_zeCommandQueueExecuteCommandLists enter: command queue %p, fence %p\n",
     hCommandQueue, hFence);
+
   // Entry action
   level0_command_queue_execute_command_list_entry(numCommandLists, phCommandLists);
   level0_fence_map_insert(hFence, numCommandLists, phCommandLists);
@@ -701,8 +778,12 @@ hpcrun_zeCommandQueueExecuteCommandLists
   // Execute the real level0 API
   ze_result_t ret = f_zeCommandQueueExecuteCommandLists(hCommandQueue, numCommandLists, phCommandLists, hFence, dispatch);
   // Exit action
+
+  PRINT("hpcrun_zeCommandQueueExecuteCommandLists exit\n");
+
   return ret;
 }
+
 
 ze_result_t
 hpcrun_zeEventPoolCreate
@@ -719,6 +800,8 @@ hpcrun_zeEventPoolCreate
   const struct hpcrun_foil_appdispatch_level0* dispatch
 )
 {
+  PRINT("hpcrun_zeEventPoolCreate enter\n");
+
   // Entry action
   ze_event_pool_desc_t pool_desc;
   level0_event_pool_create_entry(desc, &pool_desc);
@@ -730,8 +813,12 @@ hpcrun_zeEventPoolCreate
     ret = f_zeEventPoolCreate(hContext, &pool_desc, numDevices, phDevices, phEventPool, dispatch);
   }
   // Exit action
+
+  PRINT("hpcrun_zeEventPoolCreate exit\n");
+
   return ret;
 }
+
 
 ze_result_t
 hpcrun_zeEventDestroy
@@ -740,13 +827,19 @@ hpcrun_zeEventDestroy
   const struct hpcrun_foil_appdispatch_level0* dispatch
 )
 {
+  PRINT("hpcrun_zeEventDestroy enter\n");
+
   // Entry action
   level0_attribute_event(hEvent, dispatch);
   // Execute the real level0 API
   ze_result_t ret = f_zeEventDestroy(hEvent, dispatch);
   // Exit action
+
+  PRINT("hpcrun_zeEventDestroy exit\n");
+
   return ret;
 }
+
 
 ze_result_t
 hpcrun_zeEventHostReset
@@ -755,14 +848,20 @@ hpcrun_zeEventHostReset
   const struct hpcrun_foil_appdispatch_level0* dispatch
 )
 {
+  PRINT("hpcrun_zeEventHostReset enter\n");
+
   // Entry action
   level0_attribute_event(hEvent, dispatch);
   // Execute the real level0 API
   ze_result_t ret = f_zeEventHostReset(hEvent, dispatch);
 
   // Exit action
+
+  PRINT("hpcrun_zeEventHostReset exit\n");
+
   return ret;
 }
+
 
 ze_result_t
 hpcrun_zeModuleCreate
@@ -785,8 +884,10 @@ hpcrun_zeModuleCreate
     strcat(compile_flags, " -g");
     new_desc.pBuildFlags = compile_flags;
   }
+
   ze_result_t ret = f_zeModuleCreate(hContext, hDevice, &new_desc, phModule, phBuildLog, dispatch);
-  PRINT("foilbase_zeModuleCreate: module handle %p\n", *phModule);
+  PRINT("hpcrun_zeModuleCreate: module handle %p\n", *phModule);
+
   // Exit action
   level0_binary_process(*phModule, dispatch);
 
@@ -815,7 +916,8 @@ hpcrun_zeKernelCreate
 )
 {
   ze_result_t ret = f_zeKernelCreate(hModule, desc, phKernel, dispatch);
-  PRINT("foilbase_zeKernelCreate: module handle %p, kernel handle %p\n",hModule, *phKernel);
+  PRINT("hpcrun_zeKernelCreate: module handle %p, kernel handle %p\n",hModule, *phKernel);
+
   return ret;
 }
 
@@ -838,11 +940,16 @@ hpcrun_zeFenceDestroy
   const struct hpcrun_foil_appdispatch_level0* dispatch
 )
 {
-  PRINT("Enter zeFenceDestroy wrapper: fence %p\n", hFence);
+  PRINT("hpcrun_zeFenceDestroy enter: fence %p\n", hFence);
+
   level0_attribute_fence(hFence, dispatch);
   ze_result_t ret = f_zeFenceDestroy(hFence, dispatch);
+
+  PRINT("hpcrun_zeFenceDestroy exit\n");
+
   return ret;
 }
+
 
 ze_result_t
 hpcrun_zeFenceReset
@@ -851,9 +958,13 @@ hpcrun_zeFenceReset
   const struct hpcrun_foil_appdispatch_level0* dispatch
 )
 {
-  PRINT("Enter zeFenceReset wrapper: fence %p\n", hFence);
+  PRINT("hpcrun_zeFenceReset enter: fence %p\n", hFence);
+
   level0_attribute_fence(hFence, dispatch);
   ze_result_t ret = f_zeFenceReset(hFence, dispatch);
+
+  PRINT("hpcrun_zeFenceReset exit\n");
+
   return ret;
 }
 
@@ -865,9 +976,13 @@ hpcrun_zeCommandQueueSynchronize
   const struct hpcrun_foil_appdispatch_level0* dispatch
 )
 {
-  PRINT("Enter zeCommandQueueSynchronize wrapper: command queue %p\n", hCommandQueue);
+  PRINT("hpcrun_zeCommandQueueSynchronize enter: command queue %p\n", hCommandQueue);
+
   ze_result_t ret = f_zeCommandQueueSynchronize(hCommandQueue, timeout, dispatch);
   level0_attribute_command_queue(hCommandQueue, dispatch);
+
+  PRINT("hpcrun_zeCommandQueueSynchronize exit\n");
+
   return ret;
 }
 
@@ -899,11 +1014,12 @@ level0_fini
     GPU_FLUSH_ALARM_SET("hpcrun: warning: some Level 0 events not marked"
                         " complete; some GPU event data may be lost.");
 
-    gpu_operation_multiplexer_fini();
-
     GPU_FLUSH_ALARM_TEST();
     GPU_FLUSH_ALARM_CLEAR();
   }
+
+  // even if this is not normal exit, gpu-trace-fini will behave as if it is a normal exit
+  gpu_trace_fini(NULL, MONITOR_EXIT_NORMAL);
 }
 
 void
@@ -929,4 +1045,36 @@ level0_gtpin_enabled
 )
 {
   return gtpin_instrumentation;
+}
+
+
+// adjust device timestamp to be consistent with host realtime
+uint64_t
+level0_timestamp_to_realtime
+(
+  uint64_t host_submit_time,
+  uint64_t device_time
+)
+{
+#if 0
+  // adjust device timestamp with offset between host and device
+  // that was computed when device was configured for use.
+  uint64_t result = device_time + clock_offset_ns_from_level0;
+#else
+  // approximately compute the offset between device and host by assuming
+  // that the first GPU operation reported executes on the host at the
+  // time it was submitted.
+  static volatile _Atomic uint64_t clock_offset_ns_from_submit = 0;
+  if (clock_offset_ns_from_submit == 0) {
+     uint64_t zero = 0;
+     uint64_t offset = host_submit_time - device_time;
+     atomic_compare_exchange_strong(&clock_offset_ns_from_submit, &zero, offset);
+  }
+#endif
+
+  uint64_t result = device_time + clock_offset_ns_from_submit;
+
+  PRINT("level0_timestamp_to_realtime(%ld) --> %ld\n", device_time, result);
+
+  return result;
 }

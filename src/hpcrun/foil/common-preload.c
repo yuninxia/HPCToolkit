@@ -23,6 +23,19 @@ struct callback_data {
   void* result;
 };
 
+static void error_exit() {
+  void (*exit_func)(int);
+
+  // Get the address of _exit using dlsym
+  exit_func = (void (*)(int))dlsym(RTLD_NEXT, "_exit");
+
+  if (exit_func == NULL) {
+    abort(); // a less desirable way to force an exit
+  }
+
+  exit_func(-1);
+}
+
 static int phdr_callback(struct dl_phdr_info* info, size_t sz, void* data_v) {
   struct callback_data* data = data_v;
 
@@ -68,7 +81,7 @@ void* foil_dlsym(const char* symbol) {
     if (dladdr(&foil_dlsym, &dli) == 0) {
       // This should never happen, but if it does error
       assert(false && "dladdr1 failed to find libmonitor\n");
-      abort();
+      error_exit();
     }
     cb_data.skip_until_base = dli.dli_fbase;
 
@@ -103,6 +116,7 @@ static struct pfn_fetch_hooks_t {
   const struct hpcrun_foil_hookdispatch_ompt* (*ompt)();
   const struct hpcrun_foil_hookdispatch_opencl* (*opencl)();
   const struct hpcrun_foil_hookdispatch_level0* (*level0)();
+  const struct hpcrun_foil_hookdispatch_rocm* (*rocm)();
 } pfn_fetch_hooks;
 
 static void* core_dlsym(void* handle, const char* symbol) {
@@ -132,7 +146,16 @@ static void load_core_foil() {
 
   if (h == NULL) {
     fprintf(stderr, "hpcrun: Error loading libhpcrun.so: %s\n", dlerror());
-    abort();
+    fprintf(
+        stderr,
+        "ADVICE: if the error is associated with a GPU runtime library, there\n"
+        "        may be an inconsistency between the GPU library paths curried into\n"
+        "        your executable and directories that are in LD_LIBRARY_PATH as a\n"
+        "        result of loading a module. Confirm that any GPU modules that you\n"
+        "        have loaded match those that were loaded when your application or\n"
+        "        library was compiled. Check paths curried into a binary with the \n"
+        "        command 'readelf -d <your binary> | grep PATH'.\n");
+    error_exit();
   }
   pfn_fetch_hooks = (struct pfn_fetch_hooks_t){
       .client = core_dlsym(h, "hpcrun_foil_fetch_hooks_client"),
@@ -142,6 +165,7 @@ static void load_core_foil() {
       .ompt = core_dlsym(h, "hpcrun_foil_fetch_hooks_ompt"),
       .opencl = core_dlsym(h, "hpcrun_foil_fetch_hooks_opencl"),
       .level0 = core_dlsym(h, "hpcrun_foil_fetch_hooks_level0"),
+      .rocm = core_dlsym(h, "hpcrun_foil_fetch_hooks_rocm"),
   };
 }
 
@@ -178,4 +202,9 @@ const struct hpcrun_foil_hookdispatch_opencl* hpcrun_foil_fetch_hooks_opencl_dl(
 const struct hpcrun_foil_hookdispatch_level0* hpcrun_foil_fetch_hooks_level0_dl() {
   call_once(&load_core_foil_once, load_core_foil);
   return pfn_fetch_hooks.level0();
+}
+
+const struct hpcrun_foil_hookdispatch_rocm* hpcrun_foil_fetch_hooks_rocm_dl() {
+  call_once(&load_core_foil_once, load_core_foil);
+  return pfn_fetch_hooks.rocm();
 }

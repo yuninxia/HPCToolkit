@@ -21,8 +21,7 @@ HPCToolkit's measurement subsystem supports both profiling and tracing of GPU ac
 
 ### Profiling GPU Activities
 
-The foundation of HPCToolkit's support for measuring the performance of GPU-accelerated applications is a vendor-independent monitoring substrate. A thin software layer connects NVIDIA's CUPTI (CUDA Performance Tools Interface) (NVIDIA Corporation 2019) and AMD's [ROC-tracer](https://rocm.docs.amd.com/projects/roctracer/en/docs-6.2.0/reference/roctracer-spec.html) (ROCm Tracer Callback/Activity Library) monitoring libraries to this substrate. The substrate also includes function wrappers to intercept calls to the OpenCL API and Intel's Level Zero API to measure GPU performance for programming models that do not have an integrated measurement substrate
-such as CUPTI or ROC-tracer.
+The foundation of HPCToolkit's support for measuring the performance of GPU-accelerated applications is a vendor-independent monitoring substrate. A thin software layer connects NVIDIA's [CUPTI](https://docs.nvidia.com/cupti) (CUDA Performance Tools Interface) and AMD's [Rocprofiler-sdk](https://rocm.docs.amd.com/projects/rocprofiler-sdk) monitoring libraries to this substrate. The substrate also includes function wrappers to intercept calls to the OpenCL API and Intel's Level Zero API to measure GPU performance for programming models that do not have an integrated measurement substrate such as CUPTI or Rocprofiler-sdk.
 HPCToolkit reports GPU performance metrics in a vendor-neutral way. For instance, rather than focusing on NVIDIA warps or AMD wavefronts, HPCToolkit presents both as fine-grain, thread-level parallelism.
 
 HPCToolkit supports two levels of performance monitoring for GPU accelerated applications: coarse-grain profiling and tracing of GPU activities at the operation level (e.g., kernel launches, data allocations, memory copies, ...), and fine-grain measurement of GPU computations using PC sampling or instrumentation, which measure GPU computations at the granularity of individual machine instructions.
@@ -184,10 +183,11 @@ HPCToolkit supports performance measurement of programs using either OpenCL or C
 name: nvidia-cuda-monitoring-options
 ---
 | Argument to `hpcrun` | What is monitored                                                                               |
-| :------------------- | :---------------------------------------------------------------------------------------------- |
-| `-e gpu=nvidia`      | coarse-grain profiling of GPU operations                                                        |
-| `-e gpu=nvidia -t`   | coarse-grain profiling and tracing of GPU operations                                            |
-| `-e gpu=nvidia,pc`   | coarse-grain profiling of GPU operations; fine-grain profiling og GPU kernels using PC sampling |
+| :--------------------| :---------------------------------------------------------------------------------------------- |
+| `-e gpu=cuda`        | coarse-grain profiling of GPU operations                                                        |
+| `-e gpu=cuda -t`     | coarse-grain profiling and tracing of GPU operations                                            |
+| `-e gpu=cuda -tt`    | coarse-grain profiling and high-resolution tracing of GPU operations                            |
+| `-e gpu=cuda,pc`     | coarse-grain profiling of GPU operations; fine-grain profiling of GPU kernels using PC sampling |
 ```
 
 When using NVIDIA's CUDA programming model, HPCToolkit supports two levels of performance monitoring for NVIDIA GPUs: coarse-grain profiling and tracing of GPU activities at the operation level, and fine-grain profiling of GPU computations using PC sampling, which measures GPU computations at a granularity of individual machine instructions. Section [8.2.2](#nvidia-pc-sampling) describes fine-grain GPU performance measurement using PC sampling and the metrics it measures or computes.
@@ -342,13 +342,55 @@ With this coarse-grain profiling support, HPCToolkit can collect GPU operation t
 ---
 name: amd-options
 ---
-| Argument to `hpcrun` | What is monitored                                        |
-| :------------------- | :------------------------------------------------------- |
-| `-e gpu=amd`         | coarse-grain profiling of AMD GPU operations             |
-| `-e gpu=amd -t`      | coarse-grain profiling and tracing of AMD GPU operations |
+| Argument to `hpcrun`                      | What is monitored                                                                               |
+| :-------------------------- | :---------------------------------------------------------------------------------------------- |
+| `-e gpu=rocm`                            | coarse-grain profiling of AMD GPU operations                                                    |
+| `-e gpu=rocm -t`                         | coarse-grain profiling and tracing of AMD GPU operations                                        |
+| `-e gpu=rocm -tt`                         | coarse-grain profiling and high-resolution tracing of AMD GPU operations                                        |
+| `-e gpu=rocm,pc[={sw,hw}][@period_log]`  | coarse-grain profiling of GPU operations; fine-grain profiling of GPU kernels using PC sampling |
 ```
 
-At present, the hardware and software stack for AMD GPUs lacks support for fine-grain (instruction-level) performance measurement of GPU computations.
+### PC Sampling on AMD GPUs
+
+On AMD GPUs, Program Counter (PC) sampling is a profiling method that measures a statistical approximation of instructions executed within a kernel by sampling program counters in GPU compute units.
+
+AMD GPUs support two kinds of PC sampling: host-trap (software-based) sampling and stochastic (hardware-based) sampling. Support for host-trap based PC sampling first became available with ROCm 6.4 and is available on AMD GPUs MI200 and newer.
+Support for stochastic sampling first became available with ROCm 7.0 and it requires hardware support that first became available with AMD's MI300 series. Both kinds of sampling need the GPU to be running modern firmware.
+
+You can check whether one or both kinds of PC sampling are available for your GPUs with AMD's `rocprofv3-avail` tool. Running `rocprofv3-avail info --pc-sampling` will report the list of PC sampling configurations supported for each GPU agent in your system. If they are not available and your GPU is new enough, you might want to discuss whether your system administrator can update the GPU firmware for you. Information about what firmware versions are necessary or recommended for PC sampling on various GPU versions should be determined by consultation with AMD.
+
+PC sampling on AMD GPUs is a device-wide activity for both host-trap (software-based) sampling and stochastic (hardware-based) sampling.
+When using host-trap (software-based) PC sampling, the GPU device driver periodically halts the GPU and reads the PC out of each wave in an active compute unit. Samples collected using host-trap sampling may suffer from "skid", where a sample may be attributed to an instruction up to two instructions away from a source of latency. When using stochastic (hardware-based) PC sampling, each compute unit periodically chooses an active wave on the compute unit and records its PC. Over time, each compute unit samples waves in a round robin fashion.
+
+Currently only host-trap based sampling is enabled in HPCToolkit while we wait for AMD to resolve problems that occur when enabling stochastic sampling.
+To select software-based host-trap PC sampling, specify `-e gpu=rocm,pc`. In HPCToolkit, the default PC sampling frequency for software-based host-trap sampling is 100us.
+There is currently no mechanism to change the default.
+
+To select software-based host-trap PC sampling, specify `-e gpu=rocm,pc=sw`.
+To select hardware-based stochastic PC sampling, specify `-e gpu=rocm,pc=hw`.
+Specifying simply `-e gpu=rocm,pc` will default to software-based host-trap sampling.
+
+Periods for hardware stochastic sampling are measured in GPU cycles and the minimum is 256; periods must be a power of 2.
+Periods for host-trap based sampling are measured in microseconds. The minimum is 1.
+The default period for stochastic sampling is currently set to 2^20. Setting the sampling period shorter than that has been observed to cause AMD's driver to fail.
+Thus, the minimum for hardware stochastic sampling is currently 2^20.
+The default period for host-trap sampling is currently 2^7. To provide a consistent interface and guarantee that periods are a power of 2, periods for PC sampling will be interpreted as the log of the period by appending @period_log, e.g. `-e gpu=rocm,pc=hw@22` to select stochastic PC sampling with a period of 2^22.
+
+Using AMD's Rocprofiler-sdk monitoring infrastructure, HPCToolkit collects a histogram of samples for each instruction in each kernel that an application executes.
+For stochastic (hardware-based) samples, a sample contains more than a GPU program counter value.
+A stochastic sample also indicates whether the instruction represented by the sample's PC value is stalled or not. If so, it provides a reason why the instruction is stalled.
+
+In post-mortem analysis with `hpcprof`, HPCToolkit maps instruction-level samples and stall reasons (if any) back to source lines using information about how GPU machine instructions relate back to application source code using line mappings and inlining information recorded by compilers. If all PC samples in a kernel map to line 0, there are two possibilities: (1) the AMD GPU binaries used by your application don't contain line mapping information for that kernel because you didn't pass a `-g` to the compiler when generating its code, or (2) don't you didn't analyze line mapping information AMD GPU binaries by using `hpcstruct --gpucfg yes <measurement-directory>`.
+
+### Hardware Counters on AMD GPUs
+
+AMD GPUs now support a variety of hardware counters. Using AMD's Rocprofiler-sdk, HPCToolkit can configure a GPU hardware counter to count the number of events that occur during a kernel execution. Multiple counters can be used in the same execution. To see the list of available GPU hardware counters, run the `hpcrun -L` command and scan for counters listed with the prefix `rocm::`. HPCToolkit exposes the set of counters exposted by AMD's Rocprofiler-sdk.
+
+When using HPCToolkit on a system with multiple GPUs, any hardware counters specified on `hpcrun`'s command line will be configured for each of the GPUs specified in `ROCR_VISIBLE_DEVICES` or all GPUs if `ROCR_VISIBLE_DEVICES` is not specified.
+
+If not all of a node's GPUs are not the same kind, they may support different sets of counters. If you encounter a situation where `hpcrun -L` indicates that certain counters are available but you have trouble using them to monitor an execution on multiple GPUs, you can use AMD's utility [`rocprofilerv3-avail`](https://rocm.docs.amd.com/projects/rocprofiler-sdk/en/latest/how-to/using-rocprofv3-avail.html) to check whether a set of counters (e.g. `pmc1`, `pmc2`, `pmc3`) are available for particular GPU device and whether they can be measured together using `rocprofilerv3-avail pmc-check pmc1 pmc2 pmc3`.
+
+Note that the ROCm counter names you use with HPCToolkit have the prefix `rocm::`; when you pass counter names to `rocprofilerv3-avail`, omit the `rocm::` prefix.
 
 (sec:intel-gpu)=
 
@@ -378,11 +420,9 @@ name: intel-level0-options
 | Argument to `hpcrun`           | What is monitored                                                                                                                                                                                                                                                                                    |
 | :----------------------------- | :--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | `-e gpu=level0`                | coarse-grain profiling of Intel GPU operations using Intel's Level Zero runtime                                                                                                                                                                                                                         |
-| `-e gpu=level0 -t`             | coarse-grain profiling and tracing of Intel GPU operations using Intel's Level Zero runtime                                                                                                                                                                                                             |
-| `-e gpu=level0,inst=count`     | coarse-grain profiling of Intel GPU operations using Intel's Level Zero runtime; fine-grain measurement of Intel GPU kernel executions using Intel's GT-Pin for instruction counting                                                                                                                    |
-| `-e gpu=level0,inst=count -t ` | coarse-grain profiling and tracing of Intel GPU operations using Intel's Level Zero runtime; fine-grain measurement of Intel GPU kernel executions using Intel's GT-Pin for instruction counting                                                                                                        |
+| `-e gpu=level0 -t`             | coarse-grain profiling and tracing of Intel Level Zero GPU operations                                                                                                                                                                                                             |
+| `-e gpu=level0 -tt`             | coarse-grain profiling and high-resolution tracing of Intel Level Zero GPU operations                                                                                                                                                                                                             |
 | `-e gpu=level0,inst=what`      | coarse-grain profiling of Intel GPU operations using Intel's Level Zero runtime; fine-grain measurement of Intel GPU kernel executions using Intel's GT-Pin support values for *what* that include a comma-separated list that may contain values drawn from the set {count, latency, simd}             |
-| `-e gpu=level0,inst=what -t `  | coarse-grain profiling and tracing of Intel GPU operations using Intel's Level Zero runtime; fine-grain measurement of Intel GPU kernel executions using Intel's GT-Pin support values for *what* that include a comma-separated list that may contain values drawn from the set {count, latency, simd} |
 ```
 
 (sec:gpu-opencl)=

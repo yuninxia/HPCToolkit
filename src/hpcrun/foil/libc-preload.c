@@ -109,7 +109,7 @@ HPCRUN_EXPOSED_API pid_t execl(const char* path, const char* arg0, ...) {
     argv[i++] = arg;
   }
   argv[i] = NULL;
-  assert(i == argc + 1);
+  assert(i == argc);
 
   return h->execv(path, argv, d);
 }
@@ -137,7 +137,7 @@ HPCRUN_EXPOSED_API pid_t execlp(const char* file, const char* arg0, ...) {
     argv[i++] = arg;
   }
   argv[i] = NULL;
-  assert(i == argc + 1);
+  assert(i == argc);
   va_end(args);
 
   return h->execvp(file, argv, d);
@@ -166,7 +166,7 @@ HPCRUN_EXPOSED_API pid_t execle(const char* path, const char* arg0, ...) {
     argv[i++] = arg;
   }
   argv[i] = NULL;
-  assert(i == argc + 1);
+  assert(i == argc);
 
   char* const* envp = va_arg(args, char* const*);
   va_end(args);

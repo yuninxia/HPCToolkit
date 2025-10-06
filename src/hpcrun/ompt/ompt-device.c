@@ -42,11 +42,15 @@
 #include "../gpu/activity/gpu-activity-channel.h"
 #include "../gpu/activity/gpu-op-placeholders.h"
 #include "../gpu/trace/gpu-trace-api.h"
-#include "../gpu/activity/gpu-op-ccts-map.h"
 
 #include "../gpu/api/common/gpu-binary.h"
+#include "../gpu/api/common/gpu-cid-map.h"
 
 #include "../gpu/api/ompt/ompt-gpu-api.h"
+
+#ifdef USE_ROCM
+#include "../gpu/api/rocm/rocm-interface.h"
+#endif
 
 #include "../libmonitor/monitor.h"
 
@@ -154,6 +158,7 @@ device_list_insert
   e->device_id = device_id;
   e->device = device;
   e->next = device_list;
+
   device_list = e;
   PRINT("device_list_insert id=%d device=%p\n", device_id, device);
 }
@@ -227,14 +232,7 @@ hpcrun_ompt_op_id_notify(ompt_scope_endpoint_t endpoint,
 
     gpu_application_thread_process_activities();
 
-    gpu_op_ccts_t gpu_op_ccts;
-    memset(&gpu_op_ccts, 0, sizeof(gpu_op_ccts_t));
-
     hpcrun_safe_enter();
-
-    cct_addr_t frm;
-    memset(&frm, 0, sizeof(cct_addr_t));
-    frm.ip_norm = ip_norm;
 
     // if target_node is not NULL, the operation is in a target region.
     // in this case, the value of target_node represents the call path to
@@ -245,22 +243,12 @@ hpcrun_ompt_op_id_notify(ompt_scope_endpoint_t endpoint,
     // Must be under a safe region to prevent self interrupt
     hpcrun_trace_node(callpath);
 
-    cct_node_t *api_node = hpcrun_cct_insert_addr(callpath, &frm, true);
-
-    gpu_op_ccts_insert(api_node, &gpu_op_ccts, gpu_op_placeholder_flags_all);
-
     hpcrun_safe_exit();
 
-    OMPT_BASE_GET(base, trace_node) = gpu_op_ccts.ccts[gpu_placeholder_type_trace];
-
-    // Inform the worker about the placeholders
-    uint64_t cpu_submit_time = hpcrun_nanotime();
     PRINT("producing correlation %lu\n", host_op_id);
 
-    gpu_op_ccts_map_insert(host_op_id, (gpu_op_ccts_map_entry_value_t) {
-      .gpu_op_ccts = gpu_op_ccts,
-      .cpu_submit_time = cpu_submit_time
-    });
+    gpu_cid_map_insert(host_op_id, callpath, ip_normalized_NULL);
+
   } else {
     PRINT("exit ompt runtime op %lu\n", host_op_id);
     // Enter a runtime api
@@ -375,21 +363,6 @@ ompt_dump
 }
 
 
-static ompt_device_t *
-ompt_get_device
-(
- int device_id
-)
-{
-  ompt_device_entry_t *e = device_list;
-  while (e) {
-    if (e->device_id == device_id) return e->device;
-    e = e->next;
-  }
-  return 0;
-}
-
-
 static void
 ompt_finalize_flush
 (
@@ -469,7 +442,8 @@ ompt_buffer_complete
 
     gpu_monitoring_thread_activities_ready();
 
-    ompt_device_t *device = ompt_get_device(device_id);
+    ompt_device_map_entry_t *device_entry = ompt_device_map_lookup(device_id);
+    ompt_device_t *device = ompt_device_map_entry_device_get(device_entry);
 
     // signal advance to return pointer to first record
     ompt_buffer_cursor_t current = begin;
@@ -482,7 +456,7 @@ ompt_buffer_complete
       if (record == NULL) break;
 
       // process the record
-      ompt_activity_process(record);
+      ompt_activity_process(device_entry, record);
 
       // advance the cursor to the next record
       // status will be 0 if there is no next record
@@ -754,10 +728,29 @@ prepare_device
     (ompt_callback_device_unload, ompt_device_unload);
   ompt_set_callback
     (ompt_callback_target_emi, ompt_target_callback_emi);
-  ompt_set_callback
-    (ompt_callback_target_data_op_emi, ompt_data_op_callback_emi);
-  ompt_set_callback
-    (ompt_callback_target_submit_emi, ompt_submit_callback_emi);
+
+  // if the rocprofiler-sdk interface is in use, it will cause problems
+  // if we watch data operations and kernel operations. they will also
+  // be reported to rocprofiler-sdk, causing us to double count operations
+  // and time. we must turn this interface off because of AMD's unfortunate
+  // design of rocprofiler-sdk.
+  //
+  // a second reason we need to skip observing data movement events with
+  // ompt when using rocprofiler-sdk is that rocprofiler-sdk 6.4 corrupts
+  // the timestamps for some OMPT data movement events. sigh.
+  #ifdef USE_ROCM
+  bool monitor_dataops_and_kernels = !rocm_interface_is_enabled();
+  #else
+  bool monitor_dataops_and_kernels = true;
+  #endif
+
+  if (monitor_dataops_and_kernels) {
+    ompt_set_callback
+      (ompt_callback_target_data_op_emi, ompt_data_op_callback_emi);
+    ompt_set_callback
+      (ompt_callback_target_submit_emi, ompt_submit_callback_emi);
+  }
+
   ompt_set_callback
     (ompt_callback_target_map, ompt_map_callback);
 

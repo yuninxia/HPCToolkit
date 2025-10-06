@@ -22,6 +22,7 @@
 #include "simple_oo.h"
 #include "sample_source_obj.h"
 #include "common.h"
+#include "display.h"
 #include "io.h"
 
 #include "../metrics.h"
@@ -136,13 +137,13 @@ METHOD_FN(gen_event_set)
 static void
 METHOD_FN(display_events)
 {
-  printf("===========================================================================\n");
-  printf("Available IO events\n");
-  printf("===========================================================================\n");
-  printf("Name\t\tDescription\n");
-  printf("---------------------------------------------------------------------------\n");
-  printf("IO\t\t" "The number of bytes read and written per dynamic context\n");
-  printf("\n");
+  display_header(stdout, "Available IO events");
+
+  display_header_event(stdout);
+
+  display_event_info(stdout, "IO",
+    "The number of bytes read and written per dynamic context"
+  );
 }
 
 

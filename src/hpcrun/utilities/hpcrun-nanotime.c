@@ -36,11 +36,14 @@
 //*****************************************************************************
 
 uint64_t
-hpcrun_nanotime()
+hpcrun_nanotime_clock
+(
+  clockid_t clock
+)
 {
   struct timespec now;
 
-  int res = clock_gettime(CLOCK_REALTIME, &now);
+  int res = clock_gettime(clock, &now);
   if (res != 0)
     hpcrun_terminate();  // clock_gettime failed!
 
@@ -48,6 +51,28 @@ hpcrun_nanotime()
   uint64_t now_ns = now_sec * NS_PER_SEC + now.tv_nsec;
 
   return now_ns;
+}
+
+
+uint64_t
+hpcrun_nanotime_real_boot_offset
+(
+  void
+)
+{
+  uint64_t real = hpcrun_nanotime_clock(CLOCK_REALTIME);
+  uint64_t boot = hpcrun_nanotime_clock(CLOCK_BOOTTIME);
+  return real - boot;;
+}
+
+
+uint64_t
+hpcrun_nanotime
+(
+  void
+)
+{
+  return hpcrun_nanotime_clock(CLOCK_REALTIME);
 }
 
 

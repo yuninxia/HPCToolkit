@@ -497,111 +497,46 @@ if false  # get_option('papi_cupti')  # --enable-papi-c-cupti
 endif
 
 # Find support for ROCm performance monitoring
-hip_dep = dependency(
-  'hip',
-  method: 'cmake',
-  modules: ['hip::amdhip64'],
-  required: get_option('rocm'),
-  version: '>=5.1',
-  include_type: 'system',
-)
-hsa_dep = dependency(
-  'hsa-runtime64',
-  method: 'cmake',
-  required: get_option('rocm'),
-  include_type: 'system',
-)
-
-# Technically, ROCtracer and ROCprofiler don't ship any dependency files. It is extremely rare to
-# see them outside of a complete "ROCm installation" that also includes hip and hsa (above), but for
-# hardness we also support getting them via compiler checks.
-roctracer_dep = dependency('', required: false)
-if get_option('rocm').allowed()
-  roctracer_dep = dependency(
-    'ROCtracer',
-    method: 'cmake',
-    cmake_module_path: 'cmake',
-    required: false,
-    include_type: 'system',
-  )
-  if not roctracer_dep.found()
-    _roctracer_lib = cc.find_library(
-      'roctracer64',
-      has_headers: ['roctracer/roctracer_hip.h'],
-      required: false,
-    )
-    if _roctracer_lib.found()
-      roctracer_dep = declare_dependency(
-        dependencies: _roctracer_lib,
-        version: '@0@.@1@'.format(
-          cc.get_define(
-            'ROCTRACER_VERSION_MAJOR',
-            prefix: '#include <roctracer/roctracer.h>',
-            dependencies: _roctracer_lib,
-          ),
-          cc.get_define(
-            'ROCTRACER_VERSION_MINOR',
-            prefix: '#include <roctracer/roctracer.h>',
-            dependencies: _roctracer_lib,
-          ),
-        ),
-      )
-    endif
-  endif
-  if not roctracer_dep.found()
-    roctracer_dep = dependency(
-      'ROCtracer',
-      method: 'system',
-      required: get_option('rocm'),
-      include_type: 'system',
-    )
-  endif
-endif
+#hip_dep = dependency('hip', method: 'cmake', modules: ['hip::amdhip64'], required: get_option('rocm'), version: '>=5.1')
 
 rocprofiler_dep = dependency('', required: false)
 if get_option('rocm').allowed()
   rocprofiler_dep = dependency(
-    'ROCprofiler',
+    'rocprofiler-sdk',
     method: 'cmake',
     cmake_module_path: 'cmake',
     required: false,
-    include_type: 'system',
   )
   if not rocprofiler_dep.found()
     _rocprofiler_lib = cc.find_library(
-      'rocprofiler64',
-      has_headers: ['rocprofiler/rocprofiler.h'],
+      'rocprofiler-sdk',
+      has_headers: ['rocprofiler-sdk/rocprofiler.h'],
       required: false,
     )
     if _rocprofiler_lib.found()
-
-      # As a very special case, we also need the path to a metrics.xml file in the ROCprofiler
+      # As a very special case, we also need the path to a metrics.xml file in the rocprofiler-sdk
       # installation. We don't have any paths at hand to find it otherwise, so we require the user
       # to specify the path via a project option. (We use an option to match the `c*_args` used for
       # the compiler checks, usually one would add these options to a machine file.)
-      if get_option('rocprofiler_metrics_xml') == ''
-        error(
-          '-Drocprofiler_metrics_xml option must be set to use compiler fallback for ROCprofiler',
-        )
-      endif
-      _metrics_xml = fs.expanduser(get_option('rocprofiler_metrics_xml'))
-      if not fs.exists(_metrics_xml)
-        error(
-          f'-Drocprofiler_metrics_xml set to an invalid path: no such file: @_metrics_xml@',
-        )
-      endif
+      # if get_option('rocprofiler_metrics_xml') == ''
+      #  error('-Drocprofiler_metrics_xml option must be set for rocprofiler-sdk')
+      #endif
+      #_metrics_xml = fs.expanduser(get_option('rocprofiler_metrics_xml'))
+      #if not fs.exists(_metrics_xml)
+      #  error(f'-Drocprofiler_metrics_xml set to an invalid path: no such file: @_metrics_xml@')
+      #endif
       rocprofiler_dep = declare_dependency(
         dependencies: _rocprofiler_lib,
-        variables: {'metrics_xml': _metrics_xml},
+        # variables: {'metrics_xml': _metrics_xml},
         version: '@0@.@1@'.format(
           cc.get_define(
             'ROCPROFILER_VERSION_MAJOR',
-            prefix: '#include <rocprofiler/rocprofiler.h>',
+            prefix: '#include <rocprofiler-sdk/version.h>',
             dependencies: _rocprofiler_lib,
           ),
           cc.get_define(
             'ROCPROFILER_VERSION_MINOR',
-            prefix: '#include <rocprofiler/rocprofiler.h>',
+            prefix: '#include <rocprofiler-sdk/version.h>',
             dependencies: _rocprofiler_lib,
           ),
         ),
@@ -610,17 +545,18 @@ if get_option('rocm').allowed()
   endif
   if not rocprofiler_dep.found()
     rocprofiler_dep = dependency(
-      'ROCprofiler',
+      'rocprofiler-sdk',
       method: 'system',
       required: get_option('rocm'),
-      include_type: 'system',
     )
   endif
 endif
 
-_rocm_subdeps = [rocprofiler_dep, roctracer_dep, hip_dep, hsa_dep]
-rocm_dep = declare_dependency(dependencies: _rocm_subdeps, version: hip_dep.version())
-rocprofiler_path = disabler()
+_rocm_subdeps = [rocprofiler_dep]
+rocm_dep = declare_dependency(
+  dependencies: _rocm_subdeps,
+  # version: hip_dep.version(),
+)
 foreach dep : _rocm_subdeps
   if not dep.found()
     rocm_dep = dependency('', required: false)
@@ -635,25 +571,10 @@ if rocm_dep.found()
     '-D__HIP_PLATFORM_HCC__',
     language: ['c', 'cpp'],
   )
-  if cc.has_member(
-    'roctracer_record_t',
-    'kernel_name',
-    prefix: '#include <roctracer/roctracer_hip.h>',
-    dependencies: rocm_dep,
-  )
-    add_project_arguments('-DHAVE_ROCM_ACTIVITY_KERNEL_NAME', language: ['c', 'cpp'])
-  endif
-  rocprofiler_path = fs.parent(
-    rocprofiler_dep.get_variable(
-      cmake: 'ROCprofiler_METRICS_XML',
-      internal: 'metrics_xml',
-    ),
-  )
 endif
 if false  # get_option('papi_rocm')  # --enable-papi-c-rocm
   add_project_arguments('-DHPCRUN_SS_PAPI_C_ROCM', language: ['c', 'cpp'])
 endif
-
 
 # Find HIP, the language used to test the ROCm support. Meson doesn't support it as a language, but
 # we emulate Meson's basic behavior for languages.
@@ -877,7 +798,7 @@ if level0_dep.found() and get_option('tests').allowed()
   # Path 2: If the C++ compiler supports compiling SYCL code, possibly with an extra flag, use that.
   # This path is a bit different because we use Meson's native C++ support instead of implementing
   # our own mess on top of things.
-  if not has_sycl
+  if false and not has_sycl
     foreach sycl_dep : [
       declare_dependency(
         compile_args: [get_option('sycl_args')],

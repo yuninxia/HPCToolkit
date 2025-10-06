@@ -44,6 +44,14 @@ static const char phname_gpu_sync[]    = "<gpu sync>";
 static const char phname_gpu_kernel[]  = "<gpu kernel>";
 static const char phname_gpu_memset[]  = "<gpu memset>";
 
+static const char phname_gpu_scratch_free[]  = "<gpu scratch alloc>";
+static const char phname_gpu_scratch_alloc[]  = "<gpu scratch free>";
+static const char phname_gpu_scratch_async_reclaim[]  = "<gpu scratch async reclaim>";
+static const char phname_gpu_scratch_illegal[]  = "<gpu scratch illegal>";
+static const char phname_gpu_runtime[]  = "<gpu runtime>";
+static const char phname_gpu_kernel_anon[]  = "<gpu kernel anonymous>";
+static const char phname_gpu_paging[]  = "<gpu page migration>";
+
 //*****************************************************************************
 // interface operations
 //*****************************************************************************
@@ -106,6 +114,20 @@ get_placeholder_name(uint64_t placeholder) {
     return phname_gpu_sync;
   case hpcrun_placeholder_gpu_trace:
     return phname_gpu_kernel;
+  case hpcrun_placeholder_gpu_scratch_alloc:
+    return phname_gpu_scratch_alloc;
+  case hpcrun_placeholder_gpu_scratch_free:
+    return phname_gpu_scratch_free;
+  case hpcrun_placeholder_gpu_scratch_async_reclaim:
+    return phname_gpu_scratch_async_reclaim;
+  case hpcrun_placeholder_gpu_scratch_illegal:
+    return phname_gpu_scratch_illegal;
+  case hpcrun_placeholder_gpu_runtime:
+    return phname_gpu_runtime;
+  case hpcrun_placeholder_gpu_kernel_anon:
+    return phname_gpu_kernel_anon;
+  case hpcrun_placeholder_gpu_paging:
+    return phname_gpu_paging;
   case hpcrun_placeholder_ompt_tgt_none:
     // Not in NameMappings.cpp
     return NULL;
