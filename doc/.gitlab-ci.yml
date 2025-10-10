@@ -5,15 +5,17 @@
 # Generate the documentation and host on GitLab Pages.
 # This site includes the EPUB and PDF alternative formats.
 pages:
+  extends: .needs verify
   stage: artifacts
-  image: registry.gitlab.com/hpctoolkit/rtt-images:1.0.0-aio@sha256:aed3071b8690dbdf3e2b4fec2071b47680c0be171e1a5613e43f425b55b67c2c
-  needs: []
+  image: registry.gitlab.com/hpctoolkit/rtt-images:1.0.0-aio
   tags: [saas-linux-medium-amd64]
   rules:
+    - if: $CI_SERVER_FQDN != "gitlab.com"
+      when: never
     # The default branch deploys to the permanent no-prefix deployment
     - if: $CI_COMMIT_REF_PROTECTED == "true" && $CI_COMMIT_BRANCH == $CI_DEFAULT_BRANCH
       variables:
-        PAGES_PATH_PREFIX: ''
+        PAGES_PATH_PREFIX: ""
         PAGES_EXPIRE_IN: never
         ENVIRONMENT_NAME: main
     # Release tags go to permanent deployments prefixed by the release tag
@@ -26,7 +28,7 @@ pages:
     - if: $CI_PIPELINE_SOURCE == "merge_request_event"
       variables:
         PAGES_PATH_PREFIX: "mr-${CI_MERGE_REQUEST_IID}"
-        PAGES_EXPIRE_IN: 24 hours  # default
+        PAGES_EXPIRE_IN: 24 hours # default
         ENVIRONMENT_NAME: "review/mr-${CI_MERGE_REQUEST_IID}"
   cache:
     - key: meson-packagecache

@@ -1,0 +1,31 @@
+# SPDX-FileCopyrightText: Contributors to the HPCToolkit Project
+#
+# SPDX-License-Identifier: Apache-2.0
+
+# Lint the codebase with clang-tidy, to identify various common code issues that are more expensive
+# to produce and aren't suitable for compiler warnings. Fixing issues identified here isn't and
+# never will be enforced, but it does give rich insight into the quality of the code itself.
+clang-tidy:
+  extends: .needs verify
+  stage: audit
+  interruptible: true
+  rules:
+    - if: &on_gitlab $CI_SERVER_FQDN == "gitlab.com"
+  tags: [$GITLAB_SAAS_LINUX_MAX_AMD64]
+  image: registry.gitlab.com/hpctoolkit/rtt-images:1.0.0-aio
+  cache:
+    key: ccache-clang-tidy
+    when: always
+    paths:
+      - .ccache
+  variables:
+    CCACHE_DIR: "$CI_PROJECT_DIR/.ccache"
+  allow_failure: true
+  script:
+    - meson setup --backend=ninja builddir
+    - ninja -C builddir/
+    - ninja -C builddir/ clang-tidy > clang-tidy.raw.txt || true
+    - ./ci/cc-diagnostics.py clang-tidy clang-tidy.cq.json clang-tidy.raw.txt
+  artifacts:
+    reports:
+      codequality: clang-tidy.cq.json

@@ -1,0 +1,96 @@
+# SPDX-FileCopyrightText: Contributors to the HPCToolkit Project
+#
+# SPDX-License-Identifier: Apache-2.0
+
+.ubuntu24.04:compile:
+  extends: .compile
+  script:
+    - meson setup builddir/ -Dwerror=true -Ddyninst:werror=false -Dxed:werror=false -Doptimization=2 -Ddebug=false -Db_ndebug=false
+    - cd builddir/
+    - meson test --print-errorlogs 'hpctoolkit:*'
+    - meson compile
+
+.ubuntu24.04:test cpu:
+  extends: .test
+  script:
+    - cd builddir/
+    - meson test --print-errorlogs 'hpctoolkit:*'
+
+.ubuntu24.04:compile+test:
+  extends: .compile+test
+  script:
+    - meson setup builddir/ -Dwerror=true -Ddyninst:werror=false -Dxed:werror=false -Dbuildtype=debugoptimized
+    - cd builddir/
+    - meson test --print-errorlogs 'hpctoolkit:*'
+    - meson compile
+
+ubuntu24.04 amd64:compile:
+  extends: .ubuntu24.04:compile
+  rules:
+    - if: &on_gitlab $CI_SERVER_FQDN == "gitlab.com"
+  tags: [$GITLAB_SAAS_LINUX_MAX_AMD64]
+  image: &image_amd64
+    name: registry.gitlab.com/hpctoolkit/rtt-images:1.0.0-ubuntu24.04
+    docker:
+      platform: linux/amd64
+
+ubuntu24.04 amd64:test cpu:
+  extends: .ubuntu24.04:test cpu
+  needs: [ubuntu24.04 amd64:compile]
+  rules:
+    - if: *on_gitlab
+  tags: [$GITLAB_SAAS_LINUX_MAX_AMD64]
+  image: *image_amd64
+
+ubuntu24.04 arm64:compile:
+  extends: .ubuntu24.04:compile
+  rules:
+    - if: *on_gitlab
+  tags: [$GITLAB_SAAS_LINUX_MAX_ARM64]
+  image: &image_arm64
+    name: registry.gitlab.com/hpctoolkit/rtt-images:1.0.0-ubuntu24.04
+    docker:
+      platform: linux/arm64
+  script:
+    - meson setup builddir/ -Dwerror=true -Ddyninst:werror=false -Dxed:werror=false -Doptimization=2 -Ddebug=false -Db_ndebug=false
+    - cd builddir/
+    # FIXME: Dodge undiagnosed bugs in the OpenMP threading and Python support in this image specifically, in CI
+    - meson test --print-errorlogs 'hpctoolkit:*' --no-suite hpcrun --no-suite python
+    - meson compile
+
+ubuntu24.04 arm64:test cpu:
+  extends: .ubuntu24.04:test cpu
+  needs: [ubuntu24.04 arm64:compile]
+  rules:
+    - if: *on_gitlab
+  tags: [$GITLAB_SAAS_LINUX_MAX_ARM64]
+  image: *image_arm64
+  script:
+    - cd builddir/
+    # FIXME: Dodge undiagnosed bugs in the OpenMP threading and Python support in this image specifically, in CI
+    - meson test --print-errorlogs 'hpctoolkit:*' --no-suite hpcrun --no-suite python
+
+# NB: Current GPU vendor runtimes don't support ppc64le, so we use a merged compile/test
+# architecture for better performance.
+ubuntu24.04 ppc64le:test:
+  extends: .ubuntu24.04:compile+test
+  rules:
+    - if: $HPCTOOLKIT_LINUX_MAX_PPC64LE
+  tags: [$HPCTOOLKIT_LINUX_MAX_PPC64LE]
+  image: &image_ppc64le
+    name: registry.gitlab.com/hpctoolkit/rtt-images:1.0.0-ubuntu24.04
+    docker:
+      platform: linux/ppc64le
+  script:
+    - meson setup builddir/ -Dwerror=true -Ddyninst:werror=false -Dxed:werror=false -Dbuildtype=debugoptimized
+    - cd builddir/
+    # FIXME: For unknown reasons, the Python support doesn't work in this version of Python.
+    # Not sure why. Disable it for now. https://gitlab.com/hpctoolkit/hpctoolkit/-/issues/847
+    - meson test --print-errorlogs 'hpctoolkit:*' --no-suite python
+    - meson compile
+
+ubuntu24.04 ppc64le:test:hpsf:
+  extends: ubuntu24.04 ppc64le:test
+  rules:
+    - if: &on_hpsf $CI_SERVER_FQDN == "gitlab.spack.io"
+  tags: [hpsf-ppc64le]

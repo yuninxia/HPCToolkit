@@ -5,27 +5,37 @@
 # Only spawn workflows for MRs or protected branches
 workflow:
   auto_cancel:
-    on_job_failure: all
+    on_job_failure: none
     on_new_commit: interruptible
   rules:
     - if: $CI_COMMIT_REF_PROTECTED == "true"
-      auto_cancel:
-        on_job_failure: none
-        on_new_commit: none
       when: always
     - if: $CI_PIPELINE_SOURCE == "push" && $CI_COMMIT_REF_PROTECTED != "true"
       when: never
     - when: always
 
 stages:
-  - individual tests
-  - semi-fresh tests
-  - configuration tests
-  - code quality
+  - verify
+  - build
+  - test
+  - audit
   - pre-deploy checks
   - artifacts
 
 variables:
+  GITLAB_SAAS_LINUX_MAX_AMD64:
+    description: Tag for the largest GitLab-hosted x86-64 runner available
+    value: saas-linux-medium-amd64 # Without Premium/Ultimate
+  GITLAB_SAAS_LINUX_MAX_ARM64:
+    description: Tag for the largest GitLab-hosted aarch64 runner available
+    value: saas-linux-small-arm64 # Without Premium/Ultimate
+  HPCTOOLKIT_LINUX_MAX_PPC64LE:
+    description: Tag for the largest ppc64le runner available, hosted by the HPCToolkit Project
+  GITLAB_SAAS_LINUX_MAX_AMD64_GPU_STANDARD:
+    description: Tag for the largest GitLab-hosted x86-64 standard-GPU runner available
+  HPCTOOLKIT_LINUX_MAX_AMD64_GPU_AMD:
+    description: Tag for the largest x86-64 AMD-GPU runner available, hosted by the HPCToolkit Project
+
   # Most jobs require the submodules, those that don't will override this
   GIT_SUBMODULE_STRATEGY: recursive
 
@@ -43,6 +53,7 @@ variables:
   EXECUTOR_JOB_SECTION_ATTEMPTS: 3
 
 default:
+  interruptible: true
   retry:
     max: 2
     when:
@@ -60,43 +71,30 @@ default:
         || exit 68
 
 include:
-  - local: ci/tests/gitlab.gitlab-ci.yml
-    rules: &gitlab_com
-      - if: $CI_SERVER_FQDN == "gitlab.com"
-  - local: ci/tests/hpctoolkit.gitlab-ci.yml
-    rules: &hpctoolkit_gitlab_com
-      - if: $CI_SERVER_FQDN == "gitlab.com" && $CI_PROJECT_ID == "38709409"
-  - local: ci/tests/hpsf.gitlab-ci.yml
-    rules:
-      - if: $CI_SERVER_FQDN == "gitlab.spack.io"
-  - local: ci/tests/data.gitlab-ci.yml
-    rules: *hpctoolkit_gitlab_com
-  - local: ci/lint.gitlab-ci.yml
-    rules: *hpctoolkit_gitlab_com
-  - local: doc/.gitlab-ci.yml
-    rules: *gitlab_com
+  - local: ci/verify.gitlab-ci.yml
+  - local: ci/build+test/.gitlab-ci.yml
+  - local: ci/audit.gitlab-ci.yml
+  - local: ci/artifacts.gitlab-ci.yml
 
 ci performance report:
   stage: .post
-  # Delay this job slightly to allow the data to settle first
-  when: delayed
-  start_in: 3 minutes
+  when: always
   image:
     name: docker.io/python:3.14.0-alpine@sha256:829edcc737417f9084a154511bde03a50b7996f3746e4c8a6b30a99a9a10648c
     entrypoint: [""]
   dependencies: []
   script:
-  - |-
-    gitlab_discount=none
-    if [ "$CI_SERVER_FQDN" = "gitlab.com" ]; then
-      if [ "$CI_PROJECT_ID" = "38709409" ]; then
-        gitlab_discount=oss
-      else
-        gitlab_discount=oss-fork
+    - |-
+      gitlab_discount=none
+      if [ "$CI_SERVER_FQDN" = "gitlab.com" ]; then
+        if [ "$CI_PROJECT_ID" = "38709409" ]; then
+          gitlab_discount=oss
+        else
+          gitlab_discount=oss-fork
+        fi
       fi
-    fi
-  - >-
-    ./ci/perf_report.py
-    --gitlab-discount="$gitlab_discount"
-    --exclude="$CI_JOB_ID"
-    "$CI_SERVER_URL" "$CI_PROJECT_ID" "$CI_PIPELINE_ID"
+    - >-
+      ./ci/perf_report.py
+      --gitlab-discount="$gitlab_discount"
+      --exclude="$CI_JOB_ID"
+      "$CI_SERVER_URL" "$CI_PROJECT_ID" "$CI_PIPELINE_ID"

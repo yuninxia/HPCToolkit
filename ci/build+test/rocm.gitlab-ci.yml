@@ -1,0 +1,70 @@
+# SPDX-FileCopyrightText: Contributors to the HPCToolkit Project
+#
+# SPDX-License-Identifier: Apache-2.0
+
+.rocm amd64:compile:
+  extends: .compile
+  rules:
+    - if: &on_gitlab $CI_SERVER_FQDN == "gitlab.com"
+  tags: [$GITLAB_SAAS_LINUX_MAX_AMD64]
+  script:
+    # NB: We compile for MI100, MI210, and MI300. More GPUs may become relevant later, but for now this
+    # set covers what we have available in CI.
+    - >-
+      meson setup builddir/ -Dwerror=true -Ddyninst:werror=false -Dxed:werror=false -Dlibunwind:werror=false -Doptimization=2 -Ddebug=false -Db_ndebug=false
+      -Dhip_args="['--offload-arch=gfx908,gfx90a,gfx942']"
+      -Drocm=enabled
+    - cd builddir/
+    # FIXME: Tests that use Level Zero fail on systems that don't have a suitable GPU attached.
+    # This should be fixed, but for now don't try to run any of the affected tests.
+    # FIXME: The ROCm-enabled tests FAIL instead of SKIP if there is no AMD hardware available to run the test.
+    # For now, disable these tests to allow the CI job to pass
+    - meson test --print-errorlogs 'hpctoolkit:*' --no-suite level0 --no-suite rocm
+    - meson compile
+
+.rocm amd64:test amd gpu:
+  extends: .test
+  rules:
+    - if: $HPCTOOLKIT_LINUX_MAX_AMD64_GPU_AMD
+  tags: [$HPCTOOLKIT_LINUX_MAX_AMD64_GPU_AMD]
+  script:
+    - cd builddir/
+    - meson test --print-errorlogs 'hpctoolkit:*' --suite opencl --suite rocm
+
+# NB: HPSF CI uses a merged compile/test architecture. Unlike GitLab.com, there are
+# limited generic-hardware runners available, so a merged architecture works better.
+.rocm amd64:test:hpsf:
+  extends: .compile+test
+  rules:
+    - if: &on_hpsf $CI_SERVER_FQDN == "gitlab.spack.io"
+  tags: [hpsf-gpu, x86_64-amdgpu, amd-$AMD_GPU_ARCH]
+  parallel:
+    matrix:
+      - AMD_GPU_ARCH: [mi210, mi300]
+  script:
+    - >-
+      meson setup builddir/ -Dwerror=true -Ddyninst:werror=false -Dxed:werror=false -Dlibunwind:werror=false -Dbuildtype=debugoptimized
+      -Drocm=enabled
+    - cd builddir/
+    # FIXME: Tests that use Level Zero fail on systems that don't have a suitable GPU attached.
+    # This should be fixed, but for now don't try to run any of the affected tests.
+    # FIXME: The ROCm-enabled tests FAIL instead of SKIP if there is no AMD hardware available to run the test.
+    # For now, disable these tests to allow the CI job to pass
+    - meson test --print-errorlogs 'hpctoolkit:*' --no-suite level0 --no-suite rocm
+    - meson compile
+
+rocm6.3 amd64:compile:
+  extends: .rocm amd64:compile
+  image: &image_rocm6_3_amd64
+    name: registry.gitlab.com/hpctoolkit/rtt-images:1.0.0-aio
+    docker:
+      platform: linux/amd64
+
+rocm6.3 amd64:test amd gpu:
+  extends: .rocm amd64:test amd gpu
+  needs: [rocm6.3 amd64:compile]
+  image: *image_rocm6_3_amd64
+
+rocm6.3 amd64:test:hpsf:
+  extends: .rocm amd64:test:hpsf
+  image: *image_rocm6_3_amd64

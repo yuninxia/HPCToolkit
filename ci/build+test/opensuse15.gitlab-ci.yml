@@ -1,0 +1,39 @@
+# SPDX-FileCopyrightText: Contributors to the HPCToolkit Project
+#
+# SPDX-License-Identifier: Apache-2.0
+
+.opensuse15:compile:
+  extends: .compile
+  script:
+    # FIXME: This particular combination of PAPI et al. seems to cause hpcrun to hang, always.
+    # Disable PAPI in the build until a proper investigation can be carried out.
+    - >-
+      meson setup builddir/ -Dwerror=true -Ddyninst:werror=false -Dxed:werror=false -Dlibunwind:werror=false -Delfutils:werror=false -Doptimization=2 -Ddebug=false -Db_ndebug=false
+      -Dpapi=disabled
+    - cd builddir/
+    - meson test --print-errorlogs 'hpctoolkit:*'
+    - meson compile
+
+.opensuse15:test cpu:
+  extends: .test
+  script:
+    - cd builddir/
+    - meson test --print-errorlogs 'hpctoolkit:*'
+
+opensuse15 amd64:compile:
+  extends: .opensuse15:compile
+  rules:
+    - if: &on_gitlab $CI_SERVER_FQDN == "gitlab.com"
+  tags: [$GITLAB_SAAS_LINUX_MAX_AMD64]
+  image: &image_amd64
+    name: registry.gitlab.com/hpctoolkit/rtt-images:1.0.0-leap15@sha256:aacef875771924780b7702669a932df1049d56f97c37859222b5708d2f03b2ae
+    docker:
+      platform: linux/amd64
+
+opensuse15 amd64:test cpu:
+  extends: .opensuse15:test cpu
+  needs: [opensuse15 amd64:compile]
+  rules:
+    - if: *on_gitlab
+  tags: [$GITLAB_SAAS_LINUX_MAX_AMD64]
+  image: *image_amd64

@@ -136,12 +136,20 @@ class Job:
     def __init__(self, raw: dict) -> None:
         "Create a new Job from the given raw JSON-decoded GitLab API call"
         self._raw = raw
+        # NB: Job status values are from: https://docs.gitlab.com/api/jobs/#job-status-values
         if self._raw["status"] not in (
-            "success",
-            "failed",
             "canceled",
+            "canceling",
+            "created",
+            "failed",
+            "manual",
             "pending",
+            "preparing",
             "running",
+            "scheduled",
+            "skipped",
+            "success",
+            "waiting_for_resource",
         ):
             raise ValueError(f"Invalid job state: {self._raw['status']}")
 
@@ -163,12 +171,20 @@ class Job:
     @property
     def canceled(self) -> bool:
         "True if the job was canceled before it could finish"
-        return self._raw["status"] == "canceled"
+        return self._raw["status"] in ("canceling", "canceled", "skipped")
 
     @property
     def incomplete(self) -> bool:
         "True if the job has not yet completed"
-        return self._raw["status"] in ("pending", "running")
+        return self._raw["status"] in (
+            "created",
+            "manual",
+            "pending",
+            "preparing",
+            "running",
+            "scheduled",
+            "waiting_for_resource",
+        )
 
     def cost(self, **kwargs) -> Cost:
         "Calculate the Cost associated with this Job"

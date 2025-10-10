@@ -1,0 +1,126 @@
+# SPDX-FileCopyrightText: Contributors to the HPCToolkit Project
+#
+# SPDX-License-Identifier: Apache-2.0
+
+.cuda amd64:compile:
+  extends: .compile
+  rules:
+    - if: &on_gitlab $CI_SERVER_FQDN == "gitlab.com"
+  tags: [$GITLAB_SAAS_LINUX_MAX_AMD64]
+  script:
+    - >-
+      meson setup builddir/ -Dwerror=true -Ddyninst:werror=false -Dxed:werror=false -Dlibunwind:werror=false -Doptimization=2 -Ddebug=false -Db_ndebug=false
+      -Dcuda=enabled
+    - cd builddir/
+    - meson test --print-errorlogs 'hpctoolkit:*'
+    - meson compile
+
+.cuda amd64:test nvidia gpu:
+  extends: .test
+  rules:
+    - if: $GITLAB_SAAS_LINUX_MAX_AMD64_GPU_STANDARD
+  tags: [$GITLAB_SAAS_LINUX_MAX_AMD64_GPU_STANDARD]
+  script:
+    - cd builddir/
+    # FIXME: -arch=native is needed in CI to avoid PTX JIT-compilation. Without this the
+    # CI falls over if the CUDA is too new compared to the driver.
+    - meson configure -Dcuda_args=-arch=native
+    - meson test --print-errorlogs 'hpctoolkit:*' --suite opencl --suite cuda --suite hpcstruct
+
+# NB: HPSF CI uses a merged compile/test architecture. Unlike GitLab.com, there are
+# limited generic-hardware runners available, so a merged architecture works better.
+.cuda amd64:test:hpsf:
+  extends: .compile+test
+  rules:
+    - if: &on_hpsf $CI_SERVER_FQDN == "gitlab.spack.io"
+  tags: [hpsf-gpu, x86_64-nvidiagpu, nvidia-$NVIDIA_GPU_ARCH]
+  parallel:
+    matrix:
+      - NVIDIA_GPU_ARCH: [a100]
+  script:
+    - >-
+      meson setup builddir/ -Dwerror=true -Ddyninst:werror=false -Dxed:werror=false -Dlibunwind:werror=false -Dbuildtype=debugoptimized
+      -Dcuda=enabled
+    - cd builddir/
+    - meson test --print-errorlogs 'hpctoolkit:*'
+    - meson compile
+
+cuda12.0 amd64:compile:
+  extends: .cuda amd64:compile
+  image: &image_cuda12_0_amd64
+    name: registry.gitlab.com/hpctoolkit/rtt-images:1.0.0-cuda12.0
+    docker:
+      platform: linux/amd64
+
+cuda12.0 amd64:test nvidia gpu:
+  extends: .cuda amd64:test nvidia gpu
+  needs: [cuda12.0 amd64:compile]
+  image: *image_cuda12_0_amd64
+
+cuda12.0 amd64:test:hpsf:
+  extends: .cuda amd64:test:hpsf
+  image: *image_cuda12_0_amd64
+
+cuda12.1 amd64:compile:
+  extends: .cuda amd64:compile
+  image: &image_cuda12_1_amd64
+    name: registry.gitlab.com/hpctoolkit/rtt-images:1.0.0-cuda12.1
+    docker:
+      platform: linux/amd64
+
+cuda12.1 amd64:test nvidia gpu:
+  extends: .cuda amd64:test nvidia gpu
+  needs: [cuda12.1 amd64:compile]
+  image: *image_cuda12_1_amd64
+
+cuda12.1 amd64:test:hpsf:
+  extends: .cuda amd64:test:hpsf
+  image: *image_cuda12_1_amd64
+
+cuda12.2 amd64:compile:
+  extends: .cuda amd64:compile
+  image: &image_cuda12_2_amd64
+    name: registry.gitlab.com/hpctoolkit/rtt-images:1.0.0-cuda12.2
+    docker:
+      platform: linux/amd64
+
+cuda12.2 amd64:test nvidia gpu:
+  extends: .cuda amd64:test nvidia gpu
+  needs: [cuda12.2 amd64:compile]
+  image: *image_cuda12_2_amd64
+
+cuda12.2 amd64:test:hpsf:
+  extends: .cuda amd64:test:hpsf
+  image: *image_cuda12_2_amd64
+
+cuda12.4 amd64:compile:
+  extends: .cuda amd64:compile
+  image: &image_cuda12_4_amd64
+    name: registry.gitlab.com/hpctoolkit/rtt-images:1.0.0-cuda12.4
+    docker:
+      platform: linux/amd64
+
+cuda12.4 amd64:test nvidia gpu:
+  extends: .cuda amd64:test nvidia gpu
+  needs: [cuda12.4 amd64:compile]
+  image: *image_cuda12_4_amd64
+
+cuda12.4 amd64:test:hpsf:
+  extends: .cuda amd64:test:hpsf
+  image: *image_cuda12_4_amd64
+
+cuda12.5 amd64:compile:
+  extends: .cuda amd64:compile
+  image: &image_cuda12_5_amd64
+    name: registry.gitlab.com/hpctoolkit/rtt-images:1.0.0-cuda12.5
+    docker:
+      platform: linux/amd64
+
+cuda12.5 amd64:test nvidia gpu:
+  extends: .cuda amd64:test nvidia gpu
+  needs: [cuda12.5 amd64:compile]
+  image: *image_cuda12_5_amd64
+
+cuda12.5 amd64:test:hpsf:
+  extends: .cuda amd64:test:hpsf
+  image: *image_cuda12_5_amd64

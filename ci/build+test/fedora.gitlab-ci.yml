@@ -1,0 +1,52 @@
+# SPDX-FileCopyrightText: Contributors to the HPCToolkit Project
+#
+# SPDX-License-Identifier: Apache-2.0
+
+.fedora:compile:
+  extends: .compile
+  script:
+    # FIXME: This particular combination of PAPI et al. seems to cause hpcrun to hang, always.
+    # Disable PAPI in the build until a proper investigation can be carried out.
+    - >-
+      meson setup builddir/ -Dwerror=true -Ddyninst:werror=false -Dxed:werror=false -Delfutils:werror=false -Dlibunwind:werror=false -Doptimization=2 -Ddebug=false -Db_ndebug=false
+      -Dpapi=disabled
+    - cd builddir/
+    - meson test --print-errorlogs 'hpctoolkit:*'
+    - meson compile
+
+.fedora:compile clang:
+  extends: .fedora:compile
+  variables:
+    CC: ccache clang
+    CXX: ccache clang++
+
+.fedora:test cpu:
+  extends: .test
+  script:
+    - cd builddir/
+    - meson test --print-errorlogs 'hpctoolkit:*'
+
+fedora amd64:compile:
+  extends: .fedora:compile
+  rules:
+    - if: &on_gitlab $CI_SERVER_FQDN == "gitlab.com"
+  tags: [$GITLAB_SAAS_LINUX_MAX_AMD64]
+  image: &image_amd64
+    name: registry.gitlab.com/hpctoolkit/rtt-images:1.0.0-leap15
+    docker:
+      platform: linux/amd64
+
+fedora amd64:test cpu:
+  extends: .fedora:test cpu
+  needs: [fedora amd64:compile]
+  rules:
+    - if: *on_gitlab
+  tags: [$GITLAB_SAAS_LINUX_MAX_AMD64]
+  image: *image_amd64
+
+fedora amd64:compile clang:
+  extends: .fedora:compile clang
+  rules:
+    - if: *on_gitlab
+  tags: [$GITLAB_SAAS_LINUX_MAX_AMD64]
+  image: *image_amd64
