@@ -54,7 +54,7 @@ include:
 
 "regen testdata: [none, cpu]":
   extends: .regen testdata
-  image: registry.gitlab.com/hpctoolkit/rtt-images:1.0.0-ubuntu20.04
+  image: registry.gitlab.com/hpctoolkit/rtt-images:1.0.0-ubuntu20.04@sha256:f427089fb14418968cafa7473c282e0287725ccee8ceca2cd10d506c138a5298
   rules:
     - if: $CI_SERVER_FQDN == "gitlab.com"
   tags: [$GITLAB_SAAS_LINUX_MAX_AMD64]
@@ -63,7 +63,7 @@ include:
 
 "regen testdata: [nvidia, sw-cuda]":
   extends: .regen testdata
-  image: registry.gitlab.com/hpctoolkit/rtt-images:1.0.0-cuda12.5
+  image: registry.gitlab.com/hpctoolkit/rtt-images:1.0.0-cuda12.5@sha256:2aa0499fff7f72a0b017f52de8bbc6e3bab8049e842e68fd0c82a48fa24b452f
   rules:
     - if: $GITLAB_SAAS_LINUX_MAX_AMD64_GPU_STANDARD
   tags: [$GITLAB_SAAS_LINUX_MAX_AMD64_GPU_STANDARD]
@@ -76,7 +76,7 @@ include:
 
 "regen testdata: [amd]":
   extends: .regen testdata
-  image: registry.gitlab.com/hpctoolkit/rtt-images:1.0.0-aio
+  image: registry.gitlab.com/hpctoolkit/rtt-images:1.0.0-aio@sha256:aed3071b8690dbdf3e2b4fec2071b47680c0be171e1a5613e43f425b55b67c2c
   rules:
     - if: $HPCTOOLKIT_LINUX_MAX_AMD64_GPU_AMD
   tags: [$HPCTOOLKIT_LINUX_MAX_AMD64_GPU_AMD]
@@ -96,7 +96,7 @@ include:
     - "regen testdata: [none, cpu]"
     - "regen testdata: [nvidia, sw-cuda]"
     - "regen testdata: [amd]"
-  image: docker.io/alpine
+  image: docker.io/alpine@sha256:4b7ce07002c69e8f3d704a9c5d6fd3053be500b7f1c69fc0d80990c2ad8dd412
   script:
     - apk add git
     - ls -l testdata-patches/
