@@ -39,22 +39,6 @@ include:
       meson setup
       --force-fallback-for=gtpin
       -Dwerror=true
-      -Dbzip2:werror=false
-      -Ddyninst:werror=false
-      -Delfutils:werror=false
-      -Dgtpin:werror=false
-      -Dlibiberty:werror=false
-      -Dliblzma:werror=false
-      -Dlibpfm:werror=false
-      -Dlibunwind:werror=false
-      -Dopencl-headers:werror=false
-      -Dtbb:werror=false
-      -Dxed:werror=false
-      -Dxerces-c:werror=false
-      -Dxxhash:werror=false
-      -Dyaml-cpp:werror=false
-      -Dzlib:werror=false
-      -Dzstd:werror=false
       -Dcuda_args=-arch=native
       builddir/
     - meson compile -C builddir/ $(printf 'regen-testdata-%s\n' $REGEN_SUITES)

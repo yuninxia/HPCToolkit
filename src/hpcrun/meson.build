@@ -551,7 +551,12 @@ libs += main_hpcrun_lib
 # using LD_PRELOAD. These libraries must not have RPATH or RUNPATH attributes, which may
 # alter and conflict with the library search path of the application. We use patchelf to
 # remove these attributes during the build.
-patchelf = find_program('patchelf', version: '>=0.11', native: true)
+patchelf = find_program(
+  'patchelf',
+  version: '>=0.11',
+  native: true,
+  default_options: ['warning_level=2'],
+)
 
 # Libraries needed to support the "audit" interface for collecting loaded libraries
 audit_lib = shared_library(

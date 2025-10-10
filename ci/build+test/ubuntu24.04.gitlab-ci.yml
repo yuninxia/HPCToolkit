@@ -5,7 +5,7 @@
 .ubuntu24.04:compile:
   extends: .compile
   script:
-    - meson setup builddir/ -Dwerror=true -Ddyninst:werror=false -Dxed:werror=false -Doptimization=2 -Ddebug=false -Db_ndebug=false
+    - meson setup builddir/ -Dwerror=true -Doptimization=2 -Ddebug=false -Db_ndebug=false
     - cd builddir/
     - meson test --print-errorlogs 'hpctoolkit:*'
     - meson compile
@@ -19,7 +19,7 @@
 .ubuntu24.04:compile+test:
   extends: .compile+test
   script:
-    - meson setup builddir/ -Dwerror=true -Ddyninst:werror=false -Dxed:werror=false -Dbuildtype=debugoptimized
+    - meson setup builddir/ -Dwerror=true -Dbuildtype=debugoptimized
     - cd builddir/
     - meson test --print-errorlogs 'hpctoolkit:*'
     - meson compile
@@ -52,7 +52,7 @@ ubuntu24.04 arm64:compile:
     docker:
       platform: linux/arm64
   script:
-    - meson setup builddir/ -Dwerror=true -Ddyninst:werror=false -Dxed:werror=false -Doptimization=2 -Ddebug=false -Db_ndebug=false
+    - meson setup builddir/ -Dwerror=true -Doptimization=2 -Ddebug=false -Db_ndebug=false
     - cd builddir/
     # FIXME: Dodge undiagnosed bugs in the OpenMP threading and Python support in this image specifically, in CI
     - meson test --print-errorlogs 'hpctoolkit:*' --no-suite hpcrun --no-suite python
@@ -82,7 +82,7 @@ ubuntu24.04 ppc64le:test:
     docker:
       platform: linux/ppc64le
   script:
-    - meson setup builddir/ -Dwerror=true -Ddyninst:werror=false -Dxed:werror=false -Dbuildtype=debugoptimized
+    - meson setup builddir/ -Dwerror=true -Dbuildtype=debugoptimized
     - cd builddir/
     # FIXME: For unknown reasons, the Python support doesn't work in this version of Python.
     # Not sure why. Disable it for now. https://gitlab.com/hpctoolkit/hpctoolkit/-/issues/847

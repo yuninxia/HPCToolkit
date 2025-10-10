@@ -69,20 +69,37 @@ if python_inst.found()
   add_project_arguments('-DENABLE_LOGICAL_PYTHON', language: ['c', 'cpp'])
 endif
 
+# Find liblzma. We search for this first so our default_options can apply before it gets
+# used in later wraps.
+lzma_dep = dependency(
+  'liblzma',
+  version: '>=5.2.0',
+  include_type: 'system',
+  default_options: ['warning_level=0'],
+)
+
 # Find Elfutils. We search for libdw first because if libelf is installed but libdw isn't, the
 # dependency('libdw') call will invoke the Elfutils subproject and call meson.override_dependency()
 # for libelf, if we found libelf first this call causes a Meson setup failure.
 # In all major distros you can't install libdw without libelf, so this shouldn't cause problems.
+# NB: We don't use bzip2, but the Elfutils wrap might, so configure its warnings here.
+elfutils_default_options = [
+  'thread_safety=true',
+  'warning_level=0',
+  'werror=false',
+  'bzip2:warning_level=0',
+  'bzip2:werror=false',
+]
 libdw_dep = dependency(
   'libdw',
   version: '>=0.186',
-  default_options: ['thread_safety=true'],
+  default_options: elfutils_default_options,
   include_type: 'system',
 )
 libelf_dep = dependency(
   'libelf',
   version: '>=0.186',
-  default_options: ['thread_safety=true'],
+  default_options: elfutils_default_options,
   include_type: 'system',
 )
 
@@ -97,11 +114,20 @@ boost_dep = dependency(
 libunwind_dep = dependency(
   'libunwind',
   version: ['>=1.6.2', '!=1.21'],
-  default_options: ['minidebuginfo=enabled', 'zlibdebuginfo=enabled'],
+  default_options: [
+    'minidebuginfo=enabled',
+    'zlibdebuginfo=enabled',
+    'warning_level=0',
+    'werror=false',
+  ],
   include_type: 'system',
 )
-xerces_dep = dependency('xerces-c', version: '>=3.2.2', include_type: 'system')
-lzma_dep = dependency('liblzma', version: '>=5.2.0', include_type: 'system')
+xerces_dep = dependency(
+  'xerces-c',
+  version: '>=3.2.2',
+  include_type: 'system',
+  default_options: ['warning_level=0', 'werror=false'],
+)
 xxhash_dep = dependency('libxxhash', version: '>=0.8.1', include_type: 'system')
 tbb_malloc_dep = dependency(
   'tbbmalloc',
@@ -109,7 +135,12 @@ tbb_malloc_dep = dependency(
   components: ['tbb', 'tbbmalloc'],
   include_type: 'system',
 )
-yaml_cpp_dep = dependency('yaml-cpp', version: '>=0.6.2', include_type: 'system')
+yaml_cpp_dep = dependency(
+  'yaml-cpp',
+  version: '>=0.6.2',
+  include_type: 'system',
+  default_options: ['warning_level=0', 'werror=false'],
+)
 papi_dep = dependency(
   'papi',
   required: get_option('papi'),
@@ -133,12 +164,14 @@ endif
 # These dependencies don't ship any dependency files, so we use CMake by default and fall back to
 # compiler checks as a robustness case. The final fallback to dependency() in each stanza is to
 # provide a better error message and enable wrap fallbacks.
+libiberty_default_options = ['warning_level=0', 'werror=false']
 libiberty_dep = dependency(
   'Libiberty',
   method: 'cmake',
   cmake_module_path: 'cmake',
   required: false,
   include_type: 'system',
+  default_options: libiberty_default_options,
 )
 if not libiberty_dep.found()
   if cc.has_header('libiberty/demangle.h') or cc.has_header('demangle.h')
@@ -152,9 +185,16 @@ if not libiberty_dep.found()
   endif
 endif
 if not libiberty_dep.found()
-  libiberty_dep = dependency('libiberty', method: 'system', include_type: 'system')  # Force wrap fallback
+  # Force wrap fallback
+  libiberty_dep = dependency(
+    'libiberty',
+    method: 'system',
+    include_type: 'system',
+    default_options: libiberty_default_options,
+  )
 endif
 
+xed_default_options = ['warning_level=0', 'werror=false']
 xed_dep = dependency('', required: false)
 if host_machine.cpu_family() in ['x86', 'x86_64']
   xed_dep = dependency(
@@ -163,6 +203,7 @@ if host_machine.cpu_family() in ['x86', 'x86_64']
     cmake_module_path: 'cmake',
     version: '>=2022.08.11',
     required: false,
+    default_options: xed_default_options,
   )
   if not xed_dep.found()
     if cc.has_header('xed/xed-interface.h') or cc.has_header('xed-interface.h')
@@ -187,7 +228,13 @@ if host_machine.cpu_family() in ['x86', 'x86_64']
     endif
   endif
   if not xed_dep.found()
-    xed_dep = dependency('xed', method: 'system', version: '>=2022.08.11')    # Force wrap fallback
+    # Force wrap fallback
+    xed_dep = dependency(
+      'xed',
+      method: 'system',
+      version: '>=2022.08.11',
+      default_options: xed_default_options,
+    )
   endif
 endif
 if xed_dep.found()
@@ -248,7 +295,12 @@ endif
 # Dyninst ships config files, but up through 12.3 they aren't actually usable. We have a Find*
 # script that fiddles with the exposed targets until it works, so if we can't get what we want
 # directly use the find script to do so.
-_dyninst_opts = ['openmp=enabled', 'debuginfod=disabled']
+_dyninst_opts = [
+  'openmp=enabled',
+  'debuginfod=disabled',
+  'warning_level=0',
+  'werror=false',
+]
 dyninst_dep = dependency(
   'Dyninst',
   components: ['parseAPI', 'instructionAPI', 'symtabAPI'],
