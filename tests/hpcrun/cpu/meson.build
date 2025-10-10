@@ -9,7 +9,7 @@ simple_tstexe = executable(
 )
 
 subdir('dtv')
-# subdir('getenv')
+subdir('getenv')
 subdir('itimer')
 subdir('papi')
 subdir('perf')

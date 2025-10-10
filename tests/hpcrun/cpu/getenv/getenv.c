@@ -58,21 +58,6 @@ __attribute__((constructor)) static void init() {
   print("in init after call", val);
 }
 
-static char* real_getenv(const char* key) {
-  static getenv_t libc_getenv_fn = NULL;
-
-  if (libc_getenv_fn == NULL) {
-    libc_getenv_fn = (getenv_t)dlsym(RTLD_NEXT, "getenv");
-  }
-
-  char* val = libc_getenv_fn(key);
-
-  if (doprint())
-    fprintf(stderr, "in real_getenv\n", val);
-
-  return val;
-}
-
 //******************************************************************************
 // interface operations
 //******************************************************************************
