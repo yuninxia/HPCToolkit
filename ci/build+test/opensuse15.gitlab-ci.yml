@@ -26,7 +26,7 @@ opensuse15 amd64:compile:
     - if: &on_gitlab $CI_SERVER_FQDN == "gitlab.com"
   tags: [$GITLAB_SAAS_LINUX_MAX_AMD64]
   image: &image_amd64
-    name: registry.gitlab.com/hpctoolkit/rtt-images:1.0.0-leap15@sha256:aacef875771924780b7702669a932df1049d56f97c37859222b5708d2f03b2ae
+    name: registry.gitlab.com/hpctoolkit/rtt-images:1.0.0-leap15@sha256:7788d9a5dd2d0dcf7275c2c6a46884f5fb44d27b98a32cf0b2a56a4756fd33da
     docker:
       platform: linux/amd64
 
