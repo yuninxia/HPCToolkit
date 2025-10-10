@@ -56,7 +56,7 @@
 rocm6.3 amd64:compile:
   extends: .rocm amd64:compile
   image: &image_rocm6_3_amd64
-    name: registry.gitlab.com/hpctoolkit/rtt-images:1.0.0-aio
+    name: registry.gitlab.com/hpctoolkit/rtt-images:1.0.0-aio@sha256:aed3071b8690dbdf3e2b4fec2071b47680c0be171e1a5613e43f425b55b67c2c
     docker:
       platform: linux/amd64
 

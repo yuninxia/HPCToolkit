@@ -20,7 +20,7 @@ intel amd64:compile:
     - if: &on_gitlab $CI_SERVER_FQDN == "gitlab.com"
   tags: [$GITLAB_SAAS_LINUX_MAX_AMD64]
   image: &image_amd64
-    name: registry.gitlab.com/hpctoolkit/rtt-images:1.0.0-intel
+    name: registry.gitlab.com/hpctoolkit/rtt-images:1.0.0-intel@sha256:b0e20bc8b8f13d07d9d451e5b0216422b8d9610809ebabc1939af79f5384ae5f
     docker:
       platform: linux/amd64
 
