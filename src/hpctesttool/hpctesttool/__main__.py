@@ -178,26 +178,31 @@ def unwind_py_simple(*, script: Path, database: Path) -> None:
 del unwind_py_simple
 
 
-@test.command
+@main.command
 @click.argument(
-    "database",
-    type=click.Path(exists=True, readable=True, file_okay=False, path_type=Path),
+    "lhs",
+    type=click.Path(exists=True, readable=True, path_type=Path),
 )
 @click.argument(
-    "canonical",
-    type=click.Path(exists=True, readable=True, file_okay=False, path_type=Path),
+    "rhs",
+    type=click.Path(exists=True, readable=True, path_type=Path),
 )
-def db_compare(*, database: Path, canonical: Path) -> None:
-    """Compare a DATABASE against a CANONICAL database and report any differences."""
-    diff = StrictDiff(from_path(database), from_path(canonical))
+def diff(*, lhs: Path, rhs: Path) -> None:
+    """Generate the diff from LHS to RHS, both of which are databases."""
+    diff = StrictDiff(from_path(lhs), from_path(rhs))
     acc = StrictAccuracy(diff)
-    if len(diff.hunks) > 0 or acc.inaccuracy:
+
+    ok = True
+    if len(diff.hunks) > 0:
         diff.render(sys.stdout)
+        ok = False
+    if acc.inaccuracy:
         acc.render(sys.stdout)
-        raise click.ClickException("Comparison failed!")
+        ok = False
+    sys.exit(0 if ok else 1)
 
 
-del db_compare
+del diff
 
 
 @test.command
@@ -268,14 +273,14 @@ def struct_compare(*, structfile: typing.BinaryIO, canonical: typing.BinaryIO) -
 del struct_compare
 
 
-@test.command
+@main.command
 @click.argument(
     "database",
-    type=click.Path(exists=True, file_okay=False, readable=True, path_type=Path),
+    type=click.Path(exists=True, readable=True, path_type=Path),
 )
 @click.argument("output", type=click.File("w", encoding="utf-8"))
 def yaml(*, database: Path, output: typing.BinaryIO) -> None:
-    """Transcode the given database into a YAML file."""
+    """Transcode the given DATABASE into a YAML file, saved to OUTPUT."""
     ruamel.yaml.YAML(typ="rt").dump(from_path(database), output)
 
 

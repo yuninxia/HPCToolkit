@@ -12,4 +12,4 @@ trap 'rm -rf "$tmpdir"' EXIT
 tmpdir=$(mktemp --directory)
 
 "$@" -o "$tmpdir"/d
-"$hpctesttool" test db-compare "$tmpdir"/d "$canonical"
+"$hpctesttool" diff "$canonical" "$tmpdir"/d

@@ -541,7 +541,7 @@ def test_float_compare():
 
 def test_accuracy_of_invalid_diff():
     sa = StrictAccuracy(DummyDiff())
-    assert sa.inaccuracy == 1.0
+    assert sa.inaccuracy == 0.0
 
 
 @pytest.mark.parametrize(
@@ -558,15 +558,16 @@ def test_no_diff_accuracy(v4_data_small, attr, vcnt):
     acc = StrictAccuracy(diff)
     assert acc.total_cnt == vcnt
     assert acc.failed_cnt == 0
-    assert acc.inaccuracy == (1.0 if vcnt == 0 else 0.0)
+    assert acc.inaccuracy == 0.0
 
     with io.StringIO() as buf:
         acc.render(buf)
         out = buf.getvalue().splitlines()
-    assert len(out) == (2 if vcnt == 0 else 1)
-    assert (
-        out[0]
-        == f"Identified {100 if vcnt == 0 else 0:.2f}% inaccuracies in {vcnt:d} values"
-    )
+    assert len(out) == 1
     if vcnt == 0:
-        assert out[1] == "  No values were compared!"
+        assert out[0] == "No values compared"
+    else:
+        assert (
+            out[0]
+            == f"{100 if vcnt == 0 else 0:.2f}% out of {vcnt:d} values had significant differences"
+        )
