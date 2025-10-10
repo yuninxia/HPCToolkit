@@ -8,6 +8,7 @@ simple_tstexe = executable(
   dependencies: [math_dep],
 )
 
+subdir('dtv')
 # subdir('getenv')
 subdir('itimer')
 subdir('papi')
