@@ -57,6 +57,31 @@ if not build_python.found()
   )
 endif
 
+# Check whether the build Python also has ensurepip, which we need to unpack wheels and
+# for some fallback installs.
+pip_versions = '>=21.0'
+pip_force_fb = get_option('wrap_mode') == 'forcefallback' or 'pip' in get_option(
+  'force_fallback_for',
+)
+ensurepip_found = false
+if not pip_force_fb
+  ensurepip_result = run_command(
+    build_python,
+    '-c',
+    'import ensurepip; print(ensurepip.version())',
+    check: false,
+  )
+  if ensurepip_result.returncode() == 0
+    ensurepip_found = ensurepip_result.stdout().strip().version_compare(pip_versions)
+  endif
+endif
+if pip_force_fb or not ensurepip_found
+  if get_option('wrap_mode') == 'nofallback' and not pip_force_fb
+    error('Python module ensurepip is required but was not found')
+  endif
+  pip = subproject('pip', version: pip_versions).get_variable('pip')
+endif
+
 # Find liblzma. We search for this first so our default_options can apply before it gets
 # used in later wraps.
 lzma_dep = dependency(

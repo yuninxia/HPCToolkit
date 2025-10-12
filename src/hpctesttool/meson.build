@@ -11,6 +11,7 @@ run_command(
   build_python,
   '-m',
   'venv',
+  ensurepip_found ? [] : '--without-pip',
   '--upgrade',
   hpctesttool_venv,
   capture: false,
@@ -22,8 +23,7 @@ hpctesttool_python = find_program(hpctesttool_venv / 'bin' / 'python', native: t
 # predownloaded wheels to satisfy dependencies (--find-links).
 run_command(
   hpctesttool_python,
-  '-m',
-  'pip',
+  ensurepip_found ? ['-m', 'pip'] : pip,
   '--no-input',
   '--disable-pip-version-check',
   '--require-virtualenv',
