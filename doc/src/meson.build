@@ -82,6 +82,7 @@ if sphinx_force_fb or not sphinx.found() and manual_f.enabled() and get_option(
     '--require-virtualenv',
     'install',
     '--no-warn-script-location',
+    '--require-hashes',
     get_option('wrap_mode') == 'nodownload' ? '--no-index' : [],
     '--requirement',
     files('requirements.txt'),
