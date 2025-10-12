@@ -80,7 +80,7 @@ if level0_dep.found()
 endif
 
 features_msg += 'OpenCL support: @0@\n'.format(opencl_dep.found() ? 'yes' : 'no')
-features_msg += 'Python support: @0@\n'.format(python_inst.found() ? 'yes' : 'no')
+features_msg += 'Python support: @0@\n'.format(python.found() ? 'yes' : 'no')
 
 # Generate the final version information source file. The header also needs to be copied beside
 # it for it to compile properly.

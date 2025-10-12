@@ -10,7 +10,7 @@ hpctesttool_python = custom_target(
   output: 'hpctesttool-python',
   build_by_default: false,
   command: [
-    python,
+    build_python,
     files('install.py'),
     '@PRIVATE_DIR@',
     subproject('hpctesttool-wheels').get_variable('wheels'),

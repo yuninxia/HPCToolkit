@@ -12,7 +12,7 @@ endif
 
 # Find or install Sphinx and the necessary dependencies
 sphinx_venv = meson.current_build_dir() / '.venv'
-if native_python.found()
+if build_python.found()
   sphinx_venv_result = run_command(
     [
       native_pyvenv,
@@ -70,7 +70,7 @@ docs_html = custom_target(
   build_always_stale: true,
 )
 meson.add_install_script(
-  native_python,
+  build_python,
   files('install_html.py'),
   docs_html,
   docdir,
@@ -138,7 +138,7 @@ alias_target('docs', docs_all)
 run_target(
   'docs-serve',
   command: [
-    native_python,
+    build_python,
     files('serve.py'),
     meson.current_build_dir(),
     get_option('prefix') / docdir,

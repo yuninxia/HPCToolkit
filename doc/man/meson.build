@@ -11,7 +11,7 @@ _cdata.set('PROJECT_VERSION', meson.project_version())
 
 # Datestamp is the time of configuration, but only the month and year.
 _date = run_command(
-  python,
+  build_python,
   '-c',
   '''
 import datetime

@@ -35,38 +35,26 @@ if get_option('werror')
   endforeach
 endif
 
-
-# Find Python.
-python = find_program('python3', 'python', version: '>=3.8', required: false)
-if not python.found()
-  _pynames = []
-  foreach ver : range(8, 15)
-    _pynames += [f'python3.@ver@']
-  endforeach
-  python = find_program(_pynames, version: '>=3.8')
-endif
-
-# Find the Python installation, used for the Python unwinding support. This needs to be the same
-# version as the Python we test with to make everything compatible.
-python_inst = pymod.find_installation(python.full_path(), required: get_option('python'))
-if python_inst.found()
-  assert(python_inst.language_version().version_compare('>=3.8'))
-  _py_dep = python_inst.dependency(
-    required: get_option('python'),
-    include_type: 'system',
+# Find Python for the build machine. We use Python scripts to perform various tasks
+# during the build, so this is a hard requirement.
+python_names = ['python3', 'python']
+python_versions = ['>=3.8', '<4']
+python_versioned_names = []
+foreach version : range(8, 20)
+  python_versioned_names += [f'python3.@version@']
+endforeach
+build_python = find_program(
+  python_names,
+  version: python_versions,
+  native: true,
+  required: false,
+)
+if not build_python.found()
+  build_python = find_program(
+    python_versioned_names,
+    version: python_versions,
+    native: true,
   )
-  # FIXME: Workaround for https://github.com/mesonbuild/meson/issues/12862
-  if not cc.has_header('Python.h', dependencies: _py_dep)
-    _py_dep = dependency('', required: false)
-  endif
-  # To support methods like extension_module(), we make the whole Python install object
-  # "not found" if the dependency was not found.
-  if not _py_dep.found()
-    python_inst = disabler()
-  endif
-endif
-if python_inst.found()
-  add_project_arguments('-DENABLE_LOGICAL_PYTHON', language: ['c', 'cpp'])
 endif
 
 # Find liblzma. We search for this first so our default_options can apply before it gets
@@ -482,6 +470,29 @@ if mpiexec.found()
   mpiexec_cmd = [mpiexec.full_path(), '-host', 'localhost:1000', '-n']
 endif
 
+# Find the Python installation, used for the Python unwinding support.
+python = pymod.find_installation(
+  'python3',
+  required: get_option('python'),
+  disabler: true,
+)
+if python.found() and python.language_version().version_compare('<3.8')
+  # We only support Python 3.8+ for unwinding support
+  python = disabler()
+endif
+if python.found()
+  # We need access to the Python headers for unwinding support
+  _py_dep = python.dependency(required: get_option('python'), include_type: 'system')
+  if not _py_dep.found()
+    python = disabler()
+  endif
+endif
+if python.found()
+  add_project_arguments('-DENABLE_LOGICAL_PYTHON', language: ['c', 'cpp'])
+elif get_option('python').enabled()
+  error('Python support requested but compatible Python install was not found')
+endif
+
 
 # Find support for CUDA performance monitoring
 #
@@ -886,7 +897,7 @@ if level0_dep.found() and get_option('tests').allowed()
     _icpx = find_program('icpx', required: false)
     if _icpx.found()
       run_command(
-        python,
+        build_python,
         files('meson/in-tmpdir.py'),
         _icpx,
         '-fsycl',
@@ -906,7 +917,7 @@ if level0_dep.found() and get_option('tests').allowed()
     _dpcpp = find_program('dpcpp', required: false)
     if _dpcpp.found()
       run_command(
-        python,
+        build_python,
         files('meson/in-tmpdir.py'),
         _dpcpp,
         '-c',
