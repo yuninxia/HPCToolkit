@@ -8,6 +8,7 @@ source_url = https://github.com/jbeder/yaml-cpp/archive/refs/tags/0.8.0.tar.gz
 source_filename = yaml-cpp-0.8.0.tar.gz
 source_hash = fbe74bbdcee21d656715688706da3c8becfd946d92cd44705cc6098bb23b3a16
 method = cmake
+diff_files = yaml-cpp-gcc15-pr1310.patch
 
 [provide]
 yaml-cpp = yaml_cpp_dep
