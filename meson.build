@@ -514,6 +514,17 @@ if get_option('cuda').allowed()
     version: '>=11.2',
     include_type: 'system',
   )
+  if cupti_dep.found()
+    # NB: Meson's CUDA support doesn't check for headers. If the install is broken and is
+    # missing headers, we won't catch the issue until the build fails. Check here, and if
+    # we don't find them, defer to CMake's logic which does check for the headers.
+    foreach header : ['cuda.h', 'cuda_runtime_api.h', 'cupti.h']
+      if not cpp.has_header(header, dependencies: cupti_dep)
+        cupti_dep = dependency('', required: false)
+        break
+      endif
+    endforeach
+  endif
   if not cupti_dep.found()
     cupti_dep = dependency(
       'CUDAToolkit',
