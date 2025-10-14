@@ -551,11 +551,20 @@ libs += main_hpcrun_lib
 # using LD_PRELOAD. These libraries must not have RPATH or RUNPATH attributes, which may
 # alter and conflict with the library search path of the application. We use patchelf to
 # remove these attributes during the build.
+patchelf_versions = '>=0.11'
+patchelf_default_options = ['warning_level=2']
+if 'patchelf' in get_option('force_fallback_for') or get_option('wrap_mode') == 'forcefallback'
+  subproject(
+    'patchelf',
+    version: patchelf_versions,
+    default_options: patchelf_default_options,
+  )
+endif
 patchelf = find_program(
   'patchelf',
-  version: '>=0.11',
+  version: patchelf_versions,
   native: true,
-  default_options: ['warning_level=2'],
+  default_options: patchelf_default_options,
 )
 
 # Libraries needed to support the "audit" interface for collecting loaded libraries
