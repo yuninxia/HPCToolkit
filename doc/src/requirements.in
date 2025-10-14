@@ -2,6 +2,9 @@
 #
 # SPDX-License-Identifier: Apache-2.0
 
-Sphinx>=6,<9
-myst-parser>=3,<5
-sphinx-book-theme>=1,<2
+# NB: After updating this file always recompile the sibling requirements.txt, using
+# the command listed at the top of that file.
+
+Sphinx>=6.0
+myst-parser>=3.0
+sphinx-book-theme>=1.0

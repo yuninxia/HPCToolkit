@@ -7,7 +7,19 @@
 "Sphinx configuration for this documentation tree"
 
 import os
-from pathlib import PurePath
+import re
+from importlib import import_module
+from pathlib import Path, PurePath
+from typing import Dict, Optional, Tuple
+
+# Mapping from PyPI package names to Python import names
+PKG_IMPORT_NAMES = {
+    "myst-parser": "myst_parser",
+    "sphinx-book-theme": "sphinx_book_theme",
+}
+
+# Sphinx "extensions" that need to be checked directly, e.g. HTML themes
+KNOWN_NON_EXTENSIONS = {"sphinx_book_theme"}
 
 
 def path_to_url(path: PurePath) -> str:
@@ -23,6 +35,45 @@ def abs_url(base: str, path: str) -> str:
     return (base or "/") + path
 
 
+def parse_requirements_txt(
+    requirements_txt: Path,
+) -> Tuple[Optional[str], Dict[str, str]]:
+    "Parse a requirements.txt formatted file and convert to Sphinx needs_* values"
+    sphinx_ver: Optional[str] = None
+    ext_vers: Dict[str, str] = {}
+
+    for spec in {
+        line.split("#", maxsplit=1)[0].strip()
+        for line in requirements_txt.read_text(encoding="utf-8")
+        .replace("\\\n", "")
+        .splitlines()
+    } - {""}:
+        match = re.fullmatch(r"(\S+)\s*>=(\d+\.\d+)", spec)
+        if not match:
+            raise ValueError(f"Unsupported specifier: {spec!r}")
+        if match[1] == "Sphinx":
+            if sphinx_ver is not None:
+                raise ValueError("requirements.in specifies Sphinx multiple times")
+            sphinx_ver = match[2]
+        else:
+            pkg = PKG_IMPORT_NAMES[match[1]]
+            if pkg in ext_vers:
+                raise ValueError(f"requirements.in specifies {pkg} multiple times")
+            ext_vers[pkg] = match[2]
+
+    # Remove any known non-extensions and check them directly
+    for ext in KNOWN_NON_EXTENSIONS:
+        if ext in ext_vers:
+            ext_module = import_module(ext)
+            if ext_vers[ext] > ext_module.__version__:
+                raise RuntimeError(
+                    f"Version of {ext} is too old, need >={ext_vers[ext]} but have {ext_module.__version__}"
+                )
+            del ext_vers[ext]
+
+    return sphinx_ver, ext_vers
+
+
 # Project settings
 project = "HPCToolkit"
 assert project.lower() == os.environ["CONF_PROJECT_NAME"]
@@ -31,7 +82,6 @@ author = f"The {project} Developers"
 release = os.environ["CONF_VERSION"]
 version = release
 
-
 suppress_warnings = [
     # FIXME: The EPUB builder tries to include ALL files in the build directory, not just
     # the ones produced by Sphinx. This tends to cause warnings when the files aren't of a
@@ -39,6 +89,10 @@ suppress_warnings = [
     "epub.unknown_project_files",
 ]
 
+# Minimum required versions are parsed from the sibling requirements.in
+needs_sphinx, needs_extensions = parse_requirements_txt(
+    Path(__file__).parent / "requirements.in"
+)
 
 # Configuration for the sources, which are primarily written in MyST
 language = "en"

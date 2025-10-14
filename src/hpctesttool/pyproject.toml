@@ -9,6 +9,9 @@ description = "Test utilities for the HPCToolkit project"
 authors = ["Jonathon Anderson <janderson@rice.edu>"]
 license = "Apache-2.0"
 
+[tool.poetry.scripts]
+hpctesttool = "hpctesttool.__main__:main"
+
 [tool.poetry.dependencies]
 python = "^3.8"
 click = "^8.1.3"

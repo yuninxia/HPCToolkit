@@ -13,11 +13,6 @@ mkdir wheels/
 trap 'rm -f "$tmpfile"' EXIT
 tmpfile=$(mktemp --tmpdir=.)
 
-# Download a wheel for Pip
-python3 -m pip download \
-  --platform none --python-version 38 \
-  --no-deps -d wheels/ pip
-
 # Download all the wheels
 poetry -C "$project" export --with=implicit -f requirements.txt -o "$tmpfile"
 sed -i 's/;.*\\$/\\/' "$tmpfile"

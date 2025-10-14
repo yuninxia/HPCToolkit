@@ -364,7 +364,7 @@ if papi_dep.found()
   endif
 endif
 
-if python_inst.found()
+if python.found()
   srcs += files('foil/python.c', 'logical/python.c')
 endif
 
@@ -537,7 +537,7 @@ main_hpcrun_lib = shared_library(
     #rocm_dep.partial_dependency(compile_args: true, includes: true),
     rt_dep,
     xed_dep,
-    (python_inst.found() ? python_inst.dependency() : dependency('', required: false)).partial_dependency(
+    (python.found() ? python.dependency() : dependency('', required: false)).partial_dependency(
       compile_args: true,
       includes: true,
     ),

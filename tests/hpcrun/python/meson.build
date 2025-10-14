@@ -2,7 +2,7 @@
 #
 # SPDX-License-Identifier: Apache-2.0
 
-if not python_inst.found()
+if not python.found()
   subdir_done()
 endif
 
