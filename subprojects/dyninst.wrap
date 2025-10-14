@@ -8,6 +8,7 @@ patch_url = https://wrapdb.mesonbuild.com/v2/dyninst_13.0.0-2/get_patch
 patch_hash = f1c0f07eb75ebc84c9c0b1a5d9d39f47cfac7d90c59f1fb6adcf135f75f4ab06
 source_fallback_url = https://github.com/mesonbuild/wrapdb/releases/download/dyninst_13.0.0-2/dyninst-13.0.0.tar.gz
 wrapdb_version = 13.0.0-2
+diff_files = dyninst-gcc15-pr1880plus.patch
 
 [provide]
 dyninst = dyninst_dep
