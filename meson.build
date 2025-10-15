@@ -590,6 +590,9 @@ if cupti_dep.found()
     '-DCUPTI_INSTALL_PREFIX="/nonexistent"',  # TODO
     language: ['c', 'cpp'],
   )
+  if cupti_dep.version().version_compare('<=12.99')
+    add_project_arguments('-DENABLE_CUDA_PC_SAMPLING', language: ['c', 'cpp'])
+  endif
 endif
 if false  # get_option('papi_cupti')  # --enable-papi-c-cupti
   add_project_arguments('-DHPCRUN_SS_PAPI_C_CUPTI', language: ['c', 'cpp'])
