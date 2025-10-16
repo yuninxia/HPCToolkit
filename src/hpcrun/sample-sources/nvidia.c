@@ -49,6 +49,7 @@
  * macros
  *****************************************************************************/
 
+#define SOURCE_NAME "cuda"
 #define NVIDIA_CUDA "gpu=cuda"
 #define NVIDIA_CUDA_PC_SAMPLING "gpu=cuda,pc"
 #define NVIDIA_CUDA_NV_LINK "nvlink"
@@ -236,8 +237,9 @@ METHOD_FN(process_event_list)
       trace_period =
           (value == GPU_SAMPLING_PERIOD_UNSPECIFIED) ? trace_period_default : value;
       gpu_monitoring_trace_sampling_period_set(trace_period);
-    } else if (hpcrun_ev_is(event, NVIDIA_CUDA_PC_SAMPLING)) {
-
+    }
+    else if (hpcrun_ev_is(event, NVIDIA_CUDA_PC_SAMPLING)) {
+#ifdef ENABLE_CUDA_PC_SAMPLING
       pc_sampling_period_log =
           (value == GPU_SAMPLING_PERIOD_UNSPECIFIED) ?
           pc_sampling_period_log_default : value;
@@ -254,7 +256,12 @@ METHOD_FN(process_event_list)
 
       // pc sampling cannot be on with concurrent kernels
       kernel_invocation_activities[0] = CUPTI_ACTIVITY_KIND_KERNEL;
-    } else if (hpcrun_ev_is(event, NVIDIA_CUDA_NV_LINK)) {
+#else
+      // cuda pc sampling not available
+      hpcrun_ssfail_unsupported(SOURCE_NAME, NVIDIA_CUDA_PC_SAMPLING);
+#endif
+    }
+    else if (hpcrun_ev_is(event, NVIDIA_CUDA_NV_LINK)) {
       gpu_metrics_GXFER_enable();
     }
   }
@@ -343,6 +350,7 @@ static void METHOD_FN(display_events) {
     "memory copies (implicit and explicit), driver and runtime "
     "activity, and overhead.");
 
+#ifdef ENABLE_CUDA_PC_SAMPLING
   display_event_info(stdout, NVIDIA_CUDA_PC_SAMPLING,
     "Comprehensive monitoring on an NVIDIA GPU as described above"
     "with the addition of PC sampling. PC sampling attributes "
@@ -350,6 +358,9 @@ static void METHOD_FN(display_events) {
     "records aggregate statistics about the TOTAL number of samples measured, "
     "the number of samples EXPECTED, and the number of samples DROPPED. "
     "GPU utilization for a kernel may be computed as (TOTAL+DROPPED)/EXPECTED.");
+#else
+  printf("Note: '%s' is not supported on CUDA >= 13\n\n", NVIDIA_CUDA_PC_SAMPLING);
+#endif
 }
 
 //******************************************************************************
