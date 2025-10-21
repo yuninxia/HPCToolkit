@@ -539,7 +539,6 @@ if gtpin_dep.found()
     'hpcrun_gtpin_cxx',
     'foil/gtpin.cpp',
     'gpu/api/intel/gtpin/gtpin-instrumentation.cpp',
-    'gpu/api/intel/binaries/patchTokenSymbols.c',
     'gpu/api/intel/binaries/symbolVector.c',
     'gpu/api/intel/binaries/zebinSymbols.c',
     common_lean_srcs,
