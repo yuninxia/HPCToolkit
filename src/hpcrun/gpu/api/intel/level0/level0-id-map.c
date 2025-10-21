@@ -208,12 +208,12 @@ zebin_id_map_entry_elf_vector_get
 }
 
 
-char* 
+char*
 level0_kernel_name_get
 (
   ze_kernel_handle_t hKernel,
   const struct hpcrun_foil_appdispatch_level0* dispatch
-) 
+)
 {
   size_t name_len = 0;
   ze_result_t status = f_zeKernelGetName(hKernel, &name_len, NULL, dispatch);
@@ -229,18 +229,18 @@ level0_kernel_name_get
     free(kernel_name);
     return NULL;
   }
-  
+
   return kernel_name;
 }
 
 
-uint8_t* 
+uint8_t*
 level0_module_debug_zebin_get
 (
-  ze_module_handle_t hModule, 
+  ze_module_handle_t hModule,
   size_t* zebin_size,
   const struct hpcrun_foil_appdispatch_level0* dispatch
-) 
+)
 {
   f_zetModuleGetDebugInfo(
     hModule,
@@ -267,17 +267,17 @@ level0_module_debug_zebin_get
 // Transform a <hModule, hKernel, offset> tuple to a pc address by
 // using level0 api zeModuleGetFunctionPointer
 //--------------------------------------------------------------------------
-ip_normalized_t 
+ip_normalized_t
 zebin_id_transform
 (
-  ze_module_handle_t hModule, 
-  ze_kernel_handle_t hKernel, 
+  ze_module_handle_t hModule,
+  ze_kernel_handle_t hKernel,
   uint64_t offset,
   const struct hpcrun_foil_appdispatch_level0* dispatch
-) 
+)
 {
   ip_normalized_t ip = {0, 0};
-  
+
   char* function_name = level0_kernel_name_get(hKernel, dispatch);
   if (!function_name) {
     return ip;
@@ -285,10 +285,10 @@ zebin_id_transform
 
   char module_id[CRYPTO_HASH_STRING_LENGTH];
   crypto_compute_hash_string(&hModule, sizeof(hModule), module_id, CRYPTO_HASH_STRING_LENGTH);
-  
+
   uint32_t module_id_uint32;
   sscanf(module_id, "%8x", &module_id_uint32);
-  
+
   zebin_id_map_entry_t *entry = zebin_id_map_lookup(module_id_uint32);
   TMSG(LEVEL0, "zebin_id %d", module_id_uint32);
   if (entry != NULL) {

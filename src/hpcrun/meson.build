@@ -496,15 +496,15 @@ if level0_dep.found()
     'gpu/api/intel/level0/pcsampling/level0-metric-streamer.cpp',
     'gpu/api/intel/level0/pcsampling/level0-metric.cpp',
     'gpu/api/intel/level0/pcsampling/level0-module.cpp',
+    'gpu/api/intel/level0/pcsampling/level0-pc-api-receiver.cpp',
+    'gpu/api/intel/level0/pcsampling/level0-pc-interface.cpp',
     'gpu/api/intel/level0/pcsampling/level0-pc-manager.cpp',
+    'gpu/api/intel/level0/pcsampling/level0-pc-stubs.cpp',
     'gpu/api/intel/level0/pcsampling/level0-timestamp.cpp',
     'gpu/api/intel/level0/pcsampling/level0-tracing-callback-methods.cpp',
     'gpu/api/intel/level0/pcsampling/level0-tracing-callbacks.cpp',
     'gpu/api/intel/level0/pcsampling/level0-tracing.cpp',
     'gpu/api/intel/level0/pcsampling/level0-unique-id.cpp',
-    'gpu/api/intel/level0/pcsampling/level0-pc-api-receiver.cpp',
-    'gpu/api/intel/level0/pcsampling/level0-pc-interface.cpp',
-    'gpu/api/intel/level0/pcsampling/level0-pc-stubs.cpp',
   )
 
   level0_pc_cxx_lib = shared_library(

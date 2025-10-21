@@ -39,7 +39,7 @@ std::map<ze_module_handle_t, ZeModule> modules_on_devices_;
  * thread-safe for concurrent read-only access when the map is not modified.
  */
 
-/* 
+/*
  * Thread-local storage for the MCS lock node. Each application thread
  * calling the kernel launch callbacks gets its own unique node instance,
  * which is necessary for the MCS queuing lock algorithm.
@@ -243,7 +243,7 @@ OnExitKernelCreate
   modules_on_devices_mutex_.lock_shared();
   auto mit = modules_on_devices_.find(mod);
   if (mit != modules_on_devices_.end()) {
-    device = mit->second.device_; 
+    device = mit->second.device_;
     aot = mit->second.aot_;
     module_id = mit->second.module_id_;
   }
@@ -268,11 +268,11 @@ OnExitKernelCreate
   }
   ze_kernel_handle_t kernel = **(params->pphKernel);
   ZeKernelCommandProperties desc = extractKernelProperties(kernel, module_id, mod, aot, device_id, device, dispatch);
-  
+
   // Store directly in memory cache - no file I/O
   KernelPropertiesCache::getInstance().storeKernelProperties(desc.kernel_id_, desc);
   if (std::getenv("HPCTOOLKIT_LEVEL0_DEBUG_CACHE")) {
-    std::cout << "[DEBUG] Stored kernel '" << desc.name_ << "' (id: " << desc.kernel_id_ 
+    std::cout << "[DEBUG] Stored kernel '" << desc.name_ << "' (id: " << desc.kernel_id_
               << ", base_addr: 0x" << std::hex << desc.base_addr_ << std::dec
               << ") to memory cache for device " << desc.device_id_ << std::endl;
   }

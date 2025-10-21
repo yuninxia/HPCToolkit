@@ -16,7 +16,7 @@
 // interface operations
 //******************************************************************************
 
-std::string 
+std::string
 level0GenerateUniqueId
 (
   const void *data,
@@ -38,6 +38,6 @@ level0GenerateUniqueId
     pcsampling::warn("Failed to compute hash in level0GenerateUniqueId");
     return "hash_computation_failed";
   }
-  
+
   return std::string(hash_string);
 }

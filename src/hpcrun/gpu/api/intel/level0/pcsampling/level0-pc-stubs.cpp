@@ -517,4 +517,3 @@ f_zelTracerSetEnabled(zel_tracer_handle_t hTracer, ze_bool_t enable,
 }
 
 // End of file
-

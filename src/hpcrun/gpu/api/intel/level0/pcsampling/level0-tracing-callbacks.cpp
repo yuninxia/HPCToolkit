@@ -19,9 +19,9 @@
 void
 zeModuleCreateOnExit
 (
-  ze_module_create_params_t* params, 
-  ze_result_t result, 
-  void* global_user_data, 
+  ze_module_create_params_t* params,
+  ze_result_t result,
+  void* global_user_data,
   void** instance_user_data
 )
 {
@@ -32,9 +32,9 @@ zeModuleCreateOnExit
 void
 zeModuleDestroyOnEnter
 (
-  ze_module_destroy_params_t* params, 
-  ze_result_t result, 
-  void* global_user_data, 
+  ze_module_destroy_params_t* params,
+  ze_result_t result,
+  void* global_user_data,
   void** instance_user_data
 )
 {
@@ -44,9 +44,9 @@ zeModuleDestroyOnEnter
 void
 zeKernelCreateOnExit
 (
-  ze_kernel_create_params_t* params, 
-  ze_result_t result, 
-  void* global_user_data, 
+  ze_kernel_create_params_t* params,
+  ze_result_t result,
+  void* global_user_data,
   void** instance_user_data
 )
 {

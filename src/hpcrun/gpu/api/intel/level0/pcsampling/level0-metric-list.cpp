@@ -54,7 +54,7 @@ getMetricCount
 
   zet_metric_group_properties_t group_props{};
   group_props.stype = ZET_STRUCTURE_TYPE_METRIC_GROUP_PROPERTIES;
-  
+
   ze_result_t status = pcsampling::callZetMetricGroupGetProperties(group, &group_props, dispatch);
   level0_check_result(status, __LINE__);
   return group_props.metricCount;
@@ -87,7 +87,7 @@ getMetricHandles
     // Resize the vector to match the actual count
     metric_list.resize(metric_count);
   }
-  
+
   return metric_list;
 }
 
@@ -99,12 +99,12 @@ getMetricProperties
 )
 {
   zet_metric_properties_t metric_props{ZET_STRUCTURE_TYPE_METRIC_PROPERTIES};
-  
+
   if (metric == nullptr) {
     pcsampling::error("Null metric handle passed to getMetricProperties");
     return metric_props;
   }
-  
+
   ze_result_t status = pcsampling::callZetMetricGetProperties(metric, &metric_props, dispatch);
   level0_check_result(status, __LINE__);
   return metric_props;
@@ -136,7 +136,7 @@ getMetricId
 {
   // Default to an invalid ID
   metric_id = static_cast<uint32_t>(-1);
-  
+
   if (metric_list.empty()) {
     pcsampling::warn("Empty metric list passed to getMetricId");
     return;
@@ -153,7 +153,7 @@ getMetricId
       return;
     }
   }
-  
+
   // If we get here, the metric was not found
   pcsampling::warn("Metric '%s' not found in metric list", metric_name.c_str());
   metric_id = static_cast<uint32_t>(metric_list.size());
@@ -174,7 +174,7 @@ level0GetMetricList
 {
   // Clear the output list before populating it
   name_list.clear();
-  
+
   if (group == nullptr) {
     pcsampling::error("Null metric group handle passed to level0GetMetricList");
     return;
@@ -200,7 +200,7 @@ level0GetMetricList
       pcsampling::warn("Null metric handle encountered");
       continue;
     }
-    
+
     zet_metric_properties_t metric_props = getMetricProperties(metric, dispatch);
     std::string name = buildMetricName(metric_props);
     name_list.push_back(std::move(name));
@@ -217,14 +217,14 @@ level0IsValidMetricList
     pcsampling::warn("Empty metric list passed to level0IsValidMetricList");
     return false;
   }
-  
+
   uint32_t ip_idx;
   getMetricId(metric_list, "IP", ip_idx);
-  
+
   bool is_valid = (ip_idx < metric_list.size());
   if (!is_valid) {
     pcsampling::warn("No 'IP' metric found in the metric list");
   }
-  
+
   return is_valid;
 }

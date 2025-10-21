@@ -66,10 +66,10 @@ ZeCollector::ZeCollector
 }
 
 ZeCollector::~ZeCollector()
-{  
+{
   // Clean up tracer resources
   level0DestroyTracer(dispatch_);
-  
+
   // Dump collected kernel profiles
   level0DumpKernelProfiles();
 }

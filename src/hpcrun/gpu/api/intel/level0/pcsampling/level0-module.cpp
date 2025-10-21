@@ -41,7 +41,7 @@ level0GetKernelName
   // Allocate a buffer for the kernel name (including the null terminator)
   std::vector<char> kernel_name(name_len);
   status = pcsampling::callZeKernelGetName(kernel, &name_len, kernel_name.data(), dispatch);
-  
+
   // Construct a std::string from the C string if successful
   return (status == ZE_RESULT_SUCCESS) ? std::string(kernel_name.data()) : "UnknownKernel";
 }
@@ -56,7 +56,7 @@ level0GetFunctionPointer
 {
   void* function_pointer = nullptr;
   ze_result_t status = pcsampling::callZeModuleGetFunctionPointer(module, kernel_name.c_str(), &function_pointer, dispatch);
-  
+
   if (status == ZE_RESULT_SUCCESS && function_pointer != nullptr) {
     return reinterpret_cast<uint64_t>(function_pointer);
   } else {
@@ -74,9 +74,9 @@ level0GetModuleDebugInfo
 {
   size_t binary_size = 0;
   ze_result_t status = pcsampling::callZetModuleGetDebugInfo(
-    module, 
+    module,
     ZET_MODULE_DEBUG_INFO_FORMAT_ELF_DWARF,
-    &binary_size, 
+    &binary_size,
     nullptr,
     dispatch
   );
@@ -89,9 +89,9 @@ level0GetModuleDebugInfo
 
   std::vector<uint8_t> binary(binary_size);
   status = pcsampling::callZetModuleGetDebugInfo(
-    module, 
+    module,
     ZET_MODULE_DEBUG_INFO_FORMAT_ELF_DWARF,
-    &binary_size, 
+    &binary_size,
     binary.data(),
     dispatch
   );
@@ -126,7 +126,7 @@ level0GetModuleKernelNames
 
   // Allocate memory for kernel name pointers
   std::vector<const char*> kernel_names(kernel_count);
-  
+
   // Second call to get the actual kernel names
   status = pcsampling::callZeModuleGetKernelNames(module, &kernel_count, kernel_names.data(), dispatch);
   if (status != ZE_RESULT_SUCCESS) {

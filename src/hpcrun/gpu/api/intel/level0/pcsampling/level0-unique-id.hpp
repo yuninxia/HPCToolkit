@@ -26,7 +26,7 @@
 // interface operations
 //******************************************************************************
 
-std::string 
+std::string
 level0GenerateUniqueId
 (
   const void *data,

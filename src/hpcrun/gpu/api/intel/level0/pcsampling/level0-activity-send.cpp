@@ -29,7 +29,7 @@ void
 level0SendActivities
 (
   const std::deque<gpu_activity_t*>& activities
-) 
+)
 {
   for (auto* activity : activities) {
     if (!activity) {

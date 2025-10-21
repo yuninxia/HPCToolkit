@@ -154,7 +154,7 @@ generateActivities
 void
 level0GenerateActivities
 (
-  const std::map<uint64_t, KernelProperties>& kprops, 
+  const std::map<uint64_t, KernelProperties>& kprops,
   std::map<uint64_t, EuStalls>& eustalls,
   uint64_t& correlation_id,
   ze_kernel_handle_t running_kernel,

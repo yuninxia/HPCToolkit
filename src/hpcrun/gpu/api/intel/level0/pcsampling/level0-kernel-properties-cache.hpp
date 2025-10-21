@@ -47,7 +47,7 @@ public:
    * Store kernel command properties in cache.
    * Thread-safe with write lock.
    */
-  void storeKernelProperties(const std::string& kernel_id, 
+  void storeKernelProperties(const std::string& kernel_id,
                             const ZeKernelCommandProperties& props);
 
   /**
@@ -61,7 +61,7 @@ public:
    * Get all kernel properties grouped by device.
    * Used for final data export if needed.
    */
-  std::map<int32_t, std::vector<const ZeKernelCommandProperties*>> 
+  std::map<int32_t, std::vector<const ZeKernelCommandProperties*>>
   getAllPropertiesByDevice() const;
 
   /**
@@ -80,7 +80,7 @@ public:
     size_t memory_bytes;
   };
   CacheStats getStats() const;
-  
+
   /**
    * Print cache contents for debugging.
    */

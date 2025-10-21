@@ -971,7 +971,7 @@ hpcrun_zeKernelCreate
   ze_result_t ret = f_zeKernelCreate(hModule, desc, phKernel, dispatch);
 
   PRINT("hpcrun_zeKernelCreate: module handle %p, kernel handle %p\n",hModule, *phKernel);
-  
+
   // Exit action - save kernel-module mapping for PC sampling
   level0_kernel_module_map_insert(*phKernel, hModule);
 
@@ -987,7 +987,7 @@ hpcrun_zeKernelDestroy
 {
   // Entry action - remove kernel-module mapping
   level0_kernel_module_map_delete(hKernel);
-  
+
   ze_result_t ret = f_zeKernelDestroy(hKernel, dispatch);
 
   return ret;

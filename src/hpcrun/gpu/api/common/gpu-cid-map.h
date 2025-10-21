@@ -4,7 +4,7 @@
 
 // This data structure is a map from a correlation id for a GPU operation
 // to the calling context tree node representing the calling context where
-// the GPU operation was intiated. 
+// the GPU operation was initiated.
 
 // For kernel launches, we may also store a non-zero kernel_ip, which is a
 // normalized instruction pointer for the first address of the kernel. For

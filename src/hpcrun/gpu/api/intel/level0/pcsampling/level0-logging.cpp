@@ -92,7 +92,7 @@ logActivity
   uint64_t instruction_pc_lm_ip = activity->details.instruction.pc.lm_ip;
   uint64_t cid = activity->details.pc_sampling.correlation_id;
   uint16_t lm_id = activity->details.pc_sampling.pc.lm_id;
-  
+
   const auto& [kernel_name, kernel_base] = findKernelInfo(instruction_pc_lm_ip, kernel_info);
   uint64_t offset = (kernel_base != 0) ? (instruction_pc_lm_ip - kernel_base) : 0;
 

@@ -46,7 +46,7 @@ fetchDriverHandles
   std::vector<ze_driver_handle_t> drivers(driver_count);
   ze_result_t status = pcsampling::callZeDriverGet(&driver_count, drivers.data(), dispatch);
   level0_check_result(status, __LINE__);
-  
+
   return drivers;
 }
 
@@ -97,7 +97,7 @@ validateAndPrintDriverVersion
                       major, minor, requiredMajor, requiredMinor);
     return false;
   }
-  
+
   return true;
 }
 
@@ -119,7 +119,7 @@ level0GetVersion
     version = ZE_API_VERSION_FORCE_UINT32;
     return;
   }
-  
+
   fetchDriverVersion(drivers[0], version, dispatch);
 }
 

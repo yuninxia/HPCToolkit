@@ -65,7 +65,7 @@ level0ReadKernelProperties
     }
     return;
   }
-  
+
   // Fallback to regular cache if RCU not available
   if (std::getenv("HPCTOOLKIT_LEVEL0_DEBUG_CACHE")) {
     pcsampling::warn("[DEBUG] RCU cache miss for device %d, falling back to regular cache", device_id);
@@ -128,7 +128,7 @@ level0DumpKernelProfiles
                      static_cast<long long>(stats.avg_read_time.count()),
                      static_cast<long long>(stats.avg_write_time.count()),
                      stats.memory_bytes / 1024);
-    
+
     // Optionally print detailed cache contents
     // KernelPropertiesCache::getInstance().debugPrint();
   }

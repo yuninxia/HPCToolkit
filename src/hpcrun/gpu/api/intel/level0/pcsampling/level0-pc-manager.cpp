@@ -163,13 +163,13 @@ level0PCSamplingFini
       TMSG(LEVEL0, "  Average write time: %lld us", stats.avg_write_time.count());
       TMSG(LEVEL0, "  Memory usage: %zu KB", stats.memory_bytes / 1024);
     }
-    
+
     // Clean up collector resources
     if (ze_collector != nullptr) {
       ZeCollector::Destroy(ze_collector);
       ze_collector = nullptr;
     }
-    
+
     // Clean up profiler resources
     disableProfiling();
 

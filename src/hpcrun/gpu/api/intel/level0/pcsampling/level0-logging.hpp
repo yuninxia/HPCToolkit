@@ -43,7 +43,7 @@
 void
 level0LogActivities
 (
-  const std::deque<gpu_activity_t*>& activities, 
+  const std::deque<gpu_activity_t*>& activities,
   const std::map<uint64_t, KernelProperties>& kprops
 );
 

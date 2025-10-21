@@ -31,7 +31,7 @@ level0GetKernelExecutionTime
 )
 {
   KernelExecutionTime result = {0, 0, 0};
-  
+
   if (hSignalEvent == nullptr) {
     pcsampling::warn("Null event handle passed to level0GetKernelExecutionTime");
     return result;
@@ -49,14 +49,14 @@ level0GetKernelExecutionTime
 
   const uint64_t startTimestamp = timestampResult.global.kernelStart;
   const uint64_t endTimestamp   = timestampResult.global.kernelEnd;
-  
+
   // Validate timestamps
   if (startTimestamp > endTimestamp) {
     pcsampling::warn("Invalid timestamps: start (%" PRIu64 ") is after end (%" PRIu64 ")",
                      startTimestamp, endTimestamp);
     return result;
   }
-  
+
   const uint64_t kernelDuration = endTimestamp - startTimestamp;
 
   // Retrieve device properties to obtain the timer resolution

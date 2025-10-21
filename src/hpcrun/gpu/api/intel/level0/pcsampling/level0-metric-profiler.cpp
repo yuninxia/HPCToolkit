@@ -103,7 +103,7 @@ ProcessMetricData
 {
   // Define the buffer size
   uint64_t ssize = MAX_METRIC_BUFFER + 512;
-  
+
   // Read raw metric data from the streamer
   uint64_t raw_size = level0MetricStreamerReadData(streamer, raw_metrics, ssize, dispatch);
   if (raw_size == 0) return false;
@@ -197,7 +197,7 @@ ZeMetricProfiler::MetricProfilingThread
   }
 }
 
-void 
+void
 ZeMetricProfiler::RunProfilingLoop
 (
   ZeDeviceDescriptor* desc,
@@ -310,7 +310,7 @@ ZeMetricProfiler::ZeMetricProfiler
   level0EnumerateDevices(device_descriptors_, metric_contexts_, dispatch_);
 }
 
-ZeMetricProfiler::~ZeMetricProfiler() 
+ZeMetricProfiler::~ZeMetricProfiler()
 {
   StopProfilingMetrics();
 }
@@ -382,10 +382,10 @@ ZeMetricProfiler::StopProfilingMetrics
       // Skip subdevices
       continue;
     }
-    
+
     // Signal the profiling thread to stop
     it->second->app_DisableProfiler();
-    
+
     // Join the profiling thread if it exists
     if (it->second->profiling_thread_id_ >= 0) {
       pcsampling::joinProfilingThread(it->second->profiling_thread_id_);

@@ -31,7 +31,7 @@ configureTracerCallbacks
 )
 {
   // Initialize the prologue and epilogue callback structures with zero
-  zet_core_callbacks_t prologue{}; 
+  zet_core_callbacks_t prologue{};
   zet_core_callbacks_t epilogue{};
 
   // Set callback functions for module and kernel operations

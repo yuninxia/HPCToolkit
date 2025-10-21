@@ -43,7 +43,7 @@ level0FillKernelSizeMap
     pcsampling::warn("Null entry passed to level0FillKernelSizeMap");
     return;
   }
-  
+
   SymbolVector* symbols = entry->elf_vector;
   if (symbols == nullptr) {
     pcsampling::warn("Null symbol vector in entry passed to level0FillKernelSizeMap");

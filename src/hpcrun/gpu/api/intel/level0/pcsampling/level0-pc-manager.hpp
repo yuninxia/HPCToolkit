@@ -30,7 +30,7 @@ level0PCSamplingInit
  * Clean up PC sampling resources.
  * Called during program termination to free resources and clean up temporary files.
  */
-void 
+void
 level0PCSamplingFini
 (
   void

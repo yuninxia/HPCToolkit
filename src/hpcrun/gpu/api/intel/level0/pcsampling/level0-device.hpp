@@ -198,7 +198,7 @@ level0GetSubDeviceCount
   const struct hpcrun_foil_appdispatch_level0* dispatch
 );
 
-void 
+void
 level0EnumerateDevices
 (
   std::map<ze_device_handle_t, ZeDeviceDescriptor*>& device_descriptors_,

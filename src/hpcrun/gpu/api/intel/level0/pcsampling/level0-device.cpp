@@ -141,7 +141,7 @@ static void
 SetupDevice
 (
   ze_device_handle_t device,
-  ze_driver_handle_t driver, 
+  ze_driver_handle_t driver,
   int32_t id,
   int32_t parent_id,
   ze_device_handle_t parent_device,
@@ -177,15 +177,15 @@ level0GetDevices
   uint32_t num_devices = 0;
   ze_result_t status = pcsampling::callZeDeviceGet(driver, &num_devices, nullptr, dispatch);
   level0_check_result(status, __LINE__);
-  
+
   if (num_devices == 0) {
     return {};
   }
-  
+
   std::vector<ze_device_handle_t> devices(num_devices);
   status = pcsampling::callZeDeviceGet(driver, &num_devices, devices.data(), dispatch);
   level0_check_result(status, __LINE__);
-  
+
   return devices;
 }
 
@@ -268,10 +268,10 @@ level0GetDeviceProperties
 {
   ze_device_properties_t deviceProps = {};
   deviceProps.stype = ZE_STRUCTURE_TYPE_DEVICE_PROPERTIES;
-  
+
   ze_result_t status = pcsampling::callZeDeviceGetProperties(device, &deviceProps, dispatch);
   level0_check_result(status, __LINE__);
-  
+
   return deviceProps;
 }
 
