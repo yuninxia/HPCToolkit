@@ -58,3 +58,11 @@ test(
   depends: hpcrun_test_depends,
   timeout: 0,  # Signal delivery is very slow on some systems
 )
+test(
+  'Measurement of /bin/ls (non-python) using "-a python" w/ auditor',
+  find_program(files('tst-ls-produces-profiles')),
+  args: [hpctesttool, hpcrun, '/bin/ls'],
+  suite: ['hpcrun', 'python'],
+  depends: [hpcrun_test_depends],
+  timeout: 0,  # Signal delivery is very slow on some systems
+)
