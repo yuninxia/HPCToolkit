@@ -1,6 +1,11 @@
 // SPDX-FileCopyrightText: Contributors to the HPCToolkit Project
 //
 // SPDX-License-Identifier: Apache-2.0
+//
+// SPDX-License-Identifier: MIT
+// Copyright (C) 2024 Intel Corporation
+// This file was inspired by and uses some code fragments from Intel's
+// MIT-licensed pti-gpu (https://github.com/intel/pti-gpu)
 
 // -*-Mode: C++;-*-
 
@@ -18,9 +23,9 @@ struct hpcrun_foil_appdispatch_level0;
 #include <vector>
 
 
-//******************************************************************************
-// level0 includes
-//******************************************************************************
+//*****************************************************************************
+// level zero includes
+//*****************************************************************************
 
 #include <level_zero/ze_api.h>
 #include <level_zero/zet_api.h>

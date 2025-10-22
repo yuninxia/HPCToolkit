@@ -1,12 +1,26 @@
 // SPDX-FileCopyrightText: Contributors to the HPCToolkit Project
 //
 // SPDX-License-Identifier: Apache-2.0
+//
+// SPDX-License-Identifier: MIT
+// Copyright (C) 2024 Intel Corporation
+// This file was inspired by and uses some code fragments from Intel's
+// MIT-licensed pti-gpu (https://github.com/intel/pti-gpu)
 
 // -*-Mode: C++;-*-
+
+//*****************************************************************************
+// level zero includes
+//*****************************************************************************
 
 #include <level_zero/ze_api.h>
 #include <level_zero/zet_api.h>
 #include <level_zero/layers/zel_tracing_api.h>
+
+
+//*****************************************************************************
+// local includes
+//*****************************************************************************
 
 #include "../level0-pc-hpcrun-api.h"
 #include "level0-pc-api-receiver.hpp"

@@ -1,12 +1,13 @@
 // SPDX-FileCopyrightText: Contributors to the HPCToolkit Project
 //
 // SPDX-License-Identifier: Apache-2.0
+//
+// SPDX-License-Identifier: MIT
+// Copyright (C) 2024 Intel Corporation
+// This file was inspired by and uses some code fragments from Intel's
+// MIT-licensed pti-gpu (https://github.com/intel/pti-gpu)
 
 // -*-Mode: C++;-*-
-
-//*****************************************************************************
-// system includes
-//*****************************************************************************
 
 //*****************************************************************************
 // local includes
