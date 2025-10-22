@@ -55,7 +55,7 @@ typedef uint64_t rocprofiler_pc_t;
 
 #define rocprofiler_async_correlation_id_t rocprofiler_correlation_id_t
 
-#if (ROCPROFILER_VERSION_MAJOR >= 1)
+#if (ROCPROFILER_VERSION_MAJOR > 0)
 
 #undef rocprofiler_async_correlation_id_t
 
@@ -112,7 +112,7 @@ typedef uint64_t rocprofiler_pc_t;
 #define PC_VALUE(pc) pc.loaded_code_object_id, pc.loaded_code_object_offset
 #endif
 
-#if (ROCPROFILER_VERSION_MAJOR == 0 && ROCPROFILER_VERSION_MINOR >= 6)
+#if (ROCPROFILER_VERSION_MAJOR > 0 || ROCPROFILER_VERSION_MINOR > 5)
 #define ROCM_AGENT_VISIBLE(agent) (agent)->runtime_visibility.hsa
 #define ROCPROFILER_BUFFER_TRACING_MEMORY_ALLOCATION                                   \
   ROCPROFILER_BUFFER_TRACING_MEMORY_ALLOCATION
@@ -120,8 +120,7 @@ typedef uint64_t rocprofiler_pc_t;
 #define ROCM_AGENT_VISIBLE(agent) 1
 #endif
 
-#if ((ROCPROFILER_VERSION_MAJOR == 0 && ROCPROFILER_VERSION_MINOR > 5) ||              \
-     (ROCPROFILER_VERSION_MAJOR == 1))
+#if (ROCPROFILER_VERSION_MAJOR > 0 || ROCPROFILER_VERSION_MINOR > 5)
 #define loaded_code_object_id code_object_id
 #define loaded_code_object_offset code_object_offset
 #define ROCPROFILER_OMPT_AVAILABLE
