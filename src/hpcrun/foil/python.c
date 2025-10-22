@@ -40,6 +40,9 @@ bool f_identify_libpython(const char* path) {
     return false;
   }
   void* libpy = dlopen(path, RTLD_LAZY | RTLD_NOLOAD);
+  if (libpy == NULL) {
+    return false;
+  }
   if (dlsym(libpy, "PySys_AddAuditHook") == NULL) {
     dlclose(libpy);
     return false;
