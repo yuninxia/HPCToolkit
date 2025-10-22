@@ -27,16 +27,13 @@
 #include "level0-command-list-context-map.h"
 #include "level0-command-process.h"
 #include "level0-command-queue-map.h"
-#include "level0-event-map.h"
+#include "level0-correlation-device-map.h"
 #include "level0-data-node.h"
 #include "level0-debug.h"
+#include "level0-event-map.h"
 #include "level0-fence-map.h"
 #include "level0-id-map.h"
 #include "level0-kernel-module-map.h"
-#include "pcsampling/level0-correlation-device-map.h"
-#include "pcsampling/level0-pc-manager.hpp"
-
-#include "../../../../utilities/linuxtimer.h"
 
 #include "../../../../libmonitor/monitor.h"
 #include "../../../../main.h"
@@ -48,11 +45,11 @@
 #include "../../../../foil/level0.h"
 #include "../../../../libmonitor/monitor.h"
 #include "../../../../utilities/hpcrun-nanotime.h"
+#include "../../../../utilities/linuxtimer.h"
 
 #ifdef ENABLE_GTPIN
 #include "../gtpin/gtpin-instrumentation.h"
 #endif
-
 
 
 //******************************************************************************

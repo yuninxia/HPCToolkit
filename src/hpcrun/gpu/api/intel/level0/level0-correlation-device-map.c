@@ -2,10 +2,20 @@
 //
 // SPDX-License-Identifier: Apache-2.0
 
-#include "pcsampling/level0-correlation-device-map.h"
+//*****************************************************************************
+// system includes
+//*****************************************************************************
 
 #include <pthread.h>
 #include <stdlib.h>
+
+
+//*****************************************************************************
+// local includes
+//*****************************************************************************
+
+#include "level0-correlation-device-map.h"
+
 
 typedef struct device_entry {
   struct device_entry* next;

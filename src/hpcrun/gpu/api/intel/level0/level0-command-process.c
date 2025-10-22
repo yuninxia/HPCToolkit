@@ -11,6 +11,7 @@
 #define _GNU_SOURCE
 
 #include "level0-command-process.h"
+#include "level0-correlation-channels.h"
 #include "level0-data-node.h"
 #include "level0-binary.h"
 #include "level0-api.h"
@@ -44,7 +45,6 @@
 #include "../../../../libmonitor/monitor.h"
 
 #include "../../../activity/correlation/gpu-channel-common.h"
-#include "pcsampling/level0-correlation-channels.h"
 
 #include <inttypes.h>
 

@@ -16,12 +16,13 @@
 // local includes
 //*****************************************************************************
 
-
-#include "level0-command-list-map.h"
 #include "../../../../../common/lean/spinlock.h"
 
 #include "../../../activity/gpu-activity-channel.h"
-#include "pcsampling/level0-correlation-device-map.h"
+
+#include "level0-command-list-map.h"
+#include "level0-correlation-device-map.h"
+
 
 //*****************************************************************************
 // macros

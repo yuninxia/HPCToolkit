@@ -21,12 +21,13 @@
 // local includes
 //*****************************************************************************
 
-#include "level0-metric-profiler.hpp"
-#include "level0-pc-api-receiver.hpp"
-#include "level0-correlation-channels.h"
-#include "level0-module.hpp"
+#include "../level0-correlation-channels.h"
 
 #include "../../../../activity/correlation/gpu-channel-common.h"
+
+#include "level0-metric-profiler.hpp"
+#include "level0-pc-api-receiver.hpp"
+#include "level0-module.hpp"
 
 #include <inttypes.h>
 
