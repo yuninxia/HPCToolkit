@@ -122,7 +122,7 @@ level0_binary_process
   );
 
   uint32_t loadmap_module_id;
-  gpu_binary_save(debug_zebin, debug_zebin_size, true /* mark_used */, &loadmap_module_id);
+  gpu_binary_save((const char*)debug_zebin, debug_zebin_size, true /* mark_used */, &loadmap_module_id);
 
   // Generate a hash for the binary
   char zebin_id[CRYPTO_HASH_STRING_LENGTH];
@@ -135,7 +135,7 @@ level0_binary_process
 
   zebin_id_map_entry_t *entry = zebin_id_map_lookup(zebin_id_uint32);
   if (entry == NULL) {
-    SymbolVector *symbols = collectZebinSymbols(debug_zebin, debug_zebin_size);
+    SymbolVector *symbols = collectZebinSymbols((const char*)debug_zebin, debug_zebin_size);
     zebin_id_map_insert(zebin_id_uint32, loadmap_module_id, symbols);
   }
 

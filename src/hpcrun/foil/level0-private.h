@@ -99,8 +99,8 @@ struct hpcrun_foil_appdispatch_level0 {
                                                 ze_device_handle_t, uint32_t,
                                                 zet_metric_group_handle_t*);
   ze_result_t (*zetMetricStreamerOpen)(zet_context_handle_t, ze_device_handle_t,
-                                       zet_metric_group_handle_t, ze_event_handle_t,
-                                       zet_metric_streamer_desc_t*,
+                                       zet_metric_group_handle_t,
+                                       zet_metric_streamer_desc_t*, ze_event_handle_t,
                                        zet_metric_streamer_handle_t*);
   ze_result_t (*zetMetricStreamerClose)(zet_metric_streamer_handle_t);
   ze_result_t (*zetMetricGroupGet)(zet_device_handle_t, uint32_t*,
