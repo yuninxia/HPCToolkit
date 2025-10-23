@@ -41,7 +41,9 @@ bool f_identify_libpython(const char* path) {
   }
   void* libpy = dlopen(path, RTLD_LAZY | RTLD_NOLOAD);
   if (dlsym(libpy, "PySys_AddAuditHook") == NULL) {
-    dlclose(libpy);
+    if (libpy != NULL) {
+      dlclose(libpy);
+    }
     return false;
   }
   dispatch = (struct Dispatch){

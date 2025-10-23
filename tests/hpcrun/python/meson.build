@@ -6,6 +6,12 @@ if not python.found()
   subdir_done()
 endif
 
+simple_tstexe = executable(
+  'tstexe-simple-spin',
+  '../cpu/simple-spin.c',
+  dependencies: [math_dep],
+)
+
 _tst = find_program(files('tst-python-simple'))
 test(
   'Measurement of simple-1thread unwound Python',
@@ -56,5 +62,16 @@ test(
   args: [hpctesttool, hpcrun, hpcprof, python.full_path(), files('simple-1thread'), '1'],
   suite: ['hpcrun', 'python'],
   depends: hpcrun_test_depends,
+  timeout: 0,  # Signal delivery is very slow on some systems
+)
+
+test(
+  'Measurement of (non-python) @0@ using "-a python" w/ auditor'.format(
+    simple_tstexe.name(),
+  ),
+  find_program(files('tst-simple-produces-profiles')),
+  args: [hpctesttool, hpcrun, simple_tstexe],
+  suite: ['hpcrun', 'python'],
+  depends: [hpcrun_test_depends],
   timeout: 0,  # Signal delivery is very slow on some systems
 )

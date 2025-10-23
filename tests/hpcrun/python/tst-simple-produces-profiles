@@ -1,0 +1,17 @@
+#!/bin/sh -ex
+
+# SPDX-FileCopyrightText: Contributors to the HPCToolkit Project
+#
+# SPDX-License-Identifier: Apache-2.0
+
+hpctesttool="$1"
+hpcrun="$2"
+tstexe="$3"
+
+trap 'rm -rf "$tmpdir"' EXIT
+tmpdir=$(mktemp --directory)
+
+"$hpcrun" -o "$tmpdir"/m -a python --enable-auditor "$tstexe"
+# "$hpctesttool" test produces-profiles -t4 "$tmpdir"/m
+"$hpctesttool" test produces-profiles "$tmpdir"/m \
+  '^NODE [^A-Z]+\s+(CORE [^A-Z]+\s+)?THREAD 0/0:logical$'
