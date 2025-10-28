@@ -17,12 +17,9 @@
 #include <string.h>
 
 #include "gnu_demangle.h"
-#include "spinlock.h"
 #include "hpctoolkit_demangle.h"
 
 #define DEMANGLE_FLAGS  (DMGL_PARAMS | DMGL_ANSI | DMGL_VERBOSE | DMGL_RET_DROP)
-
-static spinlock_t demangle_lock = SPINLOCK_UNLOCKED;
 
 // Returns: malloc()ed string for the demangled name, or else NULL if
 // 'name' is not a mangled name.
@@ -40,11 +37,11 @@ hpctoolkit_demangle(const char * name)
     return NULL;
   }
 
-  // NOTE: comments in GCC demangler indicate that the demangler uses shared state
-  // and that locking for multithreading is our responsibility
-  spinlock_lock(&demangle_lock);
+  // cplus_demangle() by itself does not need a lock.  But if we add
+  // cplus_demangle_set_style() to set global state, then use
+  // pthread_once().
+
   char *demangled = cplus_demangle(name, DEMANGLE_FLAGS);
-  spinlock_unlock(&demangle_lock);
 
   return demangled;
 }
