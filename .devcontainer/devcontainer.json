@@ -1,6 +1,5 @@
 {
   "capAdd": [
-    "SYS_ADMIN",
     "PERFMON"
   ],
   "containerEnv": {
