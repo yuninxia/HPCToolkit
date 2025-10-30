@@ -484,8 +484,8 @@ migration_decode
 static uint64_t
 convert_page_migration
 (
- gpu_activity_t *ga,
- rocprofiler_buffer_tracing_page_migration_record_t *activity
+  gpu_activity_t *ga,
+  rocprofiler_buffer_tracing_page_migration_record_t *activity
 )
 {
   ga->kind = GPU_ACTIVITY_PAGE_MIGRATION;
@@ -506,8 +506,8 @@ convert_page_migration
 static void
 convert_memset
 (
- gpu_activity_t *ga,
- roctracer_record_t *activity
+  gpu_activity_t *ga,
+  roctracer_record_t *activity
 )
 {
   ga->kind = GPU_ACTIVITY_MEMSET;
@@ -522,9 +522,9 @@ convert_memset
 static void
 convert_sync
 (
- gpu_activity_t *ga,
- roctracer_record_t *activity,
- gpu_sync_type_t syncKind
+  gpu_activity_t *ga,
+  roctracer_record_t *activity,
+  gpu_sync_type_t syncKind
 )
 {
   ga->kind = GPU_ACTIVITY_SYNCHRONIZATION;
@@ -538,48 +538,110 @@ convert_sync
 #endif
 
 #ifdef ROCPROFILER_PC_SAMPLING_RECORD_STOCHASTIC
+
+#define FORALL_PIPE_DECODE(macro)                    \
+  macro(vector_alu,      arb_state_issue_valu)       \
+  macro(matrix,          arb_state_issue_matrix)     \
+  macro(lds,             arb_state_issue_lds)        \
+  macro(lds_direct,      arb_state_issue_lds_direct) \
+  macro(scalar,          arb_state_issue_scalar)     \
+  macro(texture,         arb_state_issue_vmem_tex)   \
+  macro(flat,            arb_state_issue_flat)       \
+  macro(export,          arb_state_issue_exp)        \
+  macro(misc,            arb_state_issue_misc)       \
+  macro(branch_msg,      arb_state_issue_brmsg)
+
+gpu_pipeline_info_t
+inspect_pipelines
+(
+  rocprofiler_pc_sampling_record_hw_t *pcs
+)
+{
+  gpu_pipeline_info_t info = {{0}, {0}};
+
+#define ISSUED(out,  in) info.issued.out = pcs->snapshot.in;
+#define STALLED(out, in) info.stalled.out = pcs->snapshot.in;
+
+  info.issued.available = 1; // info is available about pipelines issued
+  FORALL_PIPE_DECODE(ISSUED)
+  ISSUED(vector_dual_alu, dual_issue_valu) // handle dual_issue separately
+
+  info.stalled.available = 1; // info is available about pipelines stalled
+  FORALL_PIPE_DECODE(STALLED)
+
+  return info;
+}
+
+
+static gpu_inst_type_t
+get_instruction_class
+(
+  rocprofiler_pc_sampling_record_hw_t *pcs
+)
+{
+#define CASE(rtype, type) case rtype: itype = type; break;
+
+  gpu_inst_type_t itype = GPU_INST_TYPE_NONE;
+  switch(pcs->inst_type) {
+    CASE(ROCPROFILER_PC_SAMPLING_INSTRUCTION_TYPE_NONE, GPU_INST_TYPE_NONE)
+    CASE(ROCPROFILER_PC_SAMPLING_INSTRUCTION_TYPE_VALU, GPU_INST_TYPE_VECTOR)
+    CASE(ROCPROFILER_PC_SAMPLING_INSTRUCTION_TYPE_DUAL_VALU, GPU_INST_TYPE_VECTOR_DUAL)
+    CASE(ROCPROFILER_PC_SAMPLING_INSTRUCTION_TYPE_MATRIX, GPU_INST_TYPE_MATRIX)
+    CASE(ROCPROFILER_PC_SAMPLING_INSTRUCTION_TYPE_SCALAR, GPU_INST_TYPE_SCALAR)
+    CASE(ROCPROFILER_PC_SAMPLING_INSTRUCTION_TYPE_TEX, GPU_INST_TYPE_TEXTURE)
+    CASE(ROCPROFILER_PC_SAMPLING_INSTRUCTION_TYPE_LDS, GPU_INST_TYPE_LDS)
+    CASE(ROCPROFILER_PC_SAMPLING_INSTRUCTION_TYPE_LDS_DIRECT, GPU_INST_TYPE_LDS_DIRECT)
+    CASE(ROCPROFILER_PC_SAMPLING_INSTRUCTION_TYPE_FLAT, GPU_INST_TYPE_FLAT)
+    CASE(ROCPROFILER_PC_SAMPLING_INSTRUCTION_TYPE_EXPORT, GPU_INST_TYPE_EXPORT)
+    CASE(ROCPROFILER_PC_SAMPLING_INSTRUCTION_TYPE_MESSAGE, GPU_INST_TYPE_MSG)
+    CASE(ROCPROFILER_PC_SAMPLING_INSTRUCTION_TYPE_BARRIER, GPU_INST_TYPE_BARRIER)
+    CASE(ROCPROFILER_PC_SAMPLING_INSTRUCTION_TYPE_BRANCH_NOT_TAKEN, GPU_INST_TYPE_BRANCH_TAKEN)
+    CASE(ROCPROFILER_PC_SAMPLING_INSTRUCTION_TYPE_BRANCH_TAKEN, GPU_INST_TYPE_BRANCH_NOT_TAKEN)
+    CASE(ROCPROFILER_PC_SAMPLING_INSTRUCTION_TYPE_JUMP, GPU_INST_TYPE_JUMP)
+    CASE(ROCPROFILER_PC_SAMPLING_INSTRUCTION_TYPE_OTHER, GPU_INST_TYPE_OTHER)
+    CASE(ROCPROFILER_PC_SAMPLING_INSTRUCTION_TYPE_NO_INST, GPU_INST_TYPE_NONE)
+    CASE(ROCPROFILER_PC_SAMPLING_INSTRUCTION_TYPE_LAST, GPU_INST_TYPE_UNUSED) // never at runtime
+  }
+
+#undef CASE
+
+  if (pcs->snapshot.reason_not_issued ==
+    ROCPROFILER_PC_SAMPLING_INSTRUCTION_NOT_ISSUED_REASON_NO_INSTRUCTION_AVAILABLE) {
+    assert(itype == GPU_INST_TYPE_NONE); // learn if this assertion holds
+    itype = GPU_INST_TYPE_NONE;
+  }
+
+  return itype;
+}
+
 static gpu_inst_stall_t
 convert_stall_type
 (
- rocprofiler_pc_sampling_record_hw_t *pcs
+  rocprofiler_pc_sampling_record_hw_t *pcs
 )
 {
-  gpu_inst_stall_t stall = GPU_INST_STALL_NONE;
+#define CASE(rtype, type) case rtype: stall = type; break;
 
+  gpu_inst_stall_t stall = GPU_INST_STALL_NONE;
   switch(pcs->snapshot.reason_not_issued) {
-    case ROCPROFILER_PC_SAMPLING_INSTRUCTION_NOT_ISSUED_REASON_NONE:
-      stall = GPU_INST_STALL_NONE;
-      break;
-    case ROCPROFILER_PC_SAMPLING_INSTRUCTION_NOT_ISSUED_REASON_NO_INSTRUCTION_AVAILABLE:
-      stall = GPU_INST_STALL_IFETCH;
-      break;
-    case ROCPROFILER_PC_SAMPLING_INSTRUCTION_NOT_ISSUED_REASON_ALU_DEPENDENCY:
-      stall = GPU_INST_STALL_IDEPEND;
-      break;
-    case ROCPROFILER_PC_SAMPLING_INSTRUCTION_NOT_ISSUED_REASON_WAITCNT:
-      stall = GPU_INST_STALL_MEM;
-      break;
-    case ROCPROFILER_PC_SAMPLING_INSTRUCTION_NOT_ISSUED_REASON_INTERNAL_INSTRUCTION:
-      stall = GPU_INST_STALL_OTHER;
-      break;
-    case ROCPROFILER_PC_SAMPLING_INSTRUCTION_NOT_ISSUED_REASON_BARRIER_WAIT:
-      stall = GPU_INST_STALL_SYNC;
-      break;
-    case ROCPROFILER_PC_SAMPLING_INSTRUCTION_NOT_ISSUED_REASON_ARBITER_NOT_WIN:
-      stall = GPU_INST_STALL_NOT_SELECTED;
-      break;
-    case ROCPROFILER_PC_SAMPLING_INSTRUCTION_NOT_ISSUED_REASON_ARBITER_WIN_EX_STALL:
-      stall = GPU_INST_STALL_PIPE_BUSY;
-      break;
-    case ROCPROFILER_PC_SAMPLING_INSTRUCTION_NOT_ISSUED_REASON_OTHER_WAIT:
-      stall = GPU_INST_STALL_OTHER;
-      break;
-    case ROCPROFILER_PC_SAMPLING_INSTRUCTION_NOT_ISSUED_REASON_SLEEP_WAIT:
-      stall = GPU_INST_STALL_SLEEP;
-      break;
-    case ROCPROFILER_PC_SAMPLING_INSTRUCTION_NOT_ISSUED_REASON_LAST:
-      stall = GPU_INST_STALL_INVALID;
-      break;
+    CASE(ROCPROFILER_PC_SAMPLING_INSTRUCTION_NOT_ISSUED_REASON_NONE, GPU_INST_STALL_NONE)
+    CASE(ROCPROFILER_PC_SAMPLING_INSTRUCTION_NOT_ISSUED_REASON_NO_INSTRUCTION_AVAILABLE, GPU_INST_STALL_IFETCH)
+    CASE(ROCPROFILER_PC_SAMPLING_INSTRUCTION_NOT_ISSUED_REASON_ALU_DEPENDENCY, GPU_INST_STALL_IDEPEND)
+    CASE(ROCPROFILER_PC_SAMPLING_INSTRUCTION_NOT_ISSUED_REASON_WAITCNT, GPU_INST_STALL_MEM)
+    CASE(ROCPROFILER_PC_SAMPLING_INSTRUCTION_NOT_ISSUED_REASON_INTERNAL_INSTRUCTION, GPU_INST_STALL_OTHER)
+    CASE(ROCPROFILER_PC_SAMPLING_INSTRUCTION_NOT_ISSUED_REASON_BARRIER_WAIT, GPU_INST_STALL_SYNC)
+    CASE(ROCPROFILER_PC_SAMPLING_INSTRUCTION_NOT_ISSUED_REASON_ARBITER_NOT_WIN, GPU_INST_STALL_NOT_SELECTED)
+    CASE(ROCPROFILER_PC_SAMPLING_INSTRUCTION_NOT_ISSUED_REASON_ARBITER_WIN_EX_STALL, GPU_INST_STALL_PIPE_BUSY)
+    CASE(ROCPROFILER_PC_SAMPLING_INSTRUCTION_NOT_ISSUED_REASON_OTHER_WAIT, GPU_INST_STALL_OTHER)
+    CASE(ROCPROFILER_PC_SAMPLING_INSTRUCTION_NOT_ISSUED_REASON_SLEEP_WAIT, GPU_INST_STALL_SLEEP)
+    CASE(ROCPROFILER_PC_SAMPLING_INSTRUCTION_NOT_ISSUED_REASON_LAST, GPU_INST_STALL_INVALID)
+  }
+
+#undef CASE
+
+  if (pcs->wave_issued) {
+    // Note: stall reasons are unreliable if wave issued. Suppress them.
+    stall = GPU_INST_STALL_NONE;
   }
 
   return stall;
@@ -589,8 +651,8 @@ convert_stall_type
 static uint64_t
 convert_pc_sampling_hw
 (
- gpu_activity_t *ga,
- rocprofiler_pc_sampling_record_hw_t *pcs
+  gpu_activity_t *ga,
+  rocprofiler_pc_sampling_record_hw_t *pcs
 )
 {
   PRINT("PC sampling: sample(" PC_FORMAT ", ts=%ld, exec_mask=0x%16lx, "
@@ -631,14 +693,19 @@ convert_pc_sampling_hw
     cid = GPU_RUNTIME_PH_CID;
   }
 
-  ga->details.instruction.correlation_id = cid;
-
-  ga->details.instruction.pc = pc;
-
   gpu_inst_stall_t stall = convert_stall_type(pcs);
+
+  ga->details.pc_sampling.correlation_id = cid;
+  ga->details.pc_sampling.pc = pc;
   ga->details.pc_sampling.stallReason = stall;
-  ga->details.pc_sampling.samples = 1;
-  ga->details.pc_sampling.latencySamples = stall != GPU_INST_STALL_NONE;
+  ga->details.pc_sampling.issues = pcs->wave_issued;
+  ga->details.pc_sampling.non_issues = 1 - pcs->wave_issued;
+  ga->details.pc_sampling.instType = get_instruction_class(pcs);
+  ga->details.pc_sampling.pipeline_info = inspect_pipelines(pcs);
+
+  // FIXME: inspect pcs->exec_mask for lane-level parallelism
+  // total lanes, active lanes, scalar loss (scalar, not vector)
+  // questions: what is the maximum number of lanes?
 
   PRINT("PC sample GA: pc [0x%d, 0x%lx], corr 0x%lx, "
         "samples %u, latencySamples %u, stallReason %u\n",
@@ -703,15 +770,15 @@ convert_pc_sampling_sw
   ga->details.instruction.pc = pc;
 
   ga->details.pc_sampling.stallReason = GPU_INST_STALL_NONE;
-  ga->details.pc_sampling.samples = 1;
-  ga->details.pc_sampling.latencySamples = 0;
+  ga->details.pc_sampling.issues = 1;
+  ga->details.pc_sampling.non_issues = 0;
 
   PRINT("PC sample GA: pc [0x%d, 0x%lx], corr 0x%lx, "
         "samples %u, latencySamples %u, stallReason %u\n",
         ga->details.instruction.pc.lm_id, ga->details.instruction.pc.lm_ip,
         ga->details.instruction.correlation_id,
-        ga->details.pc_sampling.samples,
-        ga->details.pc_sampling.latencySamples,
+        ga->details.pc_sampling.issues,
+        ga->details.pc_sampling.non_issues,
         ga->details.pc_sampling.stallReason);
 
   return cid;

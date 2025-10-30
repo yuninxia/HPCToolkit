@@ -129,41 +129,108 @@ typedef struct instruction_metrics_t {
   macro("GMSET:COUNT", GPU_MEM_COUNT,                                   \
         "GPU memory set: count")
 
+// GPU instructions issued
+#define FORALL_GPU_INST_TYPE(macro)                                     \
+  macro(GPU_INST_METRIC_NAME ":ISS", GPU_INST_TYPE_ISSUED,              \
+        "GPU instruction issue: issued")                                \
+  macro(GPU_INST_METRIC_NAME ":NONE", GPU_INST_TYPE_NONE,               \
+        "GPU instruction issue: not issued")                            \
+  macro(GPU_INST_METRIC_NAME ":VEC2", GPU_INST_TYPE_VECTOR_DUAL,        \
+        "GPU instruction issue: vector, dual issue")                    \
+  macro(GPU_INST_METRIC_NAME ":VEC", GPU_INST_TYPE_VECTOR,              \
+        "GPU instruction issue: vector")                                \
+  macro(GPU_INST_METRIC_NAME ":MAT", GPU_INST_TYPE_MATRIX,              \
+        "GPU instruction issue: matrix")                                \
+  macro(GPU_INST_METRIC_NAME ":SCL", GPU_INST_TYPE_SCALAR,              \
+        "GPU instruction issue: scalar")                                \
+  macro(GPU_INST_METRIC_NAME ":TEX", GPU_INST_TYPE_TEXTURE,             \
+        "GPU instruction issue: texture")                               \
+  macro(GPU_INST_METRIC_NAME ":LDS", GPU_INST_TYPE_LDS,                 \
+        "GPU instruction issue: Local Data Store")                      \
+  macro(GPU_INST_METRIC_NAME ":LDSD", GPU_INST_TYPE_LDS_DIRECT,         \
+        "GPU instruction issue: Local Data Store direct")               \
+  macro(GPU_INST_METRIC_NAME ":FLAT", GPU_INST_TYPE_FLAT,               \
+        "GPU instruction issue: flat")                                  \
+  macro(GPU_INST_METRIC_NAME ":EXP", GPU_INST_TYPE_EXPORT,              \
+        "GPU instruction issue: export")                                \
+  macro(GPU_INST_METRIC_NAME ":MSG", GPU_INST_TYPE_MSG,                 \
+        "GPU instruction issue: msg")                                   \
+  macro(GPU_INST_METRIC_NAME ":BAR", GPU_INST_TYPE_BARRIER,             \
+        "GPU instruction issue: barrier")                               \
+  macro(GPU_INST_METRIC_NAME ":BRT", GPU_INST_TYPE_BRANCH_TAKEN,        \
+        "GPU instruction issue: branch taken")                          \
+  macro(GPU_INST_METRIC_NAME ":BRNT", GPU_INST_TYPE_BRANCH_NOT_TAKEN,   \
+        "GPU instruction issue: branch not taken")                      \
+  macro(GPU_INST_METRIC_NAME ":JMP", GPU_INST_TYPE_JUMP,                \
+        "GPU instruction issue: jump")                                  \
+  macro(GPU_INST_METRIC_NAME ":OTHR", GPU_INST_TYPE_OTHER,              \
+        "GPU instruction issue: other")
+
+
+
+// GPU pipeline status: instantiate with either "STL" or "ISS"
+#define FORALL_GPU_PIPE_TYPE(macro, si)                                 \
+  macro(GPU_PIPE_METRIC_NAME ":" si ":VEC2", GPU_PIPE_TYPE_VECTOR_DUAL, \
+        "GPU pipeline status: vector, dual issue")                      \
+  macro(GPU_PIPE_METRIC_NAME ":" si ":VEC", GPU_PIPE_TYPE_VECTOR,       \
+        "GPU pipeline status: vector")                                  \
+  macro(GPU_PIPE_METRIC_NAME ":" si ":MAT", GPU_PIPE_TYPE_MATRIX,       \
+        "GPU pipeline status: low precision MFMA")                      \
+  macro(GPU_PIPE_METRIC_NAME ":" si ":SCL", GPU_PIPE_TYPE_SCALAR,       \
+        "GPU pipeline status: scalar ALU or memory")                    \
+  macro(GPU_PIPE_METRIC_NAME ":" si ":LDS", GPU_PIPE_TYPE_LDS,          \
+        "GPU pipeline status: Local Data Store")                        \
+  macro(GPU_PIPE_METRIC_NAME ":" si ":LDSD", GPU_PIPE_TYPE_LDS_DIRECT,  \
+        "GPU pipeline status: Local Data Store direct")                 \
+  macro(GPU_PIPE_METRIC_NAME ":" si ":TEX", GPU_PIPE_TYPE_TEXTURE,      \
+        "GPU pipeline status: texture")                                 \
+  macro(GPU_PIPE_METRIC_NAME ":" si ":FLAT", GPU_PIPE_TYPE_FLAT,        \
+        "GPU pipeline status: flat")                                    \
+  macro(GPU_PIPE_METRIC_NAME ":" si ":EXP", GPU_PIPE_TYPE_EXPORT,       \
+        "GPU pipeline status: export")                                  \
+  macro(GPU_PIPE_METRIC_NAME ":" si ":BMSG", GPU_PIPE_TYPE_BRMSG,       \
+        "GPU pipeline status: branch or message")                       \
+  macro(GPU_PIPE_METRIC_NAME ":" si ":MSC", GPU_PIPE_TYPE_MISC,         \
+        "GPU pipeline status: miscellaneous")
+
+#define FORALL_GPU_PIPE_TYPE_ISS(macro) FORALL_GPU_PIPE_TYPE(macro, "ISS")
+#define FORALL_GPU_PIPE_TYPE_STL(macro) FORALL_GPU_PIPE_TYPE(macro, "STL")
+
 #define FORALL_GPU_INST_STALL(macro)                                    \
-  macro(GPU_INST_METRIC_NAME ":STL_ANY", GPU_INST_STALL_ANY,            \
+  macro(GPU_INST_METRIC_NAME ":STL:ANY", GPU_INST_STALL_ANY,            \
         "GPU instruction stalls: any")                                  \
-  macro(GPU_INST_METRIC_NAME ":STL_NONE", GPU_INST_STALL_NONE,          \
+  macro(GPU_INST_METRIC_NAME ":STL:NONE", GPU_INST_STALL_NONE,          \
         "GPU instruction stalls: no stall")                             \
-  macro(GPU_INST_METRIC_NAME ":STL_IFET", GPU_INST_STALL_IFETCH,        \
+  macro(GPU_INST_METRIC_NAME ":STL:IFET", GPU_INST_STALL_IFETCH,        \
         "GPU instruction stalls: await availability of next "           \
         "instruction (fetch or branch delay)")                          \
-  macro(GPU_INST_METRIC_NAME ":STL_IDEP", GPU_INST_STALL_IDEPEND,       \
+  macro(GPU_INST_METRIC_NAME ":STL:IDEP", GPU_INST_STALL_IDEPEND,       \
         "GPU instruction stalls: await satisfaction of instruction "    \
         "input dependence")                                             \
-  macro(GPU_INST_METRIC_NAME ":STL_MEM", GPU_INST_STALL_MEM,            \
+  macro(GPU_INST_METRIC_NAME ":STL:MEM", GPU_INST_STALL_MEM,            \
         "GPU instruction stalls: await completion of a kind of memory " \
         "access")                                                       \
-  macro(GPU_INST_METRIC_NAME ":STL_GMEM", GPU_INST_STALL_GMEM,          \
+  macro(GPU_INST_METRIC_NAME ":STL:GMEM", GPU_INST_STALL_GMEM,          \
         "GPU instruction stalls: await completion of global memory "    \
         "access")                                                       \
-  macro(GPU_INST_METRIC_NAME ":STL_TMEM", GPU_INST_STALL_TMEM,          \
+  macro(GPU_INST_METRIC_NAME ":STL:TMEM", GPU_INST_STALL_TMEM,          \
         "GPU instruction stalls: texture memory request queue full")    \
-  macro(GPU_INST_METRIC_NAME ":STL_SYNC", GPU_INST_STALL_SYNC,          \
+  macro(GPU_INST_METRIC_NAME ":STL:SYNC", GPU_INST_STALL_SYNC,          \
         "GPU instruction stalls: await completion of thread or "        \
         "memory synchronization")                                       \
-  macro(GPU_INST_METRIC_NAME ":STL_CMEM", GPU_INST_STALL_CMEM,          \
+  macro(GPU_INST_METRIC_NAME ":STL:CMEM", GPU_INST_STALL_CMEM,          \
         "GPU instruction stalls: await completion of constant or "      \
         "immediate memory access")                                      \
-  macro(GPU_INST_METRIC_NAME ":STL_PIPE", GPU_INST_STALL_PIPE_BUSY,     \
+  macro(GPU_INST_METRIC_NAME ":STL:PIPE", GPU_INST_STALL_PIPE_BUSY,     \
         "GPU instruction stalls: await completion of required "         \
         "compute resources")                                            \
-  macro(GPU_INST_METRIC_NAME ":STL_MTHR", GPU_INST_STALL_MEM_THROTTLE,  \
+  macro(GPU_INST_METRIC_NAME ":STL:MTHR", GPU_INST_STALL_MEM_THROTTLE,  \
         "GPU instruction stalls: global memory request queue full")     \
-  macro(GPU_INST_METRIC_NAME ":STL_NSEL", GPU_INST_STALL_NOT_SELECTED,  \
+  macro(GPU_INST_METRIC_NAME ":STL:NSEL", GPU_INST_STALL_NOT_SELECTED,  \
         "GPU instruction stalls: not selected for issue but ready")     \
-  macro(GPU_INST_METRIC_NAME ":STL_OTHR", GPU_INST_STALL_OTHER,         \
+  macro(GPU_INST_METRIC_NAME ":STL:OTHR", GPU_INST_STALL_OTHER,         \
         "GPU instruction stalls: other")                                \
-  macro(GPU_INST_METRIC_NAME ":STL_SLP", GPU_INST_STALL_SLEEP,          \
+  macro(GPU_INST_METRIC_NAME ":STL:SLP", GPU_INST_STALL_SLEEP,          \
         "GPU instruction stalls: sleep")
 
 // gpu explicit copy
@@ -587,6 +654,26 @@ void gpu_metrics_GLMEM_enable
 void gpu_metrics_GBR_enable
 (
  void
+);
+
+//--------------------------------------------------
+// record instruction issue statistics
+//--------------------------------------------------
+
+void
+gpu_metrics_GPU_INST_TYPE_enable
+(
+  void
+);
+
+//--------------------------------------------------
+// record pipeline issue/stall statistics
+//--------------------------------------------------
+
+void
+gpu_metrics_GPU_PIPE_enable
+(
+  void
 );
 
 //--------------------------------------------------

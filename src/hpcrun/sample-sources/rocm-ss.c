@@ -223,7 +223,9 @@ METHOD_FN(process_event_list)
         if (gpu_monitoring_instruction_sampling_is_enabled(GPU_INSTRUCTION_SAMPLING_HW)) {
           // only enable stall metrics if using HW support for PC sampling.
           // they are unavailable with host_trap SW support.
+          gpu_metrics_GPU_INST_TYPE_enable(); // instruction type metrics
           gpu_metrics_GPU_INST_STALL_enable(); // stall metrics
+          gpu_metrics_GPU_PIPE_enable(); // pipeline utilization metrics
         }
       }
     } else if (strncmp(rocm_event_name, ROCM_CTR_PREFIX, strlen(ROCM_CTR_PREFIX)) == 0) {

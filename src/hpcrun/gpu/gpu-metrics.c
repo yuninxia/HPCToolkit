@@ -30,6 +30,8 @@
 
 #define TRACK_NVLINK 0
 
+#define DEBUG_PIPE_TYPES 0
+
 #define FORMAT_DISPLAY_PERCENTAGE "%6.2f %%"
 #define FORMAT_DISPLAY_INT "%6.0f"
 
@@ -56,6 +58,11 @@
   macro(GPU_UTILIZATION, 17)                                     \
   macro(GPAGE, 18)                                               \
   macro(GSCR, 19)
+
+#define FORALL_SINGLETON_METRIC_KINDS(macro)                     \
+  macro(GPU_INST_TYPE, 1)                                        \
+  macro(GPU_PIPE_TYPE_ISS, 2)                                    \
+  macro(GPU_PIPE_TYPE_STL, 3)
 
 #define FORALL_METRIC_KINDS(macro)   \
   FORALL_INDEXED_METRIC_KINDS(macro) \
@@ -89,6 +96,10 @@
 #define INITIALIZE_SCALAR_METRIC_KIND(kind, value) \
   FORALL_##kind(INITIALIZE_SCALAR_METRIC)
 
+#define INITIALIZE_SINGLETON_METRIC(name, value) \
+  static kind_info_t *METRIC_KIND(name)[NUM_CLAUSES(FORALL_##name)]; \
+  static int METRIC_ID(name)[NUM_CLAUSES(FORALL_##name)];
+
 
 //------------------------------------------------------------------------------
 // metric initialization
@@ -108,6 +119,14 @@
       hpcrun_set_new_metric_desc_and_period(APPLY(METRIC_KIND, CURRENT_METRIC), metric_name, metric_desc, \
                                             MetricFlags_ValFmt_Int, 1, metric_property_none);
 
+#define INITIALIZE_SINGLETON_METRIC_INT(metric_name, index, metric_desc)                                  \
+  APPLY(METRIC_KIND, CURRENT_METRIC)[index] = hpcrun_metrics_new_kind();                                  \
+  APPLY(METRIC_ID, CURRENT_METRIC)                                                                        \
+  [index] =                                                                                               \
+      hpcrun_set_new_metric_desc_and_period(APPLY(METRIC_KIND, CURRENT_METRIC)[index], metric_name, metric_desc, \
+                                            MetricFlags_ValFmt_Int, 1, metric_property_none);             \
+  hpcrun_close_kind(APPLY(METRIC_KIND, CURRENT_METRIC)[index]);
+
 #define INITIALIZE_INDEXED_METRIC_REAL(metric_name, index, metric_desc)                                   \
   APPLY(METRIC_ID, CURRENT_METRIC)                                                                        \
   [index] =                                                                                               \
@@ -118,6 +137,14 @@
   METRIC_ID(metric_var) =                                                                                 \
       hpcrun_set_new_metric_desc_and_period(APPLY(METRIC_KIND, CURRENT_METRIC), metric_name, metric_desc, \
                                             MetricFlags_ValFmt_Int, 1, metric_property_none);
+
+
+#define INITIALIZE_SINGLETON_SCALAR_METRIC_INT(metric_name, metric_var, metric_desc)                      \
+  APPLY(METRIC_KIND, metric_var) = hpcrun_metrics_new_kind(); \
+  METRIC_ID(metric_var) =                                                                                 \
+      hpcrun_set_new_metric_desc_and_period(APPLY(METRIC_KIND, metric_var), metric_var, metric_desc, \
+                                            MetricFlags_ValFmt_Int, 1, metric_property_none); \
+  hpcrun_close_kind(APPLY(METRIC_KIND, metric_var));
 
 #define INITIALIZE_SCALAR_METRIC_INT_MOVE2PROC(metric_name, metric_var, metric_desc) \
   INITIALIZE_SCALAR_METRIC_INT(metric_name, metric_var, metric_desc)                 \
@@ -133,7 +160,7 @@
   hpcrun_set_move2proc(METRIC_ID(metric_var), true);
 
 #define SET_DISPLAY_INDEXED_METRIC(name, index, val) \
-  hpcrun_set_display(APPLY(METRIC_ID, CURRENT_METRIC)[index], val);
+  hpcrun_set_display(APPLY(METRIC_ID, CURRENT_METRIC)[index], val)
 
 #define SET_DISPLAY_SCALAR_METRIC(name, val) \
   hpcrun_set_display(APPLY(METRIC_ID, name), val);
@@ -217,10 +244,14 @@ FORALL_INDEXED_METRIC_KINDS(INITIALIZE_INDEXED_METRIC);
 
 FORALL_SCALAR_METRIC_KINDS(INITIALIZE_SCALAR_METRIC_KIND);
 
+FORALL_SINGLETON_METRIC_KINDS(INITIALIZE_SINGLETON_METRIC);
+
 static kind_info_t *GPU_COUNTER_METRIC_KIND_INFO = NULL;
 static int *gpu_counter_hpcrun_metric_id_array = NULL;
 
 static const unsigned int MAX_CHAR_FORMULA = 32;
+
+gpu_pipeline_status_t only_available = {1, 0};
 
 
 
@@ -262,23 +293,181 @@ gpu_metrics_attribute_metric_time_interval(
   gpu_metrics_attribute_metric_real(metrics, time_index, (i->end - i->start) / 1.0e9);
 }
 
+
 static void
-gpu_metrics_attribute_pc_sampling(
-    gpu_activity_t *activity)
+gpu_metrics_attribute_inst_type
+(
+  cct_node_t *cct_node,
+  gpu_pc_sampling_t *sinfo,
+  unsigned int sample_count
+)
+{
+#define METRIC_ID_NONE -1
+#define CASE(type) case type: metric_id = APPLY(METRIC_ID, GPU_INST_TYPE)[type]; break;
+
+  int metric_id = METRIC_ID_NONE;
+  switch(sinfo->instType) {
+    CASE(GPU_INST_TYPE_NONE)
+    CASE(GPU_INST_TYPE_VECTOR)
+    CASE(GPU_INST_TYPE_VECTOR_DUAL)
+    CASE(GPU_INST_TYPE_SCALAR)
+    CASE(GPU_INST_TYPE_MATRIX)
+    CASE(GPU_INST_TYPE_TEXTURE)
+    CASE(GPU_INST_TYPE_LDS)
+    CASE(GPU_INST_TYPE_LDS_DIRECT)
+    CASE(GPU_INST_TYPE_FLAT)
+    CASE(GPU_INST_TYPE_EXPORT)
+    CASE(GPU_INST_TYPE_MSG)
+    CASE(GPU_INST_TYPE_BARRIER)
+    CASE(GPU_INST_TYPE_BRANCH_TAKEN)
+    CASE(GPU_INST_TYPE_BRANCH_NOT_TAKEN)
+    CASE(GPU_INST_TYPE_JUMP)
+    CASE(GPU_INST_TYPE_OTHER)
+    case GPU_INST_TYPE_UNUSED: break;
+    case GPU_INST_TYPE_ISSUED: break;
+  }
+#undef CASE
+
+  if (metric_id != METRIC_ID_NONE) {
+    metric_data_list_t *inst_metric = hpcrun_reify_metric_set(cct_node, metric_id);
+    gpu_metrics_attribute_metric_int(inst_metric, metric_id, sample_count);
+  }
+}
+
+static bool
+status_is_interesting
+(
+  gpu_pipeline_status_t status
+)
+{
+  return status.vector_alu |
+    status.vector_dual_alu |
+    status.export |
+    status.flat |
+    status.scalar |
+    status.matrix |
+    status.lds |
+    status.lds_direct |
+    status.misc |
+    status.branch_msg |
+    status.texture;
+}
+
+
+[[maybe_unused]]
+static void
+print_interesting_status
+(
+  const char *which,
+  gpu_pipeline_status_t status
+)
+{
+#define PIPE_STATUS_PRINT(enum, field) , status.field
+#define PIPE_STATUS_FORMAT(enum, field) # field "=%d "
+  if (status_is_interesting(status)) {
+    fprintf(stderr, "%s pipeline status: "
+      FORALL_AMD_GPU_PIPES(PIPE_STATUS_FORMAT)
+      "\n", which
+      FORALL_AMD_GPU_PIPES(PIPE_STATUS_PRINT));
+  }
+}
+
+static void
+attribute_pipe_metric
+(
+  cct_node_t *cct_node,
+  int metric_id,
+  int sample_count
+)
+{
+  metric_data_list_t *pipe_metric = hpcrun_reify_metric_set(cct_node, metric_id);                            \
+  gpu_metrics_attribute_metric_int(pipe_metric, metric_id, sample_count);
+}
+
+
+static void
+gpu_metrics_attribute_pipe_stall_status
+(
+  cct_node_t *cct_node,
+  gpu_pc_sampling_t *sinfo,
+  int sample_count
+)
+{
+  gpu_pipeline_status_t status = sinfo->pipeline_info.stalled;
+#if DEBUG_PIPE_TYPES
+  print_interesting_status("stall", status);
+#endif
+
+#define IF(type, field) if (status.field) {                  \
+  int metric_id = APPLY(METRIC_ID, GPU_PIPE_TYPE_STL)[type]; \
+  attribute_pipe_metric(cct_node, metric_id, sample_count);  \
+}
+
+  FORALL_AMD_GPU_PIPES(IF)
+
+#undef IF
+}
+
+static void
+gpu_metrics_attribute_pipe_issue_status
+(
+  cct_node_t *cct_node,
+  gpu_pc_sampling_t *sinfo,
+  int sample_count
+)
+{
+  gpu_pipeline_status_t status = sinfo->pipeline_info.issued;
+#if DEBUG_PIPE_TYPES
+  print_interesting_status("issue", status);
+#endif
+
+#define IF(type, field) if (status.field) {                  \
+  int metric_id = APPLY(METRIC_ID, GPU_PIPE_TYPE_ISS)[type]; \
+  attribute_pipe_metric(cct_node, metric_id, sample_count);  \
+}
+
+  FORALL_AMD_GPU_PIPES(IF)
+
+#undef IF
+}
+
+
+static void
+gpu_metrics_attribute_pc_sampling
+(
+  gpu_activity_t *activity
+)
 {
   uint64_t sample_period = gpu_monitoring_instruction_sampling_period_get();
 
   gpu_pc_sampling_t *sinfo = &(activity->details.pc_sampling);
   cct_node_t *cct_node = activity->cct_node;
 
-  uint64_t inst_count = sinfo->samples * sample_period;
+  uint64_t issue_count = sinfo->issues * sample_period;
 
-  metric_data_list_t *inst_metric =
-    hpcrun_reify_metric_set(cct_node, METRIC_ID(GPU_INSTRUCTION_EXECUTION_COUNT));
+  if (issue_count) {
+    int issue_metric_id = APPLY(METRIC_ID, GPU_INST_TYPE)[GPU_INST_TYPE_ISSUED];
+    metric_data_list_t *issue_metric =
+      hpcrun_reify_metric_set(cct_node, issue_metric_id);
 
-  // instruction execution metric
-  gpu_metrics_attribute_metric_int(inst_metric, METRIC_ID(GPU_INSTRUCTION_EXECUTION_COUNT),
-                                   inst_count);
+    // instruction execution metric
+    gpu_metrics_attribute_metric_int(issue_metric, issue_metric_id, issue_count);
+  }
+
+  // record sampled instruction issue (if any)
+  if (sinfo->instType != GPU_INST_TYPE_UNUSED) {
+    gpu_metrics_attribute_inst_type(cct_node, sinfo, issue_count);
+  }
+
+  // record pipeline issue metrics, if available
+  if (sinfo->pipeline_info.issued.available) {
+    gpu_metrics_attribute_pipe_issue_status(cct_node, sinfo, sample_period);
+  }
+
+  // record pipeline stall metrics, if available
+  if (sinfo->pipeline_info.stalled.available) {
+    gpu_metrics_attribute_pipe_stall_status(cct_node, sinfo, sample_period);
+  }
 
   if (sinfo->stallReason != GPU_INST_STALL_INVALID) {
     int stall_summary_metric_index =
@@ -289,18 +478,21 @@ gpu_metrics_attribute_pc_sampling(
     metric_data_list_t *stall_metrics =
       hpcrun_reify_metric_set(cct_node, stall_kind_metric_index);
 
-    uint64_t stall_count = sinfo->latencySamples * sample_period;
+    uint64_t stall_count = sinfo->non_issues * sample_period;
 
-    if (sinfo->stallReason != GPU_INST_STALL_NONE)
-    {
+    if (sinfo->stallReason != GPU_INST_STALL_NONE) {
       // stall summary metric
       gpu_metrics_attribute_metric_int(stall_metrics,
                                        stall_summary_metric_index, stall_count);
+                                         // stall reason specific metric
+      gpu_metrics_attribute_metric_int(stall_metrics,
+                                       stall_kind_metric_index, stall_count);
+    } else {
+      gpu_metrics_attribute_metric_int(stall_metrics,
+                                       stall_kind_metric_index, issue_count);
     }
 
-    // stall reason specific metric
-    gpu_metrics_attribute_metric_int(stall_metrics,
-                                     stall_kind_metric_index, stall_count);
+
   }
 }
 
@@ -1088,6 +1280,33 @@ gpu_metrics_GPU_INST_enable
   THREADS_TO_COVER_LATENCY_FORMULA();
 }
 
+
+void
+gpu_metrics_GPU_INST_TYPE_enable
+(
+  void
+)
+{
+#undef CURRENT_METRIC
+#define CURRENT_METRIC GPU_INST_TYPE
+  FORALL_GPU_INST_TYPE(INITIALIZE_SINGLETON_METRIC_INT);
+}
+
+
+void
+gpu_metrics_GPU_PIPE_enable
+(
+  void
+)
+{
+#undef CURRENT_METRIC
+#define CURRENT_METRIC GPU_PIPE_TYPE_ISS
+  FORALL_GPU_PIPE_TYPE(INITIALIZE_SINGLETON_METRIC_INT, "ISS");
+
+#undef CURRENT_METRIC
+#define CURRENT_METRIC GPU_PIPE_TYPE_STL
+  FORALL_GPU_PIPE_TYPE(INITIALIZE_SINGLETON_METRIC_INT, "STL");
+}
 
 void
 gpu_metrics_GSAMP_enable
