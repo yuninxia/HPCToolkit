@@ -1,5 +1,12 @@
 <?xml version="1.0"?>
 <!DOCTYPE HPCToolkitStructure [
+<!-- SPDX-SnippetBegin -->
+<!--
+SPDX-FileCopyrightText: Contributors to the HPCToolkit Project
+
+SPDX-License-Identifier: CC-BY-4.0
+-->
+
 <!-- ******************************************************************** -->
 <!-- HPCToolkit Structure DTD                                             -->
 <!-- Version 4.9                                                          -->
@@ -67,9 +74,10 @@
         v CDATA #IMPLIED
         t CDATA #IMPLIED
         d CDATA #IMPLIED>
+<!-- SPDX-SnippetEnd -->
 ]>
 <HPCToolkitStructure i="0" version="4.9" n="">
-<LM i="2" n="/builds/hpctoolkit/hpctoolkit/tests/data/bin/recursion-x86_64-llvm15-0" has-calls="0" v="{}">
+<LM i="2" n="/builds/hpctoolkit/hpctoolkit/builddir/../tests/data/bin/recursion-x86_64-llvm15-0" has-calls="0" v="{}">
 <F i="3" n="/src/recursion.c">
 <P i="4" n="heart [recursion-x86_64-llvm15-0]" ln="heart" l="38" v="{[0x1100-0x1101)}">
 <S i="5" l="38" v="{[0x1100-0x1108)}"/>

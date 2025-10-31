@@ -1,5 +1,6 @@
 <?xml version="1.0"?>
 <!DOCTYPE HPCToolkitStructure [
+<!-- SPDX-SnippetBegin -->
 <!--
 SPDX-FileCopyrightText: Contributors to the HPCToolkit Project
 
@@ -73,6 +74,7 @@ SPDX-License-Identifier: CC-BY-4.0
         v CDATA #IMPLIED
         t CDATA #IMPLIED
         d CDATA #IMPLIED>
+<!-- SPDX-SnippetEnd -->
 ]>
 <HPCToolkitStructure i="0" version="4.9" n="">
 <LM i="2" n="/builds/hpctoolkit/hpctoolkit/builddir/../tests/data/bin/inlines+loops-sm_87-nvcc118-r" has-calls="1" v="{}">
