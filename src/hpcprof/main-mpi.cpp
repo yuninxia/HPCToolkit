@@ -137,12 +137,12 @@ int main(int argc, char* const argv[]) {
     // Make sure the files are searched for as they should be.
     pipelineB1 << std::make_unique<ProfArgs::Prefixer>(args);
 
+    // Make sure all Metrics have their Statistics set properly
+    pipelineB1 << std::make_unique<ProfArgs::StatisticsExtender>(args);
+
     // In this phase, rank 0 is the one that provides structural information
     // and decides the ids for everything.
     if (mpi::World::rank() == 0) {
-      // Make sure all Metrics have their Statistics set properly
-      pipelineB1 << std::make_unique<ProfArgs::StatisticsExtender>(args);
-
       // Load in the Finalizers for special cases
       pipelineB1 << std::make_unique<finalizers::LogicalFile>();
       for (auto& sp : args.ksyms)
