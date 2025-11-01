@@ -101,6 +101,12 @@ f_zeEventQueryKernelTimestamp(ze_event_handle_t hEvent,
   return dispatch->zeEventQueryKernelTimestamp(hEvent, dstptr);
 }
 
+ze_result_t f_zeEventQueryKernelTimestampsExt(ze_event_handle_t hEvent, ze_device_handle_t hDevice, uint32_t* count,
+                                              ze_event_query_kernel_timestamps_results_ext_properties_t* resultProps,
+                                              const struct hpcrun_foil_appdispatch_level0* dispatch) {
+  return dispatch->zeEventQueryKernelTimestampsExt(hEvent, hDevice, count, resultProps);
+}
+
 ze_result_t
 f_zeMemGetAllocProperties(ze_context_handle_t hContext, const void* ptr,
                           ze_memory_allocation_properties_t* pMemAllocProperties,

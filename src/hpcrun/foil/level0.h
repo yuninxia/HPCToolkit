@@ -41,6 +41,9 @@ ze_result_t f_zeEventQueryStatus(ze_event_handle_t,
 ze_result_t f_zeEventQueryKernelTimestamp(ze_event_handle_t,
                                           ze_kernel_timestamp_result_t*,
                                           const struct hpcrun_foil_appdispatch_level0*);
+ze_result_t f_zeEventQueryKernelTimestampsExt(ze_event_handle_t, ze_device_handle_t, uint32_t *,
+                                              ze_event_query_kernel_timestamps_results_ext_properties_t *,
+                                              const struct hpcrun_foil_appdispatch_level0*);
 ze_result_t f_zeMemGetAllocProperties(ze_context_handle_t, const void* ptr,
                                       ze_memory_allocation_properties_t*,
                                       ze_device_handle_t*,

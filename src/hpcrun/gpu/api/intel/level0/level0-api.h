@@ -242,4 +242,11 @@ level0_metrics_requested
   void
 );
 
+void
+level0_check_result
+(
+  ze_result_t result,
+  int lineNo
+);
+
 #endif

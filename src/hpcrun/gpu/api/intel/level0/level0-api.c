@@ -62,14 +62,19 @@
 #define GPU_FLUSH_ALARM_TEST_ENABLED 0
 #include "../../common/gpu-flush-alarm.h"
 
+#define NS_PER_SECOND 1000000000
+
 
 
 //******************************************************************************
 // debugging support
 //******************************************************************************
 
-#define DEBUG 0
+#define DEBUG 1
 #include "../../../common/gpu-print.h"
+
+
+#define TPRINT printf
 
 
 
@@ -81,7 +86,7 @@
 ze_driver_handle_t hDriver = NULL;
 ze_device_handle_t hDevice = NULL;
 
-uint64_t clock_offset_ns_from_level0 = 0;
+int64_t clock_offset_ns_from_level0 = 0;
 
 static bool gtpin_instrumentation = false;
 static bool level0_metrics_env = false;
@@ -93,6 +98,124 @@ static const struct hpcrun_foil_appdispatch_level0* saved_dispatch = NULL; // Sa
 // private operations
 //******************************************************************************
 
+// 2025/10/31 
+//   f_zeEventQueryKernelTimestampsExt is currently broken. This code is unused
+//   for that reason, but left here in the hope that Intel fixes it.
+
+void
+level0_query_timestamps
+(
+  ze_event_handle_t hEvent, // Assumption: hEvent was created with ZE_EVENT_POOL_FLAG_KERNEL_MAPPED_TIMESTAMP
+  ze_device_handle_t hDevice,
+  ze_kernel_timestamp_result_t **kernel_timestamps,
+  ze_synchronized_timestamp_result_ext_t **sync_timestamps,
+  unsigned *timestamp_count,
+  const struct hpcrun_foil_appdispatch_level0 *dispatch
+)
+{
+  ze_result_t status;
+  ze_device_properties_t devProps;
+  ze_event_query_kernel_timestamps_ext_properties_t tsProps;
+
+  devProps.stype = ZE_STRUCTURE_TYPE_DEVICE_PROPERTIES;
+  devProps.pNext = &tsProps;
+
+  tsProps.stype = ZE_STRUCTURE_TYPE_EVENT_QUERY_KERNEL_TIMESTAMPS_EXT_PROPERTIES;
+  tsProps.pNext = NULL;
+
+  // Determine the level of support by getting the module properties
+  status = f_zeDeviceGetProperties(hDevice, &devProps, dispatch);
+  level0_check_result(status, __LINE__);
+
+  const bool supportsKernelTimestamps =
+    ((tsProps.flags & ZE_EVENT_QUERY_KERNEL_TIMESTAMPS_EXT_FLAG_KERNEL) != 0);
+  const bool supportsSynchronizedTimestamps =
+    ((tsProps.flags & ZE_EVENT_QUERY_KERNEL_TIMESTAMPS_EXT_FLAG_SYNCHRONIZED) != 0);
+
+  // Number of event timestamps
+  uint32_t count = 0;
+
+  TPRINT("TIME supportsKernelTimestamps=%d supportsSynchronizedTimestamp=%d\n",
+    supportsKernelTimestamps, supportsSynchronizedTimestamps);
+
+  if (supportsKernelTimestamps || supportsSynchronizedTimestamps) {
+    // Get the number of timestamps associated with the event.
+     status = f_zeEventQueryKernelTimestampsExt(hEvent, hDevice, &count, NULL, dispatch);
+    level0_check_result(status, __LINE__);
+
+    // Allocate storage for kernel timestamp results
+    *kernel_timestamps = supportsKernelTimestamps ?
+      (ze_kernel_timestamp_result_t *) calloc(count, sizeof(ze_kernel_timestamp_result_t)) :
+      NULL;
+
+    // Allocate storage for synchronized timestamp results
+    *sync_timestamps = supportsSynchronizedTimestamps ?
+      (ze_synchronized_timestamp_result_ext_t *) calloc(count, sizeof(ze_synchronized_timestamp_result_ext_t)) :
+      NULL;
+
+    // Build event query kernel timestamps descriptors
+    ze_event_query_kernel_timestamps_results_ext_properties_t resultsProps;
+
+    resultsProps.stype = ZE_STRUCTURE_TYPE_EVENT_QUERY_KERNEL_TIMESTAMPS_RESULTS_EXT_PROPERTIES;
+    resultsProps.pNext = NULL;
+    resultsProps.pKernelTimestampsBuffer = *kernel_timestamps;
+    resultsProps.pSynchronizedTimestampsBuffer = *sync_timestamps;
+
+    // Query the event timestamps
+    status = f_zeEventQueryKernelTimestampsExt(hEvent, hDevice, &count, &resultsProps, dispatch);
+    level0_check_result(status, __LINE__);
+  } else {
+    *kernel_timestamps = NULL;
+    *sync_timestamps = NULL;
+  }
+  *timestamp_count = count;
+}
+
+
+uint64_t
+level0_timer_resolution_in_ns
+(
+  ze_device_properties_t *props
+)
+{
+  static uint64_t multiplier = 0;
+  if (multiplier == 0) { // not computed yet
+    if (props->stype == ZE_STRUCTURE_TYPE_DEVICE_PROPERTIES) {
+      // timerResolution is in nanoseconds
+      multiplier = props->timerResolution;
+    } else if (props->stype == ZE_STRUCTURE_TYPE_DEVICE_PROPERTIES_1_2) {
+      // timerResolution is in cycles/second
+      // ns/s / cycles/s = ns/cycle
+      multiplier = NS_PER_SECOND / props->timerResolution;
+    } else {
+      fprintf(stderr, "FATAL: hpcrun: level0: unknown time resolution\n");
+      hpcrun_terminate();
+    }
+  }
+
+  return multiplier;
+}
+
+static uint64_t level0_time
+(
+  uint64_t timestamp,
+  ze_device_properties_t *props
+)
+{
+  // only a certain number of bits in level0 timestamps are valid
+  // mask off top bits that aren't guaranteed to be valid
+  uint64_t mask = (~0ULL) >> (64 - props->kernelTimestampValidBits);
+  uint64_t masked = timestamp & mask;
+
+  uint64_t resolution_ns = level0_timer_resolution_in_ns(props);
+  uint64_t time = masked * resolution_ns;
+
+  TPRINT("TIME: L0 timestamp 0x%lx bits %d mask 0x%lx masked 0x%lx resolution %ld ADJUSTED time 0x%lx\n",
+    timestamp, props->kernelTimestampValidBits, mask, masked, resolution_ns, time);
+
+  return time;
+}
+
 static void
 compute_device_time_offset
 (
@@ -100,6 +223,12 @@ compute_device_time_offset
   const struct hpcrun_foil_appdispatch_level0 *dispatch
 )
 {
+  // Get ready to query time stamps
+  ze_device_properties_t props;
+  props.stype = ZE_STRUCTURE_TYPE_DEVICE_PROPERTIES;
+  props.pNext = NULL;
+  f_zeDeviceGetProperties(hDevice, &props, dispatch);
+
   uint64_t hostTimestamp, deviceTimestamp;
   f_zeDeviceGetGlobalTimestamps(hDevice, &hostTimestamp, &deviceTimestamp, dispatch);
 
@@ -107,26 +236,10 @@ compute_device_time_offset
   // try setting hostTimestamp from hpcrun's time on host instead
   hostTimestamp = hpcrun_nanotime();
 
-  clock_offset_ns_from_level0 = hostTimestamp - deviceTimestamp;
+  clock_offset_ns_from_level0 = hostTimestamp - level0_time(deviceTimestamp, &props);
 
-  PRINT("level0: host time %ld device time %ld offset %ld\n",
+  TPRINT("TIMES: level0: host time 0x%lx device time 0x%lx offset %ld\n",
     hostTimestamp, deviceTimestamp, clock_offset_ns_from_level0);
-}
-
-
-static void
-level0_check_result
-(
-  ze_result_t result,
-  int lineNo
-)
-{
-  if (result == ZE_RESULT_SUCCESS) return;
-
-  EEMSG("hpcrun: Level Zero API failed: %s",
-        ze_result_to_string(result));
-
-  exit(1);
 }
 
 
@@ -192,7 +305,7 @@ level0_create_new_event
   ze_event_pool_desc_t event_pool_desc = {
     ZE_STRUCTURE_TYPE_EVENT_POOL_DESC,
     NULL,
-    ZE_EVENT_POOL_FLAG_KERNEL_TIMESTAMP, // all events in pool are kernel timestamps
+    ZE_EVENT_POOL_FLAG_KERNEL_MAPPED_TIMESTAMP, // both device and synchronized timestamps
     1 // count
   };
   f_zeEventPoolCreate(hContext, &event_pool_desc, 1, &hDevice, event_pool_ptr, dispatch);
@@ -221,7 +334,7 @@ level0_attribute_event
 
   // Get ready to query time stamps
   ze_device_properties_t props;
-  props.stype = ZE_STRUCTURE_TYPE_DEVICE_PROPERTIES ;
+  props.stype = ZE_STRUCTURE_TYPE_DEVICE_PROPERTIES;
   props.pNext = NULL;
   f_zeDeviceGetProperties(hDevice, &props, dispatch);
 
@@ -231,8 +344,29 @@ level0_attribute_event
   // Query start and end time stamp for the event
   ze_kernel_timestamp_result_t timestamp;
   f_zeEventQueryKernelTimestamp(event, &timestamp, dispatch);
-  uint64_t start = timestamp.global.kernelStart * props.timerResolution;
-  uint64_t end = timestamp.global.kernelEnd * props.timerResolution;
+
+  TPRINT("TIME L0 zeEventQueryKernelTimestamp kernel [0x%lx, 0x%lx)\n",
+    timestamp.global.kernelStart, timestamp.global.kernelEnd);
+
+  uint64_t start = level0_time(timestamp.global.kernelStart, &props);
+  uint64_t end = level0_time(timestamp.global.kernelEnd, &props);
+
+  ze_kernel_timestamp_result_t *kernel_timestamps = NULL;
+  ze_synchronized_timestamp_result_ext_t *sync_timestamps = NULL;
+  uint32_t timestamp_count;
+  level0_query_timestamps(event, hDevice, &kernel_timestamps, &sync_timestamps,
+    &timestamp_count, dispatch);
+  
+  for (int i = 0; i < timestamp_count; i++) {
+    TPRINT("TIME L0 timestamp %d: kernel [0x%lx, 0x%lx) [%ld, %ld) sync [0x%lx, 0x%lx) [%ld, %ld)\n", i,
+      kernel_timestamps[i].global.kernelStart, kernel_timestamps[i].global.kernelEnd,
+      kernel_timestamps[i].global.kernelStart, kernel_timestamps[i].global.kernelEnd,
+      sync_timestamps[i].global.kernelStart, sync_timestamps[i].global.kernelEnd,
+      sync_timestamps[i].global.kernelStart, sync_timestamps[i].global.kernelEnd);
+  }
+  if (kernel_timestamps) free(kernel_timestamps);
+  if (sync_timestamps) free(sync_timestamps);
+
 
   // Attribute this event
   level0_command_end(data, start, end);
@@ -1150,20 +1284,21 @@ level0_timestamp_to_realtime
   // approximately compute the offset between device and host by assuming
   // that the first GPU operation reported executes on the host at the
   // time it was submitted.
-  static volatile _Atomic uint64_t clock_offset_ns_from_submit = 0;
+  static volatile _Atomic int64_t clock_offset_ns_from_submit = 0;
   if (clock_offset_ns_from_submit == 0) {
      uint64_t zero = 0;
-     uint64_t offset = host_submit_time - device_time;
+     int64_t offset = host_submit_time - device_time;
      atomic_compare_exchange_strong(&clock_offset_ns_from_submit, &zero, offset);
   }
 #endif
 
   uint64_t result = device_time + clock_offset_ns_from_submit;
 
-  PRINT("level0_timestamp_to_realtime(%ld) --> %ld\n", device_time, result);
+  TPRINT("TIMES: level0_timestamp_to_realtime(%lx) --> %ld\n", device_time, result);
 
   return result;
 }
+
 
 bool
 level0_metrics_requested
@@ -1172,4 +1307,20 @@ level0_metrics_requested
 )
 {
   return level0_metrics_env;
+}
+
+
+void
+level0_check_result
+(
+  ze_result_t result,
+  int lineNo
+)
+{
+  if (result == ZE_RESULT_SUCCESS) return;
+
+  EEMSG("hpcrun: Level Zero API failed: %s",
+        ze_result_to_string(result));
+
+  exit(1);
 }
