@@ -4,6 +4,30 @@
 
 subdir('hpcproflm')
 
+# Find programs needed for the Make parallel hpcstruct backend
+awk = find_program('awk', required: true)
+awk_shell_quoted = '\'@0@\''.format(awk.full_path().replace('\'', '\'"\'"\''))
+grep = find_program('grep', required: true)
+grep_shell_quoted = '\'@0@\''.format(grep.full_path().replace('\'', '\'"\'"\''))
+make = find_program('make', required: true)
+make_shell_quoted = '\'@0@\''.format(make.full_path().replace('\'', '\'"\'"\''))
+sed = find_program('sed', required: true)
+sed_shell_quoted = '\'@0@\''.format(sed.full_path().replace('\'', '\'"\'"\''))
+_args = [
+  '-DAWK_SHELL_QUOTED_PATH="@0@"'.format(
+    awk_shell_quoted.replace('\\', '\\\\').replace('"', '\\"'),
+  ),
+  '-DGREP_SHELL_QUOTED_PATH="@0@"'.format(
+    grep_shell_quoted.replace('\\', '\\\\').replace('"', '\\"'),
+  ),
+  '-DMAKE_SHELL_QUOTED_PATH="@0@"'.format(
+    make_shell_quoted.replace('\\', '\\\\').replace('"', '\\"'),
+  ),
+  '-DSED_SHELL_QUOTED_PATH="@0@"'.format(
+    sed_shell_quoted.replace('\\', '\\\\').replace('"', '\\"'),
+  ),
+]
+
 _srcs = files(
   'BinUtils.cpp',
   'ElfHelper.cpp',
@@ -66,6 +90,7 @@ hpcstruct = executable(
   'Structure-Cache.cpp',
   'Structure-Version.cpp',
   dependencies: _deps,
+  cpp_args: _args,
   install: true,
 )
 
