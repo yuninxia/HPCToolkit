@@ -1,39 +1,48 @@
 {
   "capAdd": [
-    "SYS_ADMIN",
     "PERFMON"
   ],
   "containerEnv": {
-    "LANG": "${localEnv:LANG:C.UTF-8}"
+    "LANG": "${localEnv:LANG:C.UTF-8}",
+    "OMPI_ALLOW_RUN_AS_ROOT": "1",
+    "OMPI_ALLOW_RUN_AS_ROOT_CONFIRM": "1"
   },
   "customizations": {
     "vscode": {
       "extensions": [
-        "mesonbuild.mesonbuild"
+        "EditorConfig.EditorConfig",
+        "llvm-vs-code-extensions.vscode-clangd",
+        "mesonbuild.mesonbuild",
+        "ms-python.black-formatter"
       ],
       "settings": {
-        "clangd.arguments": [
-          "--compile-commands-dir=${config:mesonbuild.buildFolder}"
-        ],
-        "mesonbuild.buildFolder": ".devcontainer/builddir-${devcontainerId}",
+        "mesonbuild.buildFolder": "builddir",
         "mesonbuild.configureOnOpen": true
       }
     }
   },
-  "features": {
-    "./add-remote-user": {}
-  },
   "image": "registry.gitlab.com/hpctoolkit/rtt-images:1.0.0-aio",
   "mounts": [
     {
+      "source": "hpctoolkit-builddir-${devcontainerId}",
+      "target": "${containerWorkspaceFolder}/builddir",
+      "type": "volume"
+    },
+    {
       "source": "ccache-${devcontainerId}",
-      "target": "/root/.ccache",
+      "target": "/var/cache/ccache",
+      "type": "volume"
+    },
+    {
+      "target": "${containerWorkspaceFolder}/.cache",
       "type": "volume"
     }
   ],
-  "remoteEnv": {
-    "BUILDDIR": "${containerWorkspaceFolder}/.devcontainer/builddir-${devcontainerId}",
-    "builddir": "${containerWorkspaceFolder}/.devcontainer/builddir-${devcontainerId}"
+  "onCreateCommand": {
+    "compile_commands.json": "[ -e '${containerWorkspaceFolder}'/compile_commands.json ] && [ \"$(readlink '${containerWorkspaceFolder}'/compile_commands.json)\" = builddir/compile_commands.json ] || ln -sb builddir/compile_commands.json '${containerWorkspaceFolder}'/compile_commands.json"
   },
-  "remoteUser": "dev"
+  "remoteEnv": {
+    "CCACHE_DIR": "/var/cache/ccache",
+    "SHELL": "/usr/bin/bash"
+  }
 }
