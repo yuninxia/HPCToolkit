@@ -75,22 +75,18 @@ level0_kernel_translate
 (
   gpu_activity_t* ga,
   level0_data_node_t* c,
-  uint64_t start,
-  uint64_t end
+  uint64_t start_host_time,
+  uint64_t end_host_time
 )
 {
-  PRINT("level0_kernel_translate: submit_time %lu, start %lu, end %lu --> tstart %lu tend %lu\n",
-    c->submit_time, start, end,
-    level0_timestamp_to_realtime(c->submit_time, start),
-    level0_timestamp_to_realtime(c->submit_time, end));
+  PRINT("level0_kernel_translate: submit_time %lu, start %lu, end %lu\n",
+    c->submit_time, start_host_time, end_host_time);
 
   ga->kind = GPU_ACTIVITY_KERNEL;
   ga->details.kernel.kernel_first_pc = ip_normalized_NULL;
   ga->details.kernel.correlation_id = c->correlation_id;
   ga->details.kernel.submit_time = c->submit_time;
-  gpu_interval_set(&ga->details.interval,
-    level0_timestamp_to_realtime(c->submit_time, start),
-    level0_timestamp_to_realtime(c->submit_time, end));
+  gpu_interval_set(&ga->details.interval, start_host_time, end_host_time);
 }
 
 static void
@@ -98,17 +94,15 @@ level0_memcpy_translate
 (
   gpu_activity_t* ga,
   level0_data_node_t* c,
-  uint64_t start,
-  uint64_t end
+  uint64_t start_host_time,
+  uint64_t end_host_time
 )
 {
-  PRINT("level0_memcpy_translate: src_type %d, dst_type %d, size %lu start %lu end %lu --> tstart %lu tend %lu\n",
+  PRINT("level0_memcpy_translate: src_type %d, dst_type %d, size %lu start %lu end %lu\n",
     c->details.memcpy.src_type,
     c->details.memcpy.dst_type,
     c->details.memcpy.copy_size,
-    start, end,
-    level0_timestamp_to_realtime(c->submit_time, start),
-    level0_timestamp_to_realtime(c->submit_time, end));
+    start_host_time, end_host_time);
 
   ga->kind = GPU_ACTIVITY_MEMCPY;
   ga->details.memcpy.bytes = c->details.memcpy.copy_size;
@@ -191,9 +185,8 @@ level0_memcpy_translate
     default:
       break;
   }
-  gpu_interval_set(&ga->details.interval,
-    level0_timestamp_to_realtime(c->submit_time, start),
-    level0_timestamp_to_realtime(c->submit_time, end));
+
+  gpu_interval_set(&ga->details.interval, start_host_time, end_host_time);
 }
 
 
@@ -280,8 +273,8 @@ void
 level0_command_end
 (
   level0_data_node_t* command_node,
-  uint64_t start,
-  uint64_t end
+  uint64_t start_host_time,
+  uint64_t end_host_time
 )
 {
   gpu_application_thread_process_activities();
@@ -295,10 +288,10 @@ level0_command_end
   switch (command_node->type) {
     case LEVEL0_KERNEL:
       ga->cct_node = command_node->kernel;
-      level0_kernel_translate(ga, command_node, start, end);
+      level0_kernel_translate(ga, command_node, start_host_time, end_host_time);
       break;
     case LEVEL0_MEMCPY:
-      level0_memcpy_translate(ga, command_node, start, end);
+      level0_memcpy_translate(ga, command_node, start_host_time, end_host_time);
       break;
     default:
       break;
