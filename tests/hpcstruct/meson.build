@@ -87,6 +87,30 @@ foreach name, struct : testdata_struct
     ]
       _should_fail = true
     endif
+    # NB: CUDA 13.0 dropped support for CUDA 11.x, possibly newer binaries in `nvdisasm`. Mark
+    # them as XFAIL to support newer versions of CUDA.
+    if cupti_dep.found() and cupti_dep.version().version_compare('>=13.0') and name in [
+      'inlines+loops-sm_62-nvcc102-0+gpucfg',
+      'inlines+loops-sm_62-nvcc102-dr+gpucfg',
+      'inlines+loops-sm_62-nvcc102-r+gpucfg',
+      'inlines+loops-sm_75-nvcc112-0+gpucfg',
+      'inlines+loops-sm_75-nvcc112-dr+gpucfg',
+      'inlines+loops-sm_75-nvcc112-r+gpucfg',
+      'inlines+loops-sm_87-nvcc118-0+gpucfg',
+      'inlines+loops-sm_87-nvcc118-dr+gpucfg',
+      'inlines+loops-sm_87-nvcc118-r+gpucfg',
+      'recursion-sm_75-nvcc112-0+gpucfg',
+      'recursion-sm_75-nvcc112-dr+gpucfg',
+      'recursion-sm_75-nvcc112-r+gpucfg',
+      'recursion-sm_87-nvcc118-0+gpucfg',
+      'recursion-sm_87-nvcc118-dr+gpucfg',
+      'recursion-sm_87-nvcc118-r+gpucfg',
+      'quicksilver-sm_62-dr+gpucfg',
+      'quicksilver-sm_70-dr+gpucfg',
+      'quicksilver-sm_87-dr+gpucfg',
+    ]
+      _should_fail = true
+    endif
 
     test(
       f'Analysis of @name@ is consistent (-j@threads@@_suffix@)',

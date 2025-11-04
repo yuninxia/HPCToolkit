@@ -6,6 +6,9 @@ if not cupti_dep.found() or not has_cuda
   subdir_done()
 endif
 
+# FIXME: PC sampling currently does not work on CUDA 13+
+_pc_sampling_should_fail = cupti_dep.version().version_compare('>=13.0')
+
 _tstexe_vecadd_cuda = executable('tstexe-vecadd-cuda', files('vecadd.cu'))
 
 _tst = find_program(files('tst-cuda-vecadd-produces-profiles'))
@@ -37,6 +40,7 @@ foreach event : ['gpu=cuda']
     args: [hpctesttool, hpcrun, _tstexe_vecadd_cuda, f'@event@,pc'],
     suite: ['hpcrun', 'cuda'],
     depends: hpcrun_test_depends,
+    should_fail: _pc_sampling_should_fail,
     is_parallel: false,  # CUPTI does not allow multiple processes to sample the GPU
     priority: 100,  # High priority to optimize for lack of parallelism
   )
@@ -46,6 +50,7 @@ foreach event : ['gpu=cuda']
     args: [hpctesttool, hpcrun, _tstexe_vecadd_cuda, f'@event@,pc', '-t'],
     suite: ['hpcrun', 'cuda'],
     depends: hpcrun_test_depends,
+    should_fail: _pc_sampling_should_fail,
     is_parallel: false,  # CUPTI does not allow multiple processes to sample the GPU
     priority: 100,  # High priority to optimize for lack of parallelism
   )
@@ -55,6 +60,7 @@ foreach event : ['gpu=cuda']
     args: [hpctesttool, hpcrun, _tstexe_vecadd_cuda, f'@event@,pc', '-tt'],
     suite: ['hpcrun', 'cuda'],
     depends: hpcrun_test_depends,
+    should_fail: _pc_sampling_should_fail,
     is_parallel: false,  # CUPTI does not allow multiple processes to sample the GPU
     priority: 100,  # High priority to optimize for lack of parallelism
   )
