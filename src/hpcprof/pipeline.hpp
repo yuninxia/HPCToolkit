@@ -552,6 +552,7 @@ private:
 
   // Storage for the pointers to the SourceLocals.
   std::vector<SourceLocal> sourceLocals;
+  std::once_flag warnLargeDisorderOnce;
 
   // Bits needed for ThreadAttributes to finalize
   ThreadAttributes::FinalizeState threadAttrFinalizeState;

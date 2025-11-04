@@ -872,14 +872,15 @@ Source::timepoint(PerThreadTemporary& tt, PerThreadTemporary::TimepointsData<Tp>
         // with a significantly smaller bound. Rewinds are expensive.
         tpd.sortBuf = decltype(tpd.sortBuf)(1023);
       } else {
-        // Fall back to loading the whole thing in memory
-        util::log::warning{}
-            << "Trace for a thread is unexpectedly extremely"
-               " unordered, falling back to an in-memory sort.\n"
-               "  This may indicate an issue during measurement, and WILL"
-               " significantly increase memory usage!\n"
-               "  Affected thread: "
-            << tt.thread().attributes;
+        // Fall back to loading the whole thing in memory and doing the sort that way.
+        std::call_once(pipe->warnLargeDisorderOnce, [] {
+          util::log::warning{}
+              << "One or more traces are extremely disordered; sorting activities in "
+                 "affected traces to compensate.\n  See INFO messages (-vv or higher) "
+                 "to list affected traces.";
+        });
+        util::log::info{} << "Trace containing significant disorder: "
+                          << tt.thread().attributes;
         tpd.unboundedDisorder = true;
       }
 
