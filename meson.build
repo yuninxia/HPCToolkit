@@ -1018,7 +1018,7 @@ if not cpp.links(_fs_code)
   foreach trial : ['stdc++fs', 'c++fs']
     _dep = cpp.find_library(trial, required: false)
     if _dep.found()
-      add_project_dependencies(_dep, language: ['c', 'cpp'])
+      add_project_dependencies(_dep, language: ['cpp'])
       _found = true
       break
     endif
