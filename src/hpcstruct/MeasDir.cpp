@@ -109,7 +109,7 @@ GPUBIN_USED_DIR  = $(MEAS_DIR)/gpubins-used
 #-------------------------------------------------------------------------------
 $(GPUBIN_USED_DIR): $(MEAS_DIR)/all.lm
 	-@mkdir $(GPUBIN_USED_DIR) >&- 2>&-
-	-@cd $(GPUBIN_USED_DIR) >&- 2>&-; for i in `cat $(MEAS_DIR)/all.lm | grep gpubin`; do if [ -e $(MEAS_DIR)/$$i ];  then ln -s $(MEAS_DIR)/$$i; fi; done >&- 2>&-
+	-@cd $(GPUBIN_USED_DIR) >&- 2>&-; for i in `cat $(MEAS_DIR)/all.lm | )EOF" GREP_SHELL_QUOTED_PATH R"EOF( gpubin`; do if [ -e $(MEAS_DIR)/$$i ];  then ln -s $(MEAS_DIR)/$$i; fi; done >&- 2>&-
 
 #-------------------------------------------------------------------------------
 # $(GB): gpubin files
@@ -143,8 +143,8 @@ CPUBIN_DIR  = $(MEAS_DIR)/cpubins
 #-------------------------------------------------------------------------------
 $(CPUBIN_DIR): $(MEAS_DIR)/all.lm
 	-@mkdir $(CPUBIN_DIR) >&- 2>&-
-	-@cd $(CPUBIN_DIR) >&- 2>&-; for i in `cat $(MEAS_DIR)/all.lm | grep ^/`; do ln -s $$i; done >&- 2>&-
-	-@cd $(CPUBIN_DIR) >&- 2>&-; for i in `cat $(MEAS_DIR)/all.lm | grep -v gpubin | grep -v ^/`; do ln -s $(MEAS_DIR)/$$i; done >&- 2>&-
+	-@cd $(CPUBIN_DIR) >&- 2>&-; for i in `cat $(MEAS_DIR)/all.lm | )EOF" GREP_SHELL_QUOTED_PATH R"EOF( ^/`; do ln -s $$i; done >&- 2>&-
+	-@cd $(CPUBIN_DIR) >&- 2>&-; for i in `cat $(MEAS_DIR)/all.lm | )EOF" GREP_SHELL_QUOTED_PATH R"EOF( -v gpubin | )EOF" GREP_SHELL_QUOTED_PATH R"EOF( -v ^/`; do ln -s $(MEAS_DIR)/$$i; done >&- 2>&-
 
 #-------------------------------------------------------------------------------
 # $(CB): cpubin files
@@ -179,11 +179,11 @@ endif
 #-------------------------------------------------------------------------------
 $(STRUCTS_DIR)/%.hpcstruct: $(CPUBIN_DIR)/%
 	@cpubin_name=`basename -s x $<`
-	@input_name=`cat $(MEAS_DIR)/all.lm | grep "/$$cpubin_name$$"`
+	@input_name=`cat $(MEAS_DIR)/all.lm | )EOF" GREP_SHELL_QUOTED_PATH R"EOF( "/$$cpubin_name$$"`
 	struct_name=$@
 	warn_name=$(STRUCTS_DIR)/$$cpubin_name.warnings
 	# @echo  DEBUG cpubin = $$cpu_bin_name
-	nbytes=`du -b -L $< | tail -1 | awk '{ print $$1 }'`
+	nbytes=`du -b -L $< | tail -1 | )EOF" AWK_SHELL_QUOTED_PATH R"EOF( '{ print $$1 }'`
 	meas_dir=$(MEAS_DIR)
 	# echo DEBUG meas_dir = $$meas_dir
 
@@ -198,14 +198,14 @@ $(STRUCTS_DIR)/%.hpcstruct: $(CPUBIN_DIR)/%
 		fi
 
 		#  invoke hpcstruct on the CPU binary in the measurements directory
-		$(STRUCT) $(CACHE_ARGS) -j $(THREADS) -o $$struct_name -M $$meas_dir $$input_name > $$warn_name 2>&1 || { err=$$?; egrep 'ERROR|WARNING' $$warn_name >&2; }
+		$(STRUCT) $(CACHE_ARGS) -j $(THREADS) -o $$struct_name -M $$meas_dir $$input_name > $$warn_name 2>&1 || { err=$$?; )EOF" GREP_SHELL_QUOTED_PATH R"EOF( -E 'ERROR|WARNING' $$warn_name >&2; }
 		# echo DEBUG: hpcstruct for analysis of CPU binary $$cpubin_name returned
 
 		# See if there is anything to worry about in the warnings file
 		#  suppress any ADVICE, INFO, DEBUG, and CACHESTAT lines and any blank lines;
 		#  it's an error if anything remains
 		#
-		errs=`sed 's/^$//INFO/g;' $$warn_name |grep -v DEBUG | grep -v CACHESTAT | grep -v INFO | grep -v ADVICE | wc -l`
+		errs=`)EOF" SED_SHELL_QUOTED_PATH R"EOF( 's/^$//INFO/g;' $$warn_name |)EOF" GREP_SHELL_QUOTED_PATH R"EOF( -v DEBUG | )EOF" GREP_SHELL_QUOTED_PATH R"EOF( -v CACHESTAT | )EOF" GREP_SHELL_QUOTED_PATH R"EOF( -v INFO | )EOF" GREP_SHELL_QUOTED_PATH R"EOF( -v ADVICE | wc -l`
 
 		# echo DEBUG errs = XX $$errs XX
 		if [ $${errs} -eq 1 ] ; then
@@ -213,7 +213,7 @@ $(STRUCTS_DIR)/%.hpcstruct: $(CPUBIN_DIR)/%
 		fi
 
 		# extract the status relative to the cache
-		CACHE_STAT=`grep CACHESTAT $$warn_name | sed 's/CACHESTAT// ' `
+		CACHE_STAT=`)EOF" GREP_SHELL_QUOTED_PATH R"EOF( CACHESTAT $$warn_name | )EOF" SED_SHELL_QUOTED_PATH R"EOF( 's/CACHESTAT// ' `
 		# echo DEBUG CACHE_STAT = XX $$CACHE_STAT XX
 		echo \ \ \ end  $$PARSTAT analysis of CPU binary $$cpubin_name $$CACHE_STAT
 
@@ -228,12 +228,12 @@ $(STRUCTS_DIR)/%.hpcstruct: $(CPUBIN_DIR)/%
 #-------------------------------------------------------------------------------
 $(STRUCTS_DIR)/%-gpucfg-$(GPUBIN_CFG).hpcstruct: $(GPUBIN_DIR)/%
 	@gpubin_name=`basename -s x $<`
-	@input_name=`cat $(MEAS_DIR)/all.lm | grep "/$$gpubin_name$$"`
+	@input_name=`cat $(MEAS_DIR)/all.lm | )EOF" GREP_SHELL_QUOTED_PATH R"EOF( "/$$gpubin_name$$"`
 	struct_name=$@
 	rm -f $(STRUCTS_DIR)/$$gpubin_name-gpucfg-$(GPUBIN_CFG_ALT).hpcstruct
 	rm -f $(STRUCTS_DIR)/$$gpubin_name-gpucfg-$(GPUBIN_CFG_ALT).warnings
 	warn_name=$(STRUCTS_DIR)/$$gpubin_name-gpucfg-$(GPUBIN_CFG).warnings
-	nbytes=`du -b -L $< | tail -1 | awk '{ print $$1 }'`
+	nbytes=`du -b -L $< | tail -1 | )EOF" AWK_SHELL_QUOTED_PATH R"EOF( '{ print $$1 }'`
 	meas_dir=$(MEAS_DIR)
 	# echo DEBUG meas_dir = $$meas_dir
 
@@ -248,14 +248,14 @@ $(STRUCTS_DIR)/%-gpucfg-$(GPUBIN_CFG).hpcstruct: $(GPUBIN_DIR)/%
 		fi
 
 		# invoke hpcstruct to process the gpu binary
-		$(STRUCT) $(CACHE_ARGS) -j $(THREADS) --gpucfg $(GPUBIN_CFG) -o $$struct_name -M $$meas_dir $$input_name > $$warn_name 2>&1 || { err=$$?; egrep 'ERROR|WARNING' $$warn_name >&2; }
+		$(STRUCT) $(CACHE_ARGS) -j $(THREADS) --gpucfg $(GPUBIN_CFG) -o $$struct_name -M $$meas_dir $$input_name > $$warn_name 2>&1 || { err=$$?; )EOF" GREP_SHELL_QUOTED_PATH R"EOF( -E 'ERROR|WARNING' $$warn_name >&2; }
 		# echo debug: hpcstruct for analysis of GPU binary $$gpubin_name returned
 
 		# See if there is anything to worry about in the warnings file
 		#  suppress any ADVICE, INFO, DEBUG, and CACHESTAT lines and any blank lines;
 		#  it's an error if anything remains
 		#
-		errs=`sed 's/^$//INFO/g;' $$warn_name |grep -v DEBUG | grep -v CACHESTAT | grep -v INFO | grep -v ADVICE | wc -l`
+		errs=`)EOF" SED_SHELL_QUOTED_PATH R"EOF( 's/^$//INFO/g;' $$warn_name |)EOF" GREP_SHELL_QUOTED_PATH R"EOF( -v DEBUG | )EOF" GREP_SHELL_QUOTED_PATH R"EOF( -v CACHESTAT | )EOF" GREP_SHELL_QUOTED_PATH R"EOF( -v INFO | )EOF" GREP_SHELL_QUOTED_PATH R"EOF( -v ADVICE | wc -l`
 		# echo DEBUG errs = XX $$errs XX
 
 		if [ $${errs} -eq 1 ] ; then
@@ -263,7 +263,7 @@ $(STRUCTS_DIR)/%-gpucfg-$(GPUBIN_CFG).hpcstruct: $(GPUBIN_DIR)/%
 		fi
 
 		# extract the status relative to the cache
-		CACHE_STAT=`grep CACHESTAT $$warn_name  | sed 's/CACHESTAT// ' `
+		CACHE_STAT=`)EOF" GREP_SHELL_QUOTED_PATH R"EOF( CACHESTAT $$warn_name  | )EOF" SED_SHELL_QUOTED_PATH R"EOF( 's/CACHESTAT// ' `
 		# echo DEBUG CACHE_STAT = XX $$CACHE_STAT XX
 
 		echo \ \ \ end  $$PARSTAT [gpucfg=$(GPUBIN_CFG)] analysis of GPU binary $$gpubin_name $$CACHE_STAT
@@ -421,7 +421,7 @@ doMeasurementsDir
   makefile.close();
 
   // Construct the make command (without the target)
-  string make_cmd = string("make -C ") + structs_dir + " -k --silent "
+  string make_cmd = string(MAKE_SHELL_QUOTED_PATH) + " -C " + structs_dir + " -k --silent "
       + " --no-print-directory";
 
   //--------------------------------------------------
