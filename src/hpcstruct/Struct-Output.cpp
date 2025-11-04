@@ -188,7 +188,9 @@ printStructFileBegin(ostream * os, ostream * gaps, string filenm)
 
   *os << "<?xml version=\"1.0\"?>\n"
       << "<!DOCTYPE HPCToolkitStructure [\n"
+      << "<!-- SPDX-SnippetBegin -->\n"
       << HPCSTRUCT_DTD
+      << "<!-- SPDX-SnippetEnd -->\n"
       << "]>\n"
       << "<HPCToolkitStructure i=\"0\" version=\"4.9\" n=\"\">\n";
 

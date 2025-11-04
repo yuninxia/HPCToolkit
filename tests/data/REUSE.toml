@@ -1,0 +1,17 @@
+version = 1
+
+# Data used for the tests is always licensed under the CDLA. It may have other licenses,
+# so we use "aggregate" to express that the contents are under all declared licenses.
+[[annotations]]
+path = [
+  "bin/inlines+loops-*",
+  "bin/quicksilver-*",
+  "bin/recursion-*",
+  "dbase/*.d/**",
+  "dbase/*.yaml",
+  "meas/*.m/**",
+  "struct/*.hpcstruct",
+]
+precedence = "aggregate"
+SPDX-FileCopyrightText = "Contributors to the HPCToolkit Project"
+SPDX-License-Identifier = "CDLA-Permissive-2.0"
