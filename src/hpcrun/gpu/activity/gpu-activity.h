@@ -151,16 +151,16 @@ typedef enum {
 
 #define FORALL_AMD_GPU_PIPES(macro)                                                                  \
   macro(GPU_PIPE_TYPE_VECTOR_DUAL, vector_dual_alu) /* 2 simple 32-bit VALU ops, no dep           */ \
-  macro(GPU_PIPE_TYPE_VECTOR, vector_alu)           /* full VALU instructions                     */ \
-  macro(GPU_PIPE_TYPE_MATRIX, matrix)               /* matrix instructions                        */ \
-  macro(GPU_PIPE_TYPE_SCALAR, scalar)               /* SALU or SMEM instructions                  */ \
-  macro(GPU_PIPE_TYPE_LDS, lds)                     /* LDS instructions                           */ \
-  macro(GPU_PIPE_TYPE_LDS_DIRECT, lds_direct)       /* LDS direct instructions                    */ \
-  macro(GPU_PIPE_TYPE_TEXTURE, texture)             /* texture sample or image_load               */ \
-  macro(GPU_PIPE_TYPE_FLAT, flat)                   /* mem access: global, LDS, scratch, host     */ \
-  macro(GPU_PIPE_TYPE_EXPORT, export)               /* graphics only: xmit final pixel or vertex  */ \
-  macro(GPU_PIPE_TYPE_BRMSG, branch_msg)            /* graphics pipeline control or interrupt CPU */ \
-  macro(GPU_PIPE_TYPE_MISC, misc)                   /* miscellaneous instructions                 */
+  macro(GPU_PIPE_TYPE_VECTOR,      vector_alu)      /* full VALU instructions                     */ \
+  macro(GPU_PIPE_TYPE_MATRIX,      matrix)          /* matrix instructions                        */ \
+  macro(GPU_PIPE_TYPE_SCALAR,      scalar)          /* SALU or SMEM instructions                  */ \
+  macro(GPU_PIPE_TYPE_LDS,         lds)             /* LDS instructions                           */ \
+  macro(GPU_PIPE_TYPE_LDS_DIRECT,  lds_direct)      /* LDS direct instructions                    */ \
+  macro(GPU_PIPE_TYPE_TEXTURE,     texture)         /* texture sample or image_load               */ \
+  macro(GPU_PIPE_TYPE_FLAT,        flat)            /* mem access: global, LDS, scratch, host     */ \
+  macro(GPU_PIPE_TYPE_EXPORT,      export)          /* graphics only: xmit final pixel or vertex  */ \
+  macro(GPU_PIPE_TYPE_BRMSG,       branch_msg)      /* graphics pipeline control or interrupt CPU */ \
+  macro(GPU_PIPE_TYPE_MISC,        misc)            /* miscellaneous instructions                 */
 
 #define DECL_ENUM(enum, field) enum,
 typedef enum {
