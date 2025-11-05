@@ -35,6 +35,18 @@ if get_option('werror')
   endforeach
 endif
 
+# FIXME: -Wrecommended-option reports warnings when using OpenMP. This is not our fault
+# but rather a bug in Meson (https://github.com/mesonbuild/meson/issues/13516).
+# Until this is fixed, ensure it does not become an error.
+if get_option('werror')
+  foreach _lang : ['c', 'cpp']
+    add_project_arguments(
+      meson.get_compiler(_lang).first_supported_argument('-Wno-error=recommended-option'),
+      language: _lang,
+    )
+  endforeach
+endif
+
 # Find Python for the build machine. We use Python scripts to perform various tasks
 # during the build, so this is a hard requirement.
 python_names = ['python3', 'python']
