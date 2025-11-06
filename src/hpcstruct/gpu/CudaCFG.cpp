@@ -259,7 +259,7 @@ void CudaFactory::Vertex::finalize(CudaFactory& fact, Dyninst::ParseAPI::CodeObj
   assert(REGEX_DOT_LINE.mark_count() == 1);
   assert(REGEX_DISASSEMBLY.mark_count() == 4);
   bool incomplete = false;
-  Dyninst::Address start;
+  Dyninst::Address start = 0;
   std::size_t num_strides = 0;
   auto section_offset = region.section().getOffset();
   for (std::regex_iterator it = {disassembly.cbegin(), disassembly.cend(), REGEX_DOT_LINE},
