@@ -6,7 +6,7 @@
 /// @brief This file defines the interface for managing a set of ROCm buffers.
 
 #ifndef rocm_bufferset_h
-#define rocm_buffer_set_h
+#define rocm_bufferset_h
 
 //******************************************************************************
 // hpctoolkit includes
