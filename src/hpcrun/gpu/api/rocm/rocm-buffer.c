@@ -123,8 +123,8 @@ rocm_buffer_process
     return;
   }
 
-  long invalid = 0;
-  long valid = 0;
+  __attribute__((unused)) long invalid = 0;
+  __attribute__((unused)) long valid = 0;
   // iterate over records
   for(size_t i = 0; i < num_headers; ++i) {
     rocprofiler_record_header_t *header = headers[i];

@@ -56,7 +56,7 @@ rocm_callback_configure_completion
 (
   rocprofiler_context_id_t context_id,
   rocprofiler_buffer_id_t buffer_id,
-  rocprofiler_callback_tracing_kind_t kind
+  rocprofiler_buffer_tracing_kind_t kind
 )
 {
   rocprofiler_status_t status =
