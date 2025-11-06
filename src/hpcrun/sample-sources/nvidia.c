@@ -68,10 +68,12 @@ static device_finalizer_fn_entry_t device_trace_finalizer_shutdown;
 static long trace_period = -1;
 static long trace_period_default = -1;
 
+#ifdef ENABLE_CUDA_PC_SAMPLING
 // -1: disabled, 5-31: period = 2^(period_log)
 static long pc_sampling_period = -1;
 static long pc_sampling_period_log = -1;
 static long pc_sampling_period_log_default = 12;
+#endif
 
 static int cupti_enabled_activities = 0;
 
@@ -128,7 +130,9 @@ typedef enum cupti_activities_flags {
   CUPTI_OVERHEAD = 64
 } cupti_activities_flags_t;
 
+#ifdef ENABLE_CUDA_PC_SAMPLING
 int cupti_pc_sampling_period_log_get() { return pc_sampling_period_log; }
+#endif
 
 int cupti_trace_period_get() { return trace_period; }
 

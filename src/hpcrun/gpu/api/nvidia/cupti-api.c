@@ -405,10 +405,12 @@ cupti_subscriber_callback
         mrd->moduleId, mrd->cubinSize, mrd->pCubin);
       DISPATCH_CALLBACK(cupti_unload_callback, (mrd->moduleId, mrd->pCubin, mrd->cubinSize));
     } else if (cb_id == CUPTI_CBID_RESOURCE_CONTEXT_CREATED) {
+#ifdef ENABLE_CUDA_PC_SAMPLING
       int pc_sampling_period_log = cupti_pc_sampling_period_log_get();
       if (pc_sampling_period_log != -1) {
         cupti_pc_sampling_enable(rd->context, pc_sampling_period_log);
       }
+#endif
     }
   } else if (domain == CUPTI_CB_DOMAIN_DRIVER_API) {
     // stop flag is only set if a driver or runtime api called
