@@ -78,7 +78,7 @@ gpu_instrumentation_options_set
 
     // match comma separator
     if (*ostr != ',') {
-      fprintf(stderr, "hpcrun ERROR: while parsing GPU instrumentation knobs, expected ',' separator but found '%s'\n", ostr);
+      fprintf(stderr, "ERROR: hpcrun: while parsing GPU instrumentation knobs, expected ',' separator but found '%s'\n", ostr);
       exit(-1);
     }
     ostr++;
@@ -93,7 +93,7 @@ gpu_instrumentation_options_set
       // otherwise require the inst prefix (when instrumentation knobs are enabled)
       match_len = strlen(INST_PREFIX);
       if (strncmp(ostr, INST_PREFIX, match_len) != 0) {
-        fprintf(stderr, "hpcrun ERROR: while parsing GPU instrumentation knobs, expected 'inst' but found '%s'\n", ostr);
+        fprintf(stderr, "ERROR: hpcrun: while parsing GPU instrumentation knobs, expected 'inst' but found '%s'\n", ostr);
         exit(-1);
       }
       ostr += match_len;
@@ -123,7 +123,7 @@ gpu_instrumentation_options_set
           } else if (strcmp(token, INST_SILENT) == 0) {
             options->silent = true;
           } else {
-            fprintf(stderr, "hpcrun ERROR: while parsing GPU instrumentation knobs, unrecognized knob '%s'\n", token);
+            fprintf(stderr, "ERROR: hpcrun: while parsing GPU instrumentation knobs, unrecognized knob '%s'\n", token);
             exit(-1);
           }
           token = strtok(NULL, delimiter);
@@ -131,12 +131,12 @@ gpu_instrumentation_options_set
         break;
 
       default:
-        fprintf(stderr, "hpcrun ERROR: unexpected text encountered parsing GPU instrumentation knobs '%s'\n", ostr);
+        fprintf(stderr, "ERROR: hpcrun: unexpected text encountered parsing GPU instrumentation knobs '%s'\n", ostr);
         exit(-1);
       }
 #else
       if (*ostr) {
-        fprintf(stderr, "hpcrun ERROR: unexpected text encountered parsing GPU"
+        fprintf(stderr, "ERROR: hpcrun: unexpected text encountered parsing GPU"
                 " setting '%s'\n", ostr);
         exit(-1);
       }
@@ -156,7 +156,7 @@ printf("gpu instrumentation options  : %s\n", opt);
   // consistency check
   if (options->attribute_latency) {
     if (options->analyze_simd) {
-      fprintf(stderr, "hpcrun WARNING: unwise to analyze GPU SIMD instructions while attributing GPU instruction latency\n");
+      fprintf(stderr, "WARNING: hpcrun: unwise to analyze GPU SIMD instructions while attributing GPU instruction latency\n");
     }
   }
 }
