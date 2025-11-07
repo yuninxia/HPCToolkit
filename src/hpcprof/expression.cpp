@@ -59,7 +59,6 @@ Expression::Expression(Kind kind, std::vector<Expression> in_args)
   case Kind::op_sub:
   case Kind::op_prod:
   case Kind::op_div:
-  case Kind::op_pow:
   case Kind::op_min:
   case Kind::op_max:
     assert(args.size() > 0 &&
@@ -73,6 +72,7 @@ Expression::Expression(Kind kind, std::vector<Expression> in_args)
     assert(args.size() == 1 &&
            "Attempt to construct an Expression with an incorrect argument count!");
     break;
+  case Kind::op_pow:
   case Kind::op_log:
     assert(args.size() == 2 &&
            "Attempt to construct an Expression with an incorrect argument count!");
@@ -87,22 +87,26 @@ double Expression::evaluate(Kind op, const std::vector<double>& args) {
   case Kind::variable:
     std::abort();
   case Kind::op_sum:
+    assert(!args.empty());
     return stdshim::accumulate(args.begin(), args.end(), (double)0.);
   case Kind::op_sub:
-    return stdshim::accumulate(args.begin(), args.end(), (double)0.,
+    assert(!args.empty());
+    return stdshim::accumulate(++args.begin(), args.end(), args[0],
                                [](double l, double r) { return l - r; });
   case Kind::op_neg:
     assert(args.size() == 1);
     return -args[0];
   case Kind::op_prod:
-    return stdshim::accumulate(args.begin(), args.end(), (double)0.,
+    assert(!args.empty());
+    return stdshim::accumulate(++args.begin(), args.end(), args[0],
                                [](double l, double r) { return l * r; });
   case Kind::op_div:
-    return stdshim::accumulate(args.begin(), args.end(), (double)0.,
+    assert(!args.empty());
+    return stdshim::accumulate(++args.begin(), args.end(), args[0],
                                [](double l, double r) { return l / r; });
   case Kind::op_pow:
-    return stdshim::accumulate(args.rbegin(), args.rend(), (double)0.,
-                               [](double r, double l) { return std::pow(l, r); });
+    assert(args.size() == 2);
+    return std::pow(args[0], args[1]);
   case Kind::op_sqrt:
     assert(args.size() == 1);
     return std::sqrt(args[0]);
@@ -113,12 +117,14 @@ double Expression::evaluate(Kind op, const std::vector<double>& args) {
     assert(args.size() == 1);
     return std::log(args[0]);
   case Kind::op_min:
+    assert(!args.empty());
     return stdshim::accumulate(
-        args.begin(), args.end(), (double)0.,
+        ++args.begin(), args.end(), args[0],
         [](double l, double r) { return std::min<double>(l, r); });
   case Kind::op_max:
+    assert(!args.empty());
     return stdshim::accumulate(
-        args.begin(), args.end(), (double)0.,
+        ++args.begin(), args.end(), args[0],
         [](double l, double r) { return std::max<double>(l, r); });
   case Kind::op_floor:
     assert(args.size() == 1);
