@@ -15,6 +15,12 @@ _exe_loops = executable(
   override_options: ['debug=true', 'optimization=0'],
   dependencies: openmp_dep,
 )
+_exe_divergence = executable(
+  'testmeas-divergence',
+  files('divergence.c'),
+  override_options: ['debug=true', 'optimization=0'],
+  dependencies: thread_dep,
+)
 
 _exe_loops_cuda = disabler()
 _exe_recursion_cuda = disabler()
@@ -73,6 +79,12 @@ _measurements += {
   'loops-hip-amd-t': {'tag': 'amd', 'tail': ['-e', 'gpu=rocm', '-t', _exe_loops_hip]},
 }
 
+# `divergence` are designed to exercise cases where there are multiple threads with
+# distinct performance parameters.
+_measurements += {
+  'divergence': {'tag': 'none', 'tail': ['-e', 'CPUTIME', '-t', _exe_divergence]},
+}
+
 # `recursion` is a small example that has recursive properties in the GPU kernel code.
 _measurements += {
   'recursion-cuda-nvidiapc-t': {
@@ -99,7 +111,6 @@ foreach name, spec : _measurements
       'dir': meson.current_source_dir() / f'@name@.m',
       'tag': spec['tag'],
       'freshstamp': _stamp,
-      'orig_measdir': fs.read(f'@name@.m' / 'original-path', encoding: 'utf-8').strip(),
     },
   }
   testdata_files += {
