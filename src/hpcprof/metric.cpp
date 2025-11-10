@@ -76,13 +76,6 @@ std::unique_lock<std::mutex> Metric::StatsAccess::synchronize() {
 }
 
 void Metric::StatsAccess::requestStatistics(Statistics ss) {
-  // If the Metric is invisible, we don't actually need to do anything
-  if (m.visibility() == Settings::visibility_t::invisible) {
-    assert(!ss.sum && !ss.mean && !ss.min && !ss.max && !ss.stddev && !ss.cfvar &&
-           "Attempt to request Statistics from an invisible Metric!");
-    return;
-  }
-
   auto l = synchronize();
   if (!l) {
     // If we're already frozen, this operation must be idempotent.
