@@ -314,16 +314,6 @@ OnExitCommandListAppendLaunchKernel
   ze_command_list_handle_t hCommandList = *(params->phCommandList);
   ze_device_handle_t hDevice = getDeviceForCommandList(hCommandList, dispatch);
 
-#if 0
-  ze_kernel_handle_t hKernel = *(params->phKernel);
-  ze_event_handle_t hSignalEvent = *(params->phSignalEvent);
-  KernelExecutionTime executionTime = level0GetKernelExecutionTime(hSignalEvent, hDevice, dispatch);
-  std::cout << "OnExitCommandListAppendLaunchKernel:  hKernel=" << hKernel << ", hDevice=" << hDevice
-            << ", Start time: " << executionTime.startTimeNs << " ns"
-            << ", End time: " << executionTime.endTimeNs << " ns"
-            << ", Execution time: " << executionTime.executionTimeNs << " ns" << std::endl;
-#endif
-
   ZeDeviceDescriptor* desc = getDeviceDescriptor(hDevice);
   if (desc) {
     waitForEventReady(desc->serial_data_ready_, dispatch);
