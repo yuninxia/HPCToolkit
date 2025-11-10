@@ -66,14 +66,24 @@ static const struct {
   uint64_t EuStalls::* stall_value;
   gpu_inst_stall_t reason;
 } stall_mappings[] = {
-    {&EuStalls::control_,   GPU_INST_STALL_NONE},      // No NVIDIA equivalent
-    {&EuStalls::pipe_,      GPU_INST_STALL_PIPE_BUSY}, // Exact match
-    {&EuStalls::send_,      GPU_INST_STALL_NONE},      // Too broad to map accurately
-    {&EuStalls::dist_,      GPU_INST_STALL_NONE},      // Different semantics
-    {&EuStalls::sbid_,      GPU_INST_STALL_IDEPEND},   // Exact match
-    {&EuStalls::sync_,      GPU_INST_STALL_SYNC},      // Exact match
-    {&EuStalls::insfetch_,  GPU_INST_STALL_IFETCH},    // Exact match
-    {&EuStalls::other_,     GPU_INST_STALL_OTHER}      // Exact match
+    // The normalized sum of all cycles on all cores when the XVE was stalled with at least one thread waiting
+    // for a Branch unit to become available. Multiple stall reasons can qualify during the same cycle.
+    {&EuStalls::control_,   GPU_INST_STALL_IFETCH},
+    {&EuStalls::pipe_,      GPU_INST_STALL_PIPE_BUSY},
+
+    // Stalled due to memory dependency or internal pipeline dependency for send.
+    // The normalized sum of all cycles on all cores when the XVE was stalled with at least one
+    // thread waiting for a Send unit to become available. Multiple stall reasons can qualify during the same cycle.
+    {&EuStalls::send_,      GPU_INST_STALL_GMEM},
+
+    // The normalized sum of all cycles on all cores when the XVE was stalled with at least one
+    // thread waiting for a Distance or Architecture Register File (ARF) dependency to resolve.
+    // Multiple stall reasons can qualify during the same cycle.
+    {&EuStalls::dist_,      GPU_INST_STALL_OTHER},
+    {&EuStalls::sbid_,      GPU_INST_STALL_IDEPEND},
+    {&EuStalls::sync_,      GPU_INST_STALL_SYNC},
+    {&EuStalls::insfetch_,  GPU_INST_STALL_IFETCH},
+    {&EuStalls::other_,     GPU_INST_STALL_OTHER}
 };
 
 static void
