@@ -1,0 +1,153 @@
+// SPDX-FileCopyrightText: Contributors to the HPCToolkit Project
+//
+// SPDX-License-Identifier: Apache-2.0
+//
+// SPDX-License-Identifier: MIT
+// Copyright (C) 2024 Intel Corporation
+// This file was inspired by and uses some code fragments from Intel's
+// MIT-licensed pti-gpu (https://github.com/intel/pti-gpu)
+
+// -*-Mode: C++;-*-
+
+//*****************************************************************************
+// system includes
+//*****************************************************************************
+
+#include <string>
+#include <vector>
+
+//*****************************************************************************
+// local includes
+//*****************************************************************************
+
+#include "level0-module.hpp"
+#include "../level0-debug.h"
+#include "level0-pc-api-receiver.hpp"
+
+
+//******************************************************************************
+// interface operations
+//******************************************************************************
+
+std::string
+level0GetKernelName
+(
+  ze_kernel_handle_t kernel,
+  const struct hpcrun_foil_appdispatch_level0* dispatch
+)
+{
+  size_t name_len = 0;
+  // First call to determine the required buffer size
+  ze_result_t status = pcsampling::callZeKernelGetName(kernel, &name_len, nullptr, dispatch);
+  if (status != ZE_RESULT_SUCCESS || name_len == 0) {
+    return "UnknownKernel";
+  }
+
+  // Allocate a buffer for the kernel name (including the null terminator)
+  std::vector<char> kernel_name(name_len);
+  status = pcsampling::callZeKernelGetName(kernel, &name_len, kernel_name.data(), dispatch);
+
+  // Construct a std::string from the C string if successful
+  return (status == ZE_RESULT_SUCCESS) ? std::string(kernel_name.data()) : "UnknownKernel";
+}
+
+uint64_t
+level0GetFunctionPointer
+(
+  ze_module_handle_t module,
+  const std::string& kernel_name,
+  const struct hpcrun_foil_appdispatch_level0* dispatch
+)
+{
+  void* function_pointer = nullptr;
+  ze_result_t status = pcsampling::callZeModuleGetFunctionPointer(module, kernel_name.c_str(), &function_pointer, dispatch);
+
+  if (status == ZE_RESULT_SUCCESS && function_pointer != nullptr) {
+    return reinterpret_cast<uint64_t>(function_pointer);
+  } else {
+    pcsampling::warn("Unable to get function pointer for kernel: %s", kernel_name.c_str());
+    return 0;
+  }
+}
+
+std::vector<uint8_t>
+level0GetModuleDebugInfo
+(
+  ze_module_handle_t module,
+  const struct hpcrun_foil_appdispatch_level0* dispatch
+)
+{
+  size_t binary_size = 0;
+  ze_result_t status = pcsampling::callZetModuleGetDebugInfo(
+    module,
+    ZET_MODULE_DEBUG_INFO_FORMAT_ELF_DWARF,
+    &binary_size,
+    nullptr,
+    dispatch
+  );
+  level0_check_result(status, __LINE__);
+
+  if (binary_size == 0) {
+    pcsampling::warn("Unable to find kernel symbols");
+    return {};
+  }
+
+  std::vector<uint8_t> binary(binary_size);
+  status = pcsampling::callZetModuleGetDebugInfo(
+    module,
+    ZET_MODULE_DEBUG_INFO_FORMAT_ELF_DWARF,
+    &binary_size,
+    binary.data(),
+    dispatch
+  );
+  level0_check_result(status, __LINE__);
+
+  return binary;
+}
+
+std::vector<std::string>
+level0GetModuleKernelNames
+(
+  ze_module_handle_t module,
+  const struct hpcrun_foil_appdispatch_level0* dispatch
+)
+{
+  if (module == nullptr) {
+    pcsampling::warn("Null module handle passed to level0GetModuleKernelNames");
+    return {};
+  }
+
+  uint32_t kernel_count = 0;
+  // First call to get the count of kernels
+  ze_result_t status = pcsampling::callZeModuleGetKernelNames(module, &kernel_count, nullptr, dispatch);
+  if (status != ZE_RESULT_SUCCESS) {
+    pcsampling::warn("Failed to get kernel count: %s", ze_result_to_string(status));
+    return {};
+  }
+
+  if (kernel_count == 0) {
+    return {};  // No kernels in this module
+  }
+
+  // Allocate memory for kernel name pointers
+  std::vector<const char*> kernel_names(kernel_count);
+
+  // Second call to get the actual kernel names
+  status = pcsampling::callZeModuleGetKernelNames(module, &kernel_count, kernel_names.data(), dispatch);
+  if (status != ZE_RESULT_SUCCESS) {
+    pcsampling::warn("Failed to get kernel names: %s", ze_result_to_string(status));
+    return {};
+  }
+
+  std::vector<std::string> result;
+  result.reserve(kernel_count);
+  for (uint32_t i = 0; i < kernel_count; ++i) {
+    if (kernel_names[i] != nullptr) {
+      result.emplace_back(kernel_names[i]);
+    } else {
+      result.emplace_back("UnknownKernel");
+    }
+  }
+
+  return result;
+}

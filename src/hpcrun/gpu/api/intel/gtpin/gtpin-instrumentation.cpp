@@ -56,7 +56,6 @@ extern "C"
 #include "../../../activity/gpu-op-placeholders.h"
 #include "../../../activity/gpu-activity-channel.h"
 #include "../../../gpu-monitoring-thread-api.h"
-#include "../binaries/patchTokenSymbols.h"
 #include "../binaries/zebinSymbols.h"
 #include "../../../../safe-sampling.h"
 #include "../../../../utilities/hpcrun-nanotime.h"
@@ -482,29 +481,6 @@ calculate_instruction_latencies
 }
 
 
-uint32_t
-patchTokenKernelLoadModuleId
-(const char *kernelName,
- const char *path,
- char *pathSuffix // pointer to terminating NULL in path
-)
-{
-  char kernelNameHash[CRYPTO_HASH_STRING_LENGTH];
-  *kernelNameHash = 0;
-
-  // compute crypto hash of kernel name into kernelNameHash
-  gtpin_hpcrun_api->crypto_compute_hash_string(kernelName, strlen(kernelName), kernelNameHash, sizeof(kernelNameHash));
-
-  // add kernel name hash as suffix to load module path
-  strcpy(pathSuffix, kernelNameHash);
-
-  // create loadmap entry of the form <binary hash>.gpubin.<kernel name hash>
-  uint16_t loadModuleId = gtpin_hpcrun_api->gpu_binary_loadmap_insert(path, true);
-
-  return loadModuleId;
-}
-
-
 static void
 dumpKernelIp
 (
@@ -538,26 +514,6 @@ dumpKernelIps
 {
   static pthread_once_t once_control = PTHREAD_ONCE_INIT;
   pthread_once(&once_control, dumpKernelIpsOnce);
-}
-
-
-static void
-recordPatchTokenKernelIps
-(char *ptKernel,
- uint32_t ptKernelSize,
- char *path) {
-  char *pathSuffix = path + strlen(path);
-  *pathSuffix++ = '.';
-  SymbolVector *symbols = collectPatchTokenSymbols(ptKernel, ptKernelSize);
-  PRINT_PATCH_TOKEN_IPS(fprintf(stderr, "\nPatch Token KernelIps\n"));
-  for (int i = 0; i < symbols->nsymbols; i++) {
-    const char *kernelName = symbols->symbolName[i];
-    uint16_t loadModuleId = patchTokenKernelLoadModuleId(kernelName, path, pathSuffix);
-    ip_normalized_t kernelIp = {.lm_id = loadModuleId, .lm_ip = symbols->symbolValue[i]};
-    kernelNameToKernelIpMap.try_emplace(std::string(kernelName), kernelIp);
-    PRINT_PATCH_TOKEN_IPS(dumpKernelIp(kernelIp.lm_id, kernelIp.lm_ip, kernelName));
-  }
-  symbolVectorFree(symbols);
 }
 
 
@@ -632,8 +588,8 @@ static ip_normalized_t find_or_add_loadmap_module
       // Intel zeBinary
       recordZebinKernelIps(kernel_elf, kernel_elf_size, path);
     } else {
-      // Intel Patch Token binary
-      recordPatchTokenKernelIps(kernel_elf, kernel_elf_size, path);
+      fprintf(stderr, "hpcrun: GTPin reported non-zeBinary kernel\n");
+      return ipNormalizedEmpty;
     }
 
     elf_binary_map.try_emplace(strdup(file_name), true);

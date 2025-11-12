@@ -454,19 +454,81 @@ endif
 if level0_dep.found()
   srcs += files(
     'foil/level0.c',
+    'gpu/api/intel/binaries/symbolVector.c',
+    'gpu/api/intel/binaries/zebinSymbols.c',
     'gpu/api/intel/level0/level0-api.c',
     'gpu/api/intel/level0/level0-binary.c',
     'gpu/api/intel/level0/level0-command-list-context-map.c',
     'gpu/api/intel/level0/level0-command-list-map.c',
     'gpu/api/intel/level0/level0-command-process.c',
     'gpu/api/intel/level0/level0-command-queue-map.c',
+    'gpu/api/intel/level0/level0-correlation-device-map.c',
     'gpu/api/intel/level0/level0-data-node.c',
     'gpu/api/intel/level0/level0-debug.c',
     'gpu/api/intel/level0/level0-event-map.c',
     'gpu/api/intel/level0/level0-fence-map.c',
     'gpu/api/intel/level0/level0-handle-map.c',
+    'gpu/api/intel/level0/level0-id-map.c',
+    'gpu/api/intel/level0/level0-kernel-module-map.c',
     'sample-sources/level0.c',
   )
+
+  level0_pc_cpp_srcs = files(
+    'gpu/api/intel/level0/level0-correlation-device-map.c',
+    'gpu/api/intel/level0/pcsampling/level0-activity-generate.cpp',
+    'gpu/api/intel/level0/pcsampling/level0-activity-send.cpp',
+    'gpu/api/intel/level0/pcsampling/level0-activity-translate.cpp',
+    'gpu/api/intel/level0/pcsampling/level0-assert.cpp',
+    'gpu/api/intel/level0/pcsampling/level0-cmdlist-device-map.cpp',
+    'gpu/api/intel/level0/pcsampling/level0-collector.cpp',
+    'gpu/api/intel/level0/pcsampling/level0-context.cpp',
+    'gpu/api/intel/level0/pcsampling/level0-correlation-id.cpp',
+    'gpu/api/intel/level0/pcsampling/level0-device.cpp',
+    'gpu/api/intel/level0/pcsampling/level0-driver.cpp',
+    'gpu/api/intel/level0/pcsampling/level0-event.cpp',
+    'gpu/api/intel/level0/pcsampling/level0-eventpool.cpp',
+    'gpu/api/intel/level0/pcsampling/level0-kernel-properties-cache.cpp',
+    'gpu/api/intel/level0/pcsampling/level0-kernel-properties.cpp',
+    'gpu/api/intel/level0/pcsampling/level0-kernel-size-map.cpp',
+    'gpu/api/intel/level0/pcsampling/level0-logging.cpp',
+    'gpu/api/intel/level0/pcsampling/level0-metric-list.cpp',
+    'gpu/api/intel/level0/pcsampling/level0-metric-profiler.cpp',
+    'gpu/api/intel/level0/pcsampling/level0-metric-streamer.cpp',
+    'gpu/api/intel/level0/pcsampling/level0-metric.cpp',
+    'gpu/api/intel/level0/pcsampling/level0-module.cpp',
+    'gpu/api/intel/level0/pcsampling/level0-pc-api-receiver.cpp',
+    'gpu/api/intel/level0/pcsampling/level0-pc-interface.cpp',
+    'gpu/api/intel/level0/pcsampling/level0-pc-manager.cpp',
+    'gpu/api/intel/level0/pcsampling/level0-pc-stubs.cpp',
+    'gpu/api/intel/level0/pcsampling/level0-tracing-callback-methods.cpp',
+    'gpu/api/intel/level0/pcsampling/level0-tracing-callbacks.cpp',
+    'gpu/api/intel/level0/pcsampling/level0-tracing.cpp',
+    'gpu/api/intel/level0/pcsampling/level0-unique-id.cpp',
+  )
+
+  level0_pc_cxx_lib = shared_library(
+    'hpcrun_level0_pc_cxx',
+    level0_pc_cpp_srcs,
+    gnu_symbol_visibility: 'hidden',
+    implicit_include_directories: false,
+    override_options: ['b_lundef=false'],
+    dependencies: [
+      common_lean_deps,
+      dl_dep,
+      level0_dep.partial_dependency(compile_args: true, includes: true),
+      libunwind_dep.partial_dependency(compile_args: true, includes: true),
+      threads_dep,
+    ],
+    link_language: 'cpp',
+    install: true,
+  )
+  hpcrun_sonames.set_quoted(
+    'HPCRUN_LEVEL0_PC_CXX_SO',
+    fs.name(level0_pc_cxx_lib.full_path()),
+  )
+  libs += level0_pc_cxx_lib
+
+  srcs += files('gpu/api/intel/level0/level0-pc-shim.c')
 endif
 
 if gtpin_dep.found()
@@ -476,7 +538,6 @@ if gtpin_dep.found()
     'hpcrun_gtpin_cxx',
     'foil/gtpin.cpp',
     'gpu/api/intel/gtpin/gtpin-instrumentation.cpp',
-    'gpu/api/intel/binaries/patchTokenSymbols.c',
     'gpu/api/intel/binaries/symbolVector.c',
     'gpu/api/intel/binaries/zebinSymbols.c',
     common_lean_srcs,

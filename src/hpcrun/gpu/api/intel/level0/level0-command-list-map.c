@@ -16,11 +16,13 @@
 // local includes
 //*****************************************************************************
 
-
-#include "level0-command-list-map.h"
 #include "../../../../../common/lean/spinlock.h"
 
 #include "../../../activity/gpu-activity-channel.h"
+
+#include "level0-command-list-map.h"
+#include "level0-correlation-device-map.h"
+
 
 //*****************************************************************************
 // macros
@@ -113,6 +115,8 @@ level0_commandlist_map_delete
 
   uint64_t key = (uint64_t)command_list_handle;
   level0_handle_map_delete(&commandlist_map_root, &commandlist_free_list, key);
+
+  hpcrun_level0_cmdlist_device_unregister(command_list_handle);
 
   spinlock_unlock(&commandlist_map_lock);
 }

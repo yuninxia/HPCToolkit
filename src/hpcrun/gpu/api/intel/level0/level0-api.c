@@ -10,6 +10,7 @@
 
 #define _GNU_SOURCE
 
+#include <pthread.h>
 #include <stdlib.h>
 #include <stdio.h>
 
@@ -20,17 +21,19 @@
 //******************************************************************************
 
 #include "level0-api.h"
+#include "level0-pc-shim.h"
 #include "level0-binary.h"
 #include "level0-command-list-map.h"
 #include "level0-command-list-context-map.h"
-#include "level0-command-queue-map.h"
-#include "level0-event-map.h"
 #include "level0-command-process.h"
+#include "level0-command-queue-map.h"
+#include "level0-correlation-device-map.h"
 #include "level0-data-node.h"
 #include "level0-debug.h"
+#include "level0-event-map.h"
 #include "level0-fence-map.h"
-
-#include "../../../../utilities/linuxtimer.h"
+#include "level0-id-map.h"
+#include "level0-kernel-module-map.h"
 
 #include "../../../../libmonitor/monitor.h"
 #include "../../../../main.h"
@@ -42,11 +45,11 @@
 #include "../../../../foil/level0.h"
 #include "../../../../libmonitor/monitor.h"
 #include "../../../../utilities/hpcrun-nanotime.h"
+#include "../../../../utilities/linuxtimer.h"
 
 #ifdef ENABLE_GTPIN
 #include "../gtpin/gtpin-instrumentation.h"
 #endif
-
 
 
 //******************************************************************************
@@ -81,6 +84,10 @@ ze_device_handle_t hDevice = NULL;
 uint64_t clock_offset_ns_from_level0 = 0;
 
 static bool gtpin_instrumentation = false;
+static bool level0_metrics_env = false;
+static bool level0_pc_sampling_requested = false;  // Track if PC sampling was requested via event
+static bool level0_pc_sampling_initialized = false; // Track if PC sampling library was initialized
+static const struct hpcrun_foil_appdispatch_level0* saved_dispatch = NULL; // Save dispatch for deferred init
 
 //******************************************************************************
 // private operations
@@ -321,14 +328,17 @@ level0_command_list_append_launch_kernel_entry
 
   // Lookup the command list and append the kernel launch to the command list
   level0_data_node_t ** command_list_data_head = level0_commandlist_map_lookup(command_list);
+  int32_t device_id = hpcrun_level0_cmdlist_device_lookup(command_list);
   if (command_list_data_head != NULL) {
     level0_data_node_t * data_for_kernel = level0_commandlist_append_kernel(command_list_data_head, kernel, event, event_pool, dispatch);
+    data_for_kernel->device_id = device_id;
     // Associate the data entry with the event
     level0_event_map_insert(event, data_for_kernel);
   } else {
     // Cannot find command list.
     // This means we are dealing with an immediate command list
-    level0_data_node_t * data_for_kernel = level0_commandlist_alloc_kernel(kernel, event, event_pool, dispatch);;
+    level0_data_node_t * data_for_kernel = level0_commandlist_alloc_kernel(kernel, event, event_pool, dispatch);
+    data_for_kernel->device_id = device_id;
     // Associate the data entry with the event
     level0_event_map_insert(event, data_for_kernel);
 #if LATE_BEGIN == 0
@@ -369,14 +379,17 @@ level0_command_list_append_launch_memcpy_entry
 
   // Lookup the command list and append the mempcy to the command list
   level0_data_node_t ** command_list_data_head = level0_commandlist_map_lookup(command_list);
+  int32_t device_id = hpcrun_level0_cmdlist_device_lookup(command_list);
   if (command_list_data_head != NULL) {
     level0_data_node_t * data_for_memcpy = level0_commandlist_append_memcpy(command_list_data_head, src_type, dst_type, mem_copy_size, event, event_pool, dispatch);
+    data_for_memcpy->device_id = device_id;
     // Associate the data entry with the event
     level0_event_map_insert(event, data_for_memcpy);
   } else {
     // Cannot find command list.
     // This means we are dealing with an immediate command list
     level0_data_node_t * data_for_memcpy = level0_commandlist_alloc_memcpy(src_type, dst_type, mem_copy_size, event, event_pool, dispatch);
+    data_for_memcpy->device_id = device_id;
     // Associate the data entry with the event
     level0_event_map_insert(event, data_for_memcpy);
 #if LATE_BEGIN == 0
@@ -394,6 +407,7 @@ level0_command_list_create_exit
 (
   ze_command_list_handle_t handle,
   ze_context_handle_t hContext,
+  ze_device_handle_t hDevice,
   int isImmediateList
 )
 {
@@ -406,6 +420,8 @@ level0_command_list_create_exit
   }
   // command list context map: command list handle -> context handle
   level0_commandlist_context_map_insert(handle, hContext);
+
+  hpcrun_level0_cmdlist_device_register_with_device(handle, hDevice);
 }
 
 
@@ -584,6 +600,24 @@ hpcrun_zeInit
   // Exit action
   get_gpu_driver_and_device(dispatch);
 
+  // Save dispatch pointer for potential later use
+  saved_dispatch = dispatch;
+
+  // Initialize PC sampling if it was requested and not yet initialized
+  // This handles the case where zeInit is called after level0_init (normal case)
+  if (level0_pc_sampling_requested && !level0_pc_sampling_initialized) {
+    char error_buffer[256] = {0};  // Initialize to avoid reading garbage
+    level0_pc_result_t result = level0_pc_init(dispatch, error_buffer, sizeof(error_buffer));
+    if (result == LEVEL0_PC_SUCCESS) {
+      level0_pc_sampling_initialized = true;
+      TMSG(LEVEL0, "PC sampling initialized successfully");
+    } else {
+      // Log the failure but don't set initialized flag, allowing retry
+      EMSG("Failed to initialize Intel Level Zero PC sampling: %s (error code: %d)",
+           error_buffer[0] ? error_buffer : "unknown error", result);
+    }
+  }
+
   PRINT("hpcrun_zeInit: exit\n");
 
   return ret;
@@ -675,7 +709,7 @@ hpcrun_zeCommandListCreate
   ze_result_t ret = f_zeCommandListCreate(hContext, hDevice, desc, phCommandList, dispatch);
 
   // Exit action
-  level0_command_list_create_exit(*phCommandList, hContext, 0);
+  level0_command_list_create_exit(*phCommandList, hContext, hDevice, 0);
 
   PRINT("hpcrun_zeCommandListCreate exit\n");
 
@@ -707,7 +741,7 @@ hpcrun_zeCommandListCreateImmediate
   ze_result_t ret = f_zeCommandListCreateImmediate(hContext, hDevice, altdesc, phCommandList, dispatch);
 
   // Exit action
-  level0_command_list_create_exit(*phCommandList, hContext, 1);
+  level0_command_list_create_exit(*phCommandList, hContext, hDevice, 1);
 
   PRINT("hpcrun_zeCommandListCreateImmediate exit\n");
 
@@ -901,6 +935,16 @@ hpcrun_zeModuleDestroy
   const struct hpcrun_foil_appdispatch_level0* dispatch
 )
 {
+  // Entry action
+  level0_module_handle_map_delete(hModule);
+
+  // Hash the module handle to get a unique id
+  char zebin_id[CRYPTO_HASH_STRING_LENGTH];
+  crypto_compute_hash_string(&hModule, sizeof(hModule), zebin_id, CRYPTO_HASH_STRING_LENGTH);
+  uint32_t zebin_id_uint32;
+  sscanf(zebin_id, "%8x", &zebin_id_uint32);
+  zebin_id_map_delete(zebin_id_uint32);
+
   ze_result_t ret = f_zeModuleDestroy(hModule, dispatch);
 
   return ret;
@@ -916,7 +960,11 @@ hpcrun_zeKernelCreate
 )
 {
   ze_result_t ret = f_zeKernelCreate(hModule, desc, phKernel, dispatch);
+
   PRINT("hpcrun_zeKernelCreate: module handle %p, kernel handle %p\n",hModule, *phKernel);
+
+  // Exit action - save kernel-module mapping for PC sampling
+  level0_kernel_module_map_insert(*phKernel, hModule);
 
   return ret;
 }
@@ -928,6 +976,9 @@ hpcrun_zeKernelDestroy
   const struct hpcrun_foil_appdispatch_level0* dispatch
 )
 {
+  // Entry action - remove kernel-module mapping
+  level0_kernel_module_map_delete(hKernel);
+
   ze_result_t ret = f_zeKernelDestroy(hKernel, dispatch);
 
   return ret;
@@ -998,6 +1049,36 @@ level0_init
     gtpin_instrumentation_options(inst_options);
 #endif
   }
+
+  // Update PC sampling request state based on current event configuration
+  // This ensures the flag is properly reset when PC sampling is not requested
+  level0_pc_sampling_requested = (inst_options && inst_options->pc_sampling);
+
+  // Check if PC sampling was requested through the event (e.g., gpu=level0,pc)
+  if (level0_pc_sampling_requested) {
+    level0_metrics_env = true;
+    // Set the environment variable for Level Zero metrics if not already set
+    setenv("ZET_ENABLE_METRICS", "1", 0);  // 0 means don't overwrite if exists
+
+    // If zeInit was already called (saved_dispatch != NULL), initialize PC sampling now
+    // This handles the case where zeInit is called before level0_init (static constructor case)
+    if (saved_dispatch && !level0_pc_sampling_initialized) {
+      char error_buffer[256] = {0};  // Initialize to avoid reading garbage
+      level0_pc_result_t result = level0_pc_init(saved_dispatch, error_buffer, sizeof(error_buffer));
+      if (result == LEVEL0_PC_SUCCESS) {
+        level0_pc_sampling_initialized = true;
+        TMSG(LEVEL0, "PC sampling initialized successfully (deferred)");
+      } else {
+        // Log the failure but don't set initialized flag, allowing retry
+        EMSG("Failed to initialize Intel Level Zero PC sampling (deferred): %s (error code: %d)",
+             error_buffer[0] ? error_buffer : "unknown error", result);
+      }
+    }
+  } else {
+    // PC sampling not requested for this run
+    level0_metrics_env = false;
+  }
+
   if (!gtpin_instrumentation) {
     gpu_kernel_table_init();
   }
@@ -1013,6 +1094,12 @@ level0_fini
   if (!GPU_FLUSH_ALARM_FIRED()) {
     GPU_FLUSH_ALARM_SET("hpcrun: warning: some Level 0 events not marked"
                         " complete; some GPU event data may be lost.");
+
+    // Only shutdown PC sampling if it was initialized
+    if (level0_pc_sampling_initialized) {
+      level0_pc_shutdown();
+      level0_pc_sampling_initialized = false;
+    }
 
     GPU_FLUSH_ALARM_TEST();
     GPU_FLUSH_ALARM_CLEAR();
@@ -1047,7 +1134,6 @@ level0_gtpin_enabled
   return gtpin_instrumentation;
 }
 
-
 // adjust device timestamp to be consistent with host realtime
 uint64_t
 level0_timestamp_to_realtime
@@ -1077,4 +1163,13 @@ level0_timestamp_to_realtime
   PRINT("level0_timestamp_to_realtime(%ld) --> %ld\n", device_time, result);
 
   return result;
+}
+
+bool
+level0_metrics_requested
+(
+  void
+)
+{
+  return level0_metrics_env;
 }

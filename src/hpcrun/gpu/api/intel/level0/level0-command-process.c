@@ -11,6 +11,7 @@
 #define _GNU_SOURCE
 
 #include "level0-command-process.h"
+#include "level0-correlation-channels.h"
 #include "level0-data-node.h"
 #include "level0-binary.h"
 #include "level0-api.h"
@@ -42,6 +43,10 @@
 #include "../../../../../common/lean/usec_time.h"
 
 #include "../../../../libmonitor/monitor.h"
+
+#include "../../../activity/correlation/gpu-channel-common.h"
+
+#include <inttypes.h>
 
 
 
@@ -231,7 +236,11 @@ level0_command_begin
     } else
 #endif  // ENABLE_GTPIN
     {
-      kernel_ip = gpu_kernel_table_get(kernel_name, LOGICAL_MANGLING_CPP);
+      if (level0_metrics_requested()) {
+        kernel_ip = level0_func_ip_resolve(kernel, command_node->dispatch);
+      } else {
+        kernel_ip = gpu_kernel_table_get(kernel_name, LOGICAL_MANGLING_CPP);
+      }
     }
     free(kernel_name);
     command_node->kernel = api_node;
@@ -240,6 +249,19 @@ level0_command_begin
 
   command_node->cct_node = api_node;
   gpu_cid_map_insert(correlation_id, api_node, kernel_ip);
+
+  // Send correlation ID to PC sampling thread for kernel launches
+  if (command_node->type == LEVEL0_KERNEL && level0_metrics_requested()) {
+    gpu_activity_channel_t *channel = gpu_activity_channel_get_local();
+    int32_t device_id = command_node->device_id;
+    uint64_t channel_idx = level0CorrelationChannelIndex(device_id);
+    if (channel_idx >= GPU_CHANNEL_TOTAL) {
+      TMSG(LEVEL0, "Correlation channel index %" PRIu64 " exceeds limit %d; falling back to base channel",
+           channel_idx, GPU_CHANNEL_TOTAL);
+      channel_idx = LEVEL0_CORRELATION_CHANNEL_BASE;
+    }
+    gpu_correlation_channel_send(channel_idx, correlation_id, channel);
+  }
 
   gpu_application_thread_process_activities();
 
@@ -262,6 +284,8 @@ level0_command_end
   uint64_t end
 )
 {
+  gpu_application_thread_process_activities();
+
   gpu_monitoring_thread_activities_ready();
   gpu_activity_t gpu_activity;
   gpu_activity_t* ga = &gpu_activity;

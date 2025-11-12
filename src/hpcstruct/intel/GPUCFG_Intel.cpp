@@ -296,45 +296,6 @@ getElementSize
 }
 
 
-static void
-addCustomFunctionObject
-(
- const std::string &func_obj_name,
- Symtab *symtab
-)
-{
-  Region *reg = NULL;
-  bool status = symtab->findRegion(reg, ".text");
-  if (!status)
-    std::abort();
-
-  unsigned long reg_size = reg->getMemSize();
-  Symbol *custom_symbol = new Symbol(
-      func_obj_name,
-      SymtabAPI::Symbol::ST_FUNCTION, // SymbolType
-      Symbol::SL_LOCAL, //SymbolLinkage
-      SymtabAPI::Symbol::SV_DEFAULT, //SymbolVisibility
-      0, //Offset,
-      NULL, //Module *module
-      reg, //Region *r
-      reg_size, //unsigned s
-      false, //bool d
-      false, //bool a
-      -1, //int index
-      -1, //int strindex
-      false //bool cs
-  );
-
-  //adding the custom symbol into the symtab object
-  status = symtab->addSymbol(custom_symbol); //(Symbol *newsym)
-  if (!status)
-    std::abort();
-
-  // After injecting symbol, we can parse inlining info
-  symtab->parseTypesNow();
-}
-
-
 static GPUParse::InstructionStat*
 getIntelInstructionStat
 (
@@ -991,26 +952,6 @@ exportCfgIntoDyninst
 
 
 static void
-recoverCfgPatchTokenBinary
-(
-  const std::string &search_path,
-  ElfFile *elfFile,
-  bool du_graph_wanted,
-  std::string &fn_name,
-  Dyninst::SymtabAPI::Symtab *the_symtab,
-  Dyninst::ParseAPI::CodeSource **code_src,
-  Dyninst::ParseAPI::CodeObject **code_obj,
-  std::vector<GPUParse::Function *> &functions
-)
-{
-  Address fn_address = 0;
-  char *fn_text = NULL;
-  auto fn_size = elfFile->getTextSection(&fn_text);
-  parseGPUFunction(functions, fn_text, fn_size, fn_name, fn_address, du_graph_wanted);
-}
-
-
-static void
 recoverCfgZeBinary
 (
   const std::string &search_path,
@@ -1063,19 +1004,6 @@ buildIntelGPUCFG
     if (cfg_wanted) {
       recoverCfgZeBinary(search_path, elfFile, du_graph_wanted, the_symtab,
                          code_src, code_obj, functions);
-    }
-  } else {
-    // An Intel GPU binary for a kernel does not contain a function symbol for the kernel
-    // in its symbol table. Without a function symbol in the symbol table, Dyninst will not
-    // associate line map entries with addresses in the kernel. To cope with this defect of
-    // binaries for Intel GPU kernels, we add a function symbol for the kernel to its Dyninst
-    // symbol table.
-    auto fn_name = elfFile->getGPUKernelName();
-    addCustomFunctionObject(fn_name, the_symtab); //adds a dummy function object
-
-    if (cfg_wanted) {
-      recoverCfgPatchTokenBinary(search_path, elfFile, du_graph_wanted, fn_name,
-                                 the_symtab, code_src, code_obj, functions);
     }
   }
 

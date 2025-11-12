@@ -1,0 +1,99 @@
+// SPDX-FileCopyrightText: Contributors to the HPCToolkit Project
+//
+// SPDX-License-Identifier: Apache-2.0
+//
+// SPDX-License-Identifier: MIT
+// Copyright (C) 2024 Intel Corporation
+// This file was inspired by and uses some code fragments from Intel's
+// MIT-licensed pti-gpu (https://github.com/intel/pti-gpu)
+
+// -*-Mode: C++;-*-
+
+//******************************************************************************
+// local includes
+//******************************************************************************
+
+#include "level0-tracing-callbacks.hpp"
+#include "level0-collector.hpp"
+
+
+//*****************************************************************************
+// callback functions
+//*****************************************************************************
+
+void
+zeModuleCreateOnExit
+(
+  ze_module_create_params_t* params,
+  ze_result_t result,
+  void* global_user_data,
+  void** instance_user_data
+)
+{
+  ZeCollector* collector = static_cast<ZeCollector*>(global_user_data);
+  OnExitModuleCreate(params, result, collector->getDispatch());
+}
+
+void
+zeModuleDestroyOnEnter
+(
+  ze_module_destroy_params_t* params,
+  ze_result_t result,
+  void* global_user_data,
+  void** instance_user_data
+)
+{
+  OnEnterModuleDestroy(params);
+}
+
+void
+zeKernelCreateOnExit
+(
+  ze_kernel_create_params_t* params,
+  ze_result_t result,
+  void* global_user_data,
+  void** instance_user_data
+)
+{
+  ZeCollector* collector = static_cast<ZeCollector*>(global_user_data);
+  OnExitKernelCreate(params, result, collector->getDispatch());
+  // Removed level0DumpKernelProfiles - now using memory cache
+}
+
+void
+zeCommandListAppendLaunchKernelOnEnter
+(
+  ze_command_list_append_launch_kernel_params_t* params,
+  ze_result_t result,
+  void* global_user_data,
+  void** instance_user_data
+)
+{
+  ZeCollector* collector = static_cast<ZeCollector*>(global_user_data);
+  OnEnterCommandListAppendLaunchKernel(params, collector->getDispatch());
+}
+
+void
+zeCommandListAppendLaunchKernelOnExit
+(
+  ze_command_list_append_launch_kernel_params_t* params,
+  ze_result_t result,
+  void* global_user_data,
+  void** instance_user_data
+)
+{
+  auto collector = static_cast<ZeCollector*>(global_user_data);
+  OnExitCommandListAppendLaunchKernel(params, collector->getDispatch());
+}
+
+void
+zeCommandListCreateImmediateOnExit
+(
+  ze_command_list_create_immediate_params_t* params,
+  ze_result_t result,
+  void* global_user_data,
+  void** instance_user_data
+)
+{
+  OnExitCommandListCreateImmediate(params, global_user_data);
+}
