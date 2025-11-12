@@ -559,11 +559,15 @@ inspect_pipelines
 {
   gpu_pipeline_info_t info = {{0}, {0}};
 
-// pipeline stalls comes directly from the arbiter bits
+// pipeline stalls from the arbiter bits
 #define STALLED(out, in) info.stalled.out = pcs->snapshot.in;
 
-// pipeline issues are cleared if the pipeline is also stalled
-#define ISSUED(out,  in) info.issued.out = pcs->snapshot.in & (~info.stalled.out);
+// pipeline issues from the arbiter bits
+
+#define ISSUED(out,  in) info.issued.out = pcs->snapshot.in;
+
+// clear issue bits if the pipeline is also stalled
+#define ISSUE_NOSTALL(out,  in) info.issued.out &= (~info.stalled.out);
 
   info.stalled.available = 1; // info is available about pipelines stalled
   FORALL_PIPE_DECODE(STALLED, stall)
@@ -617,6 +621,39 @@ get_instruction_class
   return itype;
 }
 
+static bool
+stall_not_exposed
+(
+  gpu_inst_type_t itype,
+  gpu_pipeline_info_t pinfo
+)
+{
+  switch(itype) {
+    case GPU_INST_TYPE_VECTOR:            return pinfo.issued.vector_alu;
+    case GPU_INST_TYPE_VECTOR_DUAL:       return pinfo.issued.vector_dual_alu;
+    case GPU_INST_TYPE_MATRIX:            return pinfo.issued.matrix;
+    case GPU_INST_TYPE_SCALAR:            return pinfo.issued.scalar;
+    case GPU_INST_TYPE_TEXTURE:           return pinfo.issued.texture;
+    case GPU_INST_TYPE_LDS:               return pinfo.issued.lds;
+    case GPU_INST_TYPE_LDS_DIRECT:        return pinfo.issued.lds_direct;
+    case GPU_INST_TYPE_FLAT:              return pinfo.issued.flat;
+    case GPU_INST_TYPE_EXPORT:            return pinfo.issued.export;
+    case GPU_INST_TYPE_NONE:              return false;
+    case GPU_INST_TYPE_UNUSED:            return false;
+    case GPU_INST_TYPE_ISSUED:            return true;
+
+    case GPU_INST_TYPE_BRANCH_TAKEN:
+    case GPU_INST_TYPE_BRANCH_NOT_TAKEN:
+    case GPU_INST_TYPE_MSG:               return pinfo.issued.branch_msg;
+
+    case GPU_INST_TYPE_OTHER:
+    case GPU_INST_TYPE_JUMP:
+    case GPU_INST_TYPE_BARRIER:           return !pinfo.issued.misc;
+  }
+  return true;
+}
+
+
 static gpu_inst_stall_t
 convert_stall_type
 (
@@ -633,7 +670,7 @@ convert_stall_type
     CASE(ROCPROFILER_PC_SAMPLING_INSTRUCTION_NOT_ISSUED_REASON_WAITCNT,                  GPU_INST_STALL_MEM)
     CASE(ROCPROFILER_PC_SAMPLING_INSTRUCTION_NOT_ISSUED_REASON_INTERNAL_INSTRUCTION,     GPU_INST_STALL_OTHER)
     CASE(ROCPROFILER_PC_SAMPLING_INSTRUCTION_NOT_ISSUED_REASON_BARRIER_WAIT,             GPU_INST_STALL_SYNC)
-    CASE(ROCPROFILER_PC_SAMPLING_INSTRUCTION_NOT_ISSUED_REASON_ARBITER_NOT_WIN,          GPU_INST_STALL_NOT_SELECTED)
+    CASE(ROCPROFILER_PC_SAMPLING_INSTRUCTION_NOT_ISSUED_REASON_ARBITER_NOT_WIN,          GPU_INST_STALL_DONTCARE)
     CASE(ROCPROFILER_PC_SAMPLING_INSTRUCTION_NOT_ISSUED_REASON_ARBITER_WIN_EX_STALL,     GPU_INST_STALL_PIPE_BUSY)
     CASE(ROCPROFILER_PC_SAMPLING_INSTRUCTION_NOT_ISSUED_REASON_OTHER_WAIT,               GPU_INST_STALL_OTHER)
     CASE(ROCPROFILER_PC_SAMPLING_INSTRUCTION_NOT_ISSUED_REASON_SLEEP_WAIT,               GPU_INST_STALL_SLEEP)
@@ -696,27 +733,46 @@ convert_pc_sampling_hw
     cid = GPU_RUNTIME_PH_CID;
   }
 
-  gpu_inst_stall_t stall = convert_stall_type(pcs);
-
   ga->details.pc_sampling.correlation_id = cid;
   ga->details.pc_sampling.pc = pc;
-  ga->details.pc_sampling.stallReason = stall;
+
+  gpu_inst_type_t iclass = get_instruction_class(pcs);
   ga->details.pc_sampling.issues = pcs->wave_issued;
   ga->details.pc_sampling.non_issues = 1 - pcs->wave_issued;
-  ga->details.pc_sampling.instType = get_instruction_class(pcs);
+  ga->details.pc_sampling.inst_type = iclass;
   ga->details.pc_sampling.pipeline_info = inspect_pipelines(pcs);
+
+  gpu_inst_stall_t stall = convert_stall_type(pcs);
+  bool stall_exposed = !stall_not_exposed(ga->details.pc_sampling.inst_type,
+      ga->details.pc_sampling.pipeline_info);
+
+  ga->details.pc_sampling.issue_stall_reason = stall_exposed ? stall : GPU_INST_STALL_DONTCARE;
+  ga->details.pc_sampling.issue_stall_exposed = stall_exposed;
+
+  ga->details.pc_sampling.waves_active = pcs->wave_count;
+  // FIXME: needs to come from agent: max_waves_per_simd * simd_per_cu?
+  ga->details.pc_sampling.waves_available = 32;
+
+  if (iclass == GPU_INST_TYPE_VECTOR || iclass == GPU_INST_TYPE_VECTOR_DUAL) {
+    // threads active is represented by the number of bits set in the execution mask
+    ga->details.pc_sampling.threads_active = __builtin_popcountl(pcs->exec_mask);
+    ga->details.pc_sampling.threads_available = 64; // FIXME: needs wave_front_size from agent
+  } else {
+    ga->details.pc_sampling.threads_active = 0;
+    ga->details.pc_sampling.threads_available = 0;
+  }
 
   // FIXME: inspect pcs->exec_mask for lane-level parallelism
   // total lanes, active lanes, scalar loss (scalar, not vector)
   // questions: what is the maximum number of lanes?
 
   PRINT("PC sample GA: pc [0x%d, 0x%lx], corr 0x%lx, "
-        "samples %u, latencySamples %u, stallReason %u\n",
+        "samples %u, latencySamples %u, issue_stall_reason %u\n",
         ga->details.instruction.pc.lm_id, ga->details.instruction.pc.lm_ip,
         ga->details.instruction.correlation_id,
         ga->details.pc_sampling.samples,
         ga->details.pc_sampling.latencySamples,
-        ga->details.pc_sampling.stallReason);
+        ga->details.pc_sampling.issue_stall_reason);
 
   return cid;
 }
@@ -772,17 +828,17 @@ convert_pc_sampling_sw
 
   ga->details.instruction.pc = pc;
 
-  ga->details.pc_sampling.stallReason = GPU_INST_STALL_NONE;
+  ga->details.pc_sampling.issue_stall_reason = GPU_INST_STALL_NONE;
   ga->details.pc_sampling.issues = 1;
   ga->details.pc_sampling.non_issues = 0;
 
   PRINT("PC sample GA: pc [0x%d, 0x%lx], corr 0x%lx, "
-        "samples %u, latencySamples %u, stallReason %u\n",
+        "samples %u, latencySamples %u, issue_stall_reason %u\n",
         ga->details.instruction.pc.lm_id, ga->details.instruction.pc.lm_ip,
         ga->details.instruction.correlation_id,
         ga->details.pc_sampling.issues,
         ga->details.pc_sampling.non_issues,
-        ga->details.pc_sampling.stallReason);
+        ga->details.pc_sampling.issue_stall_reason);
 
   return cid;
 }

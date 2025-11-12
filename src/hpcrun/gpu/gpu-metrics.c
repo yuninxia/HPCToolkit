@@ -32,7 +32,7 @@
 
 #define DEBUG_PIPE_TYPES 0
 
-#define FORMAT_DISPLAY_PERCENTAGE "%6.2f %%"
+#define FORMAT_DISPLAY_PERCENTAGE "%6.1f%%"
 #define FORMAT_DISPLAY_INT "%6.0f"
 
 #define FORALL_INDEXED_METRIC_KINDS(macro) \
@@ -62,7 +62,8 @@
 #define FORALL_SINGLETON_METRIC_KINDS(macro)                     \
   macro(GPU_INST_TYPE, 1)                                        \
   macro(GPU_PIPE_TYPE_ISS, 2)                                    \
-  macro(GPU_PIPE_TYPE_STL, 3)
+  macro(GPU_PIPE_TYPE_STL, 3)                                    \
+  macro(GPU_UTIL_METRICS, 4)
 
 #define FORALL_METRIC_KINDS(macro)   \
   FORALL_INDEXED_METRIC_KINDS(macro) \
@@ -125,6 +126,14 @@
   [index] =                                                                                               \
       hpcrun_set_new_metric_desc_and_period(APPLY(METRIC_KIND, CURRENT_METRIC)[index], metric_name, metric_desc, \
                                             MetricFlags_ValFmt_Int, 1, metric_property_none);             \
+  hpcrun_close_kind(APPLY(METRIC_KIND, CURRENT_METRIC)[index]);
+
+#define INITIALIZE_SINGLETON_METRIC_REAL(metric_name, index, metric_desc)                                 \
+  APPLY(METRIC_KIND, CURRENT_METRIC)[index] = hpcrun_metrics_new_kind();                                  \
+  APPLY(METRIC_ID, CURRENT_METRIC)                                                                        \
+  [index] =                                                                                               \
+      hpcrun_set_new_metric_desc_and_period(APPLY(METRIC_KIND, CURRENT_METRIC)[index], metric_name, metric_desc, \
+                                            MetricFlags_ValFmt_Real, 1, metric_property_none);             \
   hpcrun_close_kind(APPLY(METRIC_KIND, CURRENT_METRIC)[index]);
 
 #define INITIALIZE_INDEXED_METRIC_REAL(metric_name, index, metric_desc)                                   \
@@ -306,7 +315,7 @@ gpu_metrics_attribute_inst_type
 #define CASE(type) case type: metric_id = APPLY(METRIC_ID, GPU_INST_TYPE)[type]; break;
 
   int metric_id = METRIC_ID_NONE;
-  switch(sinfo->instType) {
+  switch(sinfo->inst_type) {
     CASE(GPU_INST_TYPE_NONE)
     CASE(GPU_INST_TYPE_VECTOR)
     CASE(GPU_INST_TYPE_VECTOR_DUAL)
@@ -331,6 +340,35 @@ gpu_metrics_attribute_inst_type
   if (metric_id != METRIC_ID_NONE) {
     metric_data_list_t *inst_metric = hpcrun_reify_metric_set(cct_node, metric_id);
     gpu_metrics_attribute_metric_int(inst_metric, metric_id, sample_count);
+  }
+}
+
+static void
+gpu_metrics_attribute_inst_metric
+(
+  cct_node_t *cct_node,
+  unsigned int inst_metric,
+  unsigned int count
+)
+{
+#define METRIC_ID_NONE -1
+#define CASE(type) case type: metric_id = APPLY(METRIC_ID, GPU_UTIL_METRICS)[type]; break;
+
+  int metric_id = METRIC_ID_NONE;
+  switch(inst_metric) {
+    CASE(GPU_UTIL_METRICS_WAVE_ACT)
+    CASE(GPU_UTIL_METRICS_WAVE_AVL)
+    CASE(GPU_UTIL_METRICS_WAVE_UTL)
+    CASE(GPU_UTIL_METRICS_THR_ACT)
+    CASE(GPU_UTIL_METRICS_THR_AVL)
+    CASE(GPU_UTIL_METRICS_THR_UTL)
+
+  }
+#undef CASE
+
+  if (metric_id != METRIC_ID_NONE) {
+    metric_data_list_t *mdl = hpcrun_reify_metric_set(cct_node, metric_id);
+    gpu_metrics_attribute_metric_real(mdl, metric_id, count);
   }
 }
 
@@ -455,7 +493,7 @@ gpu_metrics_attribute_pc_sampling
   }
 
   // record sampled instruction issue (if any)
-  if (sinfo->instType != GPU_INST_TYPE_UNUSED) {
+  if (sinfo->inst_type != GPU_INST_TYPE_UNUSED) {
     gpu_metrics_attribute_inst_type(cct_node, sinfo, issue_count);
   }
 
@@ -469,30 +507,34 @@ gpu_metrics_attribute_pc_sampling
     gpu_metrics_attribute_pipe_stall_status(cct_node, sinfo, sample_period);
   }
 
-  if (sinfo->stallReason != GPU_INST_STALL_INVALID) {
+  if (sinfo->issue_stall_reason != GPU_INST_STALL_INVALID) {
     int stall_summary_metric_index =
       METRIC_ID(GPU_INST_STALL)[GPU_INST_STALL_ANY];
 
-    int stall_kind_metric_index = METRIC_ID(GPU_INST_STALL)[sinfo->stallReason];
+    int stall_kind_metric_index = METRIC_ID(GPU_INST_STALL)[sinfo->issue_stall_reason];
 
     metric_data_list_t *stall_metrics =
       hpcrun_reify_metric_set(cct_node, stall_kind_metric_index);
 
     uint64_t stall_count = sinfo->non_issues * sample_period;
 
-    if (sinfo->stallReason != GPU_INST_STALL_NONE) {
-      // stall summary metric
+    if (sinfo->non_issues > 0) {
       gpu_metrics_attribute_metric_int(stall_metrics,
                                        stall_summary_metric_index, stall_count);
                                          // stall reason specific metric
       gpu_metrics_attribute_metric_int(stall_metrics,
                                        stall_kind_metric_index, stall_count);
-    } else {
-      gpu_metrics_attribute_metric_int(stall_metrics,
-                                       stall_kind_metric_index, issue_count);
     }
+  }
 
+  if (sinfo->waves_available) {
+    gpu_metrics_attribute_inst_metric(cct_node, GPU_UTIL_METRICS_WAVE_ACT, sinfo->waves_active);
+    gpu_metrics_attribute_inst_metric(cct_node, GPU_UTIL_METRICS_WAVE_AVL, sinfo->waves_available);
+  }
 
+  if (sinfo->threads_available) {
+    gpu_metrics_attribute_inst_metric(cct_node, GPU_UTIL_METRICS_THR_ACT, sinfo->threads_active);
+    gpu_metrics_attribute_inst_metric(cct_node, GPU_UTIL_METRICS_THR_AVL, sinfo->threads_available);
   }
 }
 
@@ -1290,6 +1332,45 @@ gpu_metrics_GPU_INST_TYPE_enable
 #undef CURRENT_METRIC
 #define CURRENT_METRIC GPU_INST_TYPE
   FORALL_GPU_INST_TYPE(INITIALIZE_SINGLETON_METRIC_INT);
+}
+
+
+void
+set_ratio_percent_metric
+(
+  int percent_metric_id,
+  int numerator_metric_id,
+  int denominator_metric_id
+)
+{
+  hpcrun_set_percent(percent_metric_id, 0);
+  hpcrun_set_display(percent_metric_id, HPCRUN_FMT_METRIC_SHOW);
+  metric_desc_t *reg_metric = hpcrun_id2metric_linked(percent_metric_id);
+  char *reg_formula = hpcrun_malloc_safe(sizeof(char) * MAX_CHAR_FORMULA);
+  sprintf(reg_formula, "100*(#%d/#%d)", numerator_metric_id, denominator_metric_id);
+  reg_metric->formula = reg_formula;
+  reg_metric->format = FORMAT_DISPLAY_PERCENTAGE;
+}
+
+void
+gpu_metrics_GPU_UTIL_METRICS_enable
+(
+  void
+)
+{
+#undef CURRENT_METRIC
+#define CURRENT_METRIC GPU_UTIL_METRICS
+  FORALL_GPU_UTIL_METRICS(INITIALIZE_SINGLETON_METRIC_REAL);
+
+set_ratio_percent_metric(
+  APPLY(METRIC_ID, GPU_UTIL_METRICS)[GPU_UTIL_METRICS_WAVE_UTL],
+  APPLY(METRIC_ID, GPU_UTIL_METRICS)[GPU_UTIL_METRICS_WAVE_ACT],
+   APPLY(METRIC_ID, GPU_UTIL_METRICS)[GPU_UTIL_METRICS_WAVE_AVL]);
+
+set_ratio_percent_metric(
+  APPLY(METRIC_ID, GPU_UTIL_METRICS)[GPU_UTIL_METRICS_THR_UTL],
+  APPLY(METRIC_ID, GPU_UTIL_METRICS)[GPU_UTIL_METRICS_THR_ACT],
+  APPLY(METRIC_ID, GPU_UTIL_METRICS)[GPU_UTIL_METRICS_THR_AVL]);
 }
 
 

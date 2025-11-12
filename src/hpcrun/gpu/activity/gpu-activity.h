@@ -125,7 +125,8 @@ typedef enum {
   GPU_INST_STALL_NOT_SELECTED = 11,
   GPU_INST_STALL_OTHER = 12,
   GPU_INST_STALL_SLEEP = 13,
-  GPU_INST_STALL_INVALID = 14,
+  GPU_INST_STALL_DONTCARE = 14,
+  GPU_INST_STALL_INVALID = 15
 } gpu_inst_stall_t;
 
 typedef enum {
@@ -148,6 +149,16 @@ typedef enum {
   GPU_INST_TYPE_ISSUED,
   GPU_INST_TYPE_UNUSED // NOTE: this must be last because it has no metric
 } gpu_inst_type_t;
+
+typedef enum {
+  GPU_UTIL_METRICS_WAVE_ACT = 0,
+  GPU_UTIL_METRICS_WAVE_AVL = 1,
+  GPU_UTIL_METRICS_WAVE_UTL = 2,
+  GPU_UTIL_METRICS_THR_ACT = 3,
+  GPU_UTIL_METRICS_THR_AVL = 4,
+  GPU_UTIL_METRICS_THR_UTL = 5,
+  GPU_UTIL_METRICS_LAST = 6
+} gpu_inst_metrics_t;
 
 #define FORALL_AMD_GPU_PIPES(macro)                                                                  \
   macro(GPU_PIPE_TYPE_VECTOR_DUAL, vector_dual_alu) /* 2 simple 32-bit VALU ops, no dep           */ \
@@ -257,9 +268,14 @@ typedef struct gpu_pc_sampling_t {
   ip_normalized_t pc;
   uint32_t issues;
   uint32_t non_issues;
-  gpu_inst_stall_t stallReason;
-  gpu_inst_type_t instType;
+  gpu_inst_stall_t issue_stall_reason;
+  bool issue_stall_exposed;
+  gpu_inst_type_t inst_type;
   gpu_pipeline_info_t pipeline_info;
+  uint32_t waves_active;
+  uint32_t waves_available;
+  uint32_t threads_active;
+  uint32_t threads_available;
 } gpu_pc_sampling_t;
 
 typedef struct gpu_pc_sampling_info_t {

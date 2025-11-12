@@ -226,6 +226,7 @@ METHOD_FN(process_event_list)
           gpu_metrics_GPU_INST_TYPE_enable(); // instruction type metrics
           gpu_metrics_GPU_INST_STALL_enable(); // stall metrics
           gpu_metrics_GPU_PIPE_enable(); // pipeline utilization metrics
+          gpu_metrics_GPU_UTIL_METRICS_enable(); // wave and SIMD utilization
         }
       }
     } else if (strncmp(rocm_event_name, ROCM_CTR_PREFIX, strlen(ROCM_CTR_PREFIX)) == 0) {

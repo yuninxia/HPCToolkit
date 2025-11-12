@@ -199,39 +199,52 @@ typedef struct instruction_metrics_t {
 #define FORALL_GPU_INST_STALL(macro)                                    \
   macro(GPU_INST_METRIC_NAME ":STL:ANY", GPU_INST_STALL_ANY,            \
         "GPU instruction stalls: any")                                  \
-  macro(GPU_INST_METRIC_NAME ":STL:NONE", GPU_INST_STALL_NONE,          \
-        "GPU instruction stalls: no stall")                             \
-  macro(GPU_INST_METRIC_NAME ":STL:IFET", GPU_INST_STALL_IFETCH,        \
-        "GPU instruction stalls: await availability of next "           \
-        "instruction (fetch or branch delay)")                          \
-  macro(GPU_INST_METRIC_NAME ":STL:IDEP", GPU_INST_STALL_IDEPEND,       \
-        "GPU instruction stalls: await satisfaction of instruction "    \
-        "input dependence")                                             \
   macro(GPU_INST_METRIC_NAME ":STL:MEM", GPU_INST_STALL_MEM,            \
         "GPU instruction stalls: await completion of a kind of memory " \
         "access")                                                       \
   macro(GPU_INST_METRIC_NAME ":STL:GMEM", GPU_INST_STALL_GMEM,          \
         "GPU instruction stalls: await completion of global memory "    \
         "access")                                                       \
+  macro(GPU_INST_METRIC_NAME ":STL:MTHR", GPU_INST_STALL_MEM_THROTTLE,  \
+        "GPU instruction stalls: global memory request queue full")     \
   macro(GPU_INST_METRIC_NAME ":STL:TMEM", GPU_INST_STALL_TMEM,          \
         "GPU instruction stalls: texture memory request queue full")    \
-  macro(GPU_INST_METRIC_NAME ":STL:SYNC", GPU_INST_STALL_SYNC,          \
-        "GPU instruction stalls: await completion of thread or "        \
-        "memory synchronization")                                       \
   macro(GPU_INST_METRIC_NAME ":STL:CMEM", GPU_INST_STALL_CMEM,          \
         "GPU instruction stalls: await completion of constant or "      \
         "immediate memory access")                                      \
+  macro(GPU_INST_METRIC_NAME ":STL:IFET", GPU_INST_STALL_IFETCH,        \
+        "GPU instruction stalls: await availability of next "           \
+        "instruction (fetch or branch delay)")                          \
+  macro(GPU_INST_METRIC_NAME ":STL:IDEP", GPU_INST_STALL_IDEPEND,       \
+        "GPU instruction stalls: await satisfaction of instruction "    \
+        "input dependence")                                             \
   macro(GPU_INST_METRIC_NAME ":STL:PIPE", GPU_INST_STALL_PIPE_BUSY,     \
         "GPU instruction stalls: await completion of required "         \
         "compute resources")                                            \
-  macro(GPU_INST_METRIC_NAME ":STL:MTHR", GPU_INST_STALL_MEM_THROTTLE,  \
-        "GPU instruction stalls: global memory request queue full")     \
-  macro(GPU_INST_METRIC_NAME ":STL:NSEL", GPU_INST_STALL_NOT_SELECTED,  \
-        "GPU instruction stalls: not selected for issue but ready")     \
+  macro(GPU_INST_METRIC_NAME ":STL:SYNC", GPU_INST_STALL_SYNC,          \
+        "GPU instruction stalls: await completion of thread or "        \
+        "memory synchronization")                                       \
   macro(GPU_INST_METRIC_NAME ":STL:OTHR", GPU_INST_STALL_OTHER,         \
         "GPU instruction stalls: other")                                \
   macro(GPU_INST_METRIC_NAME ":STL:SLP", GPU_INST_STALL_SLEEP,          \
-        "GPU instruction stalls: sleep")
+        "GPU instruction stalls: sleep")                                \
+  macro(GPU_INST_METRIC_NAME ":STL:DC", GPU_INST_STALL_DONTCARE,        \
+        "GPU instruction stalls: don't care because latency hidden")
+
+#define FORALL_GPU_UTIL_METRICS(macro)                                  \
+  macro("GINS:WAVE_ACT", GPU_UTIL_METRICS_WAVE_ACT,                     \
+        "GPU waves aggregate active")                                   \
+  macro("GINS:WAVE_AVL", GPU_UTIL_METRICS_WAVE_AVL,                     \
+        "GPU waves aggregate available")                                \
+  macro("GINS:WAVE_UTL", GPU_UTIL_METRICS_WAVE_UTL,                     \
+        "GPU waves utilization (actual occupancy): "                     \
+        "100*(waves active)/(waves available)")                         \
+  macro("GINS:THR_ACT", GPU_UTIL_METRICS_THR_ACT,                       \
+        "GPU SIMD lanes (threads) aggregate active")                    \
+  macro("GINS:THR_AVL", GPU_UTIL_METRICS_THR_AVL,                       \
+        "GPU SIMD lanes (threads) aggregate available ")                \
+  macro("GINS:THR_UTL", GPU_UTIL_METRICS_THR_UTL,                       \
+        "GPU SIMD lanes (threads) utilization: 100*(SIMD lanes active)/(SIMD lanes available)")
 
 // gpu explicit copy
 #define FORALL_GXCOPY(macro)                                            \
@@ -675,6 +688,18 @@ gpu_metrics_GPU_PIPE_enable
 (
   void
 );
+
+
+//--------------------------------------------------
+// record GPU inst-level wave and SIMD utilization
+//--------------------------------------------------
+
+void
+gpu_metrics_GPU_UTIL_METRICS_enable
+(
+  void
+);
+
 
 //--------------------------------------------------
 // record GPU hardware counters

@@ -242,9 +242,11 @@ convert_pcsampling
   set_gpu_instruction_fields(&ga->details.instruction, activity->correlationId,
            activity->functionId, activity->pcOffset, correlation_id);
 
-  ga->details.pc_sampling.stallReason = convert_stall_type(activity->stallReason);
-  ga->details.pc_sampling.samples = activity->samples;
-  ga->details.pc_sampling.latencySamples = activity->latencySamples;
+  ga->details.pc_sampling.issue_stall_reason = convert_stall_type(activity->issue_stall_reason);
+  ga->details.pc_sampling.issues = activity->samples;
+  ga->details.pc_sampling.non_issues = activity->latencySamples;
+  ga->details.pc_sampling.issue_stall_exposed = activity->latencySamples > 0;
+  assert(activity->samples == 0 | activity->latencySamples == 0);
 
   cuda_correlation_id_map_entry_t *correlation_entry =
     cuda_correlation_id_map_lookup(activity->correlationId);
