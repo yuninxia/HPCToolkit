@@ -45,14 +45,12 @@ static void
 logPCSampleInfo
 (
   uint64_t pc,
-  uint64_t cid,
   const std::string& kernel_name,
   uint16_t lm_id,
   uint64_t offset
 )
 {
   std::cerr << "PC sampling: sample(pc=" << toHex(pc)
-            << ", cid=" << cid
             << ", kernel_name=" << kernel_name << ")\n"
             << "PC sampling: normalize " << toHex(pc)
             << " --> [" << lm_id << ", " << toHex(offset) << "]\n";
@@ -101,8 +99,8 @@ logActivity
   const auto& [kernel_name, kernel_base] = findKernelInfo(instruction_pc_lm_ip, kernel_info);
   uint64_t offset = (kernel_base != 0) ? (instruction_pc_lm_ip - kernel_base) : 0;
 
-  std::cerr << "PC Sample\n";
-  logPCSampleInfo(activity->details.pc_sampling.pc.lm_ip, cid, kernel_name, lm_id, offset);
+  std::cerr << "[PC_Sample] correlation_id=0x" << std::hex << cid << std::dec << "\n";
+  logPCSampleInfo(activity->details.pc_sampling.pc.lm_ip, kernel_name, lm_id, offset);
   ++cid_count[cid];
 }
 
@@ -206,11 +204,11 @@ level0LogPCSample
   // Calculate the offset of the PC sampling address from the kernel base
   uint64_t offset = pc_sampling.pc.lm_ip - base_address;
 
-  std::cerr << "[PC_Sample]\n";
-  logPCSampleInfo(pc_sampling.pc.lm_ip, correlation_id, kernel_props.name, pc_sampling.pc.lm_id, offset);
-  std::cerr << "Stall reason: " << pc_sampling.stallReason
-            << ", Samples: " << pc_sampling.samples
-            << ", Latency samples: " << pc_sampling.latencySamples << "\n"
+  std::cerr << "[PC_Sample] correlation_id=0x" << std::hex << correlation_id << std::dec << "\n";
+  logPCSampleInfo(pc_sampling.pc.lm_ip, kernel_props.name, pc_sampling.pc.lm_id, offset);
+  std::cerr << "Stall reason: " << pc_sampling.issue_stall_reason
+            << ", Samples: " << pc_sampling.issues
+            << ", Latency samples: " << pc_sampling.non_issues << "\n"
             << "Stall counts: Active: " << stall.active_
             << ", Control: " << stall.control_
             << ", Pipe: " << stall.pipe_

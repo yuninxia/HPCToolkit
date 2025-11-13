@@ -77,7 +77,8 @@
 #define INTEL_LEVEL0 "gpu=level0"
 #define INTEL_LEVEL0_PC_SAMPLING "gpu=level0,pc"
 
-#define NO_THRESHOLD  1L
+// PC sample one of every 2^19 ns
+#define LEVEL0_PC_SAMPLING_PERIOD_LOG_DEFAULT 19
 
 
 
@@ -169,27 +170,29 @@ static void
 METHOD_FN(process_event_list)
 {
   hpcrun_set_trace_metric(HPCRUN_GPU_TRACE_FLAG);
-  gpu_metrics_default_enable();
-  gpu_metrics_KINFO_enable();
 
   char* evlist = METHOD_CALL(self, get_event_str);
   char* event = start_tok(evlist);
-  long th;
+  long int value = 0;
   hpcrun_extract_ev_thresh(event, sizeof(event_name), event_name,
-    &th, NO_THRESHOLD);
+    &value, GPU_SAMPLING_PERIOD_UNSPECIFIED);
 
   bool pc_sampling_enabled = false;
   if (hpcrun_ev_is(event, INTEL_LEVEL0_PC_SAMPLING)) {
     pc_sampling_enabled = true;
 
-    // Intel Level Zero reports true stall counts. Before the monitoring refactor
-    // hpcrun stored the log2(period) and later computed 1 << log, so we passed 0
-    // (log2(1)) and downstream saw a multiplier of 1. The refactored API now
-    // stores the multiplier directly; providing 1 preserves the previous behaviour,
-    // whereas keeping the old 0 would make the multiplier zero out all samples.
-    gpu_monitoring_instruction_sampling_period_set(1);
+    long sampling_period_log;
+
+    if (value != GPU_SAMPLING_PERIOD_UNSPECIFIED) {
+      sampling_period_log = value;
+    } else {
+      sampling_period_log = LEVEL0_PC_SAMPLING_PERIOD_LOG_DEFAULT;
+    }
+
+    gpu_monitoring_instruction_sampling_period_set(1 << sampling_period_log);
 
     gpu_metrics_GPU_INST_enable(); // instruction counts
+    gpu_metrics_GPU_INST_TYPE_enable();
     gpu_metrics_GPU_INST_STALL_enable();
   }
 
@@ -200,6 +203,9 @@ METHOD_FN(process_event_list)
   if (gpu_instrumentation_enabled(&level0_instrumentation_options)) {
      gpu_metrics_GPU_INST_enable();
   }
+
+  gpu_metrics_default_enable();
+  gpu_metrics_KINFO_enable();
 }
 
 static void
