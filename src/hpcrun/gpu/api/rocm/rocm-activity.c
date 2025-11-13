@@ -831,6 +831,8 @@ convert_pc_sampling_sw
   ga->details.pc_sampling.issue_stall_reason = GPU_INST_STALL_NONE;
   ga->details.pc_sampling.issues = 1;
   ga->details.pc_sampling.non_issues = 0;
+  ga->details.pc_sampling.inst_type = GPU_INST_TYPE_ISSUED;
+
 
   PRINT("PC sample GA: pc [0x%d, 0x%lx], corr 0x%lx, "
         "issues %u, non_issues %u, issue_stall_reason %u\n",

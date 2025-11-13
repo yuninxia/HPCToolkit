@@ -42,12 +42,12 @@
 #define AMD_ROCM_GPU_INSTRUCTION_SAMPLING "gpu=rocm,pc"
 #define ROCM_CTR_PREFIX "rocm::"
 
-// minimum period = 256; one of every 8 minimum periods
-#define ROCM_PC_SAMPLING_STOCHASTIC_PERIOD_LOG_DEFAULT 20
+// minimum period = 256; sample one of every 2^20 instructions
+#define ROCM_PC_SAMPLING_STOCHASTIC_PERIOD_LOG_DEFAULT_INST 20
 
-// minimum period 1; one out of every X unit time periods (us), for
+// minimum period 1us; one out of every X unit time periods (ns), for
 // the value of X specified below
-#define ROCM_PC_SAMPLING_HOST_TRAP_PERIOD_LOG_DEFAULT 7
+#define ROCM_PC_SAMPLING_HOST_TRAP_PERIOD_LOG_DEFAULT_NS 17
 
 // The path KFD_TOPOLOGY_PATH is associated with the
 // Linux Kernel Fusion Driver (KFD) used by AMD GPUs.
@@ -212,18 +212,17 @@ METHOD_FN(process_event_list)
         } else {
           sampling_period_log =
             gpu_monitoring_instruction_sampling_is_enabled(GPU_INSTRUCTION_SAMPLING_HW) ?
-            ROCM_PC_SAMPLING_STOCHASTIC_PERIOD_LOG_DEFAULT :
-            ROCM_PC_SAMPLING_HOST_TRAP_PERIOD_LOG_DEFAULT;
+            ROCM_PC_SAMPLING_STOCHASTIC_PERIOD_LOG_DEFAULT_INST :
+            ROCM_PC_SAMPLING_HOST_TRAP_PERIOD_LOG_DEFAULT_NS;
         }
 
         gpu_monitoring_instruction_sampling_period_set(1 << sampling_period_log);
 
         gpu_metrics_GPU_INST_enable(); // instruction counts
-
+        gpu_metrics_GPU_INST_TYPE_enable(); // instruction type metrics
         if (gpu_monitoring_instruction_sampling_is_enabled(GPU_INSTRUCTION_SAMPLING_HW)) {
           // only enable stall metrics if using HW support for PC sampling.
           // they are unavailable with host_trap SW support.
-          gpu_metrics_GPU_INST_TYPE_enable(); // instruction type metrics
           gpu_metrics_GPU_INST_STALL_enable(); // stall metrics
           gpu_metrics_GPU_PIPE_enable(); // pipeline utilization metrics
           gpu_metrics_GPU_UTIL_METRICS_enable(); // wave and SIMD utilization
