@@ -380,7 +380,7 @@ status_is_interesting
 {
   return status.vector_alu |
     status.vector_dual_alu |
-    status.export |
+    status.xport |
     status.flat |
     status.scalar |
     status.matrix |

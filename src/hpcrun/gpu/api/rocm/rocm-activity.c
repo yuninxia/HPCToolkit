@@ -547,7 +547,7 @@ convert_sync
   macro(scalar,       arb_state_ ## kind ## _scalar)     \
   macro(texture,      arb_state_ ## kind ## _vmem_tex)   \
   macro(flat,         arb_state_ ## kind ## _flat)       \
-  macro(export,       arb_state_ ## kind ## _exp)        \
+  macro(xport,        arb_state_ ## kind ## _exp)        \
   macro(misc,         arb_state_ ## kind ## _misc)       \
   macro(branch_msg,   arb_state_ ## kind ## _brmsg)
 
@@ -637,7 +637,7 @@ stall_not_exposed
     case GPU_INST_TYPE_LDS:               return pinfo.issued.lds;
     case GPU_INST_TYPE_LDS_DIRECT:        return pinfo.issued.lds_direct;
     case GPU_INST_TYPE_FLAT:              return pinfo.issued.flat;
-    case GPU_INST_TYPE_EXPORT:            return pinfo.issued.export;
+    case GPU_INST_TYPE_EXPORT:            return pinfo.issued.xport;
     case GPU_INST_TYPE_NONE:              return false;
     case GPU_INST_TYPE_UNUSED:            return false;
     case GPU_INST_TYPE_ISSUED:            return true;
@@ -767,11 +767,11 @@ convert_pc_sampling_hw
   // questions: what is the maximum number of lanes?
 
   PRINT("PC sample GA: pc [0x%d, 0x%lx], corr 0x%lx, "
-        "samples %u, latencySamples %u, issue_stall_reason %u\n",
+        "issues %u, non_issues %u, issue_stall_reason %u\n",
         ga->details.instruction.pc.lm_id, ga->details.instruction.pc.lm_ip,
         ga->details.instruction.correlation_id,
-        ga->details.pc_sampling.samples,
-        ga->details.pc_sampling.latencySamples,
+        ga->details.pc_sampling.issues,
+        ga->details.pc_sampling.non_issues,
         ga->details.pc_sampling.issue_stall_reason);
 
   return cid;
@@ -833,7 +833,7 @@ convert_pc_sampling_sw
   ga->details.pc_sampling.non_issues = 0;
 
   PRINT("PC sample GA: pc [0x%d, 0x%lx], corr 0x%lx, "
-        "samples %u, latencySamples %u, issue_stall_reason %u\n",
+        "issues %u, non_issues %u, issue_stall_reason %u\n",
         ga->details.instruction.pc.lm_id, ga->details.instruction.pc.lm_ip,
         ga->details.instruction.correlation_id,
         ga->details.pc_sampling.issues,
