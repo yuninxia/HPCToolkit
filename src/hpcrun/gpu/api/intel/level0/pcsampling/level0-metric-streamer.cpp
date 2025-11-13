@@ -19,6 +19,7 @@
 // local includes
 //*****************************************************************************
 
+#include "../../../../common/gpu-monitoring.h"
 #include "level0-metric-streamer.hpp"
 #include "level0-pc-api-receiver.hpp"
 
@@ -58,7 +59,7 @@ openMetricStreamer
   const struct hpcrun_foil_appdispatch_level0* dispatch
 )
 {
-  constexpr uint32_t kInterval = 500000;         // Sampling interval in nanoseconds
+  uint32_t kInterval = gpu_monitoring_instruction_sampling_period_get();         // Sampling interval in nanoseconds
   constexpr uint32_t kNotifyEveryNReports = 65536; // Notification rate
 
   zet_metric_streamer_desc_t streamer_desc = {
