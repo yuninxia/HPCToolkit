@@ -246,7 +246,7 @@ convert_pcsampling
   ga->details.pc_sampling.issues = activity->samples;
   ga->details.pc_sampling.non_issues = activity->latencySamples;
   ga->details.pc_sampling.issue_stall_exposed = activity->latencySamples > 0;
-  assert(activity->samples == 0 | activity->latencySamples == 0);
+  ga->details.pc_sampling.inst_type = GPU_INST_TYPE_ISSUED;
 
   cuda_correlation_id_map_entry_t *correlation_entry =
     cuda_correlation_id_map_lookup(activity->correlationId);
