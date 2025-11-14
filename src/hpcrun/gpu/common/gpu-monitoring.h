@@ -42,14 +42,14 @@ extern "C" {
 // type declarations
 //******************************************************************************
 
-typedef long gpu_instruction_period_t;
+typedef uint32_t gpu_instruction_sampling_period_t;
 
 typedef struct gpu_monitoring_instruction_sampling_options_t {
   bool software;
   bool hardware;
   bool unspecified;
   bool serialized;
-  gpu_instruction_period_t sampling_period;
+  gpu_instruction_sampling_period_t sampling_period;
 } gpu_monitoring_instruction_sampling_options_t;
 
 
@@ -82,7 +82,7 @@ gpu_monitoring_instruction_sampling_flags_set
 void
 gpu_monitoring_instruction_sampling_period_set
 (
-  gpu_instruction_period_t sampling_period
+  gpu_instruction_sampling_period_t sampling_period
 );
 
 
@@ -93,7 +93,7 @@ gpu_monitoring_instruction_sampling_is_enabled
 );
 
 
-gpu_instruction_period_t
+gpu_instruction_sampling_period_t
 gpu_monitoring_instruction_sampling_period_get
 (
  void

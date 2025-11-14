@@ -89,7 +89,7 @@ typedef struct level0_pc_hpcrun_api_t {
     void (*join_profiling_thread)(int thread_id);
 
     // sample period
-    uint64_t (*get_sample_period)();
+    gpu_instruction_sampling_period_t (*get_sample_period)();
 
     // Error handling - No exit() calls allowed
     level0_pc_error_handler_t error_handler;

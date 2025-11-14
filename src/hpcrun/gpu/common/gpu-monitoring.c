@@ -72,13 +72,13 @@ const char *bool_to_str(bool val)
 void
 gpu_monitoring_instruction_sampling_period_set
 (
-  gpu_instruction_period_t sampling_period
+  gpu_instruction_sampling_period_t sampling_period
 )
 {
   instruction_sampling_options.sampling_period = sampling_period;
 }
 
-gpu_instruction_period_t
+gpu_instruction_sampling_period_t
 gpu_monitoring_instruction_sampling_period_get
 (
  void
