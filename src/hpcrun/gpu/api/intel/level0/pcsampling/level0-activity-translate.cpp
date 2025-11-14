@@ -81,7 +81,7 @@ static const struct {
     // thread waiting for a Distance or Architecture Register File (ARF) dependency to resolve.
     // Multiple stall reasons can qualify during the same cycle.
     {&EuStalls::dist_,      GPU_INST_STALL_OTHER},
-    {&EuStalls::sbid_,      GPU_INST_STALL_IDEPEND},
+    {&EuStalls::sbid_,      GPU_INST_STALL_MEM},
     {&EuStalls::sync_,      GPU_INST_STALL_SYNC},
     {&EuStalls::insfetch_,  GPU_INST_STALL_IFETCH},
     {&EuStalls::other_,     GPU_INST_STALL_OTHER}
