@@ -372,6 +372,8 @@ gpu_metrics_attribute_inst_metric
   }
 }
 
+
+__attribute__((unused))
 static bool
 status_is_interesting
 (
@@ -392,7 +394,7 @@ status_is_interesting
 }
 
 
-[[maybe_unused]]
+__attribute__((unused))
 static void
 print_interesting_status
 (
