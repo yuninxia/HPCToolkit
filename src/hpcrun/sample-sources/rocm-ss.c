@@ -210,7 +210,7 @@ METHOD_FN(process_event_list)
         long sampling_period_log;
 
         if (value != GPU_SAMPLING_PERIOD_UNSPECIFIED) {
-          sampling_period_log = 
+          sampling_period_log =
             (value > MINIMUM_PC_SAMPLING_PERIOD) ? value : MINIMUM_PC_SAMPLING_PERIOD;
         } else {
           sampling_period_log =

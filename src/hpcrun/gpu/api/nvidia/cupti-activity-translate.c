@@ -242,7 +242,7 @@ convert_pcsampling
   set_gpu_instruction_fields(&ga->details.instruction, activity->correlationId,
            activity->functionId, activity->pcOffset, correlation_id);
 
-  ga->details.pc_sampling.issue_stall_reason = convert_stall_type(activity->issue_stall_reason);
+  ga->details.pc_sampling.issue_stall_reason = convert_stall_type(activity->stallReason);
   ga->details.pc_sampling.issues = activity->samples;
   ga->details.pc_sampling.non_issues = activity->latencySamples;
   ga->details.pc_sampling.issue_stall_exposed = activity->latencySamples > 0;
