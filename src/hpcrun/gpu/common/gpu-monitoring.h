@@ -7,6 +7,9 @@
 #ifndef gpu_monitoring_h
 #define gpu_monitoring_h
 
+#if defined(__cplusplus)
+extern "C" {
+#endif
 
 
 //******************************************************************************
@@ -95,5 +98,9 @@ gpu_monitoring_instruction_sampling_period_get
 (
  void
 );
+
+#if defined(__cplusplus)
+}
+#endif
 
 #endif

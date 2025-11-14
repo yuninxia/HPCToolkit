@@ -30,6 +30,7 @@
 #include "../../../activity/gpu-activity.h"
 #include "../../../activity/gpu-activity-channel.h"
 #include "../../../activity/gpu-activity-send.h"
+#include "../../../common/gpu-monitoring.h"
 #include "../../../activity/correlation/gpu-correlation-channel.h"
 #include "../../../../utilities/hpcrun-nanotime.h"
 #include "../../../../../common/lean/mcs-lock.h"
@@ -351,6 +352,8 @@ static level0_pc_hpcrun_api_t level0_pc_hpcrun_api = {
     // Thread management
     .create_profiling_thread = create_profiling_thread_wrapper,
     .join_profiling_thread = join_profiling_thread_wrapper,
+
+    .get_sample_period = gpu_monitoring_instruction_sampling_period_get,
 
     // Error handling
     .error_handler = error_handler_wrapper,

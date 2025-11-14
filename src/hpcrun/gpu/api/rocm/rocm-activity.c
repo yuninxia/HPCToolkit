@@ -630,12 +630,16 @@ stall_not_exposed
 {
   switch(itype) {
     case GPU_INST_TYPE_VECTOR:            return pinfo.issued.vector_alu;
-    case GPU_INST_TYPE_VECTOR_DUAL:       return pinfo.issued.vector_dual_alu;
-    case GPU_INST_TYPE_MATRIX:            return pinfo.issued.matrix;
+
+    case GPU_INST_TYPE_MATRIX:
+      // note: high precision matrix instructions issue on the vector pipe.
+      // so, if either is busy, consider the stall not exposed
+      return pinfo.issued.matrix |  pinfo.issued.vector_alu;
+
     case GPU_INST_TYPE_SCALAR:            return pinfo.issued.scalar;
     case GPU_INST_TYPE_TEXTURE:           return pinfo.issued.texture;
     case GPU_INST_TYPE_LDS:               return pinfo.issued.lds;
-    case GPU_INST_TYPE_LDS_DIRECT:        return pinfo.issued.lds_direct;
+
     case GPU_INST_TYPE_FLAT:              return pinfo.issued.flat;
     case GPU_INST_TYPE_EXPORT:            return pinfo.issued.xport;
     case GPU_INST_TYPE_NONE:              return false;
@@ -644,13 +648,16 @@ stall_not_exposed
 
     case GPU_INST_TYPE_BRANCH_TAKEN:
     case GPU_INST_TYPE_BRANCH_NOT_TAKEN:
-    case GPU_INST_TYPE_MSG:               return pinfo.issued.branch_msg;
-
-    case GPU_INST_TYPE_OTHER:
     case GPU_INST_TYPE_JUMP:
-    case GPU_INST_TYPE_BARRIER:           return !pinfo.issued.misc;
+    case GPU_INST_TYPE_BARRIER:
+    case GPU_INST_TYPE_OTHER:             return !pinfo.issued.misc;
+
+    // not on gfx9, so consider their latency exposed (don't care)
+    case GPU_INST_TYPE_LDS_DIRECT:
+    case GPU_INST_TYPE_MSG:
+    case GPU_INST_TYPE_VECTOR_DUAL:       return false;
   }
-  return true;
+  return false; // latency considered exposed by default
 }
 
 

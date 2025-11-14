@@ -59,7 +59,7 @@ openMetricStreamer
   const struct hpcrun_foil_appdispatch_level0* dispatch
 )
 {
-  uint32_t kInterval = gpu_monitoring_instruction_sampling_period_get();         // Sampling interval in nanoseconds
+  uint32_t kInterval = pcsampling::get_sampling_period();  // Sampling interval in nanoseconds
   constexpr uint32_t kNotifyEveryNReports = 65536; // Notification rate
 
   zet_metric_streamer_desc_t streamer_desc = {

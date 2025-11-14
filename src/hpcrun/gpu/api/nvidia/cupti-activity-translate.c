@@ -244,7 +244,7 @@ convert_pcsampling
 
   // stall reason only matters if latency is exposed (activity->latencySamples > 0)
   ga->details.pc_sampling.issue_stall_reason = activity->latencySamples > 0 ?
-    convert_stall_type(activity->issue_stall_reason) : GPU_INST_STALL_DONTCARE;
+    convert_stall_type(activity->stallReason) : GPU_INST_STALL_DONTCARE;
   ga->details.pc_sampling.issues = activity->samples;
   ga->details.pc_sampling.non_issues = activity->latencySamples;
   ga->details.pc_sampling.issue_stall_exposed = activity->latencySamples > 0;

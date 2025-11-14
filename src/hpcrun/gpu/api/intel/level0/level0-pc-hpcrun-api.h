@@ -88,6 +88,9 @@ typedef struct level0_pc_hpcrun_api_t {
     int (*create_profiling_thread)(void* (*thread_func)(void*), void* arg, const char* name);
     void (*join_profiling_thread)(int thread_id);
 
+    // sample period
+    uint64_t (*get_sample_period)();
+
     // Error handling - No exit() calls allowed
     level0_pc_error_handler_t error_handler;
     level0_pc_warning_handler_t warning_handler;
