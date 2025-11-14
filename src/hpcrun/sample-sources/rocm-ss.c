@@ -49,6 +49,8 @@
 // the value of X specified below
 #define ROCM_PC_SAMPLING_HOST_TRAP_PERIOD_LOG_DEFAULT_NS 17
 
+#define MINIMUM_PC_SAMPLING_PERIOD 10
+
 // The path KFD_TOPOLOGY_PATH is associated with the
 // Linux Kernel Fusion Driver (KFD) used by AMD GPUs.
 #define KFD_TOPOLOGY_PATH "/sys/class/kfd/kfd/topology/nodes"
@@ -208,7 +210,8 @@ METHOD_FN(process_event_list)
         long sampling_period_log;
 
         if (value != GPU_SAMPLING_PERIOD_UNSPECIFIED) {
-          sampling_period_log = value;
+          sampling_period_log = 
+            (value > MINIMUM_PC_SAMPLING_PERIOD) ? value : MINIMUM_PC_SAMPLING_PERIOD;
         } else {
           sampling_period_log =
             gpu_monitoring_instruction_sampling_is_enabled(GPU_INSTRUCTION_SAMPLING_HW) ?
@@ -300,23 +303,22 @@ METHOD_FN(display_events)
     "Collect timing information on GPU kernel invocations, "
     "memory copies, etc..");
 
-#if STOCHASTIC_SAMPLING
-  display_event_info(stdout, AMD_ROCM_GPU_INSTRUCTION_SAMPLING "[={hw,sw}]",
+  display_event_info(stdout, AMD_ROCM_GPU_INSTRUCTION_SAMPLING "[={hw,sw}][@k]",
     "Comprehensive operation-level monitoring on an AMD GPU "
     "as described above with the addition of PC sampling. "
-    "On some AMD GPUs, hardware support for PC sampling "
-    "attributes STALL reasons to individual GPU instructions. "
-    "Either hardware (hw), referred to by AMD as 'STOCHASTIC', "
-    "or software (sw), referred to by AMD as 'HOST_TRAP', support "
-    "for PC sampling can be selected.");
-#else
-  display_event_info(stdout, AMD_ROCM_GPU_INSTRUCTION_SAMPLING,
-    "Comprehensive operation-level monitoring on an AMD GPU "
-    "as described above with the addition of PC sampling. "
-    "Currently, only software-based (host-trap) support for PC "
-    "sampling while issues with hardware-based (stochastic) PC "
-    "sampling are resolved with AMD.");
-#endif
+    "\n\nMI200+ GPUs may provide software ('sw') support for PC sampling, "
+    "referred to by AMD as 'HOST_TRAP' sampling. If 'sw' sampling is "
+    "selected, the period will be set to 2^k ns [Default k=17]. "
+    "For 'sw' sampling, the minimum value for k=10. "
+    "Software support for PC sampling will only profile instructions sampled. "
+    "\n\nMI300+ GPUs may provide hardware ('hw') support for PC sampling, "
+    "referred to by AMD as 'STOCHASTIC' sampling. If 'hw' sampling is "
+    "selected, the period will be set to 2^k instructions [Default k=20]. "
+    "The minimum value of k=8. (WARNING: small values of k cause HSA/ROCm errors.) "
+    "Hardware support for PC sampling "
+    "will profile instruction issues, non-issues, instruction types, "
+    "issue stalls, pipeline issues, pipeline stalls, wave utilization, and "
+    "thread utilization.");
 
   display_header(stdout, "Available hardware counters for monitoring GPU kernels on AMD GPUs");
 

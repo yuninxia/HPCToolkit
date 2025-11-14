@@ -67,6 +67,7 @@
 #include "../messages/messages.h"
 #include "../../common/lean/hpcrun-fmt.h"
 
+#include "display.h"
 
 
 
@@ -233,36 +234,34 @@ METHOD_FN(gen_event_set)
 static void
 METHOD_FN(display_events)
 {
-  printf("===========================================================================\n");
-  printf("Available events for monitoring GPU operations atop Intel's Level Zero \n");
-  printf("===========================================================================\n");
-  printf("Name\t\tDescription\n");
-  printf("---------------------------------------------------------------------------\n");
-  printf("gpu=level0\tOperation-level monitoring for GPU-accelerated applications\n"
-         "\t\trunning atop Intel's Level Zero runtime. Collect timing \n"
-         "\t\tinformation for GPU kernel invocations, memory copies, etc.\n"
-         "\n");
-  printf("gpu=level0,pc\tComprehensive monitoring on an Intel GPU as described above\n"
-         "\t\twith the addition of PC sampling. PC sampling attributes\n"
-         "\t\tSTALL reasons to individual GPU instructions and provides\n"
-         "\t\tperformance counter data for GPU kernel execution analysis.\n"
-         "\n");
+  display_header(stdout, "Available events for monitoring GPU operations atop Intel's Level Zero");
+  display_header_event(stdout);
+
+  display_event_info(stdout, "gpu=level0",
+         "Operation-level monitoring for GPU-accelerated applications "
+         "running atop Intel's Level Zero runtime. Collect timing "
+         "information for GPU kernel invocations, memory copies, etc.");
+
+  display_event_info(stdout, "gpu=level0,pc[@k]",
+        "Comprehensive monitoring of operations on an Intel GPU as described above "
+         "with the addition of PC sampling. "
+         "The sample period will be 2^k ns. [Default: k=19]. Intel's hardware support "
+         "for PC sampling profiles instruction issues, stalls, and stall reasons.");
 #ifdef ENABLE_GTPIN
-  printf("gpu=level0,inst=<comma-separated list of options>\n"
-         "\t\tOperation-level monitoring for GPU-accelerated applications\n"
-         "\t\trunning atop Intel's Level Zero runtime. Collect timing\n"
-         "\t\tinformation for GPU kernel invocations, memory copies, etc.\n"
-         "\t\tWhen running on Intel GPUs, use optional instrumentation\n"
-         "\t\twithin GPU kernels to collect one or more of the following:\n"
-         "\t\t  count:   count how many times each GPU instruction executes\n"
+  display_event_info(stdout, "gpu=level0,inst=<comma-separated list of options>",
+         "Operation-level monitoring for GPU-accelerated applications "
+         "running atop Intel's Level Zero runtime. Collect timing "
+         "information for GPU kernel invocations, memory copies, etc. "
+         "When running on Intel GPUs, use optional instrumentation "
+         "within GPU kernels to collect one or more of the following:\n"
+         "count:   count how many times each GPU instruction executes\n"
 #if ENABLE_LATENCY_ANALYSIS
-         "\t\t  latency: approximately attribute latency to GPU instructions\n"
+         "latency: approximately attribute latency to GPU instructions\n"
 #endif
 #if ENABLE_SIMD_ANALYSIS
-         "\t\t  simd:    analyze utilization of SIMD lanes\n"
+         "simd:    analyze utilization of SIMD lanes\n"
 #endif
-         "\t\t  silent:  silence warnings from instrumentation\n"
-         "\n");
+         "silent:  silence warnings from instrumentation");
 #endif
 }
 

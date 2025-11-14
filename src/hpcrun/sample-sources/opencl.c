@@ -171,14 +171,14 @@ static void
 METHOD_FN(display_events)
 {
 #ifdef ENABLE_OPENCL
-  display_header(stdout, "Available events for monitoring GPU operations atop OpenCL");
+  display_header(stdout, "Available events for monitoring CPU and/or GPU operations atop OpenCL");
 
   display_header_event(stdout);
 
   display_event_info(stdout, "gpu=opencl",
     "Operation-level monitoring for OpenCL on a CPU or GPU. "
     "Collect timing information for GPU kernel invocations, "
-    "tmemory copies, etc..");
+    "memory copies, etc..");
 #endif
 }
 
