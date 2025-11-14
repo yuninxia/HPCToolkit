@@ -180,14 +180,11 @@ level0_update_timestamps
   level0_check_result(status, __LINE__);
 
   // NOTES:
-  // 1. Level Zero's host time is not comparable to host CLOCK_REALTIME. It is
-  //    closer to host CLOCK_BOOTTIME.
-  // 2. In tests, I have observed that the host time returned by Level Zero
-  //    differs from CLOCK_BOOTTIME on the host by about 30s, so there is no
-  //    real shared timebase.
-  // 3. HPCToolkit uses CLOCK_REALTIME in traces.
+  // 1. Level Zero's host time is not comparable to host CLOCK_REALTIME.
+  //    According to PTI documentation, it is CLOCK_MONOTONIC_RAW.
+  // 2. HPCToolkit uses CLOCK_REALTIME in traces.
   //
-  // As the result of these three facts, I substitute host CLOCK_REALTIME for
+  // As the result of these facts, I substitute host CLOCK_REALTIME for
   // the host time in the synchronized pair to provide a basis for
   // translating device times to times consistent with host CLOCK_REALTIME.
   // -- John Mellor-Crummey 11/4/2025
