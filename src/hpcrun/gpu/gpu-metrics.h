@@ -229,7 +229,11 @@ typedef struct instruction_metrics_t {
   macro(GPU_INST_METRIC_NAME ":STL:SLP", GPU_INST_STALL_SLEEP,          \
         "GPU instruction stalls: sleep")                                \
   macro(GPU_INST_METRIC_NAME ":STL:DC", GPU_INST_STALL_DONTCARE,        \
-        "GPU instruction stalls: don't care because latency hidden")
+        "GPU instruction stalls: don't care because latency hidden")    \
+  macro(GPU_INST_METRIC_NAME ":STL:NSEL", GPU_INST_STALL_NOT_SELECTED,  \
+        "GPU instruction stalls: not selected")                         \
+  macro(GPU_INST_METRIC_NAME ":STL:INV", GPU_INST_STALL_INVALID,        \
+        "GPU instruction stalls: invalid")
 
 #define FORALL_GPU_UTIL_METRICS(macro)                                  \
   macro("GINS:WAVE_ACT", GPU_UTIL_METRICS_WAVE_ACT,                     \
