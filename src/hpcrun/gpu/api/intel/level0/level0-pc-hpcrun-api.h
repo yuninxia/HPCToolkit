@@ -19,6 +19,7 @@
 #include <level_zero/layers/zel_tracing_api.h>
 
 #include "../../../../../common/lean/mcs-lock.h"
+#include "../../../common/gpu-monitoring.h"
 
 
 //******************************************************************************
