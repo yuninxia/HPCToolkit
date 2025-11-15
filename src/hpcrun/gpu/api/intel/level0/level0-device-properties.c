@@ -171,6 +171,11 @@ level0_update_timestamps
 {
   uint64_t *host_time = &properties->recent_synchronized_timestamps.host;
   uint64_t *device_time =&properties->recent_synchronized_timestamps.device;
+
+  // Obtain a pair of synchronized (host, device) timestamps from Level Zero.
+  // Here, we assume that the synchronized pair represents NOW because below
+  // we relate them to a CLOCK_REALTIME timestamp acquired on the host with
+  // hpcrun_nanotime_clock.
   ze_result_t status = f_zeDeviceGetGlobalTimestamps(hDevice, host_time,
     device_time, dispatch);
 
