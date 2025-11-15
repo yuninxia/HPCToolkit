@@ -465,11 +465,13 @@ if level0_dep.found()
     'gpu/api/intel/level0/level0-correlation-device-map.c',
     'gpu/api/intel/level0/level0-data-node.c',
     'gpu/api/intel/level0/level0-debug.c',
+    'gpu/api/intel/level0/level0-device-properties.c',
     'gpu/api/intel/level0/level0-event-map.c',
     'gpu/api/intel/level0/level0-fence-map.c',
     'gpu/api/intel/level0/level0-handle-map.c',
     'gpu/api/intel/level0/level0-id-map.c',
     'gpu/api/intel/level0/level0-kernel-module-map.c',
+    'gpu/api/intel/level0/level0-timestamps.c',
     'sample-sources/level0.c',
   )
 

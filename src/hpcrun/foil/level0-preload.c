@@ -29,6 +29,7 @@ static void init_dispatch() {
       .zeEventPoolDestroy = foil_dlsym("zeEventPoolDestroy"),
       .zeEventQueryStatus = foil_dlsym("zeEventQueryStatus"),
       .zeEventQueryKernelTimestamp = foil_dlsym("zeEventQueryKernelTimestamp"),
+      .zeEventQueryKernelTimestampsExt = foil_dlsym("zeEventQueryKernelTimestampsExt"),
       .zeMemGetAllocProperties = foil_dlsym("zeMemGetAllocProperties"),
       .zeCommandListAppendLaunchKernel = foil_dlsym("zeCommandListAppendLaunchKernel"),
       .zeCommandListAppendMemoryCopy = foil_dlsym("zeCommandListAppendMemoryCopy"),

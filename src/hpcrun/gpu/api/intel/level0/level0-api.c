@@ -34,7 +34,9 @@
 #include "level0-fence-map.h"
 #include "level0-id-map.h"
 #include "level0-kernel-module-map.h"
+#include "level0-timestamps.h"
 
+#include "../../../../utilities/linuxtimer.h"
 #include "../../../../libmonitor/monitor.h"
 #include "../../../../main.h"
 #include "../../../../memory/hpcrun-malloc.h"
@@ -62,6 +64,8 @@
 #define GPU_FLUSH_ALARM_TEST_ENABLED 0
 #include "../../common/gpu-flush-alarm.h"
 
+#define NS_PER_SECOND 1000000000
+
 
 
 //******************************************************************************
@@ -81,7 +85,7 @@
 ze_driver_handle_t hDriver = NULL;
 ze_device_handle_t hDevice = NULL;
 
-uint64_t clock_offset_ns_from_level0 = 0;
+int64_t clock_offset_ns_from_level0 = 0;
 
 static bool gtpin_instrumentation = false;
 static bool level0_metrics_env = false;
@@ -89,46 +93,11 @@ static bool level0_pc_sampling_requested = false;  // Track if PC sampling was r
 static bool level0_pc_sampling_initialized = false; // Track if PC sampling library was initialized
 static const struct hpcrun_foil_appdispatch_level0* saved_dispatch = NULL; // Save dispatch for deferred init
 
+
+
 //******************************************************************************
 // private operations
 //******************************************************************************
-
-static void
-compute_device_time_offset
-(
-  ze_device_handle_t hDevice,
-  const struct hpcrun_foil_appdispatch_level0 *dispatch
-)
-{
-  uint64_t hostTimestamp, deviceTimestamp;
-  f_zeDeviceGetGlobalTimestamps(hDevice, &hostTimestamp, &deviceTimestamp, dispatch);
-
-  // using the host timestamp from level0 didn't produce a useful result.
-  // try setting hostTimestamp from hpcrun's time on host instead
-  hostTimestamp = hpcrun_nanotime();
-
-  clock_offset_ns_from_level0 = hostTimestamp - deviceTimestamp;
-
-  PRINT("level0: host time %ld device time %ld offset %ld\n",
-    hostTimestamp, deviceTimestamp, clock_offset_ns_from_level0);
-}
-
-
-static void
-level0_check_result
-(
-  ze_result_t result,
-  int lineNo
-)
-{
-  if (result == ZE_RESULT_SUCCESS) return;
-
-  EEMSG("hpcrun: Level Zero API failed: %s",
-        ze_result_to_string(result));
-
-  exit(1);
-}
-
 
 static void
 get_gpu_driver_and_device
@@ -174,8 +143,6 @@ get_gpu_driver_and_device
     EEMSG("hpcrun: Level Zero failed: no GPU device found");
     exit(1);
   }
-
-  compute_device_time_offset(hDevice, dispatch);
 }
 
 
@@ -221,7 +188,7 @@ level0_attribute_event
 
   // Get ready to query time stamps
   ze_device_properties_t props;
-  props.stype = ZE_STRUCTURE_TYPE_DEVICE_PROPERTIES ;
+  props.stype = ZE_STRUCTURE_TYPE_DEVICE_PROPERTIES;
   props.pNext = NULL;
   f_zeDeviceGetProperties(hDevice, &props, dispatch);
 
@@ -231,11 +198,19 @@ level0_attribute_event
   // Query start and end time stamp for the event
   ze_kernel_timestamp_result_t timestamp;
   f_zeEventQueryKernelTimestamp(event, &timestamp, dispatch);
-  uint64_t start = timestamp.global.kernelStart * props.timerResolution;
-  uint64_t end = timestamp.global.kernelEnd * props.timerResolution;
+
+  PRINT("TIME L0 zeEventQueryKernelTimestamp kernel [0x%lx, 0x%lx)\n",
+    timestamp.global.kernelStart, timestamp.global.kernelEnd);
+
+  uint64_t start_host_time =
+    level0_convert_device_time_to_host_time(hDevice, dispatch,
+      timestamp.global.kernelStart);
+  uint64_t end_host_time =
+    level0_convert_device_time_to_host_time(hDevice, dispatch,
+      timestamp.global.kernelEnd);
 
   // Attribute this event
-  level0_command_end(data, start, end);
+  level0_command_end(data, start_host_time, end_host_time);
 
   // We need to release the event and event_pool to level 0
   // if they are created by us.
@@ -247,6 +222,7 @@ level0_attribute_event
   // Free data structure for this event
   level0_event_map_delete(event);
 }
+
 
 
 static void
@@ -1134,36 +1110,6 @@ level0_gtpin_enabled
   return gtpin_instrumentation;
 }
 
-// adjust device timestamp to be consistent with host realtime
-uint64_t
-level0_timestamp_to_realtime
-(
-  uint64_t host_submit_time,
-  uint64_t device_time
-)
-{
-#if 0
-  // adjust device timestamp with offset between host and device
-  // that was computed when device was configured for use.
-  uint64_t result = device_time + clock_offset_ns_from_level0;
-#else
-  // approximately compute the offset between device and host by assuming
-  // that the first GPU operation reported executes on the host at the
-  // time it was submitted.
-  static volatile _Atomic uint64_t clock_offset_ns_from_submit = 0;
-  if (clock_offset_ns_from_submit == 0) {
-     uint64_t zero = 0;
-     uint64_t offset = host_submit_time - device_time;
-     atomic_compare_exchange_strong(&clock_offset_ns_from_submit, &zero, offset);
-  }
-#endif
-
-  uint64_t result = device_time + clock_offset_ns_from_submit;
-
-  PRINT("level0_timestamp_to_realtime(%ld) --> %ld\n", device_time, result);
-
-  return result;
-}
 
 bool
 level0_metrics_requested
@@ -1172,4 +1118,20 @@ level0_metrics_requested
 )
 {
   return level0_metrics_env;
+}
+
+
+void
+level0_check_result
+(
+  ze_result_t result,
+  int lineNo
+)
+{
+  if (result == ZE_RESULT_SUCCESS) return;
+
+  EEMSG("hpcrun: Level Zero API failed: %s",
+        ze_result_to_string(result));
+
+  exit(1);
 }

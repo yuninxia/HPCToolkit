@@ -4,15 +4,15 @@
 
 // -*-Mode: C++;-*- // technically C99
 
-#ifndef __hpcrun_nanotime_h__
-#define __hpcrun_nanotime_h__
+#ifndef level0_timestamps_h
+#define level0_timestamps_h
 
 //*****************************************************************************
-// system includes
+// includes
 //*****************************************************************************
 
-#include <time.h>
 #include <stdint.h>
+#include "../../../../foil/level0.h"
 
 
 
@@ -21,30 +21,11 @@
 //*****************************************************************************
 
 uint64_t
-hpcrun_nanotime
+level0_convert_device_time_to_host_time
 (
-  void
-);
-
-
-int32_t
-hpcrun_nanosleep
-(
-  uint32_t nsec
-);
-
-
-uint64_t
-hpcrun_nanotime_clock
-(
-  clockid_t clock
-);
-
-
-uint64_t
-hpcrun_nanotime_real_boot_offset
-(
-  void
+  ze_device_handle_t hDevice,
+  const struct hpcrun_foil_appdispatch_level0 *dispatch,
+  uint64_t device_time
 );
 
 #endif

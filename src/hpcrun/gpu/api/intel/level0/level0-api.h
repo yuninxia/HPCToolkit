@@ -229,17 +229,18 @@ level0_gtpin_enabled
   void
 );
 
-uint64_t
-level0_timestamp_to_realtime
-(
-  uint64_t host_submit_time,
-  uint64_t device_time
-);
 
 bool
 level0_metrics_requested
 (
   void
+);
+
+void
+level0_check_result
+(
+  ze_result_t result,
+  int lineNo
 );
 
 #endif
