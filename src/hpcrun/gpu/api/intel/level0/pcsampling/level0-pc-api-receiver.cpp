@@ -249,6 +249,19 @@ enableNewThreads()
     }
 }
 
+//-----------------------------------------------------------------------------
+// sample period
+//-----------------------------------------------------------------------------
+
+
+uint64_t
+get_sampling_period()
+{
+    if (hpcrun_api && hpcrun_api->get_sample_period) {
+        return hpcrun_api->get_sample_period();
+    }
+    return 0;
+}
 
 //-----------------------------------------------------------------------------
 // Error handling wrappers

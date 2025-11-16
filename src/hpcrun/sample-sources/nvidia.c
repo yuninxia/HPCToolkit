@@ -253,7 +253,7 @@ METHOD_FN(process_event_list)
       gpu_monitoring_instruction_sampling_period_set(pc_sampling_period);
 
       gpu_metrics_GPU_INST_enable(); // instruction counts
-
+      gpu_metrics_GPU_INST_TYPE_enable(); // instruction type metrics
       gpu_metrics_GPU_INST_STALL_enable(); // stall metrics
 
       gpu_metrics_GSAMP_enable(); // GPU utilization from sampling

@@ -242,9 +242,13 @@ convert_pcsampling
   set_gpu_instruction_fields(&ga->details.instruction, activity->correlationId,
            activity->functionId, activity->pcOffset, correlation_id);
 
-  ga->details.pc_sampling.stallReason = convert_stall_type(activity->stallReason);
-  ga->details.pc_sampling.samples = activity->samples;
-  ga->details.pc_sampling.latencySamples = activity->latencySamples;
+  // stall reason only matters if latency is exposed (activity->latencySamples > 0)
+  ga->details.pc_sampling.issue_stall_reason = activity->latencySamples > 0 ?
+    convert_stall_type(activity->stallReason) : GPU_INST_STALL_DONTCARE;
+  ga->details.pc_sampling.issues = activity->samples;
+  ga->details.pc_sampling.non_issues = activity->latencySamples;
+  ga->details.pc_sampling.issue_stall_exposed = activity->latencySamples > 0;
+  ga->details.pc_sampling.inst_type = GPU_INST_TYPE_ISSUED;
 
   cuda_correlation_id_map_entry_t *correlation_entry =
     cuda_correlation_id_map_lookup(activity->correlationId);

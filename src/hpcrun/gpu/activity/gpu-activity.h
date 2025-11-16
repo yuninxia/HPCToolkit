@@ -112,21 +112,72 @@ typedef enum {
 } gpu_memcpy_type_t;
 
 typedef enum {
-  GPU_INST_STALL_NONE = 1,
-  GPU_INST_STALL_IFETCH = 2,
-  GPU_INST_STALL_IDEPEND = 3,
-  GPU_INST_STALL_MEM = 4,
-  GPU_INST_STALL_GMEM = 5,
-  GPU_INST_STALL_TMEM = 6,
-  GPU_INST_STALL_SYNC = 7,
-  GPU_INST_STALL_CMEM = 8,
-  GPU_INST_STALL_PIPE_BUSY = 9,
-  GPU_INST_STALL_MEM_THROTTLE = 10,
-  GPU_INST_STALL_NOT_SELECTED = 11,
-  GPU_INST_STALL_OTHER = 12,
-  GPU_INST_STALL_SLEEP = 13,
-  GPU_INST_STALL_INVALID = 14,
+  GPU_INST_STALL_NONE = 0, // note: GPU_INST_STALL_ANY=0 as well; NONE is never saved
+  GPU_INST_STALL_IFETCH = 1,
+  GPU_INST_STALL_IDEPEND = 2,
+  GPU_INST_STALL_MEM = 3,
+  GPU_INST_STALL_GMEM = 4,
+  GPU_INST_STALL_TMEM = 5,
+  GPU_INST_STALL_SYNC = 6,
+  GPU_INST_STALL_CMEM = 7,
+  GPU_INST_STALL_PIPE_BUSY = 8,
+  GPU_INST_STALL_MEM_THROTTLE = 9,
+  GPU_INST_STALL_NOT_SELECTED = 10,
+  GPU_INST_STALL_OTHER = 11,
+  GPU_INST_STALL_SLEEP = 12,
+  GPU_INST_STALL_DONTCARE = 13,
+  GPU_INST_STALL_INVALID = 14
 } gpu_inst_stall_t;
+
+typedef enum {
+  GPU_INST_TYPE_NONE = 0,
+  GPU_INST_TYPE_VECTOR_DUAL, // 2 simple 32-bit instructions, no dep --> main + limited secondary units
+  GPU_INST_TYPE_VECTOR,
+  GPU_INST_TYPE_MATRIX,
+  GPU_INST_TYPE_SCALAR,
+  GPU_INST_TYPE_TEXTURE, // texture sample or image_load
+  GPU_INST_TYPE_LDS,       // AMD: Local Data Share (LDS); NVIDIA: shared memory;
+  GPU_INST_TYPE_LDS_DIRECT, // global --> LDS, permute?, swizzle?
+  GPU_INST_TYPE_FLAT, // access to: global memory, LDS, scratch (spill area), host memory
+  GPU_INST_TYPE_EXPORT, // graphics only: to transmit final pixel or vectex data
+  GPU_INST_TYPE_MSG, // graphics pipeline control or interrupt CPU
+  GPU_INST_TYPE_BARRIER, // wait for all threads in workgroup
+  GPU_INST_TYPE_BRANCH_TAKEN,
+  GPU_INST_TYPE_BRANCH_NOT_TAKEN,
+  GPU_INST_TYPE_JUMP,
+  GPU_INST_TYPE_OTHER,
+  GPU_INST_TYPE_ISSUED,
+  GPU_INST_TYPE_UNUSED // NOTE: this must be last because it has no metric
+} gpu_inst_type_t;
+
+typedef enum {
+  GPU_UTIL_METRICS_WAVE_ACT = 0,
+  GPU_UTIL_METRICS_WAVE_AVL = 1,
+  GPU_UTIL_METRICS_WAVE_UTL = 2,
+  GPU_UTIL_METRICS_THR_ACT = 3,
+  GPU_UTIL_METRICS_THR_AVL = 4,
+  GPU_UTIL_METRICS_THR_UTL = 5,
+  GPU_UTIL_METRICS_LAST = 6
+} gpu_inst_metrics_t;
+
+#define FORALL_AMD_GPU_PIPES(macro)                                                                  \
+  macro(GPU_PIPE_TYPE_VECTOR_DUAL, vector_dual_alu) /* 2 simple 32-bit VALU ops, no dep           */ \
+  macro(GPU_PIPE_TYPE_VECTOR,      vector_alu)      /* full VALU instructions                     */ \
+  macro(GPU_PIPE_TYPE_MATRIX,      matrix)          /* matrix instructions                        */ \
+  macro(GPU_PIPE_TYPE_SCALAR,      scalar)          /* SALU or SMEM instructions                  */ \
+  macro(GPU_PIPE_TYPE_LDS,         lds)             /* LDS instructions                           */ \
+  macro(GPU_PIPE_TYPE_LDS_DIRECT,  lds_direct)      /* LDS direct instructions                    */ \
+  macro(GPU_PIPE_TYPE_TEXTURE,     texture)         /* texture sample or image_load               */ \
+  macro(GPU_PIPE_TYPE_FLAT,        flat)            /* mem access: global, LDS, scratch, host     */ \
+  macro(GPU_PIPE_TYPE_EXPORT,      xport)           /* graphics only: xmit final pixel or vertex  */ \
+  macro(GPU_PIPE_TYPE_BRMSG,       branch_msg)      /* graphics pipeline control or interrupt CPU */ \
+  macro(GPU_PIPE_TYPE_MISC,        misc)            /* miscellaneous instructions                 */
+
+#define DECL_ENUM(enum, field) enum,
+typedef enum {
+  FORALL_AMD_GPU_PIPES(DECL_ENUM)
+  GPU_PIPE_TYPE_LAST
+} gpu_pipeline_type_t;
 
 typedef enum {
   GPU_MEM_ARRAY = 0,
@@ -199,13 +250,32 @@ typedef enum {
   GPU_SCRATCH_MEMORY_ILLEGAL
 } gpu_scratch_op_t;
 
+#define BITFIELD16(field) uint16_t field : 1;
+#define DECL_BITFIELD(enum, field) BITFIELD16(field)
+typedef struct gpu_pipeline_status_t {
+  BITFIELD16(available)    // info is available about pipelines
+  FORALL_AMD_GPU_PIPES(DECL_BITFIELD)
+} gpu_pipeline_status_t;
+
+typedef struct gpu_pipeline_info_t {
+  gpu_pipeline_status_t issued;
+  gpu_pipeline_status_t stalled;
+} gpu_pipeline_info_t;
+
 // pc sampling
 typedef struct gpu_pc_sampling_t {
   uint64_t correlation_id;
   ip_normalized_t pc;
-  uint32_t samples;
-  uint32_t latencySamples;
-  gpu_inst_stall_t stallReason;
+  uint32_t issues;
+  uint32_t non_issues;
+  gpu_inst_stall_t issue_stall_reason;
+  bool issue_stall_exposed;
+  gpu_inst_type_t inst_type;
+  gpu_pipeline_info_t pipeline_info;
+  uint32_t waves_active;
+  uint32_t waves_available;
+  uint32_t threads_active;
+  uint32_t threads_available;
 } gpu_pc_sampling_t;
 
 typedef struct gpu_pc_sampling_info_t {

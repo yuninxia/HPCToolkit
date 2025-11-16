@@ -147,6 +147,11 @@ rocm_sampling_interval_for_config
   size_t interval = (config->min_interval == config->max_interval) ?
     config->min_interval : rocm_sampling_interval_get();
 
+  if (config->method == ROCPROFILER_PC_SAMPLING_METHOD_HOST_TRAP) {
+    // period is specified in ns; sampling interval needs to be in us
+    interval = interval >> 10;
+  }
+
   PRINT("rocm_sampling_interval_for_config: min=%ld, max=%ld, interval=%ld\n",
         config->min_interval, config->max_interval, interval);
 

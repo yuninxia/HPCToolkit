@@ -66,6 +66,7 @@ static const struct {
   uint64_t EuStalls::* stall_value;
   gpu_inst_stall_t reason;
 } stall_mappings[] = {
+    {&EuStalls::active_,    GPU_INST_STALL_NONE},
     // The normalized sum of all cycles on all cores when the XVE was stalled with at least one thread waiting
     // for a Branch unit to become available. Multiple stall reasons can qualify during the same cycle.
     {&EuStalls::control_,   GPU_INST_STALL_IFETCH},
@@ -80,7 +81,7 @@ static const struct {
     // thread waiting for a Distance or Architecture Register File (ARF) dependency to resolve.
     // Multiple stall reasons can qualify during the same cycle.
     {&EuStalls::dist_,      GPU_INST_STALL_OTHER},
-    {&EuStalls::sbid_,      GPU_INST_STALL_IDEPEND},
+    {&EuStalls::sbid_,      GPU_INST_STALL_MEM},
     {&EuStalls::sync_,      GPU_INST_STALL_SYNC},
     {&EuStalls::insfetch_,  GPU_INST_STALL_IFETCH},
     {&EuStalls::other_,     GPU_INST_STALL_OTHER}
@@ -115,11 +116,14 @@ fillPCSamplingActivityFields
 {
   activity->details.pc_sampling.pc.lm_ip = lm_ip;
   activity->details.pc_sampling.correlation_id = correlation_id;
-  activity->details.pc_sampling.samples = stall_count;
 
-  // FIXME(Yuning): latencySamples may not be accurate
-  activity->details.pc_sampling.latencySamples = stall_count;
-  activity->details.pc_sampling.stallReason = stall_reason;
+  uint32_t issues = (stall_reason == GPU_INST_STALL_NONE) ? stall_count : 0;
+  uint32_t stalls = (stall_reason != GPU_INST_STALL_NONE) ? stall_count : 0;
+  activity->details.pc_sampling.issues = issues;
+  activity->details.pc_sampling.inst_type = GPU_INST_TYPE_ISSUED;
+
+  activity->details.pc_sampling.non_issues = stalls;
+  activity->details.pc_sampling.issue_stall_reason = stall_reason;
 }
 
 static bool

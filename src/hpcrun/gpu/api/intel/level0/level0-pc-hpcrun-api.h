@@ -19,6 +19,7 @@
 #include <level_zero/layers/zel_tracing_api.h>
 
 #include "../../../../../common/lean/mcs-lock.h"
+#include "../../../common/gpu-monitoring.h"
 
 
 //******************************************************************************
@@ -87,6 +88,9 @@ typedef struct level0_pc_hpcrun_api_t {
     // Thread management - Must use hpcrun's thread infrastructure
     int (*create_profiling_thread)(void* (*thread_func)(void*), void* arg, const char* name);
     void (*join_profiling_thread)(int thread_id);
+
+    // sample period
+    gpu_instruction_sampling_period_t (*get_sample_period)();
 
     // Error handling - No exit() calls allowed
     level0_pc_error_handler_t error_handler;

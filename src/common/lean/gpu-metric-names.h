@@ -14,5 +14,6 @@
 //*****************************************************************************
 
 #define GPU_INST_METRIC_NAME "GINS"
+#define GPU_PIPE_METRIC_NAME "GPIPE"
 
 #endif
