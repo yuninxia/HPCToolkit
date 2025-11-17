@@ -100,13 +100,31 @@ OPTIONS: PROFILING
 
   - See the "Sample sources" under **NOTES** for additional details.
 
--e <gpu=nvidia[,pc]>, --event <gpu=nvidia[,pc]>
+-e <gpu=cuda>, --event <gpu=cuda[,pc]>
   Collect comprehensive operation-level measurements for CUDA programs on NVIDIA GPUs, including timing of GPU kernel invocations, memory copies (implicit and explicit), driver and runtime activity, and overhead.
   If the optional argument ``pc`` is used, the GPU will collect instruction-level measurements of GPU kernels using Program Counter (PC) sampling in addition to the operation-level data.
-  PC sampling attributes STALL reasons to individual GPU instructions.
+  On NVIDIA GPUs, PC sampling collects the program counter value (an instruction address), whether the
+  instruction issued or not, and the kind of stall (if any) blocking the instruction from being issued.
 
--e <gpu=amd>, --event <gpu=amd>
+--event <gpu=level0>, -e <gpu=level0[,pc]>
+  Collect comprehensive operation-level measurements for CUDA programs on Intel GPUs, including timing of GPU kernel invocations and memory copies.
+  If the optional argument ``pc`` is used, the GPU will collect instruction-level measurements of GPU kernels using Program Counter (PC) sampling in addition to the operation-level data.
+  On Intel GPUs, PC sampling collects the program counter value (an instruction address), whether the
+  instruction issued or not, and the kind of stall (if any) blocking the instruction from being issued.
+
+--event <gpu=rocm>, -e <gpu=rocm[,pc[={sw,hw}]]>
   Collect comprehensive operation-level measurements for HIP programs on AMD GPUs, including timing of GPU kernel invocations, memory copies (implicit and explicit), driver and runtime activity, and overhead.
+  If the optional argument ``pc`` is used, the GPU will collect instruction-level measurements of GPU kernels using Program Counter (PC) sampling in addition to the operation-level data. An AMD GPU may support
+  one or more kinds of PC sampling, which are performed either by software ('sw') or hardware ('hw').
+
+  Software PC sampling, available on MI200+ GPUs, halts a GPU, extracts the program counter for each active GPU wave,
+  and reports the set of program counter values it observed.
+
+  Hardware  PC sampling, available on MI300+ GPUs, collects much richer information.
+  Each PC sample includes the program counter value (an instruction address), kind of instruction at that address, whether the
+  instruction issued or not, kind of stall (if any) blocking the instruction from being issued, what pipelines issued in the
+  sampled cycle, what pipelines stalled in the sampled cycle, the utilization of available wave slots, and the utilization of
+  available SIMD lanes.
 
 -e <gpu=opencl>, --event <gpu=opencl>
   Collect comprehensive operation-level measurements for OpenCL programs on AMD, Intel, or NVIDIA GPUs, including timing of GPU kernel invocations, memory copies (implicit and explicit), driver and runtime activity, and overhead.
