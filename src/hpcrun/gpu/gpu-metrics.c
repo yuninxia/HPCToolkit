@@ -501,7 +501,7 @@ gpu_metrics_attribute_pc_sampling
 
     // attribute general instruction issue metric
     gpu_metrics_attribute_metric_int(issue_metric, issue_metric_id, issue_count);
- 
+
     // attribute specific instruction issue metric
     gpu_metrics_attribute_inst_type(cct_node, sinfo, issue_count);
   }
@@ -516,7 +516,7 @@ gpu_metrics_attribute_pc_sampling
     gpu_metrics_attribute_pipe_stall_status(cct_node, sinfo, sample_period);
   }
 
-  if (sinfo->issue_stall_reason != GPU_INST_STALL_HIDDEN && 
+  if (sinfo->issue_stall_reason != GPU_INST_STALL_HIDDEN &&
       sinfo->issue_stall_reason != GPU_INST_STALL_INVALID) {
     int stall_summary_metric_index =
       METRIC_ID(GPU_INST_STALL)[GPU_INST_STALL_ANY];
