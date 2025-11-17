@@ -192,6 +192,7 @@ METHOD_FN(process_event_list)
 
     gpu_monitoring_instruction_sampling_period_set(1 << sampling_period_log);
 
+    gpu_metrics_GPU_CYCLES_TYPE_enable();
     gpu_metrics_GPU_INST_enable(); // instruction counts
     gpu_metrics_GPU_INST_TYPE_enable();
     gpu_metrics_GPU_INST_STALL_enable();

@@ -588,9 +588,9 @@ get_instruction_class
 {
 #define CASE(rtype, type) case rtype: itype = type; break;
 
-  gpu_inst_type_t itype = GPU_INST_TYPE_NONE;
+  gpu_inst_type_t itype = GPU_INST_TYPE_UNKNOWN;
   switch(pcs->inst_type) {
-    CASE(ROCPROFILER_PC_SAMPLING_INSTRUCTION_TYPE_NONE,             GPU_INST_TYPE_NONE)
+    CASE(ROCPROFILER_PC_SAMPLING_INSTRUCTION_TYPE_NONE,             GPU_INST_TYPE_UNKNOWN)
     CASE(ROCPROFILER_PC_SAMPLING_INSTRUCTION_TYPE_VALU,             GPU_INST_TYPE_VECTOR)
     CASE(ROCPROFILER_PC_SAMPLING_INSTRUCTION_TYPE_DUAL_VALU,        GPU_INST_TYPE_VECTOR_DUAL)
     CASE(ROCPROFILER_PC_SAMPLING_INSTRUCTION_TYPE_MATRIX,           GPU_INST_TYPE_MATRIX)
@@ -606,16 +606,15 @@ get_instruction_class
     CASE(ROCPROFILER_PC_SAMPLING_INSTRUCTION_TYPE_BRANCH_TAKEN,     GPU_INST_TYPE_BRANCH_NOT_TAKEN)
     CASE(ROCPROFILER_PC_SAMPLING_INSTRUCTION_TYPE_JUMP,             GPU_INST_TYPE_JUMP)
     CASE(ROCPROFILER_PC_SAMPLING_INSTRUCTION_TYPE_OTHER,            GPU_INST_TYPE_OTHER)
-    CASE(ROCPROFILER_PC_SAMPLING_INSTRUCTION_TYPE_NO_INST,          GPU_INST_TYPE_NONE)
-    CASE(ROCPROFILER_PC_SAMPLING_INSTRUCTION_TYPE_LAST,             GPU_INST_TYPE_UNUSED) // never at runtime
+    CASE(ROCPROFILER_PC_SAMPLING_INSTRUCTION_TYPE_NO_INST,          GPU_INST_TYPE_UNKNOWN)
+    CASE(ROCPROFILER_PC_SAMPLING_INSTRUCTION_TYPE_LAST,             GPU_INST_TYPE_UNKNOWN) // never at runtime
   }
 
 #undef CASE
 
   if (pcs->snapshot.reason_not_issued ==
     ROCPROFILER_PC_SAMPLING_INSTRUCTION_NOT_ISSUED_REASON_NO_INSTRUCTION_AVAILABLE) {
-    assert(itype == GPU_INST_TYPE_NONE); // learn if this assertion holds
-    itype = GPU_INST_TYPE_NONE;
+    itype = GPU_INST_TYPE_UNKNOWN;
   }
 
   return itype;
@@ -629,6 +628,8 @@ stall_not_exposed
 )
 {
   switch(itype) {
+    case GPU_INST_TYPE_ANY:               assert(0); break; // never!
+
     case GPU_INST_TYPE_VECTOR:            return pinfo.issued.vector_alu;
 
     case GPU_INST_TYPE_MATRIX:
@@ -642,9 +643,7 @@ stall_not_exposed
 
     case GPU_INST_TYPE_FLAT:              return pinfo.issued.flat;
     case GPU_INST_TYPE_EXPORT:            return pinfo.issued.xport;
-    case GPU_INST_TYPE_NONE:              return false;
-    case GPU_INST_TYPE_UNUSED:            return false;
-    case GPU_INST_TYPE_ISSUED:            return true;
+    case GPU_INST_TYPE_UNKNOWN:           return false;
 
     case GPU_INST_TYPE_BRANCH_TAKEN:
     case GPU_INST_TYPE_BRANCH_NOT_TAKEN:
@@ -671,13 +670,13 @@ convert_stall_type
 
   gpu_inst_stall_t stall = GPU_INST_STALL_NONE;
   switch(pcs->snapshot.reason_not_issued) {
-    CASE(ROCPROFILER_PC_SAMPLING_INSTRUCTION_NOT_ISSUED_REASON_NONE,                     GPU_INST_STALL_NONE)
+    CASE(ROCPROFILER_PC_SAMPLING_INSTRUCTION_NOT_ISSUED_REASON_NONE,                     GPU_INST_STALL_HIDDEN)
     CASE(ROCPROFILER_PC_SAMPLING_INSTRUCTION_NOT_ISSUED_REASON_NO_INSTRUCTION_AVAILABLE, GPU_INST_STALL_IFETCH)
     CASE(ROCPROFILER_PC_SAMPLING_INSTRUCTION_NOT_ISSUED_REASON_ALU_DEPENDENCY,           GPU_INST_STALL_IDEPEND)
     CASE(ROCPROFILER_PC_SAMPLING_INSTRUCTION_NOT_ISSUED_REASON_WAITCNT,                  GPU_INST_STALL_MEM)
     CASE(ROCPROFILER_PC_SAMPLING_INSTRUCTION_NOT_ISSUED_REASON_INTERNAL_INSTRUCTION,     GPU_INST_STALL_OTHER)
     CASE(ROCPROFILER_PC_SAMPLING_INSTRUCTION_NOT_ISSUED_REASON_BARRIER_WAIT,             GPU_INST_STALL_SYNC)
-    CASE(ROCPROFILER_PC_SAMPLING_INSTRUCTION_NOT_ISSUED_REASON_ARBITER_NOT_WIN,          GPU_INST_STALL_DONTCARE)
+    CASE(ROCPROFILER_PC_SAMPLING_INSTRUCTION_NOT_ISSUED_REASON_ARBITER_NOT_WIN,          GPU_INST_STALL_HIDDEN)
     CASE(ROCPROFILER_PC_SAMPLING_INSTRUCTION_NOT_ISSUED_REASON_ARBITER_WIN_EX_STALL,     GPU_INST_STALL_PIPE_BUSY)
     CASE(ROCPROFILER_PC_SAMPLING_INSTRUCTION_NOT_ISSUED_REASON_OTHER_WAIT,               GPU_INST_STALL_OTHER)
     CASE(ROCPROFILER_PC_SAMPLING_INSTRUCTION_NOT_ISSUED_REASON_SLEEP_WAIT,               GPU_INST_STALL_SLEEP)
@@ -753,7 +752,7 @@ convert_pc_sampling_hw
   bool stall_exposed = !stall_not_exposed(ga->details.pc_sampling.inst_type,
       ga->details.pc_sampling.pipeline_info);
 
-  ga->details.pc_sampling.issue_stall_reason = stall_exposed ? stall : GPU_INST_STALL_DONTCARE;
+  ga->details.pc_sampling.issue_stall_reason = stall_exposed ? stall : GPU_INST_STALL_HIDDEN;
   ga->details.pc_sampling.issue_stall_exposed = stall_exposed;
 
   ga->details.pc_sampling.waves_active = pcs->wave_count;
@@ -838,7 +837,7 @@ convert_pc_sampling_sw
   ga->details.pc_sampling.issue_stall_reason = GPU_INST_STALL_NONE;
   ga->details.pc_sampling.issues = 1;
   ga->details.pc_sampling.non_issues = 0;
-  ga->details.pc_sampling.inst_type = GPU_INST_TYPE_ISSUED;
+  ga->details.pc_sampling.inst_type = GPU_INST_TYPE_UNKNOWN;
 
 
   PRINT("PC sample GA: pc [0x%d, 0x%lx], corr 0x%lx, "

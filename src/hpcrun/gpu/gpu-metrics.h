@@ -19,6 +19,11 @@
 // types
 //*****************************************************************************
 
+
+typedef enum {
+  GPU_CYCLES_TYPE_ANY = 0
+} gpu_cycles_all_t;
+
 typedef enum {
   GPU_INST_STALL_ANY = 0
 } gpu_inst_stall_all_t;
@@ -129,53 +134,91 @@ typedef struct instruction_metrics_t {
   macro("GMSET:COUNT", GPU_MEM_COUNT,                                   \
         "GPU memory set: count")
 
+// GPU cycles
+#define FORALL_GPU_CYCLES_TYPE(macro)                                     \
+  macro("GCYCLES", GPU_CYCLES_TYPE_ANY,                                   \
+        "GPU cycles (estimated using PC sampling)")
+
 // GPU instructions issued
-#define FORALL_GPU_INST_TYPE(macro)                                     \
-  macro(GPU_INST_METRIC_NAME ":ANY", GPU_INST_TYPE_ISSUED,              \
-        "GPU instruction issue: any issued instruction")                \
-  macro(GPU_INST_METRIC_NAME ":NONE", GPU_INST_TYPE_NONE,               \
-        "GPU instruction issue: not issued")                            \
-  macro(GPU_INST_METRIC_NAME ":VEC2", GPU_INST_TYPE_VECTOR_DUAL,        \
-        "GPU instruction issue: vector, dual issue")                    \
-  macro(GPU_INST_METRIC_NAME ":VEC", GPU_INST_TYPE_VECTOR,              \
-        "GPU instruction issue: vector")                                \
-  macro(GPU_INST_METRIC_NAME ":MATR", GPU_INST_TYPE_MATRIX,             \
-        "GPU instruction issue: matrix")                                \
-  macro(GPU_INST_METRIC_NAME ":SCLR", GPU_INST_TYPE_SCALAR,             \
-        "GPU instruction issue: scalar")                                \
-  macro(GPU_INST_METRIC_NAME ":TEX", GPU_INST_TYPE_TEXTURE,             \
-        "GPU instruction issue: texture")                               \
-  macro(GPU_INST_METRIC_NAME ":LDS", GPU_INST_TYPE_LDS,                 \
-        "GPU instruction issue: Local Data Store")                      \
-  macro(GPU_INST_METRIC_NAME ":LDSD", GPU_INST_TYPE_LDS_DIRECT,         \
-        "GPU instruction issue: Local Data Store direct")               \
-  macro(GPU_INST_METRIC_NAME ":FLAT", GPU_INST_TYPE_FLAT,               \
-        "GPU instruction issue: flat")                                  \
-  macro(GPU_INST_METRIC_NAME ":XPRT", GPU_INST_TYPE_EXPORT,             \
-        "GPU instruction issue: export")                                \
-  macro(GPU_INST_METRIC_NAME ":MESG", GPU_INST_TYPE_MSG,                \
-        "GPU instruction issue: message")                               \
-  macro(GPU_INST_METRIC_NAME ":BAR", GPU_INST_TYPE_BARRIER,             \
-        "GPU instruction issue: barrier")                               \
-  macro(GPU_INST_METRIC_NAME ":BRT", GPU_INST_TYPE_BRANCH_TAKEN,        \
-        "GPU instruction issue: branch taken")                          \
-  macro(GPU_INST_METRIC_NAME ":BRNT", GPU_INST_TYPE_BRANCH_NOT_TAKEN,   \
-        "GPU instruction issue: branch not taken")                      \
-  macro(GPU_INST_METRIC_NAME ":JMP", GPU_INST_TYPE_JUMP,                \
-        "GPU instruction issue: jump")                                  \
-  macro(GPU_INST_METRIC_NAME ":OTHR", GPU_INST_TYPE_OTHER,              \
-        "GPU instruction issue: other")
+#define FORALL_GPU_INST_TYPE(macro)                                       \
+  macro("GCYCLES:ISU", GPU_INST_TYPE_ANY,                                 \
+        "GPU issue cycles: issued any instruction")                       \
+  macro("GCYCLES:ISU:MATR", GPU_INST_TYPE_MATRIX,                         \
+        "GPU issue cycles: issued matrix instruction")                    \
+  macro("GCYCLES:ISU:VEC2", GPU_INST_TYPE_VECTOR_DUAL,                    \
+        "GPU issue cycles: issued dual vector instructions")              \
+  macro("GCYCLES:ISU:VEC", GPU_INST_TYPE_VECTOR,                          \
+        "GPU issue cycles: issued a vector instruction")                  \
+  macro("GCYCLES:ISU:SCLR", GPU_INST_TYPE_SCALAR,                         \
+        "GPU issue cycles: issued a scalar instruction")                  \
+  macro("GCYCLES:ISU:TEX", GPU_INST_TYPE_TEXTURE,                         \
+        "GPU issue cycles: issued a texture instruction")                 \
+  macro("GCYCLES:ISU:LDS", GPU_INST_TYPE_LDS,                             \
+        "GPU issue cycles: issued a Local Data Store instruction")        \
+  macro("GCYCLES:ISU:LDSD", GPU_INST_TYPE_LDS_DIRECT,                     \
+        "GPU issue cycles: issued a Local Data Store direct instruction") \
+  macro("GCYCLES:ISU:FLAT", GPU_INST_TYPE_FLAT,                           \
+        "GPU issue cycles: issued a flat instruction")                    \
+  macro("GCYCLES:ISU:XPRT", GPU_INST_TYPE_EXPORT,                         \
+        "GPU issue cycles: issued an export instruction")                 \
+  macro("GCYCLES:ISU:MESG", GPU_INST_TYPE_MSG,                            \
+        "GPU issue cycles: issued a message instruction")                 \
+  macro("GCYCLES:ISU:BAR", GPU_INST_TYPE_BARRIER,                         \
+        "GPU issue cycles: issued a barrier instruction")                 \
+  macro("GCYCLES:ISU:BRT", GPU_INST_TYPE_BRANCH_TAKEN,                    \
+        "GPU issue cycles: issued a branch taken instruction")            \
+  macro("GCYCLES:ISU:BRNT", GPU_INST_TYPE_BRANCH_NOT_TAKEN,               \
+        "GPU issue cycles: issued a branch not taken instruction")        \
+  macro("GCYCLES:ISU:JMP", GPU_INST_TYPE_JUMP,                            \
+        "GPU issue cycles: issued a jump instruction")                    \
+  macro("GCYCLES:ISU:OTHR", GPU_INST_TYPE_OTHER,                          \
+        "GPU issue cycles: issued an 'other' instruction")
 
-
+#define FORALL_GPU_INST_STALL(macro)                                      \
+  macro("GCYCLES:STL", GPU_INST_STALL_ANY,                                \
+        "GPU exposed instruction issue stall cycles: any kind")           \
+  macro("GCYCLES:STL:MEM", GPU_INST_STALL_MEM,                            \
+        "GPU exposed instruction issue stall cycles: await completion of a kind of memory "   \
+        "access")                                                         \
+  macro("GCYCLES:STL:GMEM", GPU_INST_STALL_GMEM,                          \
+        "GPU exposed instruction issue stall cycles: await completion of a global memory "      \
+        "access")                                                         \
+  macro("GCYCLES:STL:MTHR", GPU_INST_STALL_MEM_THROTTLE,                  \
+        "GPU exposed instruction issue stall cycles: global memory request queue full")       \
+  macro("GCYCLES:STL:TMEM", GPU_INST_STALL_TMEM,                          \
+        "GPU exposed instruction issue stall cycles: texture memory request queue full")      \
+  macro("GCYCLES:STL:CMEM", GPU_INST_STALL_CMEM,                          \
+        "GPU exposed instruction issue stall cycles: await completion of constant or "        \
+        "immediate memory access")                                        \
+  macro("GCYCLES:STL:IFET", GPU_INST_STALL_IFETCH,                        \
+        "GPU exposed instruction issue stall cycles: await availability of next "             \
+        "instruction (fetch or branch delay)")                            \
+  macro("GCYCLES:STL:IDEP", GPU_INST_STALL_IDEPEND,                       \
+        "GPU exposed instruction issue stall cycles: await satisfaction of instruction "      \
+        "input dependence")                                               \
+  macro("GCYCLES:STL:PIPE", GPU_INST_STALL_PIPE_BUSY,                     \
+        "GPU exposed instruction issue stall cycles: await completion of required "           \
+        "compute resources")                                              \
+  macro("GCYCLES:STL:SYNC", GPU_INST_STALL_SYNC,                          \
+        "GPU exposed instruction issue stall cycles: await completion of thread or "          \
+        "memory synchronization")                                         \
+  macro("GCYCLES:STL:OTHR", GPU_INST_STALL_OTHER,                         \
+        "GPU exposed instruction issue stall cycles: other")                                  \
+  macro("GCYCLES:STL:SLP", GPU_INST_STALL_SLEEP,                          \
+        "GPU exposed instruction issue stall cycles: sleep")                                  \
+  macro("GCYCLES:STL:HID", GPU_INST_STALL_HIDDEN,                         \
+        "GPU exposed instruction issue stall cycles: don't care because latency hidden")      \
+  macro("GCYCLES:STL:INV", GPU_INST_STALL_INVALID,                        \
+        "GPU exposed instruction issue stall cycles: invalid")
 
 // GPU pipeline status: instantiate with either "STL" or "ISS"
 #define FORALL_GPU_PIPE_TYPE(macro, si)                                 \
+  macro(GPU_PIPE_METRIC_NAME ":" si ":MATR", GPU_PIPE_TYPE_MATRIX,      \
+        "GPU pipeline " si " status: low precision matrix operation")   \
   macro(GPU_PIPE_METRIC_NAME ":" si ":VEC2", GPU_PIPE_TYPE_VECTOR_DUAL, \
-        "GPU pipeline " si " status: vector, dual issue")               \
+        "GPU pipeline " si " status: vector, dual")                     \
   macro(GPU_PIPE_METRIC_NAME ":" si ":VEC", GPU_PIPE_TYPE_VECTOR,       \
         "GPU pipeline " si " status: vector")                           \
-  macro(GPU_PIPE_METRIC_NAME ":" si ":MATR", GPU_PIPE_TYPE_MATRIX,      \
-        "GPU pipeline " si " status: low precision MFMA")               \
   macro(GPU_PIPE_METRIC_NAME ":" si ":SCLR", GPU_PIPE_TYPE_SCALAR,      \
         "GPU pipeline " si " status: scalar ALU or memory")             \
   macro(GPU_PIPE_METRIC_NAME ":" si ":LDS", GPU_PIPE_TYPE_LDS,          \
@@ -196,58 +239,20 @@ typedef struct instruction_metrics_t {
 #define FORALL_GPU_PIPE_TYPE_ISS(macro) FORALL_GPU_PIPE_TYPE(macro, "ISU")
 #define FORALL_GPU_PIPE_TYPE_STL(macro) FORALL_GPU_PIPE_TYPE(macro, "STL")
 
-#define FORALL_GPU_INST_STALL(macro)                                    \
-  macro(GPU_INST_METRIC_NAME ":STL:ANY", GPU_INST_STALL_ANY,            \
-        "GPU instruction stalls: any")                                  \
-  macro(GPU_INST_METRIC_NAME ":STL:MEM", GPU_INST_STALL_MEM,            \
-        "GPU instruction stalls: await completion of a kind of memory " \
-        "access")                                                       \
-  macro(GPU_INST_METRIC_NAME ":STL:GMEM", GPU_INST_STALL_GMEM,          \
-        "GPU instruction stalls: await completion of global memory "    \
-        "access")                                                       \
-  macro(GPU_INST_METRIC_NAME ":STL:MTHR", GPU_INST_STALL_MEM_THROTTLE,  \
-        "GPU instruction stalls: global memory request queue full")     \
-  macro(GPU_INST_METRIC_NAME ":STL:TMEM", GPU_INST_STALL_TMEM,          \
-        "GPU instruction stalls: texture memory request queue full")    \
-  macro(GPU_INST_METRIC_NAME ":STL:CMEM", GPU_INST_STALL_CMEM,          \
-        "GPU instruction stalls: await completion of constant or "      \
-        "immediate memory access")                                      \
-  macro(GPU_INST_METRIC_NAME ":STL:IFET", GPU_INST_STALL_IFETCH,        \
-        "GPU instruction stalls: await availability of next "           \
-        "instruction (fetch or branch delay)")                          \
-  macro(GPU_INST_METRIC_NAME ":STL:IDEP", GPU_INST_STALL_IDEPEND,       \
-        "GPU instruction stalls: await satisfaction of instruction "    \
-        "input dependence")                                             \
-  macro(GPU_INST_METRIC_NAME ":STL:PIPE", GPU_INST_STALL_PIPE_BUSY,     \
-        "GPU instruction stalls: await completion of required "         \
-        "compute resources")                                            \
-  macro(GPU_INST_METRIC_NAME ":STL:SYNC", GPU_INST_STALL_SYNC,          \
-        "GPU instruction stalls: await completion of thread or "        \
-        "memory synchronization")                                       \
-  macro(GPU_INST_METRIC_NAME ":STL:OTHR", GPU_INST_STALL_OTHER,         \
-        "GPU instruction stalls: other")                                \
-  macro(GPU_INST_METRIC_NAME ":STL:SLP", GPU_INST_STALL_SLEEP,          \
-        "GPU instruction stalls: sleep")                                \
-  macro(GPU_INST_METRIC_NAME ":STL:DC", GPU_INST_STALL_DONTCARE,        \
-        "GPU instruction stalls: don't care because latency hidden")    \
-  macro(GPU_INST_METRIC_NAME ":STL:NSEL", GPU_INST_STALL_NOT_SELECTED,  \
-        "GPU instruction stalls: not selected")                         \
-  macro(GPU_INST_METRIC_NAME ":STL:INV", GPU_INST_STALL_INVALID,        \
-        "GPU instruction stalls: invalid")
 
 #define FORALL_GPU_UTIL_METRICS(macro)                                  \
-  macro("GINS:WAVE_ACT", GPU_UTIL_METRICS_WAVE_ACT,                     \
+  macro("GCYCLES:WAVE_ACT", GPU_UTIL_METRICS_WAVE_ACT,                   \
         "GPU waves aggregate active")                                   \
-  macro("GINS:WAVE_AVL", GPU_UTIL_METRICS_WAVE_AVL,                     \
+  macro("GCYCLES:WAVE_AVL", GPU_UTIL_METRICS_WAVE_AVL,                  \
         "GPU waves aggregate available")                                \
-  macro("GINS:WAVE_UTL", GPU_UTIL_METRICS_WAVE_UTL,                     \
-        "GPU waves utilization (actual occupancy): "                     \
+  macro("GCYCLES:WAVE_UTL", GPU_UTIL_METRICS_WAVE_UTL,                  \
+        "GPU waves utilization (actual occupancy): "                    \
         "100*(waves active)/(waves available)")                         \
-  macro("GINS:THR_ACT", GPU_UTIL_METRICS_THR_ACT,                       \
+  macro("GCYCLES:THR_ACT", GPU_UTIL_METRICS_THR_ACT,                    \
         "GPU SIMD lanes (threads) aggregate active")                    \
-  macro("GINS:THR_AVL", GPU_UTIL_METRICS_THR_AVL,                       \
+  macro("GCYCLES:THR_AVL", GPU_UTIL_METRICS_THR_AVL,                    \
         "GPU SIMD lanes (threads) aggregate available ")                \
-  macro("GINS:THR_UTL", GPU_UTIL_METRICS_THR_UTL,                       \
+  macro("GCYCLES:THR_UTL", GPU_UTIL_METRICS_THR_UTL,                    \
         "GPU SIMD lanes (threads) utilization: 100*(SIMD lanes active)/(SIMD lanes available)")
 
 // gpu explicit copy
@@ -672,6 +677,18 @@ void gpu_metrics_GBR_enable
 (
  void
 );
+
+
+//--------------------------------------------------
+// record GPU PC sampling cycles
+//--------------------------------------------------
+
+void
+gpu_metrics_GPU_CYCLES_TYPE_enable
+(
+  void
+);
+
 
 //--------------------------------------------------
 // record instruction issue statistics

@@ -58,10 +58,9 @@
 // - GPU_INST_STALL_CMEM: Constant memory stall
 // - GPU_INST_STALL_PIPE_BUSY: Pipeline busy stall
 // - GPU_INST_STALL_MEM_THROTTLE: Memory throttle stall
-// - GPU_INST_STALL_NOT_SELECTED: Warp not selected for issue
 // - GPU_INST_STALL_OTHER: Other/unknown stall
 // - GPU_INST_STALL_SLEEP: Sleep/wait stall
-// - GPU_INST_STALL_INVALID: Invalid/error stall
+// - GPU_INST_STALL_HIDDEN: hidden, so uninteresting
 static const struct {
   uint64_t EuStalls::* stall_value;
   gpu_inst_stall_t reason;
@@ -120,7 +119,7 @@ fillPCSamplingActivityFields
   uint32_t issues = (stall_reason == GPU_INST_STALL_NONE) ? stall_count : 0;
   uint32_t stalls = (stall_reason != GPU_INST_STALL_NONE) ? stall_count : 0;
   activity->details.pc_sampling.issues = issues;
-  activity->details.pc_sampling.inst_type = GPU_INST_TYPE_ISSUED;
+  activity->details.pc_sampling.inst_type = GPU_INST_TYPE_UNKNOWN;
 
   activity->details.pc_sampling.non_issues = stalls;
   activity->details.pc_sampling.issue_stall_reason = stall_reason;

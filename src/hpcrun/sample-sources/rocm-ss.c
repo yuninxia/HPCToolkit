@@ -221,11 +221,12 @@ METHOD_FN(process_event_list)
 
         gpu_monitoring_instruction_sampling_period_set(1 << sampling_period_log);
 
+        gpu_metrics_GPU_CYCLES_TYPE_enable(); // gpu cycles
         gpu_metrics_GPU_INST_enable(); // instruction counts
-        gpu_metrics_GPU_INST_TYPE_enable(); // instruction type metrics
         if (gpu_monitoring_instruction_sampling_is_enabled(GPU_INSTRUCTION_SAMPLING_HW)) {
           // only enable stall metrics if using HW support for PC sampling.
           // they are unavailable with host_trap SW support.
+          gpu_metrics_GPU_INST_TYPE_enable(); // instruction type metrics
           gpu_metrics_GPU_INST_STALL_enable(); // stall metrics
           gpu_metrics_GPU_PIPE_enable(); // pipeline utilization metrics
           gpu_metrics_GPU_UTIL_METRICS_enable(); // wave and SIMD utilization

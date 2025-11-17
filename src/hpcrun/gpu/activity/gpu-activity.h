@@ -122,15 +122,14 @@ typedef enum {
   GPU_INST_STALL_CMEM = 7,
   GPU_INST_STALL_PIPE_BUSY = 8,
   GPU_INST_STALL_MEM_THROTTLE = 9,
-  GPU_INST_STALL_NOT_SELECTED = 10,
-  GPU_INST_STALL_OTHER = 11,
-  GPU_INST_STALL_SLEEP = 12,
-  GPU_INST_STALL_DONTCARE = 13,
-  GPU_INST_STALL_INVALID = 14
+  GPU_INST_STALL_OTHER = 10,
+  GPU_INST_STALL_SLEEP = 11,
+  GPU_INST_STALL_HIDDEN = 12,
+  GPU_INST_STALL_INVALID = 13
 } gpu_inst_stall_t;
 
 typedef enum {
-  GPU_INST_TYPE_NONE = 0,
+  GPU_INST_TYPE_ANY = 0,
   GPU_INST_TYPE_VECTOR_DUAL, // 2 simple 32-bit instructions, no dep --> main + limited secondary units
   GPU_INST_TYPE_VECTOR,
   GPU_INST_TYPE_MATRIX,
@@ -146,8 +145,7 @@ typedef enum {
   GPU_INST_TYPE_BRANCH_NOT_TAKEN,
   GPU_INST_TYPE_JUMP,
   GPU_INST_TYPE_OTHER,
-  GPU_INST_TYPE_ISSUED,
-  GPU_INST_TYPE_UNUSED // NOTE: this must be last because it has no metric
+  GPU_INST_TYPE_UNKNOWN
 } gpu_inst_type_t;
 
 typedef enum {
