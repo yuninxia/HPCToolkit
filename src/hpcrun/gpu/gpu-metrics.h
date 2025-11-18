@@ -172,7 +172,9 @@ typedef struct instruction_metrics_t {
   macro("GCYCLES:ISU:JMP", GPU_INST_TYPE_JUMP,                            \
         "GPU issue cycles: issued a jump instruction")                    \
   macro("GCYCLES:ISU:OTHR", GPU_INST_TYPE_OTHER,                          \
-        "GPU issue cycles: issued an 'other' instruction")
+        "GPU issue cycles: issued an 'other' instruction")                \
+  macro("GCYCLES:ISU:UNK", GPU_INST_TYPE_UNKNOWN,                         \
+        "GPU issue cycles: issued an unknown instruction kind")
 
 #define FORALL_GPU_INST_STALL(macro)                                      \
   macro("GCYCLES:STL", GPU_INST_STALL_ANY,                                \
