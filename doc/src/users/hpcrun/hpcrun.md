@@ -36,14 +36,14 @@ turn on tracing. The following use of `hpcrun` will collect both a call path pro
 hpcrun -t app arg ...
 ```
 
-The `-t` will collect a call path trace based on asynchronous sampling of each CPU thread using a time-based sampling metric. Besides the default ``CPUTIME`` metric, other time-based metrics include ``REALTIME`` and ``cycles`. How to use these metrics is described a bit later.
+The `-t` will collect a call path trace based on asynchronous sampling of each CPU thread using a time-based sampling metric. Besides the default `CPUTIME` metric, other time-based metrics include `REALTIME` and \`\`cycles\`. How to use these metrics is described a bit later.
 
-The `-t` option also  traces any GPU operations if a `-e gpu=*` option is used to enable measurement of GPU activities.
+The `-t` option also traces any GPU operations if a `-e gpu=*` option is used to enable measurement of GPU activities.
 
 Traces are most useful for understanding the execution dynamics of multithreaded or multi-process applications; however, you may find a trace of a single-threaded application to be useful to understand how an execution unfolds over time.
 
 For programs that launch many GPU operations per second, the `-tt` will collect a more useful trace than `-t`.
-Like the `-t` option, `-tt` records a call path trace based on asynchronous sampling of each CPU thread using a time-based sampling metric. Unlike ``-t``, `-tt` also records a sample for a thread as it launches each GPU operation (if any).
+Like the `-t` option, `-tt` records a call path trace based on asynchronous sampling of each CPU thread using a time-based sampling metric. Unlike `-t`, `-tt` also records a sample for a thread as it launches each GPU operation (if any).
 Without `-tt`, the activity seen on a CPU trace line at the time a kernel is launched
 is often from long ago, which makes it hard to understand how CPU activity relates to GPU activity.
 Since additional non-sample elements are added, any statistical properties of the CPU traces are disturbed.

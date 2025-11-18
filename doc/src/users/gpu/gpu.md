@@ -26,7 +26,7 @@ HPCToolkit reports GPU performance metrics in a vendor-neutral way. For instance
 
 HPCToolkit supports two levels of performance monitoring for GPU accelerated applications: coarse-grain profiling and tracing of GPU activities at the operation level (e.g., kernel launches, data allocations, memory copies, ...), and fine-grain measurement of GPU computations using PC sampling or instrumentation, which measure GPU computations at the granularity of individual machine instructions.
 
-Coarse-grain profiling attributes to each calling context the total time of all GPU operations initiated in that context. Table [8.1](#table:gtimes) shows the classes of GPU operations for which timings are collected. In addition, HPCToolkit records metrics for operations performed including memory allocation and deallocation (Table [8.2](#table:gmem)), memory set (Table [8.3](#table:gmset)), explicit memory copies (Table [8.4](#table:gxcopy)), and synchronization (Table [8.5](#table:gsync)). These operation metrics are available for GPUs from all three vendors. While summary metrics in Table [8.1](#table:gtimes) are shown by default in hpcviewer, metrics shown in Table [8.2](#table:gmem)), Table [8.3](#table:gmset)), Table [8.4](#table:gxcopy)), and Table [8.5](#table:gsync) are hidden by default to avoid overwhelming users with many columns of metrics. However, one can reveal any of these metrics  by simply marking them as visibile in hpcviewer.
+Coarse-grain profiling attributes to each calling context the total time of all GPU operations initiated in that context. Table [8.1](#table:gtimes) shows the classes of GPU operations for which timings are collected. In addition, HPCToolkit records metrics for operations performed including memory allocation and deallocation (Table [8.2](#table:gmem)), memory set (Table [8.3](#table:gmset)), explicit memory copies (Table [8.4](#table:gxcopy)), and synchronization (Table [8.5](#table:gsync)). These operation metrics are available for GPUs from all three vendors. While summary metrics in Table [8.1](#table:gtimes) are shown by default in hpcviewer, metrics shown in Table [8.2](#table:gmem)), Table [8.3](#table:gmset)), Table [8.4](#table:gxcopy)), and Table [8.5](#table:gsync) are hidden by default to avoid overwhelming users with many columns of metrics. However, one can reveal any of these metrics by simply marking them as visible in hpcviewer.
 
 For AMD and NVIDIA GPUs, HPCToolkit also reports GPU kernel characteristics, including including register usage, thread count per block, and theoretical occupancy as shown in Table [8.6](#table:gker). HPCToolkit derives a theoretical GPU occupancy metric as the ratio of the active threads in a streaming multiprocessor to the maximum active threads supported by the hardware in an AMD compute unit or an NVIDIA streaming multiprocessor.
 
@@ -130,7 +130,6 @@ name: table:gker
 | GKER:COUNT      | GPU kernel: launch count                    |
 | GKER:OCC_THR    | GPU kernel: theoretical occupancy           |
 ```
-
 
 ### Fine-grain measurement of GPU kernels
 
@@ -367,7 +366,7 @@ To select hardware-based stochastic PC sampling, specify `-e gpu=rocm,pc=hw`.
 Specifying simply `-e gpu=rocm,pc` will default to software-based host-trap sampling.
 
 Periods for hardware stochastic sampling are measured in GPU cycles and the minimum is 256; periods must be a power of 2. The default period for stochastic sampling is currently set to 2^20 cycles. HPCToolkit enables a user to specify the desired period by adding an `@k` to the end of a PC sampling specification, e.g. `-e gpu=rocm,pc=hw@22` will set the period for stochastic sampling to 2^22.
-Periods for host-trap based sampling are measured in microseconds. The minimum period is 1 us, which we express as  2^10 ns.
+Periods for host-trap based sampling are measured in microseconds. The minimum period is 1 us, which we express as 2^10 ns.
 Using `-e gpu=rocm,pc=sw@18` will set the period for software sampling to 2^18 ns.
 
 Note that the units used by HPCToolkit for configuring software and hardware PC sampling differ ('hw' uses cycles and 'sw' uses nanoseconds), even though they both use the same @k notation. For both kinds of sampling, HPCToolkit reports GCYCLES or GPU cycles. The default frequency for AMD GPUs is approximately 1GHz, so 1 cycle is approximately 1ns. While frequency adjustments may affect the GPU clock, assuming that the frequency is constant at 1GHz should be sufficient for the information to be useful for performance tuning.
@@ -467,7 +466,7 @@ In post-mortem analysis with `hpcprof`, HPCToolkit maps instruction-level sample
 
 Hardware support for stochastic sampling in AMD MI300+ GPUs collects and reports information about the kinds of instructions being issued. Using this hardware support, HPCToolkit monitors and tabulates the kinds of sampled instructions issued as shown in Table [8.11](#amd-issues). In some cycles, it is not possible to determine the kind of instruction, e.g. following a branch miss. For that reason, the number of `GCYCLE:ISU`, and the attribution to issue kinds, may be less than the number of `GCYCLES`.
 
-Hardware support for PC sampling in AMD, Intel, and NVIDIA GPUs reports the reasons that GPU instructions stall. Table [8.12](#issue-stall) shows the categories of stall reasons reported by HPCToolkit. Stall reasons available from vendor hardware are mapped into these vendor-agnostic categories. For instance, long scoreboard waits on Intel GPUs are mapped to generic memory stalls `GCYCLE:STL:MEM`. (We refer to this category as a generic memory stall as it is likely waiting for data from the memory hierarchy, but we don't know whether it is awaiting data from contant memory, texture memory, local memory, or global memory.)
+Hardware support for PC sampling in AMD, Intel, and NVIDIA GPUs reports the reasons that GPU instructions stall. Table [8.12](#issue-stall) shows the categories of stall reasons reported by HPCToolkit. Stall reasons available from vendor hardware are mapped into these vendor-agnostic categories. For instance, long scoreboard waits on Intel GPUs are mapped to generic memory stalls `GCYCLE:STL:MEM`. (We refer to this category as a generic memory stall as it is likely waiting for data from the memory hierarchy, but we don't know whether it is awaiting data from constant memory, texture memory, local memory, or global memory.)
 
 AMD's GPUs support issuing instructions to multiple independent pipelines in a single cycle.
 Hardware support for stochastic sampling in AMD MI300+ GPUs
