@@ -26,19 +26,9 @@ HPCToolkit reports GPU performance metrics in a vendor-neutral way. For instance
 
 HPCToolkit supports two levels of performance monitoring for GPU accelerated applications: coarse-grain profiling and tracing of GPU activities at the operation level (e.g., kernel launches, data allocations, memory copies, ...), and fine-grain measurement of GPU computations using PC sampling or instrumentation, which measure GPU computations at the granularity of individual machine instructions.
 
-Coarse-grain profiling attributes to each calling context the total time of all GPU operations initiated in that context. Table [8.1](#table:gtimes) shows the classes of GPU operations for which timings are collected. In addition, HPCToolkit records metrics for operations performed including memory allocation and deallocation (Table [8.2](#table:gmem)), memory set (Table [8.3](#table:gmset)), explicit memory copies (Table [8.4](#table:gxcopy)), and synchronization (Table [8.5](#table:gsync)). These operation metrics are available for GPUs from all three vendors.
-For NVIDIA GPUs, HPCToolkit also reports GPU kernel characteristics, including including register usage, thread count per block, and theoretical occupancy as shown in Table [8.6](#table:gker). HPCToolkit derives a theoretical GPU occupancy metric as the ratio of the active threads in a streaming multiprocessor to the maximum active threads supported by the hardware in one streaming multiprocessor.
+Coarse-grain profiling attributes to each calling context the total time of all GPU operations initiated in that context. Table [8.1](#table:gtimes) shows the classes of GPU operations for which timings are collected. In addition, HPCToolkit records metrics for operations performed including memory allocation and deallocation (Table [8.2](#table:gmem)), memory set (Table [8.3](#table:gmset)), explicit memory copies (Table [8.4](#table:gxcopy)), and synchronization (Table [8.5](#table:gsync)). These operation metrics are available for GPUs from all three vendors. While summary metrics in Table [8.1](#table:gtimes) are shown by default in hpcviewer, metrics shown in Table [8.2](#table:gmem)), Table [8.3](#table:gmset)), Table [8.4](#table:gxcopy)), and Table [8.5](#table:gsync) are hidden by default to avoid overwhelming users with many columns of metrics. However, one can reveal any of these metrics  by simply marking them as visibile in hpcviewer.
 
-Table [8.7](#table:pc-stall) shows fine-grain metrics for GPU instruction execution.
-When possible, HPCToolkit attributes fine-grain GPU metrics to both GPU calling contexts and CPU calling contexts.
-To our knowledge, no GPU has hardware support for attributing metrics directly to GPU calling contexts.
-To compensate, HPCToolkit approximates attributes metrics to GPU calling contexts. It reconstructs GPU calling contexts from static GPU call graphs for
-NVIDIA GPUs (See Section [8.2.4](#nvidia-cct)) and uses measurements of call sites and data flow analysis on static call graphs to apportion metrics among call paths in a GPU calling context tree.
-We expect to add similar functionality for GPUs from other vendors in the future.
-
-The performance metrics above are reported in a vendor-neutral way. Not every metric is available for all GPUs.
-Coarse-grain profiling and tracing are supported for AMD, Intel, and NVIDIA GPUs. HPCToolkit supports fine-grain measurements on NVIDIA GPUs using PC sampling and provides some simple fine-grain measurements on Intel GPUs using instrumentation.
-Currently, AMD GPUs lack both hardware and software support for fine-grain measurement. The next few sections describe specific measurement capabilities for NVIDIA, AMD, and Intel GPUs, respectively.
+For AMD and NVIDIA GPUs, HPCToolkit also reports GPU kernel characteristics, including including register usage, thread count per block, and theoretical occupancy as shown in Table [8.6](#table:gker). HPCToolkit derives a theoretical GPU occupancy metric as the ratio of the active threads in a streaming multiprocessor to the maximum active threads supported by the hardware in an AMD compute unit or an NVIDIA streaming multiprocessor.
 
 ```{table} Table 8.1: GPU operation timings.
 ---
@@ -141,27 +131,33 @@ name: table:gker
 | GKER:OCC_THR    | GPU kernel: theoretical occupancy           |
 ```
 
-```{table} Table 8.7: GPU instruction execution and stall metrics.
+
+### Fine-grain measurement of GPU kernels
+
+Table [8.7](#table:pc-stall) shows fine-grain measurements collected for instructions in GPU kernels using Program Counter (PC) sampling.
+Using GPU PC sampling, HPCToolkit attributes fine-grain GPU metrics to heterogeneous calling contexts that includes as a prefix the CPU calling context in which a kernel was launched and a suffix that represents the calling context within a kernel where the PC sample was collected.
+To our knowledge, no GPU exposes hardware support for attributing metrics directly to GPU calling contexts.
+To compensate, HPCToolkit approximately attributes metrics to GPU calling contexts. It reconstructs GPU calling contexts from static GPU call graphs with kernels on AMD, Intel, and NVIDIA GPUs and uses measurements of call sites and data flow analysis on static call graphs to apportion metrics among call paths in a GPU calling context tree.
+
+HPCToolkit attempts to report performance metrics based on PC samples in a vendor-neutral way.
+Not every metric is available for all GPUs. HPCToolkit supports instruction-level performance measurements for AMD, Intel and NVIDIA GPUs using PC sampling. HPCToolkit also provides some fine-grain measurements on Intel GPUs using binary instrumentation.
+The next few sections describe specific measurement capabilities for NVIDIA, AMD, and Intel GPUs, respectively.
+
+AMD GPUs have two strategies for collecting PC samples: one supported entirely in software and one supported by hardware. PC sampling on Intel and NVIDIA GPUs is supported by hardware. Table [8.7](#table:gpu:cycles) shows three high-level metrics that can be collected using PC sampling. All mechanisms for PC sampling report GPU cycles (GCYCLES). Using AMD's software support for PC sampling, that is the only measure provided. Using hardware support, AMD, Intel, and NVIDIA GPUs can also report whether the sampled instruction was issued (GCYCLES:ISU) or whether the sampled instruction stalled and was not issued. HPCToolkit reports stalls only if
+
+```{table} Table 8.7: GPU cycles are issues or stalls.
 ---
-name: table:pc-stall
+name: table:gpu:cycles
 ---
-| Metric         | Description                                                                            |
-| :------------- | :------------------------------------------------------------------------------------- |
-| GINST          | GPU instructions executed                                                              |
-| GINST:STL_ANY  | GPU instruction stalls: any                                                            |
-| GINST:STL_NONE | GPU instruction stalls: no stall                                                       |
-| GINST:STL_IFET | GPU instruction stalls: await availability of next instruction (fetch or branch delay) |
-| GINST:STL_IDEP | GPU instruction stalls: await satisfaction of instruction input dependence             |
-| GINST:STL_GMEM | GPU instruction stalls: await completion of global memory access                       |
-| GINST:STL_TMEM | GPU instruction stalls: texture memory request queue full                              |
-| GINST:STL_SYNC | GPU instruction stalls: await completion of thread or memory synchronization           |
-| GINST:STL_CMEM | GPU instruction stalls: await completion of constant or immediate memory access        |
-| GINST:STL_PIPE | GPU instruction stalls: await completion of required compute resources                 |
-| GINST:STL_MTHR | GPU instruction stalls: global memory request queue full                               |
-| GINST:STL_NSEL | GPU instruction stalls: not selected for issue but ready                               |
-| GINST:STL_OTHR | GPU instruction stalls: other                                                          |
-| GINST:STL_SLP  | GPU instruction stalls: sleep                                                          |
+| Metric          | Description                                                          |
+| :-------------- | :------------------------------------------------------------------- |
+| GCYCLES         | GPU cycles (estimated using PC sampling)                             |
+| GCYCLES:ISU     | GPU issue cycles: a sampled instruction was issued by the front end  |
+| GCYCLES:STL     | GPU stall cycles: a sampled instruction represents an exposed stall  |
 ```
+
+All implementations of PC sampling on GPUs periodically interrupt the execution of a kernel on a GPU to record the value of the program counter to identify what instruction a component of the GPU, e.g. a streaming multiprocessor or compute unit, is executing.
+That is all that AMD's software support for PC sampling does. It reports program counter locations observed in GPU hardware while the hardware is executing code. Hardware support for PC sampling in AMD, Intel, and NVIDIA GPUs does more than that. Each vendor's hardware also reports whether the sampled instruction issued or not. If the sampled instruction stalled, the GPU also reports one or more reasons why the instruction stalled. A GPU instruction stall may be exposed or hidden. When an instruction is sampled, the latency of a stalled instruction is hidden if the instruction's stall is overlapped with execution of one or more other instructions.
 
 ### Tracing GPU Activities
 
@@ -347,7 +343,7 @@ name: amd-options
 | `-e gpu=rocm`                            | coarse-grain profiling of AMD GPU operations                                                    |
 | `-e gpu=rocm -t`                         | coarse-grain profiling and tracing of AMD GPU operations                                        |
 | `-e gpu=rocm -tt`                         | coarse-grain profiling and high-resolution tracing of AMD GPU operations                                        |
-| `-e gpu=rocm,pc[={sw,hw}][@period_log]`  | coarse-grain profiling of GPU operations; fine-grain profiling of GPU kernels using PC sampling |
+| `-e gpu=rocm,pc[={sw,hw}][@k]`  | coarse-grain profiling of GPU operations; fine-grain profiling of GPU kernels using PC sampling every 2^k cycles (hw) or 2^k ns (sw). |
 ```
 
 ### PC Sampling on AMD GPUs
@@ -370,17 +366,139 @@ To select software-based host-trap PC sampling, specify `-e gpu=rocm,pc=sw`.
 To select hardware-based stochastic PC sampling, specify `-e gpu=rocm,pc=hw`.
 Specifying simply `-e gpu=rocm,pc` will default to software-based host-trap sampling.
 
-Periods for hardware stochastic sampling are measured in GPU cycles and the minimum is 256; periods must be a power of 2.
-Periods for host-trap based sampling are measured in microseconds. The minimum is 1.
-The default period for stochastic sampling is currently set to 2^20. Setting the sampling period shorter than that has been observed to cause AMD's driver to fail.
-Thus, the minimum for hardware stochastic sampling is currently 2^20.
-The default period for host-trap sampling is currently 2^7. To provide a consistent interface and guarantee that periods are a power of 2, periods for PC sampling will be interpreted as the log of the period by appending @period_log, e.g. `-e gpu=rocm,pc=hw@22` to select stochastic PC sampling with a period of 2^22.
+Periods for hardware stochastic sampling are measured in GPU cycles and the minimum is 256; periods must be a power of 2. The default period for stochastic sampling is currently set to 2^20 cycles. HPCToolkit enables a user to specify the desired period by adding an `@k` to the end of a PC sampling specification, e.g. `-e gpu=rocm,pc=hw@22` will set the period for stochastic sampling to 2^22.
+Periods for host-trap based sampling are measured in microseconds. The minimum period is 1 us, which we express as  2^10 ns.
+Using `-e gpu=rocm,pc=sw@18` will set the period for software sampling to 2^18 ns.
+
+Note that the units used by HPCToolkit for configuring software and hardware PC sampling differ ('hw' uses cycles and 'sw' uses nanoseconds), even though they both use the same @k notation. For both kinds of sampling, HPCToolkit reports GCYCLES or GPU cycles. The default frequency for AMD GPUs is approximately 1GHz, so 1 cycle is approximately 1ns. While frequency adjustments may affect the GPU clock, assuming that the frequency is constant at 1GHz should be sufficient for the information to be useful for performance tuning.
+
+At present, setting the sampling period for 'hw' PC sampling to a value significantly shorter than 2^20 has been observed to cause AMD's driver to fail.
+Thus, the recommended minimum for hardware stochastic sampling is currently 2^20 cycles.
+The default period for host-trap sampling is currently 2^17 ns.
+
+AMD's stochastic sampling hardware records a wealth of information with each PC sample. A sampled instruction will either issue or not. If the sampled instruction issues, the stochastic sampling hardware in AMD's MI300 reports the kind of instruction that issued as well. Table [8.11](#amd-issues) shows the kinds of issued instructions that the MI300 tracks.
+
+```{table} Table 8.11: GPU issue metrics.
+---
+name: table:amd-issues
+---
+| Metric           | Description                                                               |
+| :--------------- | :------------------------------------------------------------------------ |
+| GCYCLES:ISU:MATR | GPU issue cycles: issued a sampled matrix instruction                     |
+| GCYCLES:ISU:VEC2 | GPU issue cycles: issued dual vector instructions                         |
+| GCYCLES:ISU:VEC  | GPU issue cycles: issued a sampled vector instruction                     |
+| GCYCLES:ISU:SCLR | GPU issue cycles: issued a sampled scalar instruction                     |
+| GCYCLES:ISU:TEX  | GPU issue cycles: issued a sampled texture instruction                    |
+| GCYCLES:ISU:LDS  | GPU issue cycles: issued a sampled Local Data Store instruction           |
+| GCYCLES:ISU:LDSD | GPU issue cycles: issued a sampled Local Data Store direct instruction    |
+| GCYCLES:ISU:FLAT | GPU issue cycles: issued a sampled flat instruction                       |
+| GCYCLES:ISU:XPRT | GPU issue cycles: issued a sampled export instruction                     |
+| GCYCLES:ISU:MESG | GPU issue cycles: issued a sampled message instruction                    |
+| GCYCLES:ISU:BAR  | GPU issue cycles: issued a sampled barrier instruction                    |
+| GCYCLES:ISU:BRT  | GPU issue cycles: issued a sampled taken branch instruction               |
+| GCYCLES:ISU:BRNT | GPU issue cycles: issued a sampled not taken branch instruction           |
+| GCYCLES:ISU:JMP  | GPU issue cycles: issued a sampled jump instruction                       |
+| GCYCLES:ISU:OTHR | GPU issue cycles: issued a sampled 'other' instruction                    |
+```
+
+```{table} Table 8.12: GPU issue stall metrics.
+---
+name: table:issue-stall
+---
+| Metric           | Description                                                                                                 |
+| :--------------- | :---------------------------------------------------------------------------------------------------------- |
+| GCYCLES:STL      | GPU exposed instruction issue stall cycles: any kind                                                        |
+| GCYCLES:STL:MEM  | GPU exposed instruction issue stall cycles: await completion of a kind of memory access                     |
+| GCYCLES:STL:GMEM | GPU exposed instruction issue stall cycles: await completion of a global memory access                      |
+| GCYCLES:STL:MTHR | GPU exposed instruction issue stall cycles: global memory request queue full                                |
+| GCYCLES:STL:TMEM | GPU exposed instruction issue stall cycles: texture memory request queue full                               |
+| GCYCLES:STL:CMEM | GPU exposed instruction issue stall cycles: await completion of constant or immediate memory access         |
+| GCYCLES:STL:IFET | GPU exposed instruction issue stall cycles: await availability of next instruction (fetch or branch delay   |
+| GCYCLES:STL:IDEP | GPU exposed instruction issue stall cycles: await satisfaction of instruction input dependence              |
+| GCYCLES:STL:PIPE | GPU exposed instruction issue stall cycles: await completion of required compute resources                  |
+| GCYCLES:STL:SYNC | GPU exposed instruction issue stall cycles: await completion of thread or memory synchronization            |
+| GCYCLES:STL:OTHR | GPU exposed instruction issue stall cycles: other                                                           |
+| GCYCLES:STL:SLP  | GPU exposed instruction issue stall cycles: sleep                                                           |
+```
+
+```{table} Table 8.13: GPU pipeline issue metrics.
+---
+name: table:pipe-issue
+---
+| Metric           | Description                                                   |
+| :--------------- | :------------------------------------------------------------ |
+| GPIPE:ISU:MATR |  GPU pipeline issue status: low precision matrix operation      |
+| GPIPE:ISU:VEC2 | GPU pipeline issue status: vector, dual                         |
+| GPIPE:ISU:VEC  | GPU pipeline issue status: vector                               |
+| GPIPE:ISU:SCLR | GPU pipeline issue status: scalar ALU or memory                 |
+| GPIPE:ISU:LDS  | GPU pipeline issue status: Local Data Store                     |
+| GPIPE:ISU:LDSD | GPU pipeline issue status: Local Data Store direct              |
+| GPIPE:ISU:TEX  | GPU pipeline issue status: texture                              |
+| GPIPE:ISU:FLAT | GPU pipeline issue status: flat                                 |
+| GPIPE:ISU:XPRT | GPU pipeline issue status: export                               |
+| GPIPE:ISU:BMSG | GPU pipeline issue status: branch or message                    |
+| GPIPE:ISU:MISC | GPU pipeline issue status: miscellaneous                        |
+```
+
+```{table} Table 8.14: GPU pipeline stall metrics.
+---
+name: table:pipe-stall
+---
+| Metric          | Description                                                     |
+| :-------------- | :-------------------------------------------------------------- |
+| GPIPE:STL:MATR  |  GPU pipeline stall status: low precision matrix operation      |
+| GPIPE:STL:VEC2  | GPU pipeline stall status: vector, dual                         |
+| GPIPE:STL:VEC   | GPU pipeline stall status: vector                               |
+| GPIPE:STL:SCLR  | GPU pipeline stall status: scalar ALU or memory                 |
+| GPIPE:STL:LDS   | GPU pipeline stall status: Local Data Store                     |
+| GPIPE:STL:LDSD  | GPU pipeline stall status: Local Data Store direct              |
+| GPIPE:STL:TEX   | GPU pipeline stall status: texture                              |
+| GPIPE:STL:FLAT  | GPU pipeline stall status: flat                                 |
+| GPIPE:STL:XPRT  | GPU pipeline stall status: export                               |
+| GPIPE:STL:BMSG  | GPU pipeline stall status: branch or message                    |
+| GPIPE:STL:MISC  | GPU pipeline stall status: miscellaneous                        |
+```
 
 Using AMD's Rocprofiler-sdk monitoring infrastructure, HPCToolkit collects a histogram of samples for each instruction in each kernel that an application executes.
 For stochastic (hardware-based) samples, a sample contains more than a GPU program counter value.
 A stochastic sample also indicates whether the instruction represented by the sample's PC value is stalled or not. If so, it provides a reason why the instruction is stalled.
 
-In post-mortem analysis with `hpcprof`, HPCToolkit maps instruction-level samples and stall reasons (if any) back to source lines using information about how GPU machine instructions relate back to application source code using line mappings and inlining information recorded by compilers. If all PC samples in a kernel map to line 0, there are two possibilities: (1) the AMD GPU binaries used by your application don't contain line mapping information for that kernel because you didn't pass a `-g` to the compiler when generating its code, or (2) don't you didn't analyze line mapping information AMD GPU binaries by using `hpcstruct --gpucfg yes <measurement-directory>`.
+In post-mortem analysis with `hpcprof`, HPCToolkit maps instruction-level samples and stall reasons (if any) back to source lines using information about how GPU machine instructions relate back to application source code using line mappings and inlining information recorded by compilers. If all PC samples in a kernel map to line 0, there are two possibilities: (1) the AMD GPU binaries used by your application don't contain line mapping information for that kernel because you didn't pass a `-g` to the compiler when generating its code, or (2) don't you didn't analyze line mapping information AMD GPU binaries by using `hpcstruct <measurement-directory>`.
+
+Hardware support for stochastic sampling in AMD MI300+ GPUs collects and reports information about the kinds of instructions being issued. Using this hardware support, HPCToolkit monitors and tabulates the kinds of sampled instructions issued as shown in Table [8.11](#amd-issues). In some cycles, it is not possible to determine the kind of instruction, e.g. following a branch miss. For that reason, the number of `GCYCLE:ISU`, and the attribution to issue kinds, may be less than the number of `GCYCLES`.
+
+Hardware support for PC sampling in AMD, Intel, and NVIDIA GPUs reports the reasons that GPU instructions stall. Table [8.12](#issue-stall) shows the categories of stall reasons reported by HPCToolkit. Stall reasons available from vendor hardware are mapped into these vendor-agnostic categories. For instance, long scoreboard waits on Intel GPUs are mapped to generic memory stalls `GCYCLE:STL:MEM`. (We refer to this category as a generic memory stall as it is likely waiting for data from the memory hierarchy, but we don't know whether it is awaiting data from contant memory, texture memory, local memory, or global memory.)
+
+AMD's GPUs support issuing instructions to multiple independent pipelines in a single cycle.
+Hardware support for stochastic sampling in AMD MI300+ GPUs
+collects and reports information about pipeline issues and pipeline stalls.
+Tables [8.13](#pipe-issue) and [8.14](#pipe-stall) show the aggregate pipeline issue and stall metrics collected using these monitoring capabilities. By comparing these issue and stall counts with the GCYCLES metric, one can compute the fraction of cycles in which each pipeline issues or stalls.
+
+AMD's MI300 GPU uses 64-thread wavefronts. In contrast, NVIDIA GPUs use warps of 32 threads. GPUs hide latency by overlapping stalls of one wavefront or warp with the execution of another. Having multiple wavefronts or warps available to schedule is important for hiding latency. On AMD GPUs' HPCToolkit measures how many wavefronts are active in each sampled cycle and computes the metrics shown in Table [8.15](#wave-util).
+`GCYCLES:WAVE_ACT` reports the total number of wavefronts active aggregated across over all sampled cycles. `GCYCLES:WAVE_AVL` reports the total number of wave slots (today 32) aggregated over all sampled cycles. From these two metrics, HPCToolkit computes `GCYCLES:WAVE_UTL` -- the percent utilization of the available wave slots across all sampled cycles. This metric could have been described as occupancy; however, percent thread utilization seems like a simpler way to present this concept. Note that the measure of wave utilization only represents the utilization of wave slots in active CUs. You may have a high wave utilization even if you are only using a small fraction of the available compute units.
+
+```{table} Table 8.15: GPU wave utilization metrics.
+---
+name: table:wave-util
+---
+| Metric            | Description                                                                          |
+| :---------------- | :----------------------------------------------------------------------------------- |
+| GCYCLES:WAVE_ACT  | GPU waves aggregate active                                                           |
+| GCYCLES:WAVE_AVL  | GPU waves aggregate available                                                        |
+| GCYCLES:WAVE_UTL  | GPU waves utilization (actual occupancy): 100*(waves active)/(waves available)       |
+```
+
+Today, AMD's GPUs typically use wavefronts of 64 threads. Using hardware support for stochastic sampling on AMD MI300+ GPUs, HPCToolkit measures how many threads are active and computes the thread activity metrics shown in Table [8.16](#thread-util). When a vector instruction is sampled, HPCToolkit determines how many threads are active in the sampled cycle by counting the number of bits in the execution mask.
+`GCYCLES:THR_ACT` reports the total number of bits in the execution mask summed over all sampled vector instructions. `GCYCLES:THR_AVL` reports the wavefront size (today 64) x the number of sampled vector instructions. From these two metrics, HPCToolkit computes `GCYCLES:THR_UTL` -- the percent utilization of the available SIMD lanes by vector instructions.
+
+```{table} Table 8.16: GPU thread utilization metrics.
+---
+name: table:thread-util
+---
+| GCYCLES:THR_ACT   | GPU SIMD lanes (threads) aggregate active                                            |
+| GCYCLES:THR_AVL   | GPU SIMD lanes (threads) aggregate available                                         |
+| GCYCLES:THR_UTL   | GPU SIMD lanes (threads) utilization: 100*(SIMD lanes active)/(SIMD lanes available) |
+```
 
 ### Hardware Counters on AMD GPUs
 
@@ -400,7 +518,7 @@ HPCToolkit supports profiling and tracing of GPU-accelerated applications that o
 
 Intel's GPU compute runtime supports two kinds of GPU binaries: Intel's classic *Patch Token* binaries, and Intel's new *zeBinaries*. Either or both kinds of binaries may be present in any execution. Intel's newer zeBinary format is preferred and is the default for Intel's current compiler and runtime versions.
 
-Table [8.11](#intel-level0-options) shows available options for using HPCToolkit with Intel's Level Zero runtime. HPCToolkit supports both coarse-grain profiling and tracing of GPU operations atop Intel's Level Zero runtime. With this coarse-grain profiling support, HPCToolkit can collect GPU operation timings (Table [8.1](#table:gtimes)) and a subset of standard metrics for GPU operations such as memory allocation and deallocation (Table [8.2](#table:gmem)), memory set (Table [8.3](#table:gmset)), explicit memory copies (Table [8.4](#table:gxcopy)), and synchronization (Table [8.5](#table:gsync)).
+Table [8.17](#intel-level0-options) shows available options for using HPCToolkit with Intel's Level Zero runtime. HPCToolkit supports both coarse-grain profiling and tracing of GPU operations atop Intel's Level Zero runtime. With this coarse-grain profiling support, HPCToolkit can collect GPU operation timings (Table [8.1](#table:gtimes)) and a subset of standard metrics for GPU operations such as memory allocation and deallocation (Table [8.2](#table:gmem)), memory set (Table [8.3](#table:gmset)), explicit memory copies (Table [8.4](#table:gxcopy)), and synchronization (Table [8.5](#table:gsync)).
 
 In addition to coarse-grain profiling and tracing, HPCToolkit supports instrumentation-based measurement of GPU kernels on Intel GPUs using the Intel's GTPin binary instrumentation tool in conjunction with the Level Zero runtime.
 
@@ -413,7 +531,7 @@ approximately attributes the memory latency in each basic block by dividing it u
 When you direct HPCToolkit to collect instruction-level measurements of GPU programs using (GTPin) instrumentation, instruction-level measurements can only be attributed at the kernel level
 if your program's GPU kernels are compiled without the `-g` flag. When GPU kernels are compiled with `-g` (in addition to any optimization flags), HPCToolkit can attribute instruction-level measurements within GPU kernels to inlined templates and functions, loops, and individual source lines. If you find any kernel where instrumentation-based metrics are attributed only at the kernel level, adjust your build so that the kernel is compiled with `-g`.
 
-```{table} Table 8.11: Monitoring performance on Intel GPUs when using Intel's Level Zero runtime.
+```{table} Table 8.17: Monitoring performance on Intel GPUs when using Intel's Level Zero runtime.
 ---
 name: intel-level0-options
 ---
@@ -422,7 +540,8 @@ name: intel-level0-options
 | `-e gpu=level0`                | coarse-grain profiling of Intel GPU operations using Intel's Level Zero runtime                                                                                                                                                                                                                         |
 | `-e gpu=level0 -t`             | coarse-grain profiling and tracing of Intel Level Zero GPU operations                                                                                                                                                                                                             |
 | `-e gpu=level0 -tt`             | coarse-grain profiling and high-resolution tracing of Intel Level Zero GPU operations                                                                                                                                                                                                             |
-| `-e gpu=level0,inst=what`      | coarse-grain profiling of Intel GPU operations using Intel's Level Zero runtime; fine-grain measurement of Intel GPU kernel executions using Intel's GT-Pin support values for *what* that include a comma-separated list that may contain values drawn from the set {count, latency, simd}             |
+| `-e gpu=level0,inst=what`      | coarse-grain profiling of GPU operations using Intel's Level Zero runtime; fine-grain measurement of Intel GPU kernel executions using Intel's GT-Pin support values for *what* that include a comma-separated list that may contain values drawn from the set {count, latency, simd}             |
+| `-e gpu=level0,pc[@k]`  | coarse-grain profiling of GPU operations using Intel's Level Zero runtime; fine-grain profiling of GPU kernels using PC sampling every 2^k ns |
 ```
 
 (sec:gpu-opencl)=

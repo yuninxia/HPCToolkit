@@ -100,31 +100,40 @@ OPTIONS: PROFILING
 
   - See the "Sample sources" under **NOTES** for additional details.
 
--e <gpu=cuda>, --event <gpu=cuda[,pc]>
+-e <gpu=cuda>, --event <gpu=cuda[,pc[@k]]>
   Collect comprehensive operation-level measurements for CUDA programs on NVIDIA GPUs, including timing of GPU kernel invocations, memory copies (implicit and explicit), driver and runtime activity, and overhead.
   If the optional argument ``pc`` is used, the GPU will collect instruction-level measurements of GPU kernels using Program Counter (PC) sampling in addition to the operation-level data.
   On NVIDIA GPUs, PC sampling collects the program counter value (an instruction address), whether the
   instruction issued or not, and the kind of stall (if any) blocking the instruction from being issued.
 
---event <gpu=level0>, -e <gpu=level0[,pc]>
+  One can specify a value 'k', which will set the PC sampling period to 2^k ns for PC sampling.
+  The default sampling period is 2^12 cycles (k=12).
+
+--event <gpu=level0>, -e <gpu=level0[,pc[@k]]>
   Collect comprehensive operation-level measurements for CUDA programs on Intel GPUs, including timing of GPU kernel invocations and memory copies.
-  If the optional argument ``pc`` is used, the GPU will collect instruction-level measurements of GPU kernels using Program Counter (PC) sampling in addition to the operation-level data.
+  If the optional argument ``pc`` is used, the GPU will collect instruction-level measurements of GPU kernels using hardware-supported Program Counter (PC) sampling in addition to the operation-level data.
   On Intel GPUs, PC sampling collects the program counter value (an instruction address), whether the
   instruction issued or not, and the kind of stall (if any) blocking the instruction from being issued.
 
---event <gpu=rocm>, -e <gpu=rocm[,pc[={sw,hw}]]>
+  One can specify a value 'k', which will set the PC sampling period to 2^k ns for PC sampling.
+  The default sampling period is 2^19 ns (k=19).
+
+--event <gpu=rocm>, -e <gpu=rocm[,pc[={sw,hw}][@k]]>
   Collect comprehensive operation-level measurements for HIP programs on AMD GPUs, including timing of GPU kernel invocations, memory copies (implicit and explicit), driver and runtime activity, and overhead.
   If the optional argument ``pc`` is used, the GPU will collect instruction-level measurements of GPU kernels using Program Counter (PC) sampling in addition to the operation-level data. An AMD GPU may support
   one or more kinds of PC sampling, which are performed either by software ('sw') or hardware ('hw').
 
   Software PC sampling, available on MI200+ GPUs, halts a GPU, extracts the program counter for each active GPU wave,
-  and reports the set of program counter values it observed.
+  and reports the set of program counter values it observed. Unless 'hw' is specified, software PC sampling is the default because it is more widely available.
 
-  Hardware  PC sampling, available on MI300+ GPUs, collects much richer information.
+  Hardware PC sampling, available on MI300+ GPUs, collects much richer information.
   Each PC sample includes the program counter value (an instruction address), kind of instruction at that address, whether the
   instruction issued or not, kind of stall (if any) blocking the instruction from being issued, what pipelines issued in the
   sampled cycle, what pipelines stalled in the sampled cycle, the utilization of available wave slots, and the utilization of
   available SIMD lanes.
+
+  One can specify a value 'k', which will set the PC sampling period to 2^k cycles for hardware PC sampling and 2^k ns for software PC sampling.
+  The default sampling periods are 2^20 cycles for hardware PC sampling (k=20) and 2^17 ns for software PC sampling (k=17).
 
 -e <gpu=opencl>, --event <gpu=opencl>
   Collect comprehensive operation-level measurements for OpenCL programs on AMD, Intel, or NVIDIA GPUs, including timing of GPU kernel invocations, memory copies (implicit and explicit), driver and runtime activity, and overhead.
@@ -199,12 +208,20 @@ OPTIONS: PROFILING
   If this option is given, hpcrun collect only flat profiles, attributing metrics directly to functions without any information about the contexts in which they are called.
 
 -t, --trace
-  Generate a call path trace in addition to a call path profile.
-  This option will enable tracing for CPUs if a time-based metric, such as ``CPUTIME``, ``REALTIME``, or ``cycles`` is used.
-  This option will enable tracing for GPU operations if a ``-e gpu=*`` option is used to enable measurement of GPU activities.
+  Record a call path trace based on asynchronous sampling of each CPU thread if a time-based sampling metric,
+  such as ``CPUTIME``, ``REALTIME``, or ``cycles`` is used, in addition to a call path profile based on this metric.
+
+  This option also  traces any GPU operations if a ``-e gpu=*`` option is used to enable measurement of GPU activities.
+  Note: ``-tt`` is recommended instead of ``-t`` if your program frequently launches GPU operations.
 
 ``-tt``, ``--ttrace``
-  Generate a call path trace that includes both sample and kernel launches on the CPU in addition to a call path profile.
+  Like the ``-t`` option, record a call path trace based on asynchronous sampling of each CPU thread if a time-based sampling metric,
+  such as ``CPUTIME``, ``REALTIME``, or ``cycles`` is used, in addition to a call path profile based on this metric.
+  This option also traces any GPU operations if a ``-e gpu=*`` option is used to enable measurement of GPU activities.
+  Unlike ``-t``, also record a sample for a thread as it launches each GPU operation (if any). This option is recommended
+  instead of ``-t`` when monitoring GPU-accelerated programs that launch many GPU operations per second.
+  Without ``-tt``, the activity seen on a CPU trace line at the time a kernel is launched
+  is often from long ago, which makes it hard to understand how CPU activity relates to GPU activity.
   Since additional non-sample elements are added, any statistical properties of the CPU traces are disturbed.
   Also see ``--trace``.
 
@@ -238,10 +255,9 @@ Under most circumstances, hpcrun requires no special environment variable settin
 
 There are two situations, however, where hpcrun *must* consult the ``HPCTOOLKIT`` environment variable to determine the location of the top-level installation directory:
 
-- On some systems, parallel job launchers (e.g., Cray's ``aprun``) *copy* the hpcrun script to a different location.
-  For hpcrun to know the location of its top-level installation directory, you must set the ``HPCTOOLKIT`` environment variable to the top-level installation directory.
+- On some systems, parallel job launchers may *copy* HPCToolkit's hpcrun launcher to a different location.
+  For hpcrun to find its monitoring library, you may need to set the ``HPCTOOLKIT`` environment variable to point to HPCToolkit's top-level installation directory.
 
-- If you launch hpcrun script via a file system link, you must set ``HPCTOOLKIT`` for the same reason.
 
 LAUNCHING
 =========
