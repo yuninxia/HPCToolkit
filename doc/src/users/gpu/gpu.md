@@ -133,7 +133,7 @@ name: table:gker
 
 ### Fine-grain measurement of GPU kernels
 
-Table [8.7](#table:pc-stall) shows fine-grain measurements collected for instructions in GPU kernels using Program Counter (PC) sampling.
+Table [8.7](#table:issue-stall) shows fine-grain measurements collected for instructions in GPU kernels using Program Counter (PC) sampling.
 Using GPU PC sampling, HPCToolkit attributes fine-grain GPU metrics to heterogeneous calling contexts that includes as a prefix the CPU calling context in which a kernel was launched and a suffix that represents the calling context within a kernel where the PC sample was collected.
 To our knowledge, no GPU exposes hardware support for attributing metrics directly to GPU calling contexts.
 To compensate, HPCToolkit approximately attributes metrics to GPU calling contexts. It reconstructs GPU calling contexts from static GPU call graphs with kernels on AMD, Intel, and NVIDIA GPUs and uses measurements of call sites and data flow analysis on static call graphs to apportion metrics among call paths in a GPU calling context tree.
@@ -211,7 +211,7 @@ recorded. If all warps on a scheduler are stalled when a sample is
 taken, the sample is marked as a latency sample, meaning no instruction will be issued by the warp scheduler in the next cycle.
 Figure \[8.1\](#fig:pc sampling) shows a PC sampling example on an SM with four schedulers. Among the six collected samples, four are latency samples, so the estimated stall ratio is 4/6.
 
-Figure [8.7](#table:pc-stall) shows the stall metrics recorded by HPCToolkit using CUPTI's PC sampling. Figure [8.9](#table:gsamp) shows PC sampling summary statistics recorded by HPCToolkit. Of particular note is the metric `GSAMP:UTIL`. HPCToolkit computes approximate GPU utilization using information gathered using PC sampling. Given the average clock frequency and the sampling rate, if all SMs are active, then HPCToolkit knows how many instruction samples would be expected (`GSAMP:EXP`) if the GPU was fully active for the interval when it was in use. HPCToolkit approximates the percentage of GPU utilization by comparing the measured samples with the expected samples using the following formula: `100 * (GSAMP:TOT) / (GSAMP:EXP)`.
+Figure [8.7](#table:issue-stall) shows the stall metrics recorded by HPCToolkit using CUPTI's PC sampling. Figure [8.9](#table:gsamp) shows PC sampling summary statistics recorded by HPCToolkit. Of particular note is the metric `GSAMP:UTIL`. HPCToolkit computes approximate GPU utilization using information gathered using PC sampling. Given the average clock frequency and the sampling rate, if all SMs are active, then HPCToolkit knows how many instruction samples would be expected (`GSAMP:EXP`) if the GPU was fully active for the interval when it was in use. HPCToolkit approximates the percentage of GPU utilization by comparing the measured samples with the expected samples using the following formula: `100 * (GSAMP:TOT) / (GSAMP:EXP)`.
 
 ```{figure-md} fig:pc sampling
 ![](mental-model.png)
@@ -375,7 +375,7 @@ At present, setting the sampling period for 'hw' PC sampling to a value signific
 Thus, the recommended minimum for hardware stochastic sampling is currently 2^20 cycles.
 The default period for host-trap sampling is currently 2^17 ns.
 
-AMD's stochastic sampling hardware records a wealth of information with each PC sample. A sampled instruction will either issue or not. If the sampled instruction issues, the stochastic sampling hardware in AMD's MI300 reports the kind of instruction that issued as well. Table [8.11](#amd-issues) shows the kinds of issued instructions that the MI300 tracks.
+AMD's stochastic sampling hardware records a wealth of information with each PC sample. A sampled instruction will either issue or not. If the sampled instruction issues, the stochastic sampling hardware in AMD's MI300 reports the kind of instruction that issued as well. Table [8.11](#table:amd-issues) shows the kinds of issued instructions that the MI300 tracks.
 
 ```{table} Table 8.11: GPU issue metrics.
 ---
@@ -464,16 +464,16 @@ A stochastic sample also indicates whether the instruction represented by the sa
 
 In post-mortem analysis with `hpcprof`, HPCToolkit maps instruction-level samples and stall reasons (if any) back to source lines using information about how GPU machine instructions relate back to application source code using line mappings and inlining information recorded by compilers. If all PC samples in a kernel map to line 0, there are two possibilities: (1) the AMD GPU binaries used by your application don't contain line mapping information for that kernel because you didn't pass a `-g` to the compiler when generating its code, or (2) don't you didn't analyze line mapping information AMD GPU binaries by using `hpcstruct <measurement-directory>`.
 
-Hardware support for stochastic sampling in AMD MI300+ GPUs collects and reports information about the kinds of instructions being issued. Using this hardware support, HPCToolkit monitors and tabulates the kinds of sampled instructions issued as shown in Table [8.11](#amd-issues). In some cycles, it is not possible to determine the kind of instruction, e.g. following a branch miss. For that reason, the number of `GCYCLE:ISU`, and the attribution to issue kinds, may be less than the number of `GCYCLES`.
+Hardware support for stochastic sampling in AMD MI300+ GPUs collects and reports information about the kinds of instructions being issued. Using this hardware support, HPCToolkit monitors and tabulates the kinds of sampled instructions issued as shown in Table [8.11](#table:amd-issues). In some cycles, it is not possible to determine the kind of instruction, e.g. following a branch miss. For that reason, the number of `GCYCLE:ISU`, and the attribution to issue kinds, may be less than the number of `GCYCLES`.
 
-Hardware support for PC sampling in AMD, Intel, and NVIDIA GPUs reports the reasons that GPU instructions stall. Table [8.12](#issue-stall) shows the categories of stall reasons reported by HPCToolkit. Stall reasons available from vendor hardware are mapped into these vendor-agnostic categories. For instance, long scoreboard waits on Intel GPUs are mapped to generic memory stalls `GCYCLE:STL:MEM`. (We refer to this category as a generic memory stall as it is likely waiting for data from the memory hierarchy, but we don't know whether it is awaiting data from constant memory, texture memory, local memory, or global memory.)
+Hardware support for PC sampling in AMD, Intel, and NVIDIA GPUs reports the reasons that GPU instructions stall. Table [8.12](#table:issue-stall) shows the categories of stall reasons reported by HPCToolkit. Stall reasons available from vendor hardware are mapped into these vendor-agnostic categories. For instance, long scoreboard waits on Intel GPUs are mapped to generic memory stalls `GCYCLE:STL:MEM`. (We refer to this category as a generic memory stall as it is likely waiting for data from the memory hierarchy, but we don't know whether it is awaiting data from constant memory, texture memory, local memory, or global memory.)
 
 AMD's GPUs support issuing instructions to multiple independent pipelines in a single cycle.
 Hardware support for stochastic sampling in AMD MI300+ GPUs
 collects and reports information about pipeline issues and pipeline stalls.
-Tables [8.13](#pipe-issue) and [8.14](#pipe-stall) show the aggregate pipeline issue and stall metrics collected using these monitoring capabilities. By comparing these issue and stall counts with the GCYCLES metric, one can compute the fraction of cycles in which each pipeline issues or stalls.
+Tables [8.13](#table:pipe-issue) and [8.14](#table:pipe-stall) show the aggregate pipeline issue and stall metrics collected using these monitoring capabilities. By comparing these issue and stall counts with the GCYCLES metric, one can compute the fraction of cycles in which each pipeline issues or stalls.
 
-AMD's MI300 GPU uses 64-thread wavefronts. In contrast, NVIDIA GPUs use warps of 32 threads. GPUs hide latency by overlapping stalls of one wavefront or warp with the execution of another. Having multiple wavefronts or warps available to schedule is important for hiding latency. On AMD GPUs' HPCToolkit measures how many wavefronts are active in each sampled cycle and computes the metrics shown in Table [8.15](#wave-util).
+AMD's MI300 GPU uses 64-thread wavefronts. In contrast, NVIDIA GPUs use warps of 32 threads. GPUs hide latency by overlapping stalls of one wavefront or warp with the execution of another. Having multiple wavefronts or warps available to schedule is important for hiding latency. On AMD GPUs' HPCToolkit measures how many wavefronts are active in each sampled cycle and computes the metrics shown in Table [8.15](#table:wave-util).
 `GCYCLES:WAVE_ACT` reports the total number of wavefronts active aggregated across over all sampled cycles. `GCYCLES:WAVE_AVL` reports the total number of wave slots (today 32) aggregated over all sampled cycles. From these two metrics, HPCToolkit computes `GCYCLES:WAVE_UTL` -- the percent utilization of the available wave slots across all sampled cycles. This metric could have been described as occupancy; however, percent thread utilization seems like a simpler way to present this concept. Note that the measure of wave utilization only represents the utilization of wave slots in active CUs. You may have a high wave utilization even if you are only using a small fraction of the available compute units.
 
 ```{table} Table 8.15: GPU wave utilization metrics.
@@ -487,7 +487,7 @@ name: table:wave-util
 | GCYCLES:WAVE_UTL  | GPU waves utilization (actual occupancy): 100*(waves active)/(waves available)       |
 ```
 
-Today, AMD's GPUs typically use wavefronts of 64 threads. Using hardware support for stochastic sampling on AMD MI300+ GPUs, HPCToolkit measures how many threads are active and computes the thread activity metrics shown in Table [8.16](#thread-util). When a vector instruction is sampled, HPCToolkit determines how many threads are active in the sampled cycle by counting the number of bits in the execution mask.
+Today, AMD's GPUs typically use wavefronts of 64 threads. Using hardware support for stochastic sampling on AMD MI300+ GPUs, HPCToolkit measures how many threads are active and computes the thread activity metrics shown in Table [8.16](#table:thread-util). When a vector instruction is sampled, HPCToolkit determines how many threads are active in the sampled cycle by counting the number of bits in the execution mask.
 `GCYCLES:THR_ACT` reports the total number of bits in the execution mask summed over all sampled vector instructions. `GCYCLES:THR_AVL` reports the wavefront size (today 64) x the number of sampled vector instructions. From these two metrics, HPCToolkit computes `GCYCLES:THR_UTL` -- the percent utilization of the available SIMD lanes by vector instructions.
 
 ```{table} Table 8.16: GPU thread utilization metrics.
