@@ -487,13 +487,16 @@ name: table:wave-util
 | GCYCLES:WAVE_UTL  | GPU waves utilization (actual occupancy): 100*(waves active)/(waves available)       |
 ```
 
-Today, AMD's GPUs typically use wavefronts of 64 threads. Using hardware support for stochastic sampling on AMD MI300+ GPUs, HPCToolkit measures how many threads are active and computes the thread activity metrics shown in Table [8.16](#table:thread-util). When a vector instruction is sampled, HPCToolkit determines how many threads are active in the sampled cycle by counting the number of bits in the execution mask.
+Today, AMD's GPUs typically use wavefronts of 64 threads. Using hardware support for stochastic sampling on AMD MI300+ GPUs, HPCToolkit measures how many threads are active and computes the thread activity metrics shown in 
+Table [8.16](#table:thread-util). When a vector instruction is sampled, HPCToolkit determines how many threads are active in the sampled cycle by counting the number of bits in the execution mask.
 `GCYCLES:THR_ACT` reports the total number of bits in the execution mask summed over all sampled vector instructions. `GCYCLES:THR_AVL` reports the wavefront size (today 64) x the number of sampled vector instructions. From these two metrics, HPCToolkit computes `GCYCLES:THR_UTL` -- the percent utilization of the available SIMD lanes by vector instructions.
 
 ```{table} Table 8.16: GPU thread utilization metrics.
 ---
 name: table:thread-util
 ---
+| Metric            | Description                                                                          |
+| :---------------- | :----------------------------------------------------------------------------------- |
 | GCYCLES:THR_ACT   | GPU SIMD lanes (threads) aggregate active                                            |
 | GCYCLES:THR_AVL   | GPU SIMD lanes (threads) aggregate available                                         |
 | GCYCLES:THR_UTL   | GPU SIMD lanes (threads) utilization: 100*(SIMD lanes active)/(SIMD lanes available) |
