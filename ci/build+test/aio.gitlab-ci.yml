@@ -4,6 +4,8 @@
 
 aio amd64:compile:
   extends: .compile
+  variables:
+    BUILD_SLUG: aio-amd64
   rules:
     - if: &on_gitlab $CI_SERVER_FQDN == "gitlab.com"
   tags: [$GITLAB_SAAS_LINUX_MAX_AMD64]
@@ -14,11 +16,12 @@ aio amd64:compile:
   script:
     # NB: We compile for MI100, MI210, and MI300. More GPUs may become relevant later, but for now this
     # set covers what we have available in CI.
+    - mkdir tmp/
     - >-
-      meson setup builddir/ -Dwerror=true -Doptimization=2 -Ddebug=false -Db_ndebug=false
+      meson setup tmp/builddir-${BUILD_SLUG}/ -Dwerror=true -Doptimization=2 -Ddebug=false -Db_ndebug=false
       -Dhip_args="['--offload-arch=gfx908,gfx90a,gfx942']"
       -Dcuda=enabled -Drocm=enabled -Dlevel0=enabled -Dgtpin=enabled
-    - cd builddir/
+    - cd tmp/builddir-${BUILD_SLUG}/
     # FIXME: Tests that use Level Zero fail on systems that don't have a suitable GPU attached.
     # This should be fixed, but for now don't try to run any of the affected tests.
     # FIXME: The ROCm-enabled tests FAIL instead of SKIP if there is no AMD hardware available to run the test.
@@ -28,13 +31,15 @@ aio amd64:compile:
 
 aio amd64:test cpu:
   extends: .test
+  variables:
+    BUILD_SLUG: aio-amd64
   needs: [aio amd64:compile]
   rules:
     - if: *on_gitlab
   tags: [$GITLAB_SAAS_LINUX_MAX_AMD64]
   image: *image_amd64
   script:
-    - cd builddir/
+    - cd tmp/builddir-${BUILD_SLUG}/
     # FIXME: Tests that use Level Zero fail on systems that don't have a suitable GPU attached.
     # This should be fixed, but for now don't try to run any of the affected tests.
     # FIXME: The ROCm-enabled tests FAIL instead of SKIP if there is no AMD hardware available to run the test.
@@ -43,20 +48,21 @@ aio amd64:test cpu:
 
 aio amd64:test nvidia gpu:
   extends: .test
+  variables:
+    BUILD_SLUG: aio-amd64
+    # These variables are set for compatibility with legacy (non-CDI) nvidia-container-toolkit
+    NVIDIA_VISIBLE_DEVICES: all
+    NVIDIA_DRIVER_CAPABILITIES: compute,utility
   needs: [aio amd64:compile]
   rules:
     - if: $GITLAB_SAAS_LINUX_MAX_AMD64_GPU_STANDARD
   tags: [$GITLAB_SAAS_LINUX_MAX_AMD64_GPU_STANDARD]
   image: *image_amd64
-  variables:
-    # These variables are set for compatibility with legacy (non-CDI) nvidia-container-toolkit
-    NVIDIA_VISIBLE_DEVICES: all
-    NVIDIA_DRIVER_CAPABILITIES: compute,utility
   script:
     # These paths need to be set for compatibility with nvidia-docker v1
     - export PATH="$PATH":/usr/local/nvidia/bin
     - export LD_LIBRARY_PATH="$LD_LIBRARY_PATH":/usr/local/nvidia/lib:/usr/local/nvidia/lib64
-    - cd builddir/
+    - cd tmp/builddir-${BUILD_SLUG}/
     # FIXME: -arch=native is needed in CI to avoid PTX JIT-compilation. Without this the
     # CI falls over if the CUDA is too new compared to the driver.
     - meson configure -Dcuda_args=-arch=native
@@ -64,11 +70,13 @@ aio amd64:test nvidia gpu:
 
 aio amd64:test amd gpu:
   extends: .test
+  variables:
+    BUILD_SLUG: aio-amd64
   needs: [aio amd64:compile]
   rules:
     - if: $HPCTOOLKIT_LINUX_MAX_AMD64_GPU_AMD
   tags: [$HPCTOOLKIT_LINUX_MAX_AMD64_GPU_AMD]
   image: *image_amd64
   script:
-    - cd builddir/
+    - cd tmp/builddir-${BUILD_SLUG}/
     - meson test --print-errorlogs --repeat 7 'hpctoolkit:*' --suite rocm --suite opencl

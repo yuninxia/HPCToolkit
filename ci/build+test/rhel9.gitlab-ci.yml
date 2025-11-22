@@ -5,19 +5,20 @@
 .rhel9:compile:
   extends: .compile
   script:
+    - mkdir tmp/
     # FIXME: This particular combination of PAPI et al. seems to cause hpcrun to hang, always.
     # Disable PAPI in the build until a proper investigation can be carried out.
     - >-
-      meson setup builddir/ -Dwerror=true -Doptimization=2 -Ddebug=false -Db_ndebug=false
+      meson setup tmp/builddir-${BUILD_SLUG}/ -Dwerror=true -Doptimization=2 -Ddebug=false -Db_ndebug=false
       -Dpapi=disabled
-    - cd builddir/
+    - cd tmp/builddir-${BUILD_SLUG}/
     - meson test --print-errorlogs 'hpctoolkit:*'
     - meson compile
 
 .rhel9:test cpu:
   extends: .test
   script:
-    - cd builddir/
+    - cd tmp/builddir-${BUILD_SLUG}/
     - meson test --print-errorlogs 'hpctoolkit:*'
 
 .rhel9:compile+test:
@@ -26,14 +27,16 @@
     # FIXME: This particular combination of PAPI et al. seems to cause hpcrun to hang, always.
     # Disable PAPI in the build until a proper investigation can be carried out.
     - >-
-      meson setup builddir/ -Dwerror=true -Dbuildtype=debugoptimized
+      meson setup tmp/builddir-${BUILD_SLUG}/ -Dwerror=true -Dbuildtype=debugoptimized
       -Dpapi=disabled
-    - cd builddir/
+    - cd tmp/builddir-${BUILD_SLUG}/
     - meson test --print-errorlogs 'hpctoolkit:*'
     - meson compile
 
 rhel9 amd64:compile:
   extends: .rhel9:compile
+  variables:
+    BUILD_SLUG: rhel9-amd64
   rules:
     - if: &on_gitlab $CI_SERVER_FQDN == "gitlab.com"
   tags: [$GITLAB_SAAS_LINUX_MAX_AMD64]
@@ -44,6 +47,8 @@ rhel9 amd64:compile:
 
 rhel9 amd64:test cpu:
   extends: .rhel9:test cpu
+  variables:
+    BUILD_SLUG: rhel9-amd64
   needs: [rhel9 amd64:compile]
   rules:
     - if: *on_gitlab
@@ -52,6 +57,8 @@ rhel9 amd64:test cpu:
 
 rhel9 arm64:compile:
   extends: .rhel9:compile
+  variables:
+    BUILD_SLUG: rhel9-arm64
   rules:
     - if: *on_gitlab
   tags: [$GITLAB_SAAS_LINUX_MAX_ARM64]
@@ -62,6 +69,8 @@ rhel9 arm64:compile:
 
 rhel9 arm64:test cpu:
   extends: .rhel9:test cpu
+  variables:
+    BUILD_SLUG: rhel9-arm64
   needs: [rhel9 arm64:compile]
   rules:
     - if: *on_gitlab
@@ -72,6 +81,8 @@ rhel9 arm64:test cpu:
 # architecture for better performance.
 rhel9 ppc64le:test:
   extends: .rhel9:compile+test
+  variables:
+    BUILD_SLUG: rhel9-ppc64le
   rules:
     - if: $HPCTOOLKIT_LINUX_MAX_PPC64LE
   tags: [$HPCTOOLKIT_LINUX_MAX_PPC64LE]
@@ -82,6 +93,8 @@ rhel9 ppc64le:test:
 
 rhel9 ppc64le:test:hpsf:
   extends: rhel9 ppc64le:test
+  variables:
+    BUILD_SLUG: rhel9-ppc64le-hpsf
   rules:
     - if: &on_hpsf $CI_SERVER_FQDN == "gitlab.spack.io"
   tags: [hpsf-ppc64le]

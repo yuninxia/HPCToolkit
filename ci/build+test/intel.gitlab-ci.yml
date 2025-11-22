@@ -5,10 +5,11 @@
 .intel:compile:
   extends: .compile
   script:
+    - mkdir tmp/
     - >-
-      meson setup builddir/ -Dwerror=true -Doptimization=2 -Ddebug=false -Db_ndebug=false
+      meson setup tmp/builddir-${BUILD_SLUG}/ -Dwerror=true -Doptimization=2 -Ddebug=false -Db_ndebug=false
       -Dlevel0=enabled -Dgtpin=enabled
-    - cd builddir/
+    - cd tmp/builddir-${BUILD_SLUG}/
     # FIXME: Tests that use Level Zero fail on systems that don't have a suitable GPU attached.
     # This should be fixed, but for now don't try to run any of the affected tests.
     - meson test --print-errorlogs 'hpctoolkit:*' --no-suite level0
@@ -16,6 +17,8 @@
 
 intel amd64:compile:
   extends: .intel:compile
+  variables:
+    BUILD_SLUG: intel-amd64
   rules:
     - if: &on_gitlab $CI_SERVER_FQDN == "gitlab.com"
   tags: [$GITLAB_SAAS_LINUX_MAX_AMD64]
@@ -26,13 +29,15 @@ intel amd64:compile:
 
 intel amd64:test cpu:
   extends: .test
+  variables:
+    BUILD_SLUG: intel-amd64
   needs: [intel amd64:compile]
   rules:
     - if: *on_gitlab
   tags: [$GITLAB_SAAS_LINUX_MAX_AMD64]
   image: *image_amd64
   script:
-    - cd builddir/
+    - cd tmp/builddir-${BUILD_SLUG}/
     # FIXME: Tests that use Level Zero fail on systems that don't have a suitable GPU attached.
     # This should be fixed, but for now don't try to run any of the affected tests.
     - meson test --print-errorlogs 'hpctoolkit:*' --no-suite level0
@@ -41,6 +46,8 @@ intel amd64:test cpu:
 # limited generic-hardware runners available, so a merged architecture works better.
 intel amd64:test:hpsf:
   extends: .compile+test
+  variables:
+    BUILD_SLUG: intel-amd64-hpsf
   rules:
     - if: &on_hpsf $CI_SERVER_FQDN == "gitlab.spack.io"
   tags: [hpsf-gpu, x86_64-intelgpu, intel-$INTEL_GPU_ARCH]
@@ -49,19 +56,21 @@ intel amd64:test:hpsf:
       - INTEL_GPU_ARCH: [data-center-max-1100]
   image: *image_amd64
   script:
+    - mkdir tmp/
     - >-
-      meson setup builddir/ -Dwerror=true -Dbuildtype=debugoptimized
+      meson setup tmp/builddir-${BUILD_SLUG}/ -Dwerror=true -Dbuildtype=debugoptimized
       -Dlevel0=enabled -Dgtpin=enabled
-    - cd builddir/
+    - cd tmp/builddir-${BUILD_SLUG}/
     - meson test --print-errorlogs 'hpctoolkit:*'
     - meson compile
 
 intel:compile icx:
   extends: .intel:compile
+  variables:
+    BUILD_SLUG: intel-amd64-icx
+    CC: ccache icx
+    CXX: ccache icpx
   rules:
     - if: *on_gitlab
   tags: [$GITLAB_SAAS_LINUX_MAX_AMD64]
   image: *image_amd64
-  variables:
-    CC: ccache icx
-    CXX: ccache icpx

@@ -5,27 +5,31 @@
 .ubuntu22.04:compile:
   extends: .compile
   script:
-    - meson setup builddir/ -Dwerror=true -Doptimization=2 -Ddebug=false -Db_ndebug=false
-    - cd builddir/
+    - mkdir tmp/
+    - meson setup tmp/builddir-${BUILD_SLUG}/ -Dwerror=true -Doptimization=2 -Ddebug=false -Db_ndebug=false
+    - cd tmp/builddir-${BUILD_SLUG}/
     - meson test --print-errorlogs 'hpctoolkit:*'
     - meson compile
 
 .ubuntu22.04:test cpu:
   extends: .test
   script:
-    - cd builddir/
+    - cd tmp/builddir-${BUILD_SLUG}/
     - meson test --print-errorlogs 'hpctoolkit:*'
 
 .ubuntu22.04:compile+test:
   extends: .compile+test
   script:
-    - meson setup builddir/ -Dwerror=true -Dbuildtype=debugoptimized
-    - cd builddir/
+    - mkdir tmp/
+    - meson setup tmp/builddir-${BUILD_SLUG}/ -Dwerror=true -Dbuildtype=debugoptimized
+    - cd tmp/builddir-${BUILD_SLUG}/
     - meson test --print-errorlogs 'hpctoolkit:*'
     - meson compile
 
 ubuntu22.04 amd64:compile:
   extends: .ubuntu22.04:compile
+  variables:
+    BUILD_SLUG: ubuntu22.04-amd64
   rules:
     - if: &on_gitlab $CI_SERVER_FQDN == "gitlab.com"
   tags: [$GITLAB_SAAS_LINUX_MAX_AMD64]
@@ -36,6 +40,8 @@ ubuntu22.04 amd64:compile:
 
 ubuntu22.04 amd64:test cpu:
   extends: .ubuntu22.04:test cpu
+  variables:
+    BUILD_SLUG: ubuntu22.04-amd64
   needs: [ubuntu22.04 amd64:compile]
   rules:
     - if: *on_gitlab
@@ -44,6 +50,8 @@ ubuntu22.04 amd64:test cpu:
 
 ubuntu22.04 arm64:compile:
   extends: .ubuntu22.04:compile
+  variables:
+    BUILD_SLUG: ubuntu22.04-arm64
   rules:
     - if: *on_gitlab
   tags: [$GITLAB_SAAS_LINUX_MAX_ARM64]
@@ -54,6 +62,8 @@ ubuntu22.04 arm64:compile:
 
 ubuntu22.04 arm64:test cpu:
   extends: .ubuntu22.04:test cpu
+  variables:
+    BUILD_SLUG: ubuntu22.04-arm64
   needs: [ubuntu22.04 arm64:compile]
   rules:
     - if: *on_gitlab
@@ -64,6 +74,8 @@ ubuntu22.04 arm64:test cpu:
 # architecture for better performance.
 ubuntu22.04 ppc64le:test:
   extends: .ubuntu22.04:compile+test
+  variables:
+    BUILD_SLUG: ubuntu22.04-ppc64le
   rules:
     - if: $HPCTOOLKIT_LINUX_MAX_PPC64LE
   tags: [$HPCTOOLKIT_LINUX_MAX_PPC64LE]
@@ -74,6 +86,8 @@ ubuntu22.04 ppc64le:test:
 
 ubuntu22.04 ppc64le:test:hpsf:
   extends: ubuntu22.04 ppc64le:test
+  variables:
+    BUILD_SLUG: ubuntu22.04-ppc64le-hpsf
   rules:
     - if: &on_hpsf $CI_SERVER_FQDN == "gitlab.spack.io"
   tags: [hpsf-ppc64le]
