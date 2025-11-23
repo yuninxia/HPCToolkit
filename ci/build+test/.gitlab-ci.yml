@@ -85,3 +85,62 @@ include:
   cache: *compile_caches
   variables:
     CCACHE_DIR: "$CI_PROJECT_DIR/.ccache"
+
+# This job combines compile_commands.json files from all build jobs in the build stage
+# into a single unified compile_commands.json file in the project root directory.
+# This provides a comprehensive compilation database for downstream SAST jobs.
+compile_commands.json:
+  stage: build
+  interruptible: true
+  rules:
+    - if: $CI_SERVER_FQDN == "gitlab.com"
+  needs:
+    - job: aio amd64:compile
+      optional: true
+    - job: cuda12.0 amd64:compile
+      optional: true
+    - job: cuda12.1 amd64:compile
+      optional: true
+    - job: cuda12.2 amd64:compile
+      optional: true
+    - job: cuda12.4 amd64:compile
+      optional: true
+    - job: cuda12.5 amd64:compile
+      optional: true
+    - job: fedora amd64:compile
+      optional: true
+    - job: fedora amd64:compile clang
+      optional: true
+    - job: intel amd64:compile
+      optional: true
+    - job: intel:compile icx
+      optional: true
+    - job: opensuse15 amd64:compile
+      optional: true
+    - job: rhel8 amd64:compile
+      optional: true
+    - job: rhel9 amd64:compile
+      optional: true
+    - job: rhel9 arm64:compile
+      optional: true
+    - job: rocm6.3 amd64:compile
+      optional: true
+    - job: ubuntu22.04 amd64:compile
+      optional: true
+    - job: ubuntu22.04 arm64:compile
+      optional: true
+    - job: ubuntu24.04 amd64:compile
+      optional: true
+    - job: ubuntu24.04 arm64:compile
+      optional: true
+  image: docker.io/alpine:3.20@sha256:beefdbd8a1da6d2915566fde36db9db0b524eb737fc57cd1367effd16dc0d06d
+  before_script:
+    - apk add --no-cache jq
+  script:
+    - >-
+      jq -s 'add | map(select(.file|contains("subprojects/")|not)) | unique_by(.file)'
+      tmp/builddir*/compile_commands.json > compile_commands.json
+    - echo "Successfully wrote $(jq length compile_commands.json) commands to compile_commands.json"
+  artifacts:
+    paths:
+      - compile_commands.json
