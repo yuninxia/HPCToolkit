@@ -69,7 +69,7 @@
   (ga)->details.dtype.end = activity_time((record)->end_timestamp);  \
   (ga)->details.dtype.correlation_id = (record)->correlation_id.external.value
 
-
+#define CEIL_DIV(NUM, DENOM) (NUM + DENOM - 1)/DENOM
 
 //******************************************************************************
 // private data
@@ -186,8 +186,11 @@ convert_kernel_launch
   ga->details.kernel.vectorRegisters = (info) ? info->kernel_vgpr_count : 0;
   ga->details.kernel.blockSharedMemory = (info) ? info->workgroup_LDS_bytes : 0;
   ga->details.kernel.localMemoryTotal = (info) ? info->kernel_scratch_bytes : 0;
-  ga->details.kernel.blockThreads = dim3_size(&(activity->dispatch_info.workgroup_size));
-  ga->details.kernel.blocks = dim3_size(&(activity->dispatch_info.grid_size));
+
+  uint64_t workgroup_size = dim3_size(&(activity->dispatch_info.workgroup_size));
+  uint64_t grid_size = dim3_size(&(activity->dispatch_info.grid_size));
+  ga->details.kernel.blockThreads = workgroup_size;
+  ga->details.kernel.blocks = CEIL_DIV(grid_size, workgroup_size); // round up
 
   return ga->details.kernel.correlation_id;
 }
