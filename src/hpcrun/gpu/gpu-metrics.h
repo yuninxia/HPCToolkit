@@ -213,33 +213,33 @@ typedef struct instruction_metrics_t {
   macro("GCYCLES:STL:INV", GPU_INST_STALL_INVALID,                        \
         "GPU exposed instruction issue stall cycles: invalid")
 
-// GPU pipeline status: instantiate with either "STL" or "ISS"
-#define FORALL_GPU_PIPE_TYPE(macro, si)                                 \
+// GPU pipeline cycles: instantiate with either stall or issue
+#define FORALL_GPU_PIPE_TYPE(macro, si, sil)                            \
   macro(GPU_PIPE_METRIC_NAME ":" si ":MATR", GPU_PIPE_TYPE_MATRIX,      \
-        "GPU pipeline " si " status: low precision matrix operation")   \
+        "GPU pipeline " sil " cycles: low precision matrix operation")  \
   macro(GPU_PIPE_METRIC_NAME ":" si ":VEC2", GPU_PIPE_TYPE_VECTOR_DUAL, \
-        "GPU pipeline " si " status: vector, dual")                     \
+        "GPU pipeline " sil " cycles: vector, dual")                    \
   macro(GPU_PIPE_METRIC_NAME ":" si ":VEC", GPU_PIPE_TYPE_VECTOR,       \
-        "GPU pipeline " si " status: vector")                           \
+        "GPU pipeline " sil " cycles: vector")                          \
   macro(GPU_PIPE_METRIC_NAME ":" si ":SCLR", GPU_PIPE_TYPE_SCALAR,      \
-        "GPU pipeline " si " status: scalar ALU or memory")             \
+        "GPU pipeline " sil " cycles: scalar ALU or memory")            \
   macro(GPU_PIPE_METRIC_NAME ":" si ":LDS", GPU_PIPE_TYPE_LDS,          \
-        "GPU pipeline " si " status: Local Data Store")                 \
+        "GPU pipeline " sil " cycles: Local Data Store")                \
   macro(GPU_PIPE_METRIC_NAME ":" si ":LDSD", GPU_PIPE_TYPE_LDS_DIRECT,  \
-        "GPU pipeline " si " status: Local Data Store direct")          \
+        "GPU pipeline " sil " cycles: Local Data Store direct")         \
   macro(GPU_PIPE_METRIC_NAME ":" si ":TEX", GPU_PIPE_TYPE_TEXTURE,      \
-        "GPU pipeline " si " status: texture")                          \
+        "GPU pipeline " sil " cycles: texture")                         \
   macro(GPU_PIPE_METRIC_NAME ":" si ":FLAT", GPU_PIPE_TYPE_FLAT,        \
-        "GPU pipeline " si " status: flat")                             \
+        "GPU pipeline " sil " cycles: flat")                            \
   macro(GPU_PIPE_METRIC_NAME ":" si ":XPRT", GPU_PIPE_TYPE_EXPORT,      \
-        "GPU pipeline " si " status: export")                           \
+        "GPU pipeline " sil " cycles: export")                          \
   macro(GPU_PIPE_METRIC_NAME ":" si ":BMSG", GPU_PIPE_TYPE_BRMSG,       \
-        "GPU pipeline " si " status: branch or message")                \
+        "GPU pipeline " sil " cycles: branch or message")               \
   macro(GPU_PIPE_METRIC_NAME ":" si ":MISC", GPU_PIPE_TYPE_MISC,        \
-        "GPU pipeline " si " status: miscellaneous")
+        "GPU pipeline " sil " cycles: miscellaneous")
 
-#define FORALL_GPU_PIPE_TYPE_ISS(macro) FORALL_GPU_PIPE_TYPE(macro, "ISU")
-#define FORALL_GPU_PIPE_TYPE_STL(macro) FORALL_GPU_PIPE_TYPE(macro, "STL")
+#define FORALL_GPU_PIPE_TYPE_ISU(macro) FORALL_GPU_PIPE_TYPE(macro, "ISU", "issue")
+#define FORALL_GPU_PIPE_TYPE_STL(macro) FORALL_GPU_PIPE_TYPE(macro, "STL", "stall")
 
 
 #define FORALL_GPU_UTIL_METRICS(macro)                                  \

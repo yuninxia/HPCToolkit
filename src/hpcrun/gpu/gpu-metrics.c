@@ -62,7 +62,7 @@
 #define FORALL_SINGLETON_METRIC_KINDS(macro)                     \
   macro(GPU_CYCLES_TYPE, 0)                                      \
   macro(GPU_INST_TYPE, 1)                                        \
-  macro(GPU_PIPE_TYPE_ISS, 2)                                    \
+  macro(GPU_PIPE_TYPE_ISU, 2)                                    \
   macro(GPU_PIPE_TYPE_STL, 3)                                    \
   macro(GPU_UTIL_METRICS, 4)
 
@@ -463,7 +463,7 @@ gpu_metrics_attribute_pipe_issue_status
 #endif
 
 #define IF(type, field) if (status.field) {                  \
-  int metric_id = APPLY(METRIC_ID, GPU_PIPE_TYPE_ISS)[type]; \
+  int metric_id = APPLY(METRIC_ID, GPU_PIPE_TYPE_ISU)[type]; \
   attribute_pipe_metric(cct_node, metric_id, sample_count);  \
 }
 
@@ -1421,12 +1421,12 @@ gpu_metrics_GPU_PIPE_enable
 )
 {
 #undef CURRENT_METRIC
-#define CURRENT_METRIC GPU_PIPE_TYPE_ISS
-  FORALL_GPU_PIPE_TYPE(INITIALIZE_SINGLETON_METRIC_INT, "ISS");
+#define CURRENT_METRIC GPU_PIPE_TYPE_ISU
+  FORALL_GPU_PIPE_TYPE_ISU(INITIALIZE_SINGLETON_METRIC_INT);
 
 #undef CURRENT_METRIC
 #define CURRENT_METRIC GPU_PIPE_TYPE_STL
-  FORALL_GPU_PIPE_TYPE(INITIALIZE_SINGLETON_METRIC_INT, "STL");
+  FORALL_GPU_PIPE_TYPE_STL(INITIALIZE_SINGLETON_METRIC_INT);
 }
 
 void
