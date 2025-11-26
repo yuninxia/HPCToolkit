@@ -1128,6 +1128,7 @@ add_project_arguments(
 )
 
 
+subdir('meson/quality')
 subdir('doc')
 subdir('src')
 subdir('tests')

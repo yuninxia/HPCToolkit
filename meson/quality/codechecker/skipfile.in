@@ -1,0 +1,16 @@
+# SPDX-FileCopyrightText: Contributors to the HPCToolkit Project
+#
+# SPDX-License-Identifier: CC0-1.0
+
+# Include files from the source directory, but not those in subprojects
+-@MESON_PROJECT_SOURCE_ROOT@/subprojects/*
++@MESON_PROJECT_SOURCE_ROOT@/*
+-@MESON_GLOBAL_SOURCE_ROOT@/subprojects/*
+
+# Include files from the build directory, but not those in subprojects
+-@MESON_PROJECT_BUILD_ROOT@/subprojects/*
++@MESON_PROJECT_BUILD_ROOT@/*
+-@MESON_GLOBAL_BUILD_ROOT@/subprojects/*
+
+# Ignore all other files
+-*
