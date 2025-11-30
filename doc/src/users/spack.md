@@ -4,7 +4,7 @@ SPDX-FileCopyrightText: Contributors to the HPCToolkit Project
 SPDX-License-Identifier: CC-BY-4.0
 -->
 
-# Installing HPCToolkit with Spack
+# Installing with Spack
 
 This chapter outlines how to build and install HPCToolkit and Hpcviewer with [Spack](https://spack.readthedocs.io/en/latest/). If you are unfamiliar with Spack, see the section below [Running Spack for the First Time](#spack-first-time).
 
@@ -401,7 +401,7 @@ You should use python 3.10 or later and use the same version as the application.
 
 (spack-first-time)=
 
-## Running Spack for the First Time
+## Spack for Beginners
 
 If you have never run Spack before, then follow these steps to set up your system.
 Some of these steps may take several minutes for the first time while Spack

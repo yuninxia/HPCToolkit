@@ -34,7 +34,7 @@ Finally, one explores a performance database with HPCToolkit's `hpcviewer` graph
 
 The rest of this chapter briefly discusses unique aspects of HPCToolkit's measurement, analysis and presentation capabilities.
 
-## Asynchronous Sampling and Call Path Profiling
+## Call Path Profiling
 
 Without accurate measurement, performance analysis results may be of questionable value.
 As a result, a principal focus of work on HPCToolkit has been the design and implementation of techniques to provide accurate fine-grain measurements of production applications running at scale.
@@ -69,7 +69,7 @@ These analyses enable `hpcrun` to unwind call stacks for optimized code with lit
 The output of a run with `hpcrun` is a *measurements directory* containing the data, and the information necessary
 to recover the names of all shared libraries and GPU binaries.
 
-## Recovering Static Program Structure
+## Recovering Program Structure
 
 To enable effective analysis, call path profiles for executions of optimized programs must be correlated
 with important source code abstractions.
@@ -95,7 +95,7 @@ For example, `hpcstruct`'s program structure naturally reveals transformations s
 loops that arise from compilation of Fortran 90 array notation.
 Similarly, it exposes calls to compiler support routines and wait loops in communication libraries of which one would otherwise be unaware.
 
-## Aggregating and Attributing Performance Measurements
+## Attributing Performance to Code
 
 HPCToolkit combines (post-mortem) the recovered static program structure with dynamic call paths to expose inlined frames and loop nests.
 This enables us to attribute the performance of samples in their full static and dynamic context and correlate it with source code.
@@ -109,7 +109,7 @@ In most cases `hpcprof` is able to complete the reduction in minutes, however fo
 `hpcprof-mpi` is an MPI application identical to `hpcprof`, except that employs distributed-memory parallelism in addition to multithreading to aggregate and attribute performance measurements for many CPUs and GPUs.
 In our experience, exploiting 8-10 compute nodes via `hpcprof-mpi` can be as much as 5x faster than `hpcprof` for analyzing performance measurements from thousands of CPUs and GPUs.
 
-## Presenting Performance Measurements
+## Interactive Performance Analysis
 
 To enable an analyst to rapidly pinpoint and quantify performance bottlenecks, tools must present the performance measurements in a way that engages the analyst, focuses attention on what is important, and automates common analysis subtasks to reduce the mental effort and frustration of sifting through a sea of measurement details.
 

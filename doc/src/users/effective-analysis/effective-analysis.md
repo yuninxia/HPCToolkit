@@ -6,11 +6,11 @@ SPDX-License-Identifier: CC-BY-4.0
 
 (chpt:effective-performance-analysis)=
 
-# Effective Strategies for Analyzing Program Performance
+# Strategies for Insight
 
 This chapter describes some proven strategies for using performance measurements to identify performance bottlenecks in both serial and parallel codes.
 
-## Monitoring High-Latency Penalty Events
+## Monitoring High-Latency Events
 
 A very simple and often effective methodology is to profile with respect to cycles and high-latency penalty events.
 If HPCToolkit attributes a large number of penalty events with a particular source-code statement, there is an extremely high likelihood of significant exposed stalling.
@@ -137,7 +137,7 @@ Identifying such sources of inefficiency is the first step towards improving per
 
 (sec:effective-performance-analysis:scalability)=
 
-## Pinpointing and Quantifying Scalability Bottlenecks
+## Analyzing Scalability Bottlenecks
 
 On large-scale parallel systems, identifying impediments to scalability is of paramount importance.
 On today's systems fashioned out of multicore processors, two kinds of scalability are of particular interest:

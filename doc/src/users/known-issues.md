@@ -17,11 +17,7 @@ Other known issues can be seen in the project's Gitlab issues pages:
 
 In CUDA 13.0, NVIDIA removed a deprecated API used by HPCToolkit for PC sampling, so HPCToolkit can't be compiled against CUDA 13. When compiled against CUDA 12 and run with CUDA 13, `hpcrun`'s calls to `cuFuncGetModule` fail. As a result, there is no way to use HPCToolkit with CUDA 13 at present. We recommend using CUDA 12 as a stopgap solution if you want to measure your program with HPCToolkit.
 
-## Using Level Zero, time may be observed as non-monotonic
-
-When using HPCToolkit to collect traces of GPU-accelerated applications on Aurora, we have frequently observed non-monotonic timestamp values associated with GPU operations launched with Level Zero. When this happens, it causes GPU operations to be reported in a trace at a time a few minutes in the past. We have commonly seen this in executions longer than six minutes or so. For short executions, our advice is to simply measure again and hope that the issue doesn't occur during the execution of your program. For long-running programs, there may not be a way to avoid this problem. This issue is a priority to resolve.
-
-## When monitoring applications that use ROCm using LD_AUDIT in `hpcrun` may cause it to fail to elide OpenMP runtime frames
+## When monitoring applications that use ROCm, using LD_AUDIT in `hpcrun` may cause it to fail to elide OpenMP runtime frames
 
 Description:
 : When an application provides a runtime that supports the OpenMP tools API known as OMPT, normally in the OpenMP runtime frames between user code on call stacks are elided. However, we have observed that when using Glibc's `LD_AUDIT` as part of HPCToolkit's measurement infrastructure in conjunction with ROCm's Rocprofiler and Roctracer, an application's TLS storage is incorrectly reinitialized during HPCToolkit's initialization; this clears some important HPCToolkit state information from thread local variables. As a result, the primary thread is not recognized as an OpenMP thread, which is necessary to elide runtime frames.
@@ -31,7 +27,7 @@ This bug was reported to Red Hat (https://sourceware.org/bugzilla/show_bug.cgi?i
 Workaround:
 : Use the `--disable-auditor` option to `hpcrun`.
 
-## When using Intel GPUs, `hpcrun` may report that substantial time is spent in a partial call path consisting of only an unknown procedure
+## When using instrumentation on Intel GPUs, `hpcrun` may report that substantial time is spent in a partial call path consisting of only an unknown procedure
 
 Description:
 : Binary instrumentation on Intel GPUs uses Intel's GTPin. GTPin runs in its own private namespace. Asynchronous samples collected in response to Linux timer or hardware counter events may often occur when GTPin is executing. With GTPin in a private namespace, its code and symbols are invisible to `hpcrun`, which causes a degenerate unwind consisting of only an unknown procedure.
@@ -64,7 +60,7 @@ Development Plan:
 ## hpcrun may associate several profiles and traces with rank 0, thread 0
 
 Description:
-: On Cray systems, we have observed that `hpcrun` associates several profiles and traces with rank 0, thread 0. This results from the fact that a PMI daemon gets forked from the application in a constructor and there is no exec. Initially, each process gets tagged with rank 0, thread 0 until the real rank and thread is determined later in the execution. That determination never happens for the PMI daemon.
+: On HPE systems, we have observed that `hpcrun` associates several profiles and traces with rank 0, thread 0. This results from the fact that a PMI daemon gets forked from the application in a constructor and there is no exec. Initially, each process gets tagged with rank 0, thread 0 until the real rank and thread is determined later in the execution. That determination never happens for the PMI daemon.
 
 Workaround:
 : In our experience, the hpcrun files in the measurement for the daemon tagged with rank 0 thread 0 are very small. In experiments we ran, they were about 2K. You can remove these profiles and their matching trace files before processing a measurement database with `hpcprof`. The correspondence between a profile and trace can be determined because they only differ in their suffix (hpcrun or hpctrace).

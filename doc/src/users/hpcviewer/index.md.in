@@ -30,11 +30,11 @@ The table below summarizes views supported by `hpcviewer`.
 
 | View                  | Dimension                    | Note                                                                |
 | :-------------------- | :--------------------------- | :------------------------------------------------------------------ |
-| Profile - [Metric view](#sec:pane-metric)            | Call-path x Metrics  | display the tree and its associated metrics                         |
-| Profile - [Thread view](#sec:hpcviewer:thread-level) | Call-path x Metrics  | display the tree and its metrics for a set of execution contexts    |
-| Profile - [Graph view](#sec:hpcviewer:plots)         | Execution contexts x Metric | display a metric of a specific tree node for all execution contexts |
-| Trace - [Main view](#sec:mainview)                     | Execution contexts x Time   | display execution context behavior over time                        |
-| Trace - [Depth view](#sec:depthview)    | Call-path x Time     | display call stacks over time of an execution context               |
+| Profile - [Metric view](#sec:pane-metric)            | Call-path x Metrics  | display the tree and its associated metrics                         |
+| Profile - [Thread view](#sec:hpcviewer:thread-level) | Call-path x Metrics  | display the tree and its metrics for a set of execution contexts    |
+| Profile - [Graph view](#sec:hpcviewer:plots)         | Execution contexts x Metric | display a metric of a specific tree node for all execution contexts |
+| Trace - [Main view](#sec:mainview)                     | Execution contexts x Time   | display execution context behavior over time                        |
+| Trace - [Depth view](#sec:depthview)    | Call-path x Time     | display call stacks over time of an execution context               |
 
 Note that in the [Profile view](#sec:profile), GPU stream execution contexts are not shown in this view; metrics for a GPU operation are associated with the calling context in the thread that initiated the GPU operation (Section [Thread View](sec:hpcviewer:thread-level)).
 In the [Trace view](sec:trace), GPU streams have their trace lines independently from their host, allowing for the traces between hosts and devices to be separated.

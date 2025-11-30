@@ -10,11 +10,12 @@ overview.md
 quickstart.md
 spack.md
 meson.md
-effective-analysis/effective-analysis.md
 hpcrun/hpcrun.md
 mpi.md
+openmp.md
 gpu/gpu.md
 hpcviewer/hpcviewer.md
+effective-analysis/effective-analysis.md
 known-issues.md
 faq.md
 environment-vars.md

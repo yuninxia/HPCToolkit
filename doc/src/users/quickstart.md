@@ -102,19 +102,17 @@ To configure `hpcrun` with two samples sources, `e1@howoften1` and `e2@howoften2
 
 One can simply profile and optionally trace computations offloaded onto AMD, Intel, and NVIDIA GPUs by using one of the following event specifiers:
 
-- `-e gpu=nvidia` is used with CUDA and OpenMP on NVIDIA GPUs
+- `-e gpu=cuda` is used with CUDA and OpenMP on NVIDIA GPUs
 
-- `-e gpu=amd` is used with HIP and OpenMP on AMD GPUs
+- `-e gpu=rocm` is used with HIP and OpenMP on AMD GPUs
 
 - `-e gpu=level0` is used with Intel's Level Zero runtime for Data Parallel C++ and OpenMP
 
 - `-e gpu=opencl` can be used on any of the GPU platforms.
 
-Adding a `-t` to `hpcrun`'s command line when profiling GPU computations will trace them as well.
+Adding a `-t` to `hpcrun`'s command line when profiling GPU computations will trace them as well. `hpcrun` also supports a `-tt` option for boosted resolution tracing of GPU-accelerated programs. Using this flag causes the calling context of CPU threads to be recorded in their traces each time they launch a GPU operation. This option is particularly helpful when tracing codes that launch GPU operations more often than default CPU sampling frequency.
 
-To support more intuitive tracing results of GPU-accelerated programs, `hpcrun` also supports a `-tt` option for boosted resolution tracing. Using this flag causes the calling context of CPU threads to be recorded in their traces each time they launch a GPU operation. This option is particularly helpful when tracing codes that launch GPU operations more often than default CPU sampling frequency.
-
-More information about instruction-level performance measurement of GPU kernels is available in a section of this manual that describes support for [Measurement and Analysis of GPU-accelerated Applications](#chpt:gpu).
+More information about monitoring GPU-accelerated applications, including information about how to monitor activity within GPU kernels, is available in a later chapter [Measurement and Analysis of GPU-accelerated Applications](#chpt:gpu).
 
 ### Recovering Program Structure
 
@@ -222,7 +220,7 @@ If your application has restricted access, be careful where you put
 the cache directory and be sure to restrict the directory permissions.
 ```
 
-### Attributing Measurements to Source Code
+### Attributing Performance to Code
 
 To analyze HPCToolkit's measurements and attribute them to the application's source code, use `hpcprof`, typically invoked as follows:
 
@@ -259,7 +257,7 @@ hpcprof -R `/home/joe/app/src/=/extern/homes/joe/app/src/' \
 
 Note that on systems where MPI applications are restricted to a scratch file system, it is the users responsibility to copy any wanted source files and make them available to `hpcprof`.
 
-### Presenting Performance Measurements for Interactive Analysis
+### Interactive Performance Analysis
 
 To interactively view and analyze an HPCToolkit performance database, use `hpcviewer`.
 `hpcviewer` may be launched from the command line or by double-clicking on its icon on MacOS or Windows.
@@ -271,7 +269,7 @@ hpcviewer hpctoolkit-app-database
 
 Additional help for `hpcviewer` can be found in a help pane available from `hpcviewer`'s *Help* menu.
 
-### Effective Performance Analysis Techniques
+### Effective Analysis Strategies
 
 To effectively analyze application performance, consider using one of the following strategies, which are described in more detail in Chapter [4](#chpt:effective-performance-analysis).
 

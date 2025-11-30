@@ -788,7 +788,7 @@ makeStructure(string absfilepath,
     if (intel_file) { // don't run parseapi on intel binary
       intel_gpu_arch = 1;
 #ifdef ENABLE_IGA
-      bool compute_intel_gpu_cfg = true;
+      bool compute_intel_gpu_cfg = structOpts.compute_gpu_cfg;
       parsable = buildIntelGPUCFG(search_path, elfFile, the_symtab,
                               compute_intel_gpu_cfg, false,
                               structOpts.jobs, &code_src, &code_obj);

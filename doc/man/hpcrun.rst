@@ -479,40 +479,6 @@ One can configure the kernel to use a value as small as 1 millisecond, but it is
 However, on Linux one can get quite close to the kernel Hz rate by setting the itimer interval to something less than the Hz rate.
 For example, if the Hz rate is 1000 microseconds, one can use 500 microseconds (or just 1) and obtain about 999 interrupts per second.
 
-PLATFORM-SPECIFIC NOTES
------------------------
-
-Cray Systems
-------------
-
-When using dynamically linked binaries on Cray systems, you should add the ``HPCTOOLKIT`` environment variable to your launch script.
-Set ``HPCTOOLKIT`` to the top-level HPCToolkit install prefix (the directory containing the ``bin/``, ``lib/`` and ``libexec/`` subdirectories) and export it to the environment.
-This is only needed for running dynamically linked binaries.
-For example:
-
-.. code:: bash
-
-  #!/bin/sh
-  #PBS -l mppwidth=#nodes
-  #PBS -l walltime=00:30:00
-  #PBS -V
-
-  export HPCTOOLKIT=/path/to/hpctoolkit/install/directory
-
-  # ...Rest of Script...
-
-If ``HPCTOOLKIT`` is not set, you may see errors such as the following in
-your job's error log.
-
-::
-
-   /var/spool/alps/103526/hpcrun: Unable to find HPCTOOLKIT root directory.
-   Please set HPCTOOLKIT to the install prefix, either in this script, or in your environment, and try again.
-
-The problem is that the Cray ALPS job launcher copies the hpcrun script to a directory somewhere below ``/var/spool/alps/`` and runs it from there.
-By moving hpcrun to a different directory, this breaks hpcrun's default method for finding HPCToolkit's top-level installation directory.
-The solution is to add ``HPCTOOLKIT`` to your environment so that hpcrun can find HPCToolkit's top-level installation directory.
-
 MISCELLANEOUS
 -------------
 
