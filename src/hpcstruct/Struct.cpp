@@ -1793,12 +1793,12 @@ doFunction(WorkEnv & env, FileInfo * finfo, GroupInfo * ginfo, ProcInfo * pinfo,
   // for delay slot instructions to be out of function ranges.
   // We use gap computation to mitigate this problem.
   //
+  VMAIntervalSet covered;
   if (num_funcs == 1 && intel_gpu_arch == 0) {
     //
     // add unclaimed regions (gaps) to the group leader, but only for
     // standard functions (only one func in group)
     //
-    VMAIntervalSet covered;
 
     for (auto bit = bvec.begin(); bit != bvec.end(); ++bit) {
       Block * block = *bit;
@@ -1815,24 +1815,26 @@ doFunction(WorkEnv & env, FileInfo * finfo, GroupInfo * ginfo, ProcInfo * pinfo,
 #if DEBUG_SHOW_GAPS
   debug_mutex.lock();
 
-  auto pit = ginfo->procMap.begin();
-  ProcInfo * pinfo = pit->second;
+  {
+    auto pit = ginfo->procMap.begin();
+    ProcInfo * pinfo = pit->second;
 
-  cout << "\nfunc:  0x" << hex << pinfo->entry_vma << dec
-       << "  (1/" << num_funcs << ")\n"
-       << "link:   " << pinfo->linkName << "\n"
-       << "parse:  " << pinfo->func->name() << "\n"
-       << "0x" << hex << ginfo->start
-       << "--0x" << ginfo->end << dec << "\n";
+    cout << "\nfunc:  0x" << hex << pinfo->entry_vma << dec
+         << "  (1/" << num_funcs << ")\n"
+         << "link:   " << pinfo->linkName << "\n"
+         << "parse:  " << pinfo->func->name() << "\n"
+         << "0x" << hex << ginfo->start
+         << "--0x" << ginfo->end << dec << "\n";
 
-  if (! ginfo->alt_file) {
-    cout << "\ncovered:\n"
-         << covered.toString() << "\n"
-         << "\ngaps:\n"
-         << ginfo->gapSet.toString() << "\n";
-  }
-  else {
-    cout << "\ngaps: alt-file\n";
+    if (! ginfo->alt_file) {
+      cout << "\ncovered:\n"
+           << covered.toString() << "\n"
+           << "\ngaps:\n"
+           << ginfo->gapSet.toString() << "\n";
+    }
+    else {
+      cout << "\ngaps: alt-file\n";
+    }
   }
 
   debug_mutex.unlock();
@@ -3030,7 +3032,7 @@ dumpWorkList(WorkList & wl)
   cout << "\n--------------------------------------------------\n";
   cout << "work list\n\n";
 
-  for (auto i = 0; i < wl.size(); i++) {
+  for (long unsigned int i = 0; i < wl.size(); i++) {
     WorkItem * wi = wl[i];
     FileInfo * finfo = wi->finfo;
     GroupInfo * ginfo = wi->ginfo;
@@ -3106,7 +3108,7 @@ debugNewGaps(CodeObject * code_obj, string elfFilename)
   //
   Block * prev_block = blockVec[0];
 
-  for (long n = 1; n < blockVec.size(); n++) {
+  for (long unsigned int n = 1; n < blockVec.size(); n++) {
     Block * block = blockVec[n];
     long size = block->start() - prev_block->end();
 
