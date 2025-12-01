@@ -36,7 +36,7 @@ To enable remote access to data on a host, one needs to build and install `hpcse
 1. Checkout the `main` branch of `hpcserver`:
 
    ```
-   git clone https://gitlab.com/hpctoolkit/hpcserver
+   git clone https://gitlab.com/hpctoolkit/database
    git checkout main
    ```
 
