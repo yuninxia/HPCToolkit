@@ -78,8 +78,8 @@
 #define INTEL_LEVEL0 "gpu=level0"
 #define INTEL_LEVEL0_PC_SAMPLING "gpu=level0,pc"
 
-// PC sample one of every 2^19 ns
-#define LEVEL0_PC_SAMPLING_PERIOD_LOG_DEFAULT 19
+// PC sample one of every 2^20 ns
+#define LEVEL0_PC_SAMPLING_PERIOD_LOG_DEFAULT 20
 
 
 

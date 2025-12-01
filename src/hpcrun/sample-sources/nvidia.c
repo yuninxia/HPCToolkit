@@ -72,7 +72,7 @@ static long trace_period_default = -1;
 // -1: disabled, 5-31: period = 2^(period_log)
 static long pc_sampling_period = -1;
 static long pc_sampling_period_log = -1;
-static long pc_sampling_period_log_default = 12;
+static long pc_sampling_period_log_default = 20;
 #endif
 
 static int cupti_enabled_activities = 0;

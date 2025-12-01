@@ -158,7 +158,7 @@ gpu_sample_process
 
   cct_node_t *pc = (pht == gpu_placeholder_type_kernel_anon) ?
     kernel_ph :
-    hpcrun_cct_insert_ip_norm(kernel_ph, ip, true);
+    hpcrun_cct_insert_ip_norm(kernel_ph, ip, false);
 
   if (pc) {
     PRINT("pc %p\n", pc);

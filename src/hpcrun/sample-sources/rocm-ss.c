@@ -47,7 +47,7 @@
 
 // minimum period 1us; one out of every X unit time periods (ns), for
 // the value of X specified below
-#define ROCM_PC_SAMPLING_HOST_TRAP_PERIOD_LOG_DEFAULT_NS 17
+#define ROCM_PC_SAMPLING_HOST_TRAP_PERIOD_LOG_DEFAULT_NS 20
 
 #define MINIMUM_PC_SAMPLING_PERIOD 10
 

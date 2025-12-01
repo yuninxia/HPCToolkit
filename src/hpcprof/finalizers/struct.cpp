@@ -261,7 +261,7 @@ bool StructFile::resolve(ContextFlowGraph& fg) noexcept {
     // report it as the final answer.
     fg.handler([](const Metric& m) {
       ContextFlowGraph::MetricHandling ret;
-      if (m.name() == "GINS")
+      if (m.name() == "GCYCLES")
         ret.interior = true;
       else if (m.name() == "GKER:COUNT")
         ret.exterior = ret.exteriorLogical = true;
