@@ -27,7 +27,7 @@ This substrate interfaces with NVIDIA's [CUPTI](https://docs.nvidia.com/cupti) (
 
 For each of the supported GPU runtimes (ROCm, CUDA, Level Zero, and OpenCL), HPCToolkit supports several monitoring options. All of the GPU runtimes support profiling and tracing of GPU operations. ROCm, CUDA, and Level Zero support instruction-level measurement within GPU kernels using PC sampling. Level Zero also supports instruction-level performance measurement within GPU kernels using binary instrumentation with Intel's GTPin.
 
-Table [9.1](#amd-options) shows arguments to `hpcrun` that can be used to monitor the performance of GPU operations offloaded by HIP or OpenMP on AMD GPUs. Note that there are two types of PC sampling: hardware (`hw`) and software-only (`sw`). `sw` PC sampling is the default mode because it is available on MI200+; `hw` PC sampling is available only on MI300+. For `sw` PC sampling, the default period is 2^17 ns. For `hw` PC sampling, the default period is 2^20 cycles.
+Table [9.1](#amd-options) shows arguments to `hpcrun` that can be used to monitor the performance of GPU operations offloaded by HIP or OpenMP on AMD GPUs. Note that there are two types of PC sampling: hardware (`hw`) and software-only (`sw`). `sw` PC sampling is the default mode because it is available on MI200+; `hw` PC sampling is available only on MI300+. For`sw` PC sampling, HPCToolkit's default period is 2^20 ns. For `hw` PC sampling, the default period is 2^20 cycles.
 
 ```{table} Table 9.1: Monitoring performance on AMD GPUs when using AMD's HIP and OpenMP programming models atop AMD's ROCm runtime.
 ---
@@ -43,7 +43,7 @@ widths: grid
 ```
 
 Table [9.2](#nvidia-cuda-monitoring-options) shows arguments to `hpcrun` that can be used to monitor the performance of GPU operations offloaded by CUDA or OpenMP on NVIDIA GPUs.
-On NVIDIA GPUs, the default period for PC sampling is 2^12 cycles.
+On NVIDIA GPUs, HPCToolkit's default period for PC sampling is 2^20 cycles.
 
 ```{table} Table 9.2: Monitoring performance on NVIDIA GPUs when using CUDA or OpenMP programming models.
 ---
@@ -57,7 +57,7 @@ name: nvidia-cuda-monitoring-options
 | `-e gpu=cuda,pc[@k]` | coarse-grain profiling of GPU operations; fine-grain profiling within GPU kernels using PC sampling every 2^k cycles |
 ```
 
-Table [9.3](#intel-level0-options) shows available options for using HPCToolkit that can be used to monitor the performance of GPU operations offloaded by SYCL or OpenMP to Intel's Level Zero runtime. On Intel GPUs, the default period for PC sampling is 2^19 ns.
+Table [9.3](#intel-level0-options) shows available options for using HPCToolkit that can be used to monitor the performance of GPU operations offloaded by SYCL or OpenMP to Intel's Level Zero runtime. On Intel GPUs, HPCToolkit's default period for PC sampling is 2^20 ns.
 
 ```{table} Table 9.3: Monitoring performance on Intel GPUs when using SYCL or OpenMP programming models atop Intel's Level Zero runtime.
 ---
@@ -425,8 +425,8 @@ To select software-based host-trap PC sampling, specify `-e gpu=rocm,pc=sw`.
 To select hardware-based stochastic PC sampling, specify `-e gpu=rocm,pc=hw`.
 Specifying simply `-e gpu=rocm,pc` will default to software-based host-trap sampling.
 
-Periods for hardware stochastic sampling are measured in GPU cycles and the minimum is 256; periods must be a power of 2. The default period for stochastic sampling is currently set to `2^20` cycles. HPCToolkit enables a user to specify the desired period by adding an `@k` to the end of a PC sampling specification, e.g. `-e gpu=rocm,pc=hw@22` will set the period for stochastic sampling to `2^22` cycles.
-Periods for host-trap based sampling are measured in microseconds. The minimum period is 1 us, which HPCToolkit enforces as `2^10` ns. The default period for host-trap sampling is set to `2^17` ns.
+Periods for hardware stochastic sampling are measured in GPU cycles and the minimum is 256; periods must be a power of 2. HPCToolkit's default period for AMD stochastic sampling is currently set to `2^20` cycles. HPCToolkit enables a user to specify the desired period by adding an `@k` to the end of a PC sampling specification, e.g. `-e gpu=rocm,pc=hw@22` will set the period for stochastic sampling to `2^22` cycles.
+Periods for host-trap based sampling are measured in microseconds. The minimum period is 1 us, which HPCToolkit enforces as `2^10` ns. HPCToolkit's default period for AMD host-trap sampling is set to `2^20` ns.
 Using `-e gpu=rocm,pc=sw@18` will set the period for software-based host-trap sampling to `2^18` ns.
 
 ```{important}
