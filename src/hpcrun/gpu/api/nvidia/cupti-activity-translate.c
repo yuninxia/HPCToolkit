@@ -415,7 +415,12 @@ convert_kernel
   ga->details.kernel.device_id = activity->deviceId;
   ga->details.kernel.context_id = activity->contextId;
   ga->details.kernel.stream_id = activity->streamId;
-  ga->details.kernel.blocks = activity->blockX * activity->blockY * activity->blockZ;
+
+  unsigned long block_elements = activity->blockX * activity->blockY * activity->blockZ;
+  unsigned long grid_elements = activity->gridX * activity->gridY * activity->gridZ;
+
+  // ceiling of grid_elements / block_elements
+  ga->details.kernel.blocks = (grid_elements + block_elements - 1) / block_elements;
 
   gpu_interval_set(&ga->details.interval, activity->start, activity->end);
 

@@ -249,13 +249,13 @@ typedef struct instruction_metrics_t {
         "GPU waves aggregate available")                                \
   macro("GCYCLES:WAVE_UTL", GPU_UTIL_METRICS_WAVE_UTL,                  \
         "GPU waves utilization (actual occupancy): "                    \
-        "100*(waves active)/(waves available)")                         \
+        "100*(WAVE_ACT/WAVE_AVL)")                                      \
   macro("GCYCLES:THR_ACT", GPU_UTIL_METRICS_THR_ACT,                    \
         "GPU SIMD lanes (threads) aggregate active")                    \
   macro("GCYCLES:THR_AVL", GPU_UTIL_METRICS_THR_AVL,                    \
         "GPU SIMD lanes (threads) aggregate available ")                \
   macro("GCYCLES:THR_UTL", GPU_UTIL_METRICS_THR_UTL,                    \
-        "GPU SIMD lanes (threads) utilization: 100*(SIMD lanes active)/(SIMD lanes available)")
+        "GPU SIMD lanes (threads) utilization: 100*(THR_ACT/THR_AVL)")
 
 // gpu explicit copy
 #define FORALL_GXCOPY(macro)                                            \
@@ -439,9 +439,9 @@ typedef struct instruction_metrics_t {
         "GPU kernel: dynamic memory accumulator [internal use only]")   \
   macro("GKER:LMEM_ACUMU (b)", GPU_KINFO_LMEM_ACUMU,                    \
         "GPU kernel: local memory accumulator [internal use only]")     \
-  macro("GKER:FGP_ACT_ACUMU", GPU_KINFO_FGP_ACT_ACUMU,                  \
+  macro("GKER:WARP_ACT_ACUMU", GPU_KINFO_WARP_ACT_ACUMU,                \
         "GPU kernel: fine-grain parallelism accumulator [internal use only]") \
-  macro("GKER:FGP_MAX_ACUMU", GPU_KINFO_FGP_MAX_ACUMU,                  \
+  macro("GKER:WARP_AVL_ACUMU", GPU_KINFO_WARP_AVL_ACUMU,                \
         "GPU kernel: fine-grain parallelism accumulator [internal use only]") \
   macro("GKER:THR_SREG_ACUMU", GPU_KINFO_SREG_ACUMU,                    \
         "GPU kernel: scalar register count accumulator [internal use only]") \
@@ -451,7 +451,7 @@ typedef struct instruction_metrics_t {
         "GPU kernel: thread count accumulator [internal use only]")     \
   macro("GKER:BLK_SM_ACUMU", GPU_KINFO_BLK_SMEM_ACUMU,                  \
         "GPU kernel: block local memory accumulator [internal use only]") \
-  macro("GKER:BLKS_ACUMU", GPU_KINFO_BLKS_ACUMU,                        \
+  macro("GKER:BLKS_AVG_ACUMU", GPU_KINFO_BLKS_AVG_ACUMU,                \
         "GPU kernel: block count accumulator [internal use only]")      \
   macro("GKER:STMEM (b)", GPU_KINFO_STMEM,                              \
         "GPU kernel: static memory (bytes)")                            \
@@ -459,24 +459,24 @@ typedef struct instruction_metrics_t {
         "GPU kernel: dynamic memory (bytes)")                           \
   macro("GKER:LMEM (b)", GPU_KINFO_LMEM,                                \
         "GPU kernel: local memory (bytes)")                             \
-  macro("GKER:FGP_ACT", GPU_KINFO_FGP_ACT,                              \
+  macro("GKER:WARP_ACT", GPU_KINFO_WARP_ACT,                            \
         "GPU kernel: fine-grain parallelism, actual")                   \
-  macro("GKER:FGP_MAX", GPU_KINFO_FGP_MAX,                              \
-        "GPU kernel: fine-grain parallelism, maximum")                  \
+  macro("GKER:WARP_AVL", GPU_KINFO_WARP_AVL,                            \
+        "GPU kernel: SM warp parallelism, available")                   \
   macro("GKER:SREG", GPU_KINFO_SREG,                                    \
         "GPU kernel: scalar register count")                            \
   macro("GKER:VREG", GPU_KINFO_VREG,                                    \
         "GPU kernel: vector register count")                            \
   macro("GKER:BLK_THR", GPU_KINFO_BLK_THREADS,                          \
-        "GPU kernel: thread count")                                     \
+        "GPU kernel: thread count per grid block")                      \
   macro("GKER:BLK_SM (b)", GPU_KINFO_BLK_SMEM,                          \
         "GPU kernel: block local memory (bytes)")                       \
-  macro("GKER:BLKS", GPU_KINFO_BLKS,                                    \
-        "GPU kernel: block count")                                      \
+  macro("GKER:BLKS_AVG", GPU_KINFO_BLKS_AVG,                            \
+        "GPU kernel: average grid block count per launch")              \
   macro("GKER:COUNT", GPU_KINFO_COUNT,                                  \
         "GPU kernel: launch count")                                     \
   macro("GKER:OCC_THR", GPU_KINFO_OCCUPANCY_THR,                        \
-        "GPU kernel: theoretical occupancy (FGP_ACT / FGP_MAX)")
+        "GPU kernel: theoretical occupancy 100*(WARP_ACT/WARP_AVL)")
 
 // gpu implicit copy
 #define FORALL_GICOPY(macro)                                            \

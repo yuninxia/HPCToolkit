@@ -197,7 +197,7 @@
   hpcrun_set_display(METRIC_ID(name), HPCRUN_FMT_METRIC_SHOW_EXCLUSIVE);                                         \
   reg_metric = hpcrun_id2metric_linked(METRIC_ID(name));                                                         \
   reg_formula = hpcrun_malloc_safe(sizeof(char) * MAX_CHAR_FORMULA);                                             \
-  sprintf(reg_formula, "100*(#%d/#%d)", METRIC_ID(GPU_KINFO_FGP_ACT_ACUMU), METRIC_ID(GPU_KINFO_FGP_MAX_ACUMU)); \
+  sprintf(reg_formula, "100*(#%d/#%d)", METRIC_ID(GPU_KINFO_WARP_ACT_ACUMU), METRIC_ID(GPU_KINFO_WARP_AVL_ACUMU)); \
   reg_metric->formula = reg_formula;                                                                             \
   reg_metric->format = FORMAT_DISPLAY_PERCENTAGE
 
@@ -676,10 +676,10 @@ gpu_metrics_attribute_kernel(
     gpu_metrics_attribute_metric_int(metrics, METRIC_ID(GPU_KINFO_LMEM_ACUMU),
                                      k->localMemoryTotal);
 
-    gpu_metrics_attribute_metric_int(metrics, METRIC_ID(GPU_KINFO_FGP_ACT_ACUMU),
+    gpu_metrics_attribute_metric_int(metrics, METRIC_ID(GPU_KINFO_WARP_ACT_ACUMU),
                                      k->activeWarpsPerSM);
 
-    gpu_metrics_attribute_metric_int(metrics, METRIC_ID(GPU_KINFO_FGP_MAX_ACUMU),
+    gpu_metrics_attribute_metric_int(metrics, METRIC_ID(GPU_KINFO_WARP_AVL_ACUMU),
                                      k->maxActiveWarpsPerSM);
 
     gpu_metrics_attribute_metric_int(metrics, METRIC_ID(GPU_KINFO_SREG_ACUMU),
@@ -694,7 +694,7 @@ gpu_metrics_attribute_kernel(
     gpu_metrics_attribute_metric_int(metrics, METRIC_ID(GPU_KINFO_BLK_SMEM_ACUMU),
                                      k->blockSharedMemory);
 
-    gpu_metrics_attribute_metric_int(metrics, METRIC_ID(GPU_KINFO_BLKS_ACUMU),
+    gpu_metrics_attribute_metric_int(metrics, METRIC_ID(GPU_KINFO_BLKS_AVG_ACUMU),
                                      k->blocks);
   }
 
@@ -1255,13 +1255,13 @@ gpu_metrics_KINFO_enable
   DIVISION_FORMULA(GPU_KINFO_STMEM);
   DIVISION_FORMULA(GPU_KINFO_DYMEM);
   DIVISION_FORMULA(GPU_KINFO_LMEM);
-  DIVISION_FORMULA(GPU_KINFO_FGP_ACT);
-  DIVISION_FORMULA(GPU_KINFO_FGP_MAX);
+  DIVISION_FORMULA(GPU_KINFO_WARP_ACT);
+  DIVISION_FORMULA(GPU_KINFO_WARP_AVL);
   DIVISION_FORMULA(GPU_KINFO_SREG);
   DIVISION_FORMULA(GPU_KINFO_VREG);
   DIVISION_FORMULA(GPU_KINFO_BLK_THREADS);
   DIVISION_FORMULA(GPU_KINFO_BLK_SMEM);
-  DIVISION_FORMULA(GPU_KINFO_BLKS);
+  DIVISION_FORMULA(GPU_KINFO_BLKS_AVG);
   OCCUPANCY_FORMULA(GPU_KINFO_OCCUPANCY_THR);
 }
 

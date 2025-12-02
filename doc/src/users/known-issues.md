@@ -84,13 +84,13 @@ Description:
 : When analyzing a GPU-accelerated application that employs NVIDIA GPUs, HPCToolkit estimates percent GPU theoretical occupancy as the ratio of active GPU threads divided by the maximum number of GPU threads available. In multi-threaded or multi-rank programs, HPCToolkit reports GPU theoretical occupancy with the label
 
   ```
-  Sum over rank/thread of exclusive 'GPU kernel: theoretical occupancy (FGP_ACT / FGP_MAX)'
+  Sum over rank/thread of exclusive 'GPU kernel: theoretical occupancy 100*(WARP_ACT/WARP_AVL)'
   ```
 
   rather than its correct label
 
   ```
-  GPU kernel: theoretical occupancy (FGP_ACT / FGP_MAX)
+  GPU kernel: theoretical occupancy 100*(WARP_ACT/WARP_AVL)
   ```
 
   The metric is computed correctly by summing the fine-grain parallelism used in each kernel launch across all threads and ranks and dividing it by the sum of the maximum fine-grain parallelism available to each kernel launch across all threads and ranks, and presenting the value as a percent.

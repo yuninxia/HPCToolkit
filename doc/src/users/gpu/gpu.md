@@ -89,7 +89,7 @@ name: opencl-monitoring-options
 
 ## Profiling GPU Operations
 
-In most cases, HPCToolkit reports performance metrics for GPU operations in a vendor-neutral way. For instance, rather than focusing on NVIDIA GPU warps or AMD GPU wavefronts, HPCToolkit presents both as fine-grain, thread-level parallelism.
+In most cases, HPCToolkit reports performance metrics for GPU operations in a vendor-neutral way.
 
 Coarse-grain profiling attributes to each calling context the total time of all GPU operations initiated in that context. Table [9.5](#table:gtimes) shows the classes of GPU operations for which timings are collected. For AMD and NVIDIA GPUs, HPCToolkit also reports GPU kernel characteristics, including including register usage, thread count per block, and theoretical occupancy as shown in Table [9.6](#table:gker). HPCToolkit derives a theoretical GPU occupancy metric as the ratio of the actual number of threads in a block to be scheduled on an AMD compute unit or an NVIDIA streaming multiprocessor to the maximum number of threads supported in a block.
 
@@ -118,14 +118,14 @@ name: table:gker
 | GKER:STMEM (B)  | GPU kernel: static memory (bytes)           |
 | GKER:DYMEM (B)  | GPU kernel: dynamic memory (bytes)          |
 | GKER:LMEM (B)   | GPU kernel: local memory (bytes)            |
-| GKER:FGP_ACT    | GPU kernel: fine-grain parallelism, actual  |
-| GKER:FGP_MAX    | GPU kernel: fine-grain parallelism, maximum |
+| GKER:WARP_ACT   | GPU kernel: SM warp parallelism, actual     |
+| GKER:WARP_AVL   | GPU kernel: SM warp parallelism, available  |
 | GKER:THR_REG    | GPU kernel: thread register count           |
-| GKER:BLK_THR    | GPU kernel: thread count                    |
-| GKER:BLK        | GPU kernel: block count                     |
+| GKER:BLK_THR    | GPU kernel: thread count per grid block     |
+| GKER:BLKS_AVG   | GPU kernel: average grid block count per launch  |
 | GKER:BLK_SM (B) | GPU kernel: block local memory (bytes)      |
 | GKER:COUNT      | GPU kernel: launch count                    |
-| GKER:OCC_THR    | GPU kernel: theoretical occupancy           |
+| GKER:OCC_THR    | GPU kernel: theoretical occupancy (WARP_ACT / WARP_AVL) |
 ```
 
 ```{table} Table 9.7: GPU memory allocation and deallocation. Note: metrics marked with * are hidden by default.
@@ -194,6 +194,14 @@ name: table:gsync
 | GSYNC:STR (s)*  | GPU synchronizations: stream            |
 | GSYNC:CTX (s)*  | GPU synchronizations: context           |
 | GSYNC:COUNT       | GPU synchronizations: count             |
+```
+
+Figure [9.0](#qs-no-cct) shows a screenshot of a profile view of [Quicksilver](https://asc.llnl.gov/codes/proxy-apps/quicksilver) - a proxy application from Lawrence Livermore National Laboratory. The figure shows a top-down view of heterogeneous calling contexts that span both CPU and GPU. In the middle of the figure is a placeholder `<gpu kernel>` that is inserted by HPCToolkit to mark the transition between CPU and GPU code in the call stack. Above the placeholder is a CPU calling context where the GPU kernel was invoked. Below the `<gpu kernel>` placeholder, we see `CycleTrackingKernel` - the only non-trivial kernel in this code. Columns in the figure's metric table show metrics associated with `CycleTrackingKernel`. From these we see that on average, the kernel uses 12 of 64 possible warps per SM (`WARP_ACT` vs. `WARP_AVL`). The kernel uses 158 registers (`GKER:SREG`), uses 128 threads per grid block (`GKER:BLK_THR`), was launched with an average of 5 grid blocks (`GKER:BLKS_AVG`), was launched 195 times (`GKER:COUNT Sum(E)`), with an average occupancy 18.8% (`GKER:OCC_THR`), calculated as 100 * (`WARP_ACT`/ `WARP_AVL`).
+
+```{figure-md} qs-profile-metrics
+![](qs-profile-metrics.png)
+
+Figure 9.0: A screenshot of `hpcviewer` for the GPU-accelerated Quicksilver proxy app with kernel metrics.
 ```
 
 ```{important}
