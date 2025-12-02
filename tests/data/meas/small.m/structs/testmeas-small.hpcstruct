@@ -1,5 +1,12 @@
 <?xml version="1.0"?>
 <!DOCTYPE HPCToolkitStructure [
+<!-- SPDX-SnippetBegin -->
+<!--
+SPDX-FileCopyrightText: Contributors to the HPCToolkit Project
+
+SPDX-License-Identifier: CC-BY-4.0
+-->
+
 <!-- ******************************************************************** -->
 <!-- HPCToolkit Structure DTD                                             -->
 <!-- Version 4.9                                                          -->
@@ -67,28 +74,29 @@
         v CDATA #IMPLIED
         t CDATA #IMPLIED
         d CDATA #IMPLIED>
+<!-- SPDX-SnippetEnd -->
 ]>
 <HPCToolkitStructure i="0" version="4.9" n="">
 <LM i="2" n="/builds/hpctoolkit/hpctoolkit/builddir/tests/data/meas/testmeas-small" has-calls="0" v="{}">
 <F i="3" n="/builds/hpctoolkit/hpctoolkit/tests/data/meas/small.c">
-<P i="4" n="spinsleep" l="1" v="{[0x1129-0x112a)}">
-<S i="5" l="1" v="{[0x1129-0x1131)}"/>
-<S i="6" l="2" v="{[0x1131-0x113e)}"/>
-<S i="7" l="3" v="{[0x113e-0x1147)}"/>
-<S i="8" l="4" v="{[0x1172-0x1176)}"/>
-<L i="9" l="3" f="/builds/hpctoolkit/hpctoolkit/tests/data/meas/small.c" v="{[0x1169-0x116a)}">
-<S i="10" l="3" v="{[0x1147-0x1172)}"/>
+<P i="4" n="spinsleep" l="5" v="{[0x1129-0x112a)}">
+<S i="5" l="5" v="{[0x1129-0x1131)}"/>
+<S i="6" l="6" v="{[0x1131-0x113e)}"/>
+<S i="7" l="7" v="{[0x113e-0x1147)}"/>
+<S i="8" l="9" v="{[0x1172-0x1176)}"/>
+<L i="9" l="7" f="/builds/hpctoolkit/hpctoolkit/tests/data/meas/small.c" v="{[0x1169-0x116a)}">
+<S i="10" l="7" v="{[0x1165-0x1172)}"/>
+<S i="11" l="8" v="{[0x1147-0x1165)}"/>
 </L>
 </P>
-<P i="11" n="caller" l="6" v="{[0x1176-0x1177)}">
-<S i="12" l="6" v="{[0x1176-0x117e)}"/>
-<S i="13" l="7" v="{[0x117e-0x1188)}"/>
-<S i="14" l="8" v="{[0x1188-0x118b)}"/>
+<P i="12" n="caller" l="11" v="{[0x1176-0x1177)}">
+<S i="13" l="11" v="{[0x1176-0x118b)}"/>
 </P>
-<P i="15" n="main" l="10" v="{[0x118b-0x118c)}">
-<S i="16" l="10" v="{[0x118b-0x1193)}"/>
-<S i="17" l="11" v="{[0x1193-0x11ac)}"/>
-<S i="18" l="12" v="{[0x11ac-0x11ae)}"/>
+<P i="14" n="main" l="13" v="{[0x118b-0x118c)}">
+<S i="15" l="13" v="{[0x118b-0x1193)}"/>
+<S i="16" l="14" v="{[0x1193-0x119d)}"/>
+<S i="17" l="15" v="{[0x119d-0x11ac)}"/>
+<S i="18" l="16" v="{[0x11ac-0x11ae)}"/>
 </P>
 </F>
 <F i="19" n="[testmeas-small]">
