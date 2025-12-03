@@ -715,7 +715,7 @@ makeStructure(string absfilepath,
 
   Output::printStructFileBegin(outFile, gapsFile, filename);
 
-  for (unsigned int i = 0; i < elfFileVector->size(); i++) {
+  for (std::size_t i = 0; i < elfFileVector->size(); i++) {
     bool parsable = true;
     ElfFile *elfFile = (*elfFileVector)[i];
 
@@ -758,7 +758,7 @@ makeStructure(string absfilepath,
 #pragma omp parallel  shared(modVec)
     {
 #pragma omp for  schedule(dynamic, 1)
-      for (unsigned int i = 0; i < modVec.size(); i++) {
+      for (std::size_t i = 0; i < modVec.size(); i++) {
         Module * mod = modVec[i];
         mod->parseLineInformation();
       }
@@ -868,7 +868,7 @@ makeStructure(string absfilepath,
     firstprivate(outFile, gapsFile, search_path, gaps_filenm, parsable)
     {
 #pragma omp for  schedule(dynamic, 1)
-      for (unsigned int i = 0; i < wlLaunch.size(); i++) {
+      for (std::size_t i = 0; i < wlLaunch.size(); i++) {
         doWorkItem(wlLaunch[i], search_path, parsable, gapsFile != NULL);
 
         // the printing must be single threaded
@@ -898,7 +898,7 @@ makeStructure(string absfilepath,
     // if this is the last (or only) elf file, then don't bother with
     // piecemeal cleanup.
     if (i + 1 < elfFileVector->size()) {
-      for (unsigned int i = 0; i < wlPrint.size(); i++) {
+      for (std::size_t i = 0; i < wlPrint.size(); i++) {
         delete wlPrint[i];
       }
 
@@ -1865,7 +1865,7 @@ doLoopTree(WorkEnv & env, FileInfo * finfo, GroupInfo * ginfo,
 
   std::sort(clist.begin(), clist.end(), LoopTreeLessThan);
 
-  for (unsigned int i = 0; i < clist.size(); i++) {
+  for (std::size_t i = 0; i < clist.size(); i++) {
     LoopList *subList =
       doLoopTree(env, finfo, ginfo, func, visited, clist[i]);
 
@@ -1930,7 +1930,7 @@ doLoopLate(WorkEnv & env, GroupInfo * ginfo, ParseAPI::Function * func,
 
   std::sort(bvec.begin(), bvec.end(), BlockLessThan);
 
-  for (unsigned int i = 0; i < bvec.size(); i++) {
+  for (std::size_t i = 0; i < bvec.size(); i++) {
     if (! visited[bvec[i]]) {
       doBlock(env, ginfo, func, visited, bvec[i], root);
     }
@@ -3032,7 +3032,7 @@ dumpWorkList(WorkList & wl)
   cout << "\n--------------------------------------------------\n";
   cout << "work list\n\n";
 
-  for (long unsigned int i = 0; i < wl.size(); i++) {
+  for (std::size_t i = 0; i < wl.size(); i++) {
     WorkItem * wi = wl[i];
     FileInfo * finfo = wi->finfo;
     GroupInfo * ginfo = wi->ginfo;
@@ -3108,7 +3108,7 @@ debugNewGaps(CodeObject * code_obj, string elfFilename)
   //
   Block * prev_block = blockVec[0];
 
-  for (long unsigned int n = 1; n < blockVec.size(); n++) {
+  for (std::size_t n = 1; n < blockVec.size(); n++) {
     Block * block = blockVec[n];
     long size = block->start() - prev_block->end();
 
