@@ -2,34 +2,13 @@
 #
 # SPDX-License-Identifier: Apache-2.0
 
-# Generate the documentation and host on GitLab Pages.
+# Generate the documentation for hosting on GitLab Pages.
 # This site includes the EPUB and PDF alternative formats.
-pages:
+.doc:
   extends: .needs verify
   stage: artifacts
   image: registry.gitlab.com/hpctoolkit/rtt-images:1.0.0-aio@sha256:aed3071b8690dbdf3e2b4fec2071b47680c0be171e1a5613e43f425b55b67c2c
   tags: [saas-linux-medium-amd64]
-  rules:
-    - if: $CI_SERVER_FQDN != "gitlab.com"
-      when: never
-    # The default branch deploys to the permanent no-prefix deployment
-    - if: $CI_COMMIT_REF_PROTECTED == "true" && $CI_COMMIT_BRANCH == $CI_DEFAULT_BRANCH
-      variables:
-        PAGES_PATH_PREFIX: ""
-        PAGES_EXPIRE_IN: never
-        ENVIRONMENT_NAME: main
-    # Release tags go to permanent deployments prefixed by the release tag
-    - if: $CI_COMMIT_REF_PROTECTED == "true" && $CI_COMMIT_TAG
-      variables:
-        PAGES_PATH_PREFIX: $CI_COMMIT_TAG
-        PAGES_EXPIRE_IN: never
-        ENVIRONMENT_NAME: release/$CI_COMMIT_TAG
-    # MRs go to a temporary parallel deployment named by the IID
-    - if: $CI_PIPELINE_SOURCE == "merge_request_event"
-      variables:
-        PAGES_PATH_PREFIX: "mr-${CI_MERGE_REQUEST_IID}"
-        PAGES_EXPIRE_IN: 24 hours # default
-        ENVIRONMENT_NAME: "review/mr-${CI_MERGE_REQUEST_IID}"
   cache:
     - key: meson-packagecache
       when: always
@@ -41,18 +20,45 @@ pages:
     - >-
       meson setup
       -Dmanual=enabled -Dmanual_pdf=enabled -Ddatadir="$CI_PROJECT_DIR"/install
-      -Ddocs_host_url="$CI_PAGES_URL"
+      -Ddocs_host_url="$BASE_URL"
       -Ddocs_versions_url="${default_pages_url}/_versions.json"
       builddir/
     - meson compile -C builddir/ docs
     - meson install -C builddir/ --no-rebuild --tags docs
     - ./doc/ci_versions.py "$default_pages_url" install/doc/hpctoolkit/_version.json install/doc/hpctoolkit/_versions.json
-    - echo "Deployed to $CI_PAGES_URL"
+    - echo "Deployed to $BASE_URL/index.html"
+
+# For all pipelines, we generate the documentation in a way that can be viewed from the
+# job artifacts, which are hosted on GitLab Pages (kinda).
+doc:
+  extends: .doc
+  before_script:
+    # NB: This pattern is reverse-engineered from the GitLab source:
+    # https://gitlab.com/gitlab-org/gitlab/-/blob/aa7df73eeeabc9c584da6ad93a0fcfc900a9fc8a/lib/gitlab/pages/url_builder.rb#L9
+    - BASE_URL="https://${CI_PAGES_HOSTNAME}/-/${CI_PROJECT_PATH#*/}/-/jobs/${CI_JOB_ID}/artifacts/install/doc/hpctoolkit"
+  artifacts:
+    expose_as: Rendered documentation
+    paths:
+      - install/doc/hpctoolkit/
+
+# "Final" versions of the documentation (default branch or a final release) get deployed
+# to the full GitLab Pages site for external consumption.
+pages:
+  extends: .doc
+  rules:
+    - if: $CI_SERVER_FQDN != "gitlab.com"
+      when: never
+    # The default branch deploys to the permanent no-prefix deployment
+    - if: $CI_COMMIT_REF_PROTECTED == "true" && $CI_COMMIT_BRANCH == $CI_DEFAULT_BRANCH
+      variables:
+        PAGES_PATH_PREFIX: ""
+    # Release tags go to permanent deployments prefixed by the release tag
+    - if: $CI_COMMIT_REF_PROTECTED == "true" && $CI_COMMIT_TAG
+      variables:
+        PAGES_PATH_PREFIX: $CI_COMMIT_TAG
+  variables:
+    BASE_URL: $CI_PAGES_URL
   pages:
     publish: install/doc/hpctoolkit/
     path_prefix: $PAGES_PATH_PREFIX
-    expire_in: $PAGES_EXPIRE_IN
-  environment:
-    name: $ENVIRONMENT_NAME
-    url: $CI_PAGES_URL
-    auto_stop_in: $PAGES_EXPIRE_IN
+    expire_in: never
