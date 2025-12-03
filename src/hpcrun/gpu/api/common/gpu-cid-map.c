@@ -71,7 +71,7 @@ insert_gpu_runtime_root
   cct_bundle_t* cct = &(td->core_profile_trace_data.epoch->csdata);
 
   cct_node_t *rt_ph = hpcrun_cct_insert_ip_norm(cct->top,
-    gpu_op_placeholder_ip(gpu_placeholder_type_runtime), false);
+    gpu_op_placeholder_ip(gpu_placeholder_type_runtime), true);
 
   gpu_cid_map_insert(GPU_RUNTIME_PH_CID, rt_ph, ip_normalized_NULL);
 
