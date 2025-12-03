@@ -631,7 +631,10 @@ stall_not_exposed
 )
 {
   switch(itype) {
-    case GPU_INST_TYPE_ANY:               assert(0); break; // never!
+    case GPU_INST_TYPE_ANY:
+      assert(false && "specific instruction type cannot be GPU_INST_TYPE_ANY");
+      hpcrun_terminate();
+      break; // unreachable
 
     case GPU_INST_TYPE_VECTOR:            return pinfo.issued.vector_alu;
 
