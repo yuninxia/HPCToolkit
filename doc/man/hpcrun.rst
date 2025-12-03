@@ -100,26 +100,31 @@ OPTIONS: PROFILING
 
   - See the "Sample sources" under **NOTES** for additional details.
 
--e <gpu=cuda>, --event <gpu=cuda[,pc[@k]]>
-  Collect comprehensive operation-level measurements for CUDA programs on NVIDIA GPUs, including timing of GPU kernel invocations, memory copies (implicit and explicit), driver and runtime activity, and overhead.
+-e gpu=cuda[,pc[@k]], --event gpu=cuda[,pc[@k]]
+  Collect comprehensive operation-level measurements for CUDA/OpenMP programs on NVIDIA GPUs, including timing of GPU kernel invocations, memory copies (implicit and explicit), driver and runtime activity, and overhead.
   If the optional argument ``pc`` is used, the GPU will collect instruction-level measurements of GPU kernels using Program Counter (PC) sampling in addition to the operation-level data.
   On NVIDIA GPUs, PC sampling collects the program counter value (an instruction address), whether the
   instruction issued or not, and the kind of stall (if any) blocking the instruction from being issued.
 
   One can specify a value 'k', which will set the PC sampling period to 2^k ns for PC sampling.
-  The default sampling period is 2^12 cycles (k=12).
+  The default sampling period is 2^20 cycles (k=20).
 
---event <gpu=level0>, -e <gpu=level0[,pc[@k]]>
-  Collect comprehensive operation-level measurements for CUDA programs on Intel GPUs, including timing of GPU kernel invocations and memory copies.
+-e gpu=level0[,pc[@k]], --event gpu=level0[,pc[@k]]
+  Collect comprehensive operation-level measurements for SYCL/DPC++/OpenMP programs on Intel GPUs using Intel's Level Zero runtime library, including timing of GPU kernel invocations and memory copies.
   If the optional argument ``pc`` is used, the GPU will collect instruction-level measurements of GPU kernels using hardware-supported Program Counter (PC) sampling in addition to the operation-level data.
   On Intel GPUs, PC sampling collects the program counter value (an instruction address), whether the
   instruction issued or not, and the kind of stall (if any) blocking the instruction from being issued.
 
   One can specify a value 'k', which will set the PC sampling period to 2^k ns for PC sampling.
-  The default sampling period is 2^19 ns (k=19).
+  The default sampling period is 2^20 ns (k=20).
 
---event <gpu=rocm>, -e <gpu=rocm[,pc[={sw,hw}][@k]]>
-  Collect comprehensive operation-level measurements for HIP programs on AMD GPUs, including timing of GPU kernel invocations, memory copies (implicit and explicit), driver and runtime activity, and overhead.
+-e gpu=level0,inst=count, --event gpu=level0,inst=count
+  Collect comprehensive operation-level measurements for SYCL/DPC++/OpenMP programs on Intel GPUs using Intel's Level Zero runtime library, including timing of GPU kernel invocations and memory copies.
+  At runtime, instrument GPU kernels with Intel's GTPin binary instrumentation library to collect basic-block counts. At program termination,
+  propagate basic-block execution counts to individual instructions for instruction counts.
+
+-e gpu=rocm[,pc[={sw,hw}][@k]], --event gpu=rocm[,pc[={sw,hw}][@k]]
+  Collect comprehensive operation-level measurements for HIP/OpenMP programs on AMD GPUs, including timing of GPU kernel invocations, memory copies (implicit and explicit), driver and runtime activity, and overhead.
   If the optional argument ``pc`` is used, the GPU will collect instruction-level measurements of GPU kernels using Program Counter (PC) sampling in addition to the operation-level data. An AMD GPU may support
   one or more kinds of PC sampling, which are performed either by software ('sw') or hardware ('hw').
 
@@ -133,11 +138,11 @@ OPTIONS: PROFILING
   available SIMD lanes.
 
   One can specify a value 'k', which will set the PC sampling period to 2^k cycles for hardware PC sampling and 2^k ns for software PC sampling.
-  The default sampling periods are 2^20 cycles for hardware PC sampling (k=20) and 2^17 ns for software PC sampling (k=17).
+  The default sampling periods are 2^20 cycles for hardware PC sampling and 2^20 ns for software PC sampling (k=20).
 
--e <gpu=opencl>, --event <gpu=opencl>
+-e gpu=opencl, --event gpu=opencl
   Collect comprehensive operation-level measurements for OpenCL programs on AMD, Intel, or NVIDIA GPUs, including timing of GPU kernel invocations, memory copies (implicit and explicit), driver and runtime activity, and overhead.
-  The opencl measurement mode may also be used to measure executions of DPC++ programs compiled to Intel's OpenCL backend.
+  The OpenCL measurement mode may also be used to measure executions of DPC++ programs compiled to Intel's OpenCL backend.
 
 -c howoften, --count howoften
   Only available for events managed by Linux perf.
@@ -212,18 +217,19 @@ OPTIONS: PROFILING
   such as ``CPUTIME``, ``REALTIME``, or ``cycles`` is used, in addition to a call path profile based on this metric.
 
   This option also  traces any GPU operations if a ``-e gpu=*`` option is used to enable measurement of GPU activities.
+
   Note: ``-tt`` is recommended instead of ``-t`` if your program frequently launches GPU operations.
 
 ``-tt``, ``--ttrace``
   Like the ``-t`` option, record a call path trace based on asynchronous sampling of each CPU thread if a time-based sampling metric,
   such as ``CPUTIME``, ``REALTIME``, or ``cycles`` is used, in addition to a call path profile based on this metric.
   This option also traces any GPU operations if a ``-e gpu=*`` option is used to enable measurement of GPU activities.
-  Unlike ``-t``, also record a sample for a thread as it launches each GPU operation (if any). This option is recommended
+  Unlike ``-t``, this flag causes a sample to be recorded for a thread as it launches each GPU operation (if any). This option is recommended
   instead of ``-t`` when monitoring GPU-accelerated programs that launch many GPU operations per second.
   Without ``-tt``, the activity seen on a CPU trace line at the time a kernel is launched
-  is often from long ago, which makes it hard to understand how CPU activity relates to GPU activity.
-  Since additional non-sample elements are added, any statistical properties of the CPU traces are disturbed.
-  Also see ``--trace``.
+  is often from far earlier in the execution, which can make it difficult to relate to concurrent CPU and GPU activity.
+  However, since `-tt` collects samples at an irregular rate, statistical properties of the CPU traces are disturbed and cannot be trusted when this flag is used.
+  Also see ``-t``.
 
 OPTIONS: HPCTOOLKIT DEVELOPMENT
 -------------------------------

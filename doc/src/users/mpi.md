@@ -14,9 +14,11 @@ A single installation of HPCToolkit should work with any MPI implementation.
 You don't need to provide an `mpi.h` include path when building HPCToolkit and you don't need to compile multiple versions of HPCToolkit, one for each MPI implementation.
 It has been tested and used with MPICH, MVAPICH and OpenMPI.
 
+```{hint}
 A thoughtful reader might wonder how one installation of HPCToolkit can interoperate with MPI implementations that
 use different representations for `MPI_COMM_WORLD`.
-`hpcrun` waits for the application to call `MPI_Comm_rank` and uses the same communicator value that the application uses.
+Instead of calling `MPI_Comm_rank` directly, `hpcrun` waits for the application to call `MPI_Comm_rank` and captures the returned rank index.
+```
 
 ## Measuring MPI Ranks
 

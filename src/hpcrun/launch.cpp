@@ -111,9 +111,10 @@ R"==(
 
   -tt, --ttrace        Enhanced resolution tracing. Generate a call path trace that
                        includes both sample and kernel launches on the CPU in
-                       addition to a call path profile. Since additional non-sample
-                                           elements are added, any statistical properties of the CPU
-                                           traces are disturbed.
+                       addition to a call path profile. However, since `-tt` collects
+                       samples at an irregular rate, statistical properties of the
+                       CPU traces are disturbed and cannot be trusted when this flag
+                       is used.
 
   --omp-serial-only    When profiling using the OMPT interface for OpenMP,
                        suppress all samples not in serial code.

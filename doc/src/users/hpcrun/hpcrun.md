@@ -19,7 +19,7 @@ call path profiles and call path traces data for *dynamically linked* binaries. 
 dynamically linked programs, this requires no change to the program
 source and no change to the build procedure. You should build your
 application natively with full optimization. `hpcrun` inserts its
-profiling code into the application at runtime via `LD_PRELOAD`.
+profiling code into the application at runtime via `LD_AUDIT` (preferred in most situations) or `LD_PRELOAD` (still available since most versions of glibc `LD_AUDIT` have significant bugs in corner cases).
 
 `hpcrun` monitors the execution of applications on a CPU using asynchronous sampling and, upon request, monitors GPU activity using vendor runtime capabilities. If `hpcrun` is used without any arguments to measure a program
 

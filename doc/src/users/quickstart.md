@@ -110,7 +110,7 @@ One can simply profile and optionally trace computations offloaded onto AMD, Int
 
 - `-e gpu=opencl` can be used on any of the GPU platforms.
 
-Adding a `-t` to `hpcrun`'s command line when profiling GPU computations will trace them as well. `hpcrun` also supports a `-tt` option for boosted resolution tracing of GPU-accelerated programs. Using this flag causes the calling context of CPU threads to be recorded in their traces each time they launch a GPU operation. This option is particularly helpful when tracing codes that launch GPU operations more often than default CPU sampling frequency.
+Adding a `-t` to `hpcrun`'s command line when profiling GPU computations will trace them as well. `hpcrun` also supports a `-tt` option for boosted resolution tracing of GPU-accelerated programs. Using this flag causes the calling context of CPU threads to be recorded in their traces each time they launch a GPU operation. This option is particularly helpful when tracing codes that frequently launch GPU operations.
 
 More information about monitoring GPU-accelerated applications, including information about how to monitor activity within GPU kernels, is available in a later chapter [Measurement and Analysis of GPU-accelerated Applications](#chpt:gpu).
 
