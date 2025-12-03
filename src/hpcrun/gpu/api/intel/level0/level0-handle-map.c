@@ -116,7 +116,7 @@ level0_handle_map_delete
 )
 {
   level0_handle_map_entry_t *node = st_delete(map_root_ptr, key);
-  st_free(free_list_ptr, node);
+  if (node) st_free(free_list_ptr, node);
 }
 
 level0_handle_map_entry_t*
