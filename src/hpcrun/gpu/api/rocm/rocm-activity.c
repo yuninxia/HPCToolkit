@@ -69,7 +69,7 @@
   (ga)->details.dtype.end = activity_time((record)->end_timestamp);  \
   (ga)->details.dtype.correlation_id = (record)->correlation_id.external.value
 
-#define CEIL_DIV(NUM, DENOM) (NUM + DENOM - 1)/DENOM
+#define CEIL_DIV(NUM, DENOM) ((NUM) + (DENOM) - 1)/(DENOM)
 
 //******************************************************************************
 // private data
