@@ -293,14 +293,12 @@ show-files:
 #-------------------------------------------------------------------------------
 clean:
 	@echo removing all hpcstruct files in $(STRUCTS_DIR)
-	@rm -f $(GS)
-	@rm -f $(CS)
+	@rm -f *.hpcstruct
 	@echo removing all links to CPU binaries in $(CPUBIN_DIR)
 	@rm -rf $(CPUBIN_DIR)
 	@rm -rf $(MEAS_DIR)/all.lm
 	@echo removing all warnings files in $(STRUCTS_DIR)
-	@rm -f $(CW)
-	@rm -f $(GW)
+	@rm -f *.warnings
 )EOF";
 // editorconfig-checker-enable
 
