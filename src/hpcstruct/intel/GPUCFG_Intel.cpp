@@ -912,8 +912,25 @@ recoverIntelCFG
 
       TargetType type = TargetType::COND_TAKEN;
       if (inst->is_call) {
-        // call fall through edge to next instruction
+#define ENABLE_STATIC_CALLSITE_RECOVERY 0
+#if ENABLE_STATIC_CALLSITE_RECOVERY
         type = TargetType::CALL;
+#else
+        // hpcprof is currently unable to deal with overlapping code regions
+        // for functions. Overlapping code has been observed in Intel GPU
+        // binaries. Coping with overlapping code only becomes a problem
+        // when static callsite recovery is enabled. Disable recovery of
+        // call instructions for now.
+        static bool not_warned = true;
+        if (not_warned) {
+          DIAG_WMsgIf(not_warned,
+            "Recovery of call sites in Intel GPU binaries is disabled in "
+            "this release. As a result, hpcprof won't be able to reconstruct "
+            "dynamic calling contexts within Intel GPU kernels.");
+          not_warned = false;
+        }
+        continue;
+#endif
       } else if (target_block->insts.front()->offset == inst->offset + inst->size) {
         // fall through edge to target_block, which immediately follows instruction inst
         type = TargetType::DIRECT;
