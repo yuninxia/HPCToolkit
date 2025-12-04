@@ -205,7 +205,7 @@ $(STRUCTS_DIR)/%.hpcstruct: $(CPUBIN_DIR)/%
 		#  suppress any ADVICE, INFO, DEBUG, and CACHESTAT lines and any blank lines;
 		#  it's an error if anything remains
 		#
-		errs=`)EOF" SED_SHELL_QUOTED_PATH R"EOF( 's/^$//INFO/g;' $$warn_name |)EOF" GREP_SHELL_QUOTED_PATH R"EOF( -v DEBUG | )EOF" GREP_SHELL_QUOTED_PATH R"EOF( -v CACHESTAT | )EOF" GREP_SHELL_QUOTED_PATH R"EOF( -v INFO | )EOF" GREP_SHELL_QUOTED_PATH R"EOF( -v ADVICE | wc -l`
+		errs=`)EOF" SED_SHELL_QUOTED_PATH R"EOF( 's/^$$/INFO/g;' $$warn_name |)EOF" GREP_SHELL_QUOTED_PATH R"EOF( -v DEBUG | )EOF" GREP_SHELL_QUOTED_PATH R"EOF( -v CACHESTAT | )EOF" GREP_SHELL_QUOTED_PATH R"EOF( -v INFO | )EOF" GREP_SHELL_QUOTED_PATH R"EOF( -v ADVICE | wc -l`
 
 		# echo DEBUG errs = XX $$errs XX
 		if [ $${errs} -eq 1 ] ; then
@@ -255,7 +255,7 @@ $(STRUCTS_DIR)/%-gpucfg-$(GPUBIN_CFG).hpcstruct: $(GPUBIN_DIR)/%
 		#  suppress any ADVICE, INFO, DEBUG, and CACHESTAT lines and any blank lines;
 		#  it's an error if anything remains
 		#
-		errs=`)EOF" SED_SHELL_QUOTED_PATH R"EOF( 's/^$//INFO/g;' $$warn_name |)EOF" GREP_SHELL_QUOTED_PATH R"EOF( -v DEBUG | )EOF" GREP_SHELL_QUOTED_PATH R"EOF( -v CACHESTAT | )EOF" GREP_SHELL_QUOTED_PATH R"EOF( -v INFO | )EOF" GREP_SHELL_QUOTED_PATH R"EOF( -v ADVICE | wc -l`
+		errs=`)EOF" SED_SHELL_QUOTED_PATH R"EOF( 's/^$$/INFO/g;' $$warn_name |)EOF" GREP_SHELL_QUOTED_PATH R"EOF( -v DEBUG | )EOF" GREP_SHELL_QUOTED_PATH R"EOF( -v CACHESTAT | )EOF" GREP_SHELL_QUOTED_PATH R"EOF( -v INFO | )EOF" GREP_SHELL_QUOTED_PATH R"EOF( -v ADVICE | wc -l`
 		# echo DEBUG errs = XX $$errs XX
 
 		if [ $${errs} -eq 1 ] ; then
