@@ -6,7 +6,7 @@ SPDX-License-Identifier: CC-BY-4.0
 
 (sec:remote)=
 
-# Accessing Remote Databases
+## Accessing Remote Databases
 
 `hpcviewer` can open performance databases located on remote hosts. Access to performance data on a remote host is supported by running a utility known as `hpcserver` on the remote host to communicate with an instance of `hpcviewer` running elsewhere.
 With the help of an instance of `hpcserver`, a user running `hpcviewer` can interact with a remote database in real-time, viewing and analyzing performance metrics.
@@ -22,7 +22,7 @@ This prevents access to the socket by other users.
 
 To enable remote access to data on a host, one needs to build and install `hpcserver` on the host, as described in the next section.
 
-## Building and Installing `hpcserver`
+### Building and Installing `hpcserver`
 
 `hpcserver` supports secure and efficient communication between a server containing an HPCToolkit database and an instance of `hpcviewer` running elsewhere. `hpcserver` is written entirely in Java and is designed for cross-platform compatibility. Below are the requirements and instructions for building and installing `hpcserver`.
 
@@ -59,7 +59,7 @@ Just because `java` is on your path doesn't guarantee that it will be on the pat
 - For the convenience of users, `/path/where/to/install/hpcserver` should be short because remote users will need to type the path into a remote instance of `hpcviewer`. If convenient, `/path/where/to/install/hpcserver` can be `/path/to/hpctoolkit-installation`
 ```
 
-## Opening a Remote Database
+### Opening a Remote Database
 
 Steps to opening a remote database:
 
