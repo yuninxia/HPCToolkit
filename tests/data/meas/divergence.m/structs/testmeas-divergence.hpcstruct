@@ -1,0 +1,170 @@
+<?xml version="1.0"?>
+<!DOCTYPE HPCToolkitStructure [
+<!-- SPDX-SnippetBegin -->
+<!--
+SPDX-FileCopyrightText: Contributors to the HPCToolkit Project
+
+SPDX-License-Identifier: CC-BY-4.0
+-->
+
+<!-- ******************************************************************** -->
+<!-- HPCToolkit Structure DTD                                             -->
+<!-- Version 4.9                                                          -->
+<!-- ******************************************************************** -->
+
+<!ELEMENT HPCToolkitStructure (LM)*>
+<!ATTLIST HPCToolkitStructure
+        version CDATA #REQUIRED
+        i       CDATA #REQUIRED
+        n       CDATA #IMPLIED>
+  <!-- Load module: -->
+  <!--   (i)d: unique identifier for cross referencing -->
+  <!--   (n)ame -->
+  <!--   (l)ine range: "beg-end" (inclusive range) -->
+  <!--   (v)ma-range-set: "{[beg-end), [beg-end)...}" -->
+  <!--   (t)arget: target function address -->
+  <!--   (d)evice: device name -->
+  <!ELEMENT LM (F|P)*>
+  <!ATTLIST LM
+        i CDATA #REQUIRED
+        n CDATA #REQUIRED
+        has-calls CDATA #REQUIRED
+        v CDATA #IMPLIED>
+  <!-- File: -->
+  <!ELEMENT F (P|L|S)*>
+  <!ATTLIST F
+        i CDATA #REQUIRED
+        n CDATA #REQUIRED>
+  <!-- Procedure: ln=link name (if different than name) -->
+  <!ELEMENT P (P|A|L|S|C)*>
+  <!ATTLIST P
+        i  CDATA #REQUIRED
+        n  CDATA #REQUIRED
+        ln CDATA #IMPLIED
+        l  CDATA #IMPLIED
+        s  CDATA #IMPLIED
+        v  CDATA #IMPLIED>
+  <!-- Alien: (f)ilename -->
+  <!ELEMENT A (A|L|S|C)*>
+  <!ATTLIST A
+        i CDATA #REQUIRED
+        f CDATA #IMPLIED
+        n CDATA #IMPLIED
+        ln CDATA #IMPLIED
+        l CDATA #IMPLIED
+        v CDATA #IMPLIED>
+  <!-- Loop -->
+  <!ELEMENT L (A|L|S|C)*>
+  <!ATTLIST L
+        i CDATA #REQUIRED
+        l CDATA #REQUIRED
+        f CDATA #IMPLIED
+        v CDATA #IMPLIED>
+  <!-- Statement -->
+  <!ELEMENT S EMPTY>
+  <!ATTLIST S
+        i CDATA #REQUIRED
+        l CDATA #REQUIRED
+        v CDATA #IMPLIED>
+  <!-- Callsite (a special Statement) -->
+  <!ELEMENT C (C)*>
+  <!ATTLIST C
+        i CDATA #REQUIRED
+        l CDATA #REQUIRED
+        v CDATA #IMPLIED
+        t CDATA #IMPLIED
+        d CDATA #IMPLIED>
+<!-- SPDX-SnippetEnd -->
+]>
+<HPCToolkitStructure i="0" version="4.9" n="">
+<LM i="2" n="/builds/hpctoolkit/hpctoolkit/builddir/tests/data/meas/testmeas-divergence" has-calls="0" v="{}">
+<F i="3" n="/builds/hpctoolkit/hpctoolkit/tests/data/meas/divergence.c">
+<P i="4" n="work" l="12" v="{[0x11a9-0x11aa)}">
+<S i="5" l="12" v="{[0x11a9-0x11b5)}"/>
+<S i="6" l="13" v="{[0x11b5-0x11bd)}"/>
+<S i="7" l="14" v="{[0x11bd-0x11ca)}"/>
+<S i="8" l="15" v="{[0x11ca-0x11d2) [0x11e2-0x11e4)}"/>
+<S i="9" l="16" v="{[0x11d2-0x11e2)}"/>
+<S i="10" l="20" v="{[0x1211-0x1216)}"/>
+<S i="11" l="21" v="{[0x1216-0x1218)}"/>
+<L i="12" l="15" f="/builds/hpctoolkit/hpctoolkit/tests/data/meas/divergence.c" v="{[0x1207-0x1208)}">
+<S i="13" l="15" v="{[0x1207-0x1211)}"/>
+<S i="14" l="17" v="{[0x1202-0x1207)}"/>
+<S i="15" l="18" v="{[0x11e4-0x1202)}"/>
+</L>
+</P>
+<P i="16" n="main" l="23" v="{[0x1218-0x1219)}">
+<S i="17" l="23" v="{[0x1218-0x1233)}"/>
+<S i="18" l="24" v="{[0x1233-0x123a)}"/>
+<S i="19" l="25" v="{[0x123a-0x1248)}"/>
+<S i="20" l="31" v="{[0x1248-0x1252)}"/>
+<S i="21" l="37" v="{[0x12cd-0x12d9)}"/>
+<S i="22" l="38" v="{[0x12d9-0x12e3)}"/>
+<S i="23" l="41" v="{[0x1305-0x130a)}"/>
+<S i="24" l="42" v="{[0x130a-0x1320)}"/>
+<L i="25" l="31" f="/builds/hpctoolkit/hpctoolkit/tests/data/meas/divergence.c" v="{[0x12c6-0x12c7)}">
+<S i="26" l="31" v="{[0x12c1-0x12cd)}"/>
+<S i="27" l="32" v="{[0x1252-0x128a)}"/>
+<S i="28" l="33" v="{[0x128a-0x12a8)}"/>
+<A i="29" l="34" f="/builds/hpctoolkit/hpctoolkit/tests/data/meas/divergence.c" n="" v="{}">
+<A i="30" l="42" f="/usr/include/x86_64-linux-gnu/bits/error.h" n="error" v="{}">
+<S i="31" l="42" v="{[0x12a8-0x12c0)}"/>
+<S i="32" l="43" v="{[0x12c0-0x12c1)}"/>
+</A>
+</A>
+</L>
+<L i="33" l="38" f="/builds/hpctoolkit/hpctoolkit/tests/data/meas/divergence.c" v="{[0x12fe-0x12ff)}">
+<S i="34" l="38" v="{[0x12f9-0x1305)}"/>
+<S i="35" l="39" v="{[0x12e3-0x12f9)}"/>
+</L>
+</P>
+</F>
+<F i="36" n="[testmeas-divergence]">
+<P i="37" n="_init" l="0" v="{[0x1000-0x1001)}">
+<S i="38" l="0" v="{[0x1000-0x101b)}"/>
+</P>
+<P i="39" n="targ1070@plt" l="0" v="{[0x1070-0x1071)}">
+<S i="40" l="0" v="{[0x1070-0x1080)}"/>
+</P>
+<P i="41" n="pthread_create@plt" l="0" v="{[0x1080-0x1081)}">
+<S i="42" l="0" v="{[0x1080-0x1090)}"/>
+</P>
+<P i="43" n="__stack_chk_fail@plt" l="0" v="{[0x1090-0x1091)}">
+<S i="44" l="0" v="{[0x1090-0x10a0)}"/>
+</P>
+<P i="45" n="error@plt" l="0" v="{[0x10a0-0x10a1)}">
+<S i="46" l="0" v="{[0x10a0-0x10b0)}"/>
+</P>
+<P i="47" n="pthread_join@plt" l="0" v="{[0x10b0-0x10b1)}">
+<S i="48" l="0" v="{[0x10b0-0x10c0)}"/>
+</P>
+<P i="49" n="_start" l="0" v="{[0x10c0-0x10c1)}">
+<S i="50" l="0" v="{[0x10c0-0x10ef)}"/>
+</P>
+<P i="51" n="deregister_tm_clones" l="0" v="{[0x10f0-0x10f1)}">
+<S i="52" l="0" v="{[0x10f0-0x1120)}"/>
+</P>
+<P i="53" n="register_tm_clones" l="0" v="{[0x1120-0x1121)}">
+<S i="54" l="0" v="{[0x1120-0x1160)}"/>
+</P>
+<P i="55" n="__do_global_dtors_aux" l="0" v="{[0x1160-0x1161)}">
+<S i="56" l="0" v="{[0x1160-0x11a0)}"/>
+</P>
+<P i="57" n="frame_dummy" l="0" v="{[0x11a0-0x11a1)}">
+<S i="58" l="0" v="{[0x11a0-0x11a9)}"/>
+</P>
+<P i="59" n="__libc_csu_init" l="0" v="{[0x1320-0x1321)}">
+<S i="60" l="0" v="{[0x1320-0x1360) [0x1376-0x1385)}"/>
+<L i="61" l="0" f="[testmeas-divergence]" v="{[0x1360-0x1361)}">
+<S i="62" l="0" v="{[0x1360-0x1376)}"/>
+</L>
+</P>
+<P i="63" n="__libc_csu_fini" l="0" v="{[0x1390-0x1391)}">
+<S i="64" l="0" v="{[0x1390-0x1395)}"/>
+</P>
+<P i="65" n="_fini" l="0" v="{[0x1398-0x1399)}">
+<S i="66" l="0" v="{[0x1398-0x13a5)}"/>
+</P>
+</F>
+</LM>
+</HPCToolkitStructure>

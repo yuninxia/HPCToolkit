@@ -43,8 +43,9 @@ static double atomic_add(std::atomic<double>& a, const double v) noexcept {
   return old;
 }
 
-static double atomic_op(std::atomic<double>& a, const double v,
-                        Statistic::combination_t op) noexcept {
+static void atomic_op(std::atomic<double>& a, const double v,
+                      Statistic::combination_t op) noexcept {
+  assert(v != 0);
   double old = a.load(std::memory_order_relaxed);
   switch (op) {
   case Statistic::combination_t::sum:
@@ -62,7 +63,6 @@ static double atomic_op(std::atomic<double>& a, const double v,
       ;
     break;
   }
-  return old;
 }
 
 StatisticAccumulator::StatisticAccumulator(const Metric& m)
@@ -82,10 +82,18 @@ void StatisticAccumulator::PartialRef::addRaw(const raw_t& v) noexcept {
 #ifndef NDEBUG
   added = true;
 #endif
-  atomic_op(partial.point, v[0], statpart.combinator());
-  atomic_op(partial.function, v[1], statpart.combinator());
-  atomic_op(partial.function_noloops, v[2], statpart.combinator());
-  atomic_op(partial.execution, v[3], statpart.combinator());
+  if (v[0] != 0) {
+    atomic_op(partial.point, v[0], statpart.combinator());
+  }
+  if (v[1] != 0) {
+    atomic_op(partial.function, v[1], statpart.combinator());
+  }
+  if (v[2] != 0) {
+    atomic_op(partial.function_noloops, v[2], statpart.combinator());
+  }
+  if (v[3] != 0) {
+    atomic_op(partial.execution, v[3], statpart.combinator());
+  }
   const bool isLoop = v[4] == 1.0;
   if (partial.isLoop.load(std::memory_order_relaxed) != isLoop)
     partial.isLoop.store(isLoop, std::memory_order_relaxed);
@@ -398,17 +406,23 @@ void PerThreadTemporary::finalize() noexcept {
         auto& atomics = accum.partials[i];
         if (atomics.isLoop.load(std::memory_order_relaxed) != isLoop)
           atomics.isLoop.store(isLoop, std::memory_order_relaxed);
-        atomic_op(
-            atomics.point,
-            partial.m_accum.evaluate(mx.second.point.load(std::memory_order_relaxed)),
-            partial.combinator());
-        atomic_op(atomics.function, partial.m_accum.evaluate(mx.second.function),
-                  partial.combinator());
-        atomic_op(atomics.function_noloops,
-                  partial.m_accum.evaluate(mx.second.function_noloops),
-                  partial.combinator());
-        atomic_op(atomics.execution, partial.m_accum.evaluate(mx.second.execution),
-                  partial.combinator());
+        if (auto value = mx.second.point.load(std::memory_order_relaxed); value != 0) {
+          atomic_op(atomics.point, partial.m_accum.evaluate(value),
+                    partial.combinator());
+        }
+        if (mx.second.function != 0) {
+          atomic_op(atomics.function, partial.m_accum.evaluate(mx.second.function),
+                    partial.combinator());
+        }
+        if (mx.second.function_noloops != 0) {
+          atomic_op(atomics.function_noloops,
+                    partial.m_accum.evaluate(mx.second.function_noloops),
+                    partial.combinator());
+        }
+        if (mx.second.execution != 0) {
+          atomic_op(atomics.execution, partial.m_accum.evaluate(mx.second.execution),
+                    partial.combinator());
+        }
       }
     }
 

@@ -787,8 +787,6 @@ static std::pair<bool, fs::path> remove_prefix(const fs::path& path,
 
 void ProfArgs::StatisticsExtender::appendStatistics(const Metric& m,
                                                     Metric::StatsAccess mas) noexcept {
-  if (m.visibility() == Metric::Settings::visibility_t::invisible)
-    return;
   Metric::Statistics s;
   s.sum = args.stats.sum;
   s.mean = args.stats.mean;

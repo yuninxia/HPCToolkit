@@ -1,0 +1,75 @@
+version: 0
+inputs:
+  - &CPUTIMEx20_x28_sx29_-sum-x5b_0x0x5d_-execution
+    metric: CPUTIME (s)
+    scope: execution
+    formula: $$
+    combine: sum
+  - &CPUTIMEx20_x28_sx29_-min-x5b_0x0x5d_-execution
+    metric: CPUTIME (s)
+    scope: execution
+    formula: $$
+    combine: min
+  - &CPUTIMEx20_x28_sx29_-max-x5b_0x0x5d_-execution
+    metric: CPUTIME (s)
+    scope: execution
+    formula: $$
+    combine: max
+  - &CPUTIMEx20_x28_sx29_-sum-x5b_0x0x5d_-lex_aware
+    metric: CPUTIME (s)
+    scope: lex_aware
+    formula: $$
+    combine: sum
+  - &CPUTIMEx20_x28_sx29_-min-x5b_0x0x5d_-lex_aware
+    metric: CPUTIME (s)
+    scope: lex_aware
+    formula: $$
+    combine: min
+  - &CPUTIMEx20_x28_sx29_-max-x5b_0x0x5d_-lex_aware
+    metric: CPUTIME (s)
+    scope: lex_aware
+    formula: $$
+    combine: max
+  - &CPUTIMEx20_x28_sx29_-sum-x5b_0x0x5d_-function
+    metric: CPUTIME (s)
+    scope: function
+    formula: $$
+    combine: sum
+  - &CPUTIMEx20_x28_sx29_-min-x5b_0x0x5d_-function
+    metric: CPUTIME (s)
+    scope: function
+    formula: $$
+    combine: min
+  - &CPUTIMEx20_x28_sx29_-max-x5b_0x0x5d_-function
+    metric: CPUTIME (s)
+    scope: function
+    formula: $$
+    combine: max
+roots:
+  - name: CPUTIME (s)
+    description: Time threads are active (seconds)
+    variants:
+      Sum:
+        render: [number, percent]
+        formula:
+          inclusive:
+            standard: *CPUTIMEx20_x28_sx29_-sum-x5b_0x0x5d_-execution
+          exclusive:
+            custom: *CPUTIMEx20_x28_sx29_-sum-x5b_0x0x5d_-lex_aware
+            standard: *CPUTIMEx20_x28_sx29_-sum-x5b_0x0x5d_-function
+      Min:
+        render: [number]
+        formula:
+          inclusive:
+            standard: *CPUTIMEx20_x28_sx29_-min-x5b_0x0x5d_-execution
+          exclusive:
+            custom: *CPUTIMEx20_x28_sx29_-min-x5b_0x0x5d_-lex_aware
+            standard: *CPUTIMEx20_x28_sx29_-min-x5b_0x0x5d_-function
+      Max:
+        render: [number]
+        formula:
+          inclusive:
+            standard: *CPUTIMEx20_x28_sx29_-max-x5b_0x0x5d_-execution
+          exclusive:
+            custom: *CPUTIMEx20_x28_sx29_-max-x5b_0x0x5d_-lex_aware
+            standard: *CPUTIMEx20_x28_sx29_-max-x5b_0x0x5d_-function
