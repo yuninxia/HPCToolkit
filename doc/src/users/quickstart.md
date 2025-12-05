@@ -114,6 +114,8 @@ Adding a `-t` to `hpcrun`'s command line when profiling GPU computations will tr
 
 More information about monitoring GPU-accelerated applications, including information about how to monitor activity within GPU kernels, is available in a later chapter [Measurement and Analysis of GPU-accelerated Applications](#chpt:gpu).
 
+(recovering-program-structure)=
+
 ### Recovering Program Structure
 
 When `hpcrun` measures the performance of an application, it associates performance information with machine code addresses. To relate performance information associated with machine code addresses back to source code locations, HPCToolkit provides a tool `hpcstruct` that analyzes CPU and GPU binaries associated with an execution to *recover program structure*. Program structure for a binary includes information about its source files, procedures, inlined code, loop nests, and statements. Program structure for a binary is recovered by combining source code mapping information recorded by compilers (when apprpropriate compile time arguments, e.g. `-g`, are used) with information about loops that `hpcstruct` gleans from analyzing the control flow between machine instructions in the binary.
@@ -216,7 +218,7 @@ hpcstruct -c /path/to/cache/directory measurements-directory
 ```{warning}
 Caching the structure files involves copying the CPU and GPU binaries
 and libraries into the cache directory.
-If your application has restricted access, be careful where you put
+If all or part of your application has restricted access, be careful where you put
 the cache directory and be sure to restrict the directory permissions.
 ```
 

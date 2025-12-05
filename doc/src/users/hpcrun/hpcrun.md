@@ -36,16 +36,16 @@ turn on tracing. The following use of `hpcrun` will collect both a call path pro
 hpcrun -t app arg ...
 ```
 
-The `-t` will collect a call path trace based on asynchronous sampling of each CPU thread using a time-based sampling metric. Besides the default `CPUTIME` metric, other time-based metrics include `REALTIME` and \`\`cycles\`. How to use these metrics is described a bit later.
+The `-t` will collect a call path trace based on asynchronous sampling of each CPU thread using a time-based sampling metric. Besides the default `CPUTIME` metric, other time-based metrics include `REALTIME` and `CYCLES`. How to use these metrics is described a bit later.
 
 The `-t` option also traces any GPU operations if a `-e gpu=*` option is used to enable measurement of GPU activities.
 
 Traces are most useful for understanding the execution dynamics of multithreaded or multi-process applications; however, you may find a trace of a single-threaded application to be useful to understand how an execution unfolds over time.
 
 For programs that launch many GPU operations per second, the `-tt` will collect a more useful trace than `-t`.
-Like the `-t` option, `-tt` records a call path trace based on asynchronous sampling of each CPU thread using a time-based sampling metric. Unlike `-t`, `-tt` also records a sample for a thread as it launches each GPU operation (if any).
-Without `-tt`, the activity seen on a CPU trace line at the time a kernel is launched
-is often from long ago, which makes it hard to understand how CPU activity relates to GPU activity.
+Like the `-t` option, `-tt` records a call path trace based on asynchronous sampling of each CPU thread using a time-based sampling metric. Unlike `-t`, `-tt` also records a sample for a thread as it launches each GPU operation, if any.
+Without `-tt`, the activity seen on a CPU trace line at the time it launches a GPU operation
+is often from far earlier in the execution, which can make it difficult to relate to concurrent CPU and GPU activity.
 Since additional non-sample elements are added, any statistical properties of the CPU traces are disturbed.
 
 While CPUTIME is used as the default sample source if no other sample source is specified, many other sample sources are available.
@@ -67,7 +67,7 @@ hpcrun -t -e event@howoften ... app arg ...
 ```
 
 For example, to profile an application using hardware counter sample sources
-provided by Linux `perf_events` and sample cycles at 300 times/second (the default sampling frequency) and sample every 4,000,000 instructions,
+provided by Linux `perf_events` and sample cycles 300 times/second (the default sampling frequency) and sample every 4,000,000 instructions,
 you would use:
 
 ```
@@ -554,7 +554,7 @@ hpcrun -e REALTIME@5000 app arg ...
 do not use more than one timer-based sample source to monitor a program execution.
 When using a sample source such as `CPUTIME` or `REALTIME`,
 we recommend not using another time-based sampling source such as
-Linux `perf_events` CYCLES or PAPI's `PAPI_TOT_CYC`.
+Linux `perf_events` `CYCLES` or PAPI's `PAPI_TOT_CYC`.
 Technically, this is feasible and `hpcrun` won't die.
 However, multiple time-based sample sources would compete with one another to measure the
 execution and likely lead to dropped samples and possibly distorted results.

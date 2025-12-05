@@ -224,11 +224,11 @@ OPTIONS: PROFILING
   Like the ``-t`` option, record a call path trace based on asynchronous sampling of each CPU thread if a time-based sampling metric,
   such as ``CPUTIME``, ``REALTIME``, or ``cycles`` is used, in addition to a call path profile based on this metric.
   This option also traces any GPU operations if a ``-e gpu=*`` option is used to enable measurement of GPU activities.
-  Unlike ``-t``, this flag causes a sample to be recorded for a thread as it launches each GPU operation (if any). This option is recommended
+  Unlike ``-t``, this flag causes a sample to be recorded for a thread as it launches each GPU operation, if any. This option is recommended
   instead of ``-t`` when monitoring GPU-accelerated programs that launch many GPU operations per second.
-  Without ``-tt``, the activity seen on a CPU trace line at the time a kernel is launched
+  Without ``-tt``, the activity seen on a CPU trace line at the time it launches a GPU operation
   is often from far earlier in the execution, which can make it difficult to relate to concurrent CPU and GPU activity.
-  However, since `-tt` collects samples at an irregular rate, statistical properties of the CPU traces are disturbed and cannot be trusted when this flag is used.
+  However, since ``-tt`` collects samples at an irregular rate, statistical properties of the CPU traces are disturbed and cannot be trusted when this flag is used.
   Also see ``-t``.
 
 OPTIONS: HPCTOOLKIT DEVELOPMENT

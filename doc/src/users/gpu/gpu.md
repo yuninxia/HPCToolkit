@@ -10,13 +10,13 @@ SPDX-License-Identifier: CC-BY-4.0
 
 HPCToolkit can measure both CPU and GPU performance of GPU-accelerated applications. It measures CPU performance using asynchronous sampling, as described in
 Section [6.3](#sample-sources), and it measures GPU operations using tool libraries or interfaces provided by GPU vendors.
-A single build of HPCToolkit can support GPUs from AMD, Intel, and NVIDIA.
+A single build of HPCToolkit can support GPUs from AMD, NVIDIA, and Intel.
 
-In this chapter, we describe HPCToolkit's capabilities for profiling, tracing, and PC sampling of GPU-accelerated applications that use CUDA, ROCm, Level Zero, OpenCL, and/or OpenMP offloading.
+In this chapter, we describe HPCToolkit's capabilities for profiling, tracing, and PC sampling of GPU-accelerated applications that use a variety of vendor runtimes and tool interfaces, including ROCm (AMD), CUDA (NVIDIA), Level Zero (Intel), OpenCL (all GPUs), and/or OpenMP (all GPUs).
 
 Section [9.1](#sec:gpu-quickstart) provides a quick start guide for using HPCToolkit to measure GPU-accelerated applications.
 Subsequent sections describe profiling (Section [9.2](#sec:gpu-profiling)), tracing (Section [9.3](#sec:gpu-tracing)), PC sampling (Section [9.4](#sec:gpu-sampling)), and associated platform-independent metrics.
-The chapter concludes with sections on CUDA (Section [9.5](#sec:gpu-cuda)), ROCm (Section [9.6](#sec:gpu-rocm)), and Level Zero (Section [9.7](#sec:gpu-level0)) that discuss platform-specific measurement details or metrics.
+The chapter concludes with sections on AMD GPUs (Section [9.5](#sec:gpu-rocm)), NVIDIA GPUs (Section [9.6](#sec:gpu-cuda)), and Intel GPUs (Section [9.7](#sec:gpu-level0)) that discuss platform-specific measurement details or metrics.
 
 (sec:gpu-quickstart)=
 
@@ -27,7 +27,7 @@ This substrate interfaces with NVIDIA's [CUPTI](https://docs.nvidia.com/cupti) (
 
 For each of the supported GPU runtimes (ROCm, CUDA, Level Zero, and OpenCL), HPCToolkit supports several monitoring options. All of the GPU runtimes support profiling and tracing of GPU operations. ROCm, CUDA, and Level Zero support instruction-level measurement within GPU kernels using PC sampling. Level Zero also supports instruction-level performance measurement within GPU kernels using binary instrumentation with Intel's GTPin.
 
-Table [9.1](#amd-options) shows arguments to `hpcrun` that can be used to monitor the performance of GPU operations offloaded by HIP or OpenMP on AMD GPUs. Note that there are two types of PC sampling: hardware (`hw`) and software-only (`sw`). `sw` PC sampling is the default mode because it is available on MI200+; `hw` PC sampling is available only on MI300+. For`sw` PC sampling, HPCToolkit's default period is 2^20 ns. For `hw` PC sampling, the default period is 2^20 cycles.
+Table [9.1](#amd-options) shows arguments to `hpcrun` that can be used to monitor the performance of GPU operations offloaded by HIP or OpenMP on AMD GPUs.
 
 ```{table} Table 9.1: Monitoring performance on AMD GPUs when using AMD's HIP and OpenMP programming models atop AMD's ROCm runtime.
 ---
@@ -40,6 +40,23 @@ widths: grid
 | `-e gpu=rocm -t`                | coarse-grain profiling and tracing of AMD GPU operations                                        |
 | `-e gpu=rocm -tt`               | coarse-grain profiling and high-resolution tracing of AMD GPU operations                        |
 | `-e gpu=rocm,pc[={sw,hw}][@k]`  | coarse-grain profiling of GPU operations; fine-grain profiling within GPU kernels using PC sampling every 2^k cycles (hw) or 2^k ns (sw). |
+```
+
+AMD GPUs support two types of PC sampling: hardware (`hw`) and software-only (`sw`). `sw` PC sampling is the default mode because it is available on MI200+; `hw` PC sampling is available only on MI300+. For`sw` PC sampling, HPCToolkit's default period is 2^20 ns. For `hw` PC sampling, the default period is 2^20 cycles.
+
+Normal tracing (`-t`) collects CPU trace entries using asynchronous sampling and GPU trace entries at the beginning and end of every GPU operation.
+High-resolution tracing (`-tt`) additionally records a CPU trace entry each time a CPU thread launches a GPU operation, if any.
+For programs that launch many GPU operations per second, `-tt` will collect a more useful trace than `-t`.
+Without `-tt`, the activity seen on a CPU trace line at the time it launches a GPU operation
+is often from far earlier in the execution, which can make it difficult to relate to concurrent CPU and GPU activity.
+
+```{tip}
+For all GPU events, you may combine CPU and GPU profiling events in the same run.
+For example, `hpcrun -e REALTIME -e gpu=rocm -t ...` would profile and trace activity on the CPU using the default CPU sampling period while profiling and tracing GPU operations as well.
+```
+
+```{tip}
+You can use `-t` or `-tt` while collecting PC samples to see *qualitative* timings; however, the overhead of processing PC samples is likely to distort timings in traces. For accurate timings in traces, we recommend collecting PC samples and traces in different executions.
 ```
 
 Table [9.2](#nvidia-cuda-monitoring-options) shows arguments to `hpcrun` that can be used to monitor the performance of GPU operations offloaded by CUDA or OpenMP on NVIDIA GPUs.
@@ -78,12 +95,14 @@ Table [9.4](#opencl-monitoring-options) shows the possible command-line argument
 ---
 name: opencl-monitoring-options
 ---
-| Argument to `hpcrun` | What is monitored                                                                      |
+| Argument to `hpcrun` | What is monitored                                                                      |
 | :------------------- | :------------------------------------------------------------------------------------- |
-| `-e gpu=opencl`      | coarse-grain profiling of GPU operations using a platform's OpenCL runtime             |
-| `-e gpu=opencl -t`   | coarse-grain profiling and tracing of GPU operations using a platform's OpenCL runtime |
-| `-e gpu=opencl -tt`  | coarse-grain profiling and high-resolution tracing of GPU operations using a platform's OpenCL runtime                 |
+| `-e gpu=opencl`      | coarse-grain profiling of GPU operations using a platform's OpenCL runtime             |
+| `-e gpu=opencl -t`   | coarse-grain profiling and tracing of GPU operations using a platform's OpenCL runtime |
+| `-e gpu=opencl -tt`  | coarse-grain profiling and high-resolution tracing of GPU operations using a platform's OpenCL runtime                 |
 ```
+
+If OpenMP is implemented using the OMPT interface, then no special arguments are needed to turn on monitoring.
 
 (sec:gpu-profiling)=
 
@@ -125,7 +144,7 @@ name: table:gker
 | GKER:BLKS_AVG   | GPU kernel: average grid block count per launch  |
 | GKER:BLK_SM (B) | GPU kernel: block local memory (bytes)      |
 | GKER:COUNT      | GPU kernel: launch count                    |
-| GKER:OCC_THR    | GPU kernel: theoretical occupancy (WARP_ACT / WARP_AVL) |
+| GKER:OCC_THR    | GPU kernel: theoretical occupancy 100 * (WARP_ACT / WARP_AVL) |
 ```
 
 ```{table} Table 9.7: GPU memory allocation and deallocation. Note: metrics marked with * are hidden by default.
@@ -193,15 +212,15 @@ name: table:gsync
 | GSYNC:STRE (s)* | GPU synchronizations: stream event wait |
 | GSYNC:STR (s)*  | GPU synchronizations: stream            |
 | GSYNC:CTX (s)*  | GPU synchronizations: context           |
-| GSYNC:COUNT       | GPU synchronizations: count             |
+| GSYNC:COUNT     | GPU synchronizations: count             |
 ```
 
-Figure [9.0](#qs-no-cct) shows a screenshot of a profile view of [Quicksilver](https://asc.llnl.gov/codes/proxy-apps/quicksilver) - a proxy application from Lawrence Livermore National Laboratory. The figure shows a top-down view of heterogeneous calling contexts that span both CPU and GPU. In the middle of the figure is a placeholder `<gpu kernel>` that is inserted by HPCToolkit to mark the transition between CPU and GPU code in the call stack. Above the placeholder is a CPU calling context where the GPU kernel was invoked. Below the `<gpu kernel>` placeholder, we see `CycleTrackingKernel` - the only non-trivial kernel in this code. Columns in the figure's metric table show metrics associated with `CycleTrackingKernel`. From these we see that on average, the kernel uses 12 of 64 possible warps per SM (`WARP_ACT` vs. `WARP_AVL`). The kernel uses 158 registers (`GKER:SREG`), uses 128 threads per grid block (`GKER:BLK_THR`), was launched with an average of 5 grid blocks (`GKER:BLKS_AVG`), was launched 195 times (`GKER:COUNT Sum(E)`), with an average occupancy 18.8% (`GKER:OCC_THR`), calculated as 100 * (`WARP_ACT`/ `WARP_AVL`).
+Figure [9.1](#qs-no-cct) shows a screenshot of a profile view of [Quicksilver](https://asc.llnl.gov/codes/proxy-apps/quicksilver) - a proxy application from Lawrence Livermore National Laboratory. The figure shows a top-down view of heterogeneous calling contexts that span both CPU and GPU. In the middle of the figure is a placeholder `<gpu kernel>` that is inserted by HPCToolkit to mark the transition between CPU and GPU code in the call stack. Above the placeholder is a CPU calling context where the GPU kernel was invoked. Below the `<gpu kernel>` placeholder, we see `CycleTrackingKernel` - the only non-trivial kernel in this code. Columns in the figure's metric table show metrics associated with `CycleTrackingKernel`. From these we see that on average, the kernel uses 12 of 64 possible warps per SM (`WARP_ACT` vs. `WARP_AVL`). The kernel uses 158 registers (`GKER:SREG`), uses 128 threads per grid block (`GKER:BLK_THR`), was launched with an average of 5 grid blocks (`GKER:BLKS_AVG`), was launched 195 times (`GKER:COUNT Sum(E)`), with an average occupancy 18.8% (`GKER:OCC_THR`), calculated as 100 * (`WARP_ACT` / `WARP_AVL`).
 
 ```{figure-md} qs-profile-metrics
 ![](qs-profile-metrics.png)
 
-Figure 9.0: A screenshot of `hpcviewer` for the GPU-accelerated Quicksilver proxy app with kernel metrics.
+Figure 9.1: A screenshot of `hpcviewer` for the GPU-accelerated Quicksilver proxy app with kernel metrics.
 ```
 
 ```{important}
@@ -227,11 +246,11 @@ Without `-tt`, the activity seen on a CPU trace line at the time a kernel is lau
 Note that using `-tt` disturbs the statistical properties of CPU traces since it adds non-sample events whenever a thread launches a GPU operation.
 
 ```{important}
-The next section describes instruction-level measurement within GPU kernels using PC sampling. Unless you are using a very large sampling period, collecting and attributing PC samples may add significant CPU overhead to a GPU-accelerated code. Tracing is not recommended when PC sampling is enabled as the overhead of PC sampling will likely affect timings in traces.
+The next section describes instruction-level measurement within GPU kernels using PC sampling. Unless you are using a very large sampling period, collecting and attributing PC samples may add significant CPU overhead to a GPU-accelerated code. Tracing using either `-t` or `-tt` is not recommended when PC sampling is enabled as the overhead of PC sampling will likely affect timings in traces.
 ```
 
 ```{important}
-During execution `hpcrun` creates CPU tool threads to record traces of GPU activities. The work performed by such tool threads is not reported in profiles and traces shown by HPCToolkit. By default, `hpcrun` creates one tracing thread per 256 GPU streams. To adjust the number of GPU streams per tracing thread, see the settings for `HPCRUN_CONTROL_KNOBS` in Appendix [14](#sec:env).
+During execution `hpcrun` creates CPU tool threads to record traces of GPU activities. The work performed by such tool threads is not reported in profiles and traces shown by HPCToolkit. By default, `hpcrun` creates one tracing thread per 256 GPU streams. To adjust the number of GPU streams per tracing thread, see the settings for `HPCRUN_CONTROL_KNOBS` in Section [14](#sec:env).
 When mapping a GPU-accelerated node program onto a node, you may need to consider provisioning additional hardware threads or cores to accommodate these tracing threads; otherwise, they may compete with application threads for CPU resources, which may degrade the performance of your program.
 ```
 
@@ -302,12 +321,12 @@ To attribute PC samples collected during an execution of a GPU-accelerated appli
 
 By default, when applied to a measurements directory, `hpcstruct` performs only lightweight analysis of the GPU functions in each GPU binary, enabling PC samples to be mapped to functions, loops, and source lines. It is important to understand that AMD, Intel, and NVIDIA GPU measurement APIs for PC sampling collect "flat" PC samples without any information about GPU call stacks.
 
-In our experience, calling contexts within GPU kernels are essential for developers to understand the performance of sophisticated kernels that employ many device functions. The GPU-accelerated [Quicksilver](https://asc.llnl.gov/codes/proxy-apps/quicksilver) proxy application from Lawrence Livermore National Laboratory illustrates this problem. Figure [9.1](#qs-no-cct) shows a screenshot of `hpcviewer` displaying PC sampling measurements for Quicksilver without reconstruction of a calling context tree within `CycleTrackingKernel`. The figure shows a top-down view of heterogeneous calling contexts that span both CPU and GPU. In the middle of the figure is a placeholder `<gpu kernel>` that is inserted by HPCToolkit to mark the transition between CPU and GPU code in the call stack. Above the placeholder is a CPU calling context where the GPU kernel was invoked. Below the `<gpu kernel>` placeholder, `hpcviewer` shows more than a dozen GPU device functions that were executed on behalf of `CycleTrackingKernel`.
+In our experience, calling contexts within GPU kernels are essential for developers to understand the performance of sophisticated kernels that employ many device functions. The GPU-accelerated [Quicksilver](https://asc.llnl.gov/codes/proxy-apps/quicksilver) proxy application from Lawrence Livermore National Laboratory illustrates this problem. Figure [9.2](#qs-no-cct) shows a screenshot of `hpcviewer` displaying PC sampling measurements for Quicksilver without reconstruction of a calling context tree within `CycleTrackingKernel`. The figure shows a top-down view of heterogeneous calling contexts that span both CPU and GPU. In the middle of the figure is a placeholder `<gpu kernel>` that is inserted by HPCToolkit to mark the transition between CPU and GPU code in the call stack. Above the placeholder is a CPU calling context where the GPU kernel was invoked. Below the `<gpu kernel>` placeholder, `hpcviewer` shows more than a dozen GPU device functions that were executed on behalf of `CycleTrackingKernel`.
 
 ```{figure-md} qs-no-cct
 ![](qs-no-cct.png)
 
-Figure 9.1: A screenshot of `hpcviewer` for the GPU-accelerated Quicksilver proxy app without GPU CCT reconstruction.
+Figure 9.2: A screenshot of `hpcviewer` for the GPU-accelerated Quicksilver proxy app without GPU CCT reconstruction.
 ```
 
 Since GPU measurement APIs don't provide information about device-function call stacks within GPU kernels for PC samples, we designed a method to reconstruct GPU calling contexts during post-mortem analysis. This analysis is only performed when (1) an execution has been monitored using PC sampling, and (2) the measurement directory containing an execution's GPU binaries has been analyzed in detail by invoking `hpcstruct` on the directory with the option `--gpucfg yes`. Reconstructing calling contexts within GPU kernels is optional because it may be expensive for kernels with large calling context trees.
@@ -325,84 +344,17 @@ Without the ability to measure each device function invocation, HPCToolkit assum
 
 HPCToolkit's `hpcprof` analyzes the static call graph associated with each GPU kernel. If the static call graph for a GPU kernel contains cycles, which arise from recursive or mutually-recursive calls, `hpcprof` replaces each cycle with a [strongly connected component](https://en.wikipedia.org/wiki/Strongly_connected_component) (SCC). In this case, `hpcprof` unlinks call graph edges between vertices within the SCC and adds an SCC vertex to enclose the set of vertices in each SCC. The rest of `hpcprof`'s analysis treats an SCC vertex in the call graph like a device function. The process of reconstructing calling context trees for GPU kernels using static call sites and sample counts is described [elsewhere](https://arxiv.org/pdf/2109.06931).
 
+Figure [9.3](#qs-cct) shows an `hpcviewer` screenshot for the GPU-accelerated Quicksilver code following reconstruction of GPU calling contexts. Notice that after the reconstruction, one can see that `CycleTrackingKernel` calls `CycleTrackingGuts`, which calls `CollisionEvent`, which eventually calls `macroscopicCrossSection` and `NuclearData::getNumberOfReactions`. The the rich GPU calling context tree reconstructed by `hpcprof` also shows loop nests and inlined code.
+
 ```{figure-md} qs-cct
 ![](qs-cct.png)
 
-Figure 9.2: A screenshot of `hpcviewer` for the GPU-accelerated Quicksilver proxy app with GPU CCT reconstruction.
+Figure 9.3: A screenshot of `hpcviewer` for the GPU-accelerated Quicksilver proxy app with GPU CCT reconstruction.
 ```
-
-Figure [9.2](#qs-cct) shows an `hpcviewer` screenshot for the GPU-accelerated Quicksilver code following reconstruction of GPU calling contexts. Notice that after the reconstruction, one can see that `CycleTrackingKernel` calls `CycleTrackingGuts`, which calls `CollisionEvent`, which eventually calls `macroscopicCrossSection` and `NuclearData::getNumberOfReactions`. The the rich GPU calling context tree reconstructed by `hpcprof` also shows loop nests and inlined code.
 
 ```{tip}
 If all PC samples in a kernel map to line 0, it is likely that the GPU binaries used by your application don't contain line mapping information. Consult the appropriate GPU-specific section below for information about the compiler option required to record line mappings that you need for performance analysis.
 ```
-
-(sec:gpu-cuda)=
-
-## NVIDIA GPUs
-
-HPCToolkit supports profiling, tracing, and PC sampling of GPU operations on NVIDIA GPUs for programs written in CUDA, OpenMP, OpenCL. Profiling, tracing, and PC sampling of GPU-accelerated applications have already been in this chapter. In this section, we focus on a few things specific to the measurement of applications on NVIDIA GPUs.
-
-(sec:nvidia-pc-sampling)=
-
-### PC Sampling on NVIDIA GPUs
-
-NVIDIA's GPUs have supported [PC sampling](https://docs.nvidia.com/cupti/Cupti/r_main.html#r_pc_sampling) since Maxwell.
-Instruction samples are collected separately on each active streaming
-multiprocessor (SM) and merged in a buffer returned by NVIDIA's CUPTI.
-In each sampling period, one warp scheduler of each active SM
-samples the next instruction from one of its active warps. Sampling rotates through
-an SM's warp schedulers in a round robin fashion.
-When an instruction is sampled, its stall reason (if any) is
-recorded. If all warps on a scheduler are stalled when a sample is
-taken, the sample is marked as a latency sample, meaning no instruction will be issued by the warp scheduler in the next cycle.
-Figure [9.3](#fig:pc-sampling) shows a PC sampling example on an SM with four schedulers. Among the six collected samples, four are latency samples, so the estimated stall ratio is 4/6.
-
-Table [9.13](#table:gsamp) shows summary statistics recorded by HPCToolkit with collecting PC samples on NVIDIA GPUs. Of particular note is the metric `GSAMP:UTIL`. HPCToolkit computes approximate GPU utilization using information gathered using PC sampling. Given the average clock frequency and the sampling rate, if all SMs are active, then HPCToolkit knows how many instruction samples would be expected (`GSAMP:EXP`) if the GPU was fully active for the interval when it was in use. HPCToolkit approximates the percentage of GPU utilization by comparing the measured samples with the expected samples using the following formula: `100 * (GSAMP:TOT) / (GSAMP:EXP)`.
-
-```{figure-md} fig:pc-sampling
-![](mental-model.png)
-
-Figure 9.3: NVIDIA's GPU PC sampling example on an SM. `P`-`6P` represent
-six sample periods P cycles apart. `S_1`-`S_4` represent four schedulers on an SM.
-```
-
-```{table} Table 9.13: GPU utilization statistics computed from PC Samples on NVIDIA GPUs.
----
-name: table:gsamp
----
-| Metric          | Description                                |
-| :-------------- | :----------------------------------------- |
-| GSAMP:DRP       | GPU PC samples: dropped                    |
-| GSAMP:EXP       | GPU PC samples: expected                   |
-| GSAMP:TOT       | GPU PC samples: measured                   |
-| GSAMP:PER (cyc) | GPU PC samples: period (GPU cycles)        |
-| GSAMP:UTIL (%)  | GPU utilization computed using PC sampling |
-```
-
-```{important}
-To collect PC samples on NVIDIA GPUs, at present HPCToolkit uses an older CUPTI interface that serializes the execution of GPU kernels. HPCToolkit uses this interface so that it can precisely attribute GPU PC samples to CPU calling contexts that invoke GPU kernels. This interface blocks concurrent execution of GPU kernels, which may slow execution. Furthermore, because of kernel serialization, HPCToolkit's PC sampling measurements will only reflect the GPU activity of kernels running in isolation.
-
-Our experience with CUPTI's serialization-based API for PC sampling is that the overhead is less than `5x`. The overhead of GPU monitoring is principally on the host side. The time spent in GPU operations or in kernels as measured by PC samples is expected to be accurate. However, since execution as a whole is slowed while measuring GPU operations and collecting PC samples, one must be careful about drawing conclusions about overall program performance. Any traces collected while collecting PC samples on NVIDIA GPUs will be dilated and should be viewed as providing qualitative information only.
-```
-
-### Attributing PC Samples to CUDA Source Code
-
-To attribute performance within GPU kernels, one must add an appropriate flag to NVIDIA's compilers to record mappings between machine code and source code. `nvcc` and `nvc++` provide a `-lineinfo` option that records precise mappings from machine code to source code, including information about inlined functions.
-
-```{important}
-Don't use `nvcc`'s `-G` option when measuring performance. While it records precise mappings from machine code to source code, it also disables *all* compiler optimizations and generates GPU code that may be vastly slower.
-```
-
-### Binary analysis on NVIDIA GPUs
-
-Analysis of binaries for NVIDIA GPUs is problematic. NVIDIA does not provide an API for analysis of GPU binaries. For that reason, HPCToolkit invokes NVIDIA's `nvdisasm` command line tool to analyze control flow in NVIDIA GPU binaries. `nvdisasm` produces Control Flow Graphs (CFGs) in DOT with assembly code annotations for each node in a CFG. For large CUDA binaries, `nvdisasm`'s ASCII output files can be huge; however, that is the least of the problems. The biggest problems are that (1) `nvdisasm` fails to produce a CFG for GPU functions that have certain features, e.g. contain `sib calls`, and (2) when a GPU binary contains a function that `nvdisasm` can't process, it gives up and doesn't process the remainder of a GPU binary.
-
-To compensate, HPCToolkit inspects the symbol table of an NVIDIA GPU binary and then invokes `nvdisasm` once for each function in the GPU binary to extract that function's CFG. With this approach, HPCToolkit is resilient against `nvdisasm` deficiencies. On any function where `nvdisasm` fails to extract a CFG, HPCToolkit attributes costs any samples collected to the function as a whole.
-
-For large binaries with many functions, the cost of invoking `nvdisasm` to extract a CFG for just one function is not proportional to only the size of the function of interest. That may make the aforementioned approach impractical for very large binaries. When this approach was applied to an NVIDIA GPU binary almost a gigabyte in size containing roughly 40K functions, `hpcstruct` analyzed the binary for two days without completing.
-
-If `hpcstruct` takes too long to analyze anything, it can be interrupted with `^C`. Any analysis already complete, will be saved and not recomputed. Restarting `hpcstruct` will show the first binary where analysis is being reinitiated. A problematic binary can be excluded from analysis by `hpcstruct` using `hpcstruct`'s `-x|--exclude` option. Without program structure information from `hpcstruct`, HPCToolkit's `hpcprof` will be unable to attribute costs to calling contexts within a GPU kernel, loops, or inlined code. However, `hpcprof` will still be able to attribute PC samples to source lines in kernels and device functions.
 
 (sec:gpu-rocm)=
 
@@ -411,7 +363,7 @@ If `hpcstruct` takes too long to analyze anything, it can be interrupted with `^
 On AMD GPUs,
 HPCToolkit supports coarse-grain profiling of GPU-accelerated applications that offload GPU computation using AMD's HIP programming model, OpenMP, and OpenCL. In this section, we focus on a few important details about monitoring applications on AMD GPUs with AMD's new [Rocprofiler-sdk](https://rocm.docs.amd.com/projects/rocprofiler-sdk).
 
-### PC Sampling on AMD GPUs
+### AMD GPU PC Sampling
 
 AMD GPUs support two kinds of PC sampling: host-trap (software-based) sampling and stochastic (hardware-based) sampling. Support for host-trap based PC sampling first became available with ROCm 6.4 and is available on AMD GPUs MI200 and newer.
 Support for stochastic sampling first became available with ROCm 7.0 and it requires hardware support that first became available with AMD's MI300 series. Both kinds of sampling need the GPU to be running modern firmware.
@@ -443,9 +395,9 @@ At present, setting the sampling period for `hw` PC sampling to a period signifi
 
 For both kinds of sampling, HPCToolkit reports `GCYCLES` or GPU cycles. The default frequency for AMD GPUs is approximately 1GHz, so 1 cycle is approximately 1 ns. While frequency adjustments may affect the GPU clock, assuming that the frequency is constant at 1GHz should be sufficient for measurements to be adequate for performance tuning.
 
-AMD's stochastic sampling hardware records a wealth of information with each PC sample. A sampled instruction will either issue or not. In most cases, the stochastic sampling hardware in an AMD MI300 reports the kind of a wavefront's sampled instruction. Table [9.11](#table:amd-issues) shows the kinds of issued instructions that the MI300 tracks and reports. In some cases, a wavefront's instruction may not be known if the wavefront is stalled fetching the next instruction after a branch.
+AMD's stochastic sampling hardware records a wealth of information with each PC sample. A sampled instruction will either issue or not. In most cases, the stochastic sampling hardware in an AMD MI300 reports the kind of a wavefront's sampled instruction. Table [9.13](#table:amd-issues) shows the kinds of issued instructions that the MI300 tracks and reports. In some cases, a wavefront's instruction may not be known if the wavefront is stalled fetching the next instruction after a branch.
 
-```{table} Table 9.14: GPU issue metrics. Note: metrics marked with * are hidden by default.
+```{table} Table 9.13: GPU issue metrics. Note: metrics marked with * are hidden by default.
 ---
 name: table:amd-issues
 ---
@@ -468,9 +420,9 @@ name: table:amd-issues
 | GCYCLES:ISU:OTHR* | GPU issue cycles: issued a sampled 'other' instruction                    |
 ```
 
-AMD GPUs support multiple execution pipelines and multiple instruction issue. As a result, more than one pipeline may report an issue in a cycle. AMD's stochastic sampling hardware tracks all instructions that issue in a sampled cycle, not just the sampled instruction. Different models of AMD GPUs may have different pipelines. HPCToolkit reports AMD GPU pipeline issues with a separate metric for each GPU pipeline, as shown in Table [9.15](#table:pipe-issue). Note that matrix pipeline is only used for matrix instructions on low-precision numbers. Matrix operations on 32 or 64-bit numbers issue to the vector pipeline.
+AMD GPUs support multiple execution pipelines and multiple instruction issue. As a result, more than one pipeline may report an issue in a cycle. AMD's stochastic sampling hardware tracks all instructions that issue in a sampled cycle, not just the sampled instruction. Different models of AMD GPUs may have different pipelines. HPCToolkit reports AMD GPU pipeline issues with a separate metric for each GPU pipeline, as shown in Table [9.14](#table:pipe-issue). Note that matrix pipeline is only used for matrix instructions on low-precision numbers. Matrix operations on 32 or 64-bit numbers issue to the vector pipeline.
 
-```{table} Table 9.15: GPU pipeline issue metrics.
+```{table} Table 9.14: GPU pipeline issue metrics.
 ---
 name: table:pipe-issue
 ---
@@ -490,9 +442,9 @@ name: table:pipe-issue
 ```
 
 A GPU pipeline may stall waiting for resources that are not available in the current cycle, e.g., register ports.
-HPCToolkit reports AMD GPU pipeline stalls with a separate metric for each GPU pipeline, as shown in Table [9.16](#table:pipe-stall). By comparing issue and stall counts with the GCYCLES metric, one can compute the fraction of cycles in which each pipeline issues, stalls, or is idle.
+HPCToolkit reports AMD GPU pipeline stalls with a separate metric for each GPU pipeline, as shown in Table [9.15](#table:pipe-stall). By comparing issue and stall counts with the GCYCLES metric, one can compute the fraction of cycles in which each pipeline issues, stalls, or is idle.
 
-```{table} Table 9.16: GPU pipeline stall metrics.
+```{table} Table 9.15: GPU pipeline stall metrics.
 ---
 name: table:pipe-stall
 ---
@@ -511,10 +463,10 @@ name: table:pipe-stall
 | GPIPE:STL:MISC  | GPU pipeline stall status: miscellaneous                        |
 ```
 
-Computation on AMD's GPUs is organized as wavefronts. AMD GPUs hide latency by overlapping stalls of one wavefront with the execution of another. Having multiple wavefronts available to schedule is important for hiding latency. On AMD GPUs, HPCToolkit measures how many wavefronts are active in each sampled cycle and computes the metrics shown in Table [9.17](#table:wave-util).
-`GCYCLES:WAVE_ACT` reports the total number of wavefronts active aggregated across over all sampled cycles. `GCYCLES:WAVE_AVL` reports the total number of wave slots (today 32) aggregated over all sampled cycles. From these two metrics, HPCToolkit computes `GCYCLES:WAVE_UTL` -- the percent utilization of the available wave slots across all sampled cycles. Note that this measure of wave utilization only represents the utilization of wave slots in active CUs. You may have a high wave utilization even if you are only using a small fraction of the available compute units. Wavefront utilization metrics are attributed to code within GPU kernels at all levels of granularity: source lines, loops, inlined functions, and call chains.
+Computation on AMD's GPUs is organized as wavefronts. AMD GPUs hide latency by overlapping stalls of one wavefront with the execution of another. Having multiple wavefronts available to schedule is important for hiding latency. On AMD GPUs, HPCToolkit measures how many wavefronts are active in each sampled cycle and computes the metrics shown in Table [9.16](#table:wave-util).
+`GCYCLES:WAVE_ACT` reports the total number of wavefronts active aggregated over all sampled cycles. `GCYCLES:WAVE_AVL` reports the total number of wave slots (today 32) aggregated over all sampled cycles. From these two metrics, HPCToolkit computes `GCYCLES:WAVE_UTL` -- the percent utilization of the available wave slots across all sampled cycles. Note that this measure of wave utilization only represents the utilization of wave slots in active CUs. You may have a high wave utilization even if you are only using a small fraction of the available compute units. Wavefront utilization metrics are attributed to code within GPU kernels at all levels of granularity: source lines, loops, inlined functions, and call chains.
 
-```{table} Table 9.17: GPU wave utilization metrics.
+```{table} Table 9.16: GPU wave utilization metrics.
 ---
 name: table:wave-util
 ---
@@ -522,14 +474,14 @@ name: table:wave-util
 | :---------------- | :----------------------------------------------------------------------------------- |
 | GCYCLES:WAVE_ACT  | GPU waves aggregate active                                                           |
 | GCYCLES:WAVE_AVL  | GPU waves aggregate available                                                        |
-| GCYCLES:WAVE_UTL  | GPU waves utilization (actual occupancy): 100*(waves active)/(waves available)       |
+| GCYCLES:WAVE_UTL  | GPU waves utilization (actual occupancy): 100 * (WAVE_ACT /WAVE_AVL)       |
 ```
 
 Today, AMD's GPUs typically use wavefronts of 64 threads. Using hardware support for stochastic sampling on AMD MI300+ GPUs, HPCToolkit measures how many threads are active and computes the thread activity metrics shown in
-Table [9.18](#table:thread-util). When a vector instruction is sampled, HPCToolkit determines how many threads are active in the sampled cycle by counting the number of bits in the execution mask.
+Table [9.17](#table:thread-util). When a vector instruction is sampled, HPCToolkit determines how many threads are active in the sampled cycle by counting the number of bits in the execution mask.
 `GCYCLES:THR_ACT` reports the total number of bits in the execution mask summed over all sampled vector instructions. `GCYCLES:THR_AVL` reports the wavefront size x the number of sampled vector instructions. From these two metrics, HPCToolkit computes `GCYCLES:THR_UTL` -- the percent utilization of the available SIMD lanes by vector instructions. Thread utilization metrics are attributed to code within GPU kernels at all levels of granularity: source lines, loops, inlined functions, and call chains.
 
-```{table} Table 9.18: GPU thread utilization metrics.
+```{table} Table 9.17: GPU thread utilization metrics.
 ---
 name: table:thread-util
 ---
@@ -537,7 +489,15 @@ name: table:thread-util
 | :---------------- | :----------------------------------------------------------------------------------- |
 | GCYCLES:THR_ACT   | GPU SIMD lanes (threads) aggregate active                                            |
 | GCYCLES:THR_AVL   | GPU SIMD lanes (threads) aggregate available                                         |
-| GCYCLES:THR_UTL   | GPU SIMD lanes (threads) utilization: 100*(SIMD lanes active)/(SIMD lanes available) |
+| GCYCLES:THR_UTL   | GPU SIMD lanes (threads) utilization: 100 * (THR_ACT / THR_AVL) |
+```
+
+#### Attributing PC Samples to Source Code
+
+On AMD GPUs, adding a `-g` to your normal optimization flags when compiling with AMD's compilers, e.g. `hipcc`, will ensure that your GPU binaries include all of the information for mapping measurements collected with PC sampling to source code.
+
+```{note}
+After optimization by AMD's compilers, some code affected by optimization may map to line 0. This is a problem/feature of upstream LLVM and can't currently be avoided. If all code maps to line 0, that is a sign that you didn't compile your GPU code using `-g`.
 ```
 
 ### AMD GPU Hardware Counters
@@ -550,6 +510,75 @@ If not all of a node's GPUs are not the same kind, they may support different se
 
 Note that the ROCm counter names you use with HPCToolkit have the prefix `rocm::`; when you pass counter names to `rocprofilerv3-avail`, omit the `rocm::` prefix.
 
+(sec:gpu-cuda)=
+
+## NVIDIA GPUs
+
+HPCToolkit supports profiling, tracing, and PC sampling of GPU operations on NVIDIA GPUs for programs written in CUDA, OpenMP, OpenCL. Profiling, tracing, and PC sampling of GPU-accelerated applications have already been in this chapter. In this section, we focus on a few things specific to the measurement of applications on NVIDIA GPUs.
+
+(sec:nvidia-pc-sampling)=
+
+### NVIDIA GPU PC Sampling
+
+NVIDIA's GPUs have supported [PC sampling](https://docs.nvidia.com/cupti/Cupti/r_main.html#r_pc_sampling) since Maxwell.
+Instruction samples are collected separately on each active streaming
+multiprocessor (SM) and merged in a buffer returned by NVIDIA's CUPTI.
+In each sampling period, one warp scheduler of each active SM
+samples the next instruction from one of its active warps. Sampling rotates through
+an SM's warp schedulers in a round robin fashion.
+When an instruction is sampled, its stall reason (if any) is
+recorded. If all warps on a scheduler are stalled when a sample is
+taken, the sample is marked as a latency sample, meaning no instruction will be issued by the warp scheduler in the next cycle.
+Figure [9.4](#fig:pc-sampling) shows a PC sampling example on an SM with four warp schedulers. Among the six collected samples, four are latency samples, so the estimated stall ratio is 4/6.
+
+```{figure-md} fig:pc-sampling
+![](mental-model.png)
+
+Figure 9.4: NVIDIA's GPU PC sampling example on an SM. `P`-`6P` represent
+six sample periods P cycles apart. `S_1`-`S_4` represent four warp schedulers on an SM.
+```
+
+Table [9.18](#table:gsamp) shows summary statistics recorded by HPCToolkit with collecting PC samples on NVIDIA GPUs. Of particular note is the metric `GSAMP:UTIL`. HPCToolkit computes approximate GPU utilization using information gathered using PC sampling. Given the average clock frequency and the sampling rate, if all SMs are active, then HPCToolkit knows how many instruction samples would be expected (`GSAMP:EXP`) if the GPU was fully active for the interval when it was in use. HPCToolkit approximates the percentage of GPU utilization by comparing the measured samples with the expected samples using the following formula: `100 * (GSAMP:TOT) / (GSAMP:EXP)`.
+
+```{table} Table 9.18: GPU utilization statistics computed from PC Samples on NVIDIA GPUs.
+---
+name: table:gsamp
+---
+| Metric          | Description                                |
+| :-------------- | :----------------------------------------- |
+| GSAMP:DRP       | GPU PC samples: dropped                    |
+| GSAMP:EXP       | GPU PC samples: expected                   |
+| GSAMP:TOT       | GPU PC samples: measured                   |
+| GSAMP:PER (cyc) | GPU PC samples: period (GPU cycles)        |
+| GSAMP:UTIL (%)  | GPU utilization computed using PC sampling |
+```
+
+```{important}
+To collect PC samples on NVIDIA GPUs, at present HPCToolkit uses an older CUPTI interface that serializes the execution of GPU kernels. HPCToolkit uses this interface so that it can precisely attribute GPU PC samples to CPU calling contexts that invoke GPU kernels. This interface blocks concurrent execution of GPU kernels, which may slow execution. Furthermore, because of kernel serialization, HPCToolkit's PC sampling measurements will only reflect the GPU activity of kernels running in isolation.
+
+Our experience with CUPTI's serialization-based API for PC sampling is that the overhead is less than `5x`. The overhead of GPU monitoring is principally on the host side. The time spent in GPU operations or in kernels as measured by PC samples is expected to be accurate. However, since execution as a whole is slowed while measuring GPU operations and collecting PC samples, one must be careful about drawing conclusions about overall program performance. Any traces collected while collecting PC samples on NVIDIA GPUs will be dilated and should be viewed as providing qualitative information only.
+```
+
+### Attributing PC Samples to CUDA Source Code
+
+To attribute performance within GPU kernels, one must add an appropriate flag to NVIDIA's compilers to record mappings between machine code and source code. `nvcc` and `nvc++` provide a `-lineinfo` option that records precise mappings from machine code to source code, including information about inlined functions.
+
+```{important}
+Don't use `nvcc`'s `-G` option when measuring performance. While it records precise mappings from machine code to source code, it also disables *all* compiler optimizations and generates GPU code that may be vastly slower.
+```
+
+### Binary analysis on NVIDIA GPUs
+
+NVIDIA does not provide an API for analysis of GPU binaries. For that reason, HPCToolkit invokes NVIDIA's `nvdisasm` command line tool to analyze control flow in NVIDIA GPU binaries. `nvdisasm` produces Control Flow Graphs (CFGs) in DOT with assembly code annotations for each node in a CFG. For large CUDA binaries, `nvdisasm`'s ASCII output files can be huge; however, that is the least of the problems. The biggest problems are that (1) `nvdisasm` fails to produce a CFG for GPU functions that have certain features, e.g. contain `sib calls`, and (2) when a GPU binary contains a function that `nvdisasm` can't process, it gives up and doesn't process the remainder of a GPU binary.
+
+To compensate, HPCToolkit inspects the symbol table of an NVIDIA GPU binary and then invokes `nvdisasm` once for each function in the GPU binary to extract that function's CFG. With this approach, HPCToolkit is resilient against `nvdisasm` failures on individual functions. In cases where `nvdisasm` fails to extract a CFG for a function, HPCToolkit attributes costs for any samples collected to the function as a whole.
+
+```{caution}
+For large binaries with many functions, the cost of invoking `nvdisasm` to extract a CFG for just one function is not proportional to only the size of the function of interest. That may make the aforementioned approach of using multiple executions of `nvdisasm` to extract CFGs one function at a time impractical for very large binaries. When we applied this approach to an NVIDIA GPU binary almost a gigabyte in size containing roughly 40K functions, `hpcstruct` analyzed the binary for two days without completing before we killed it.
+```
+
+If `hpcstruct` takes too long to analyze anything, it can be interrupted with `^C`. Any analysis already complete, will be saved and not recomputed. Restarting `hpcstruct` will show the first binary where analysis is being reinitiated. A problematic binary can be excluded from analysis by `hpcstruct` using `hpcstruct`'s `-x|--exclude` option. Without program structure information from `hpcstruct`, HPCToolkit's `hpcprof` will be unable to attribute costs to calling contexts within a GPU kernel, loops, or inlined code. However, `hpcprof` will still be able to attribute PC samples to source lines in kernels and device functions. Usage of the exclude option is discussed elsewhere in a tip in a section about [recovering program structure](#recovering-program-structure).
+
 (sec:gpu-level0)=
 
 ## Intel GPUs
@@ -561,7 +590,7 @@ Collection of profiles, traces, and PC samples for GPU-accelerated applications 
 At present, HPCToolkit only supports instrumentation-based collection of dynamic instruction counts within GPU kernels. Previously, HPCToolkit also supported approximate measurement of memory latency and a variety of statistics for SIMD instructions. However, problems experienced over the years with various versions of GTPin have led us to disable collection of latency and SIMD measurements in the current release of HPCToolkit. These capabilities may work with the most recent version of GTPin but they are untested.
 Instrumentation can be combined with profiling and tracing in the same execution.
 
-### PC Sampling on Intel GPUs
+### Intel GPU PC Sampling
 
 Hardware support for PC sampling on Intel GPUs report stall reasons for sampled instructions. Table [9.19](#intel-gpu-stall-reasons) shows the mapping of stall reasons reported by Intel's GPUs into HPCToolkit's (mostly) vendor-neutral stall reasons. As shown in the table, memory dependency stalls can apparently be reported in two ways. Since memory stalls tend to dominate anything else, we attribute all stalls that contain memory dependencies to memory stalls. On Intel GPUs, we report `SCOREBOARD ID` stalls to `GCYCLES:STL:MEM` to indicate a stall on some unspecified memory, and `SEND` stalls to `GCYCLES:STL:GMEM` (representing global memory stalls) as per our (possibly erroneous) understanding of Intel's stall reasons.
 
@@ -584,4 +613,4 @@ name: intel-gpu-stall-reasons
 
 ### Attributing PC Samples to Source Code
 
-To attribute performance within GPU kernels, one must add appropriate flags to Intel's compilers to record mappings between machine instructions and source code. Intel recommends using compiler options `-gline-tables-only` and `-fdebug-info-for-profiling` rather than `-g`.
+To attribute performance within GPU kernels, one must add appropriate flags to Intel's compilers to record mappings between machine instructions and source code. Intel recommends using compiler options `-gline-tables-only` and `-fdebug-info-for-profiling` rather than `-g`. These options can be added to your normal optimization flags.
