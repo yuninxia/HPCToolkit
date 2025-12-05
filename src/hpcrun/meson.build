@@ -245,43 +245,53 @@ srcs = files(
 )
 
 if host_machine.cpu_family() in ['x86', 'x86_64']
-  srcs += files(
-    'trampoline/x86-family/x86-tramp.S',
-    'unwind/x86-family/amd-xop.c',
-    'unwind/x86-family/manual-intervals/x86-32bit-icc-variant.c',
-    'unwind/x86-family/manual-intervals/x86-32bit-main.c',
-    'unwind/x86-family/manual-intervals/x86-fail-intervals.c',
-    'unwind/x86-family/manual-intervals/x86-gcc-adjust.c',
-    'unwind/x86-family/manual-intervals/x86-gcc-main64.c',
-    'unwind/x86-family/manual-intervals/x86-intel-align32.c',
-    'unwind/x86-family/manual-intervals/x86-intel-align64.c',
-    'unwind/x86-family/manual-intervals/x86-intel-composer2013-mic.c',
-    'unwind/x86-family/manual-intervals/x86-intel11-f90main.c',
-    'unwind/x86-family/manual-intervals/x86-linux-dlresolver.c',
-    'unwind/x86-family/manual-intervals/x86-pgi-mp_pexit.c',
-    'unwind/x86-family/x86-addsub.c',
-    'unwind/x86-family/x86-and.c',
-    'unwind/x86-family/x86-build-intervals.c',
-    'unwind/x86-family/x86-call.c',
-    'unwind/x86-family/x86-canonical.c',
-    'unwind/x86-family/x86-cold-path.c',
-    'unwind/x86-family/x86-debug.c',
-    'unwind/x86-family/x86-decoder.c',
-    'unwind/x86-family/x86-enter.c',
-    'unwind/x86-family/x86-jump.c',
-    'unwind/x86-family/x86-lea.c',
-    'unwind/x86-family/x86-leave.c',
-    'unwind/x86-family/x86-move.c',
-    'unwind/x86-family/x86-process-inst.c',
-    'unwind/x86-family/x86-push.c',
-    'unwind/x86-family/x86-return.c',
-    'unwind/x86-family/x86-unwind-interval-fixup.c',
-    'unwind/x86-family/x86-unwind-interval.c',
-    'unwind/x86-family/x86-unwind-support.c',
-    'unwind/x86-family/x86-unwind.c',
-    'unwind/x86-family/x86-validate-retn-addr.c',
-    'utilities/arch/x86-family/x86-context-pc.c',
-  )
+  srcs += files('trampoline/x86-family/x86-tramp.S')
+
+  if xed_dep.found()
+    srcs += files(
+      'unwind/x86-family/amd-xop.c',
+      'unwind/x86-family/manual-intervals/x86-32bit-icc-variant.c',
+      'unwind/x86-family/manual-intervals/x86-32bit-main.c',
+      'unwind/x86-family/manual-intervals/x86-fail-intervals.c',
+      'unwind/x86-family/manual-intervals/x86-gcc-adjust.c',
+      'unwind/x86-family/manual-intervals/x86-gcc-main64.c',
+      'unwind/x86-family/manual-intervals/x86-intel-align32.c',
+      'unwind/x86-family/manual-intervals/x86-intel-align64.c',
+      'unwind/x86-family/manual-intervals/x86-intel-composer2013-mic.c',
+      'unwind/x86-family/manual-intervals/x86-intel11-f90main.c',
+      'unwind/x86-family/manual-intervals/x86-linux-dlresolver.c',
+      'unwind/x86-family/manual-intervals/x86-pgi-mp_pexit.c',
+      'unwind/x86-family/x86-addsub.c',
+      'unwind/x86-family/x86-and.c',
+      'unwind/x86-family/x86-build-intervals.c',
+      'unwind/x86-family/x86-call.c',
+      'unwind/x86-family/x86-canonical.c',
+      'unwind/x86-family/x86-cold-path.c',
+      'unwind/x86-family/x86-debug.c',
+      'unwind/x86-family/x86-decoder.c',
+      'unwind/x86-family/x86-enter.c',
+      'unwind/x86-family/x86-jump.c',
+      'unwind/x86-family/x86-lea.c',
+      'unwind/x86-family/x86-leave.c',
+      'unwind/x86-family/x86-move.c',
+      'unwind/x86-family/x86-process-inst.c',
+      'unwind/x86-family/x86-push.c',
+      'unwind/x86-family/x86-return.c',
+      'unwind/x86-family/x86-unwind-interval-fixup.c',
+      'unwind/x86-family/x86-unwind-interval.c',
+      'unwind/x86-family/x86-unwind-support.c',
+      'unwind/x86-family/x86-unwind.c',
+      'unwind/x86-family/x86-validate-retn-addr.c',
+      'utilities/arch/x86-family/x86-context-pc.c',
+    )
+  else
+    # Fallback to the generic libunwind-based unwinder
+    srcs += files(
+      'unwind/common/default_validation_summary.c',
+      'unwind/generic-libunwind/libunw-unwind.c',
+      'utilities/arch/libunwind/libunwind-context-pc.c',
+    )
+  endif
 elif host_machine.cpu_family() == 'ppc64'
   srcs += files(
     'trampoline/ppc64/ppc64-tramp.s',
