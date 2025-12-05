@@ -221,7 +221,7 @@ endif
 
 xed_default_options = ['warning_level=0', 'werror=false']
 xed_dep = dependency('', required: false)
-if host_machine.cpu_family() in ['x86', 'x86_64']
+if host_machine.cpu_family() in ['x86', 'x86_64'] and get_option('xed').allowed()
   xed_dep = dependency(
     'Xed',
     method: 'cmake',
@@ -258,11 +258,13 @@ if host_machine.cpu_family() in ['x86', 'x86_64']
       'xed',
       method: 'system',
       version: '>=2022.08.11',
+      required: get_option('xed'),
       default_options: xed_default_options,
     )
   endif
 endif
 if xed_dep.found()
+  add_project_arguments('-DHAVE_XED', language: ['c', 'cpp'])
   if xed_dep.type_name() == 'internal'
     assert(xed_dep.version() != 'undefined')
     if xed_dep.version().version_compare('>=2023.08.21')
@@ -280,6 +282,10 @@ if xed_dep.found()
       endif
     endforeach
   endif
+elif host_machine.cpu_family() in ['x86', 'x86_64'] and not get_option('xed').disabled()
+  warning(
+    'XED not available, will only use libunwind for unwinding. Unwind reliability may suffer for stripped binaries.',
+  )
 endif
 
 perfmon_dep = dependency(

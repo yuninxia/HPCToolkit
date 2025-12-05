@@ -10,6 +10,7 @@
 
 #include <sys/types.h>
 #include <libunwind.h>
+#include <stddef.h>
 
 void *
 hpcrun_context_pc_async(void *context)

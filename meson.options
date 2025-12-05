@@ -31,6 +31,13 @@ option(
 
 option('python', type: 'feature', description: 'Enable Python unwinder (experimental)')
 
+option(
+  'xed',
+  type: 'feature',
+  value: 'enabled',
+  description: 'Enable Intel XED library for x86-64 native unwinding',
+)
+
 option('papi', type: 'feature', description: 'Enable PAPI metrics')
 option('cuda', type: 'feature', description: 'Enable CUDA metrics')
 option('level0', type: 'feature', description: 'Enable Level 0 metrics')
