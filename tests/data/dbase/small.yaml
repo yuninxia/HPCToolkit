@@ -48,26 +48,106 @@ meta: !meta.db/v4
         scope: *id004
         prop_metric_id: 3
       summaries:
-      - !meta.db/v4/SummaryStatistic  # sum / '$$' / point  #0
+      - !meta.db/v4/SummaryStatistic  # sum / '1' / point  #0
+        scope: *id001
+        formula: '1'
+        combine: !meta.db/v4/SummaryStatistic.Combine sum
+        stat_metric_id: 0
+      - !meta.db/v4/SummaryStatistic # sum / '$$' / point  #4
         scope: *id001
         formula: $$
         combine: !meta.db/v4/SummaryStatistic.Combine sum
-        stat_metric_id: 0
-      - !meta.db/v4/SummaryStatistic # sum / '$$' / function  #1
+        stat_metric_id: 4
+      - !meta.db/v4/SummaryStatistic # sum / '($$^2)' / point  #8
+        scope: *id001
+        formula: ($$^2)
+        combine: !meta.db/v4/SummaryStatistic.Combine sum
+        stat_metric_id: 8
+      - !meta.db/v4/SummaryStatistic # min / '$$' / point  #12
+        scope: *id001
+        formula: $$
+        combine: !meta.db/v4/SummaryStatistic.Combine min
+        stat_metric_id: 12
+      - !meta.db/v4/SummaryStatistic # max / '$$' / point  #16
+        scope: *id001
+        formula: $$
+        combine: !meta.db/v4/SummaryStatistic.Combine max
+        stat_metric_id: 16
+      - !meta.db/v4/SummaryStatistic # sum / '1' / function  #1
+        scope: *id002
+        formula: '1'
+        combine: !meta.db/v4/SummaryStatistic.Combine sum
+        stat_metric_id: 1
+      - !meta.db/v4/SummaryStatistic # sum / '$$' / function  #5
         scope: *id002
         formula: $$
         combine: !meta.db/v4/SummaryStatistic.Combine sum
-        stat_metric_id: 1
-      - !meta.db/v4/SummaryStatistic # sum / '$$' / lex_aware  #2
+        stat_metric_id: 5
+      - !meta.db/v4/SummaryStatistic # sum / '($$^2)' / function  #9
+        scope: *id002
+        formula: ($$^2)
+        combine: !meta.db/v4/SummaryStatistic.Combine sum
+        stat_metric_id: 9
+      - !meta.db/v4/SummaryStatistic # min / '$$' / function  #13
+        scope: *id002
+        formula: $$
+        combine: !meta.db/v4/SummaryStatistic.Combine min
+        stat_metric_id: 13
+      - !meta.db/v4/SummaryStatistic # max / '$$' / function  #17
+        scope: *id002
+        formula: $$
+        combine: !meta.db/v4/SummaryStatistic.Combine max
+        stat_metric_id: 17
+      - !meta.db/v4/SummaryStatistic # sum / '1' / lex_aware  #2
+        scope: *id003
+        formula: '1'
+        combine: !meta.db/v4/SummaryStatistic.Combine sum
+        stat_metric_id: 2
+      - !meta.db/v4/SummaryStatistic # sum / '$$' / lex_aware  #6
         scope: *id003
         formula: $$
         combine: !meta.db/v4/SummaryStatistic.Combine sum
-        stat_metric_id: 2
-      - !meta.db/v4/SummaryStatistic # sum / '$$' / execution  #3
+        stat_metric_id: 6
+      - !meta.db/v4/SummaryStatistic # sum / '($$^2)' / lex_aware  #10
+        scope: *id003
+        formula: ($$^2)
+        combine: !meta.db/v4/SummaryStatistic.Combine sum
+        stat_metric_id: 10
+      - !meta.db/v4/SummaryStatistic # min / '$$' / lex_aware  #14
+        scope: *id003
+        formula: $$
+        combine: !meta.db/v4/SummaryStatistic.Combine min
+        stat_metric_id: 14
+      - !meta.db/v4/SummaryStatistic # max / '$$' / lex_aware  #18
+        scope: *id003
+        formula: $$
+        combine: !meta.db/v4/SummaryStatistic.Combine max
+        stat_metric_id: 18
+      - !meta.db/v4/SummaryStatistic # sum / '1' / execution  #3
+        scope: *id004
+        formula: '1'
+        combine: !meta.db/v4/SummaryStatistic.Combine sum
+        stat_metric_id: 3
+      - !meta.db/v4/SummaryStatistic # sum / '$$' / execution  #7
         scope: *id004
         formula: $$
         combine: !meta.db/v4/SummaryStatistic.Combine sum
-        stat_metric_id: 3
+        stat_metric_id: 7
+      - !meta.db/v4/SummaryStatistic # sum / '($$^2)' / execution  #11
+        scope: *id004
+        formula: ($$^2)
+        combine: !meta.db/v4/SummaryStatistic.Combine sum
+        stat_metric_id: 11
+      - !meta.db/v4/SummaryStatistic # min / '$$' / execution  #15
+        scope: *id004
+        formula: $$
+        combine: !meta.db/v4/SummaryStatistic.Combine min
+        stat_metric_id: 15
+      - !meta.db/v4/SummaryStatistic # max / '$$' / execution  #19
+        scope: *id004
+        formula: $$
+        combine: !meta.db/v4/SummaryStatistic.Combine max
+        stat_metric_id: 19
   modules: !meta.db/v4/LoadModules
     modules:
     - &id005 !meta.db/v4/Module  # /testmeas-small []
@@ -103,13 +183,13 @@ meta: !meta.db/v4
       flags: !meta.db/v4/Function.Flags []
   context: !meta.db/v4/ContextTree
     entry_points:
-    - !meta.db/v4/EntryPoint  # main thread (= main_thread)  #4
-      ctx_id: 4
+    - !meta.db/v4/EntryPoint  # main thread (= main_thread)  #18
+      ctx_id: 18
       entry_point: !meta.db/v4/EntryPoint.EntryPoint main_thread
       pretty_name: main thread
       children:
-      - !meta.db/v4/Context  # -call> [function] main  #9
-        ctx_id: 9
+      - !meta.db/v4/Context  # -call> [function] main  #4
+        ctx_id: 4
         flags: !meta.db/v4/Context.Flags [has_function]
         relation: !meta.db/v4/Context.Relation call
         lexical_type: !meta.db/v4/Context.LexicalType function
@@ -120,8 +200,8 @@ meta: !meta.db/v4
         module:
         offset:
         children:
-        - !meta.db/v4/Context  # -lexical> [line] /small.c:15  #18 ^M[0]
-          ctx_id: 18
+        - !meta.db/v4/Context  # -lexical> [line] /small.c:15  #7 ^M[0]
+          ctx_id: 7
           flags: !meta.db/v4/Context.Flags [has_srcloc]
           relation: !meta.db/v4/Context.Relation lexical
           lexical_type: !meta.db/v4/Context.LexicalType line
@@ -132,8 +212,8 @@ meta: !meta.db/v4
           module:
           offset:
           children:
-          - !meta.db/v4/Context  # -call> [function] caller  #14
-            ctx_id: 14
+          - !meta.db/v4/Context  # -call> [function] caller  #10
+            ctx_id: 10
             flags: !meta.db/v4/Context.Flags [has_function]
             relation: !meta.db/v4/Context.Relation call
             lexical_type: !meta.db/v4/Context.LexicalType function
@@ -144,8 +224,8 @@ meta: !meta.db/v4
             module:
             offset:
             children:
-            - !meta.db/v4/Context  # -lexical> [line] /small.c:11  #16 ^M[0]
-              ctx_id: 16
+            - !meta.db/v4/Context  # -lexical> [line] /small.c:11  #20 ^M[0]
+              ctx_id: 20
               flags: !meta.db/v4/Context.Flags [has_srcloc]
               relation: !meta.db/v4/Context.Relation lexical
               lexical_type: !meta.db/v4/Context.LexicalType line
@@ -156,8 +236,8 @@ meta: !meta.db/v4
               module:
               offset:
               children:
-              - !meta.db/v4/Context  # -call> [function] spinsleep  #21
-                ctx_id: 21
+              - !meta.db/v4/Context  # -call> [function] spinsleep  #23
+                ctx_id: 23
                 flags: !meta.db/v4/Context.Flags [has_function]
                 relation: !meta.db/v4/Context.Relation call
                 lexical_type: !meta.db/v4/Context.LexicalType function
@@ -168,8 +248,8 @@ meta: !meta.db/v4
                 module:
                 offset:
                 children:
-                - !meta.db/v4/Context  # -lexical> [loop] /small.c:7 /testmeas-small+0x1169  #6 ^M[0]
-                  ctx_id: 6
+                - !meta.db/v4/Context  # -lexical> [loop] /small.c:7 /testmeas-small+0x1169  #22 ^M[0]
+                  ctx_id: 22
                   flags: !meta.db/v4/Context.Flags [has_point, has_srcloc]
                   relation: !meta.db/v4/Context.Relation lexical
                   lexical_type: !meta.db/v4/Context.LexicalType loop
@@ -180,19 +260,7 @@ meta: !meta.db/v4
                   module: *id005
                   offset: 4457
                   children:
-                  - !meta.db/v4/Context  # -lexical> [line] /small.c:7  #2 ^M[0]
-                    ctx_id: 2
-                    flags: !meta.db/v4/Context.Flags [has_srcloc]
-                    relation: !meta.db/v4/Context.Relation lexical
-                    lexical_type: !meta.db/v4/Context.LexicalType line
-                    propagation: 1
-                    function:
-                    file: *id006
-                    line: 7
-                    module:
-                    offset:
-                    children: []
-                  - !meta.db/v4/Context # -lexical> [line] /small.c:8  #3 ^M[0]
+                  - !meta.db/v4/Context  # -lexical> [line] /small.c:8  #3 ^M[0]
                     ctx_id: 3
                     flags: !meta.db/v4/Context.Flags [has_srcloc]
                     relation: !meta.db/v4/Context.Relation lexical
@@ -204,8 +272,8 @@ meta: !meta.db/v4
                     module:
                     offset:
                     children: []
-        - !meta.db/v4/Context # -lexical> [line] /small.c:14  #11 ^M[0]
-          ctx_id: 11
+        - !meta.db/v4/Context # -lexical> [line] /small.c:14  #8 ^M[0]
+          ctx_id: 8
           flags: !meta.db/v4/Context.Flags [has_srcloc]
           relation: !meta.db/v4/Context.Relation lexical
           lexical_type: !meta.db/v4/Context.LexicalType line
@@ -228,8 +296,8 @@ meta: !meta.db/v4
             module:
             offset:
             children:
-            - !meta.db/v4/Context  # -lexical> [loop] /small.c:7 /testmeas-small+0x1169  #10 ^M[0]
-              ctx_id: 10
+            - !meta.db/v4/Context  # -lexical> [loop] /small.c:7 /testmeas-small+0x1169  #6 ^M[0]
+              ctx_id: 6
               flags: !meta.db/v4/Context.Flags [has_point, has_srcloc]
               relation: !meta.db/v4/Context.Relation lexical
               lexical_type: !meta.db/v4/Context.LexicalType loop
@@ -240,7 +308,19 @@ meta: !meta.db/v4
               module: *id005
               offset: 4457
               children:
-              - !meta.db/v4/Context  # -lexical> [line] /small.c:8  #1 ^M[0]
+              - !meta.db/v4/Context  # -lexical> [line] /small.c:7  #2 ^M[0]
+                ctx_id: 2
+                flags: !meta.db/v4/Context.Flags [has_srcloc]
+                relation: !meta.db/v4/Context.Relation lexical
+                lexical_type: !meta.db/v4/Context.LexicalType line
+                propagation: 1
+                function:
+                file: *id006
+                line: 7
+                module:
+                offset:
+                children: []
+              - !meta.db/v4/Context # -lexical> [line] /small.c:8  #1 ^M[0]
                 ctx_id: 1
                 flags: !meta.db/v4/Context.Flags [has_srcloc]
                 relation: !meta.db/v4/Context.Relation lexical
@@ -260,78 +340,324 @@ profile: !profile.db/v4
       flags: !profile.db/v4/Profile.Flags [is_summary]
       values:
         0:  # for <root>
-          3: 1.211134  # for sum / '$$' / execution  #3
+          3: 1.0  # for sum / '1' / execution  #3
+          7: 1.211497 # for sum / '$$' / execution  #7
+          11: 1.467724981009 # for sum / '($$^2)' / execution  #11
+          15: 1.211497 # for min / '$$' / execution  #15
+          19: 1.211497 # for max / '$$' / execution  #19
         1: # for -lexical> [line] /small.c:8  #1 ^M[0]
-          1: 0.605368  # for sum / '$$' / function  #1
-          2: 0.605368 # for sum / '$$' / lex_aware  #2
-          3: 0.605368 # for sum / '$$' / execution  #3
+          1: 1.0  # for sum / '1' / function  #1
+          2: 1.0 # for sum / '1' / lex_aware  #2
+          3: 1.0 # for sum / '1' / execution  #3
+          5: 0.403717 # for sum / '$$' / function  #5
+          6: 0.403717 # for sum / '$$' / lex_aware  #6
+          7: 0.403717 # for sum / '$$' / execution  #7
+          9: 0.162987416089 # for sum / '($$^2)' / function  #9
+          10: 0.162987416089 # for sum / '($$^2)' / lex_aware  #10
+          11: 0.162987416089 # for sum / '($$^2)' / execution  #11
+          13: 0.403717 # for min / '$$' / function  #13
+          14: 0.403717 # for min / '$$' / lex_aware  #14
+          15: 0.403717 # for min / '$$' / execution  #15
+          17: 0.403717 # for max / '$$' / function  #17
+          18: 0.403717 # for max / '$$' / lex_aware  #18
+          19: 0.403717 # for max / '$$' / execution  #19
         2: # for -lexical> [line] /small.c:7  #2 ^M[0]
-          1: 0.201886  # for sum / '$$' / function  #1
-          2: 0.201886 # for sum / '$$' / lex_aware  #2
-          3: 0.201886 # for sum / '$$' / execution  #3
+          1: 1.0  # for sum / '1' / function  #1
+          2: 1.0 # for sum / '1' / lex_aware  #2
+          3: 1.0 # for sum / '1' / execution  #3
+          5: 0.201888 # for sum / '$$' / function  #5
+          6: 0.201888 # for sum / '$$' / lex_aware  #6
+          7: 0.201888 # for sum / '$$' / execution  #7
+          9: 0.04075876454400001 # for sum / '($$^2)' / function  #9
+          10: 0.04075876454400001 # for sum / '($$^2)' / lex_aware  #10
+          11: 0.04075876454400001 # for sum / '($$^2)' / execution  #11
+          13: 0.201888 # for min / '$$' / function  #13
+          14: 0.201888 # for min / '$$' / lex_aware  #14
+          15: 0.201888 # for min / '$$' / execution  #15
+          17: 0.201888 # for max / '$$' / function  #17
+          18: 0.201888 # for max / '$$' / lex_aware  #18
+          19: 0.201888 # for max / '$$' / execution  #19
         3: # for -lexical> [line] /small.c:8  #3 ^M[0]
-          1: 0.40388  # for sum / '$$' / function  #1
-          2: 0.40388 # for sum / '$$' / lex_aware  #2
-          3: 0.40388 # for sum / '$$' / execution  #3
-        4: # for main thread (= main_thread)  #4
-          3: 1.211134  # for sum / '$$' / execution  #3
+          1: 1.0  # for sum / '1' / function  #1
+          2: 1.0 # for sum / '1' / lex_aware  #2
+          3: 1.0 # for sum / '1' / execution  #3
+          5: 0.605892 # for sum / '$$' / function  #5
+          6: 0.605892 # for sum / '$$' / lex_aware  #6
+          7: 0.605892 # for sum / '$$' / execution  #7
+          9: 0.367105115664 # for sum / '($$^2)' / function  #9
+          10: 0.367105115664 # for sum / '($$^2)' / lex_aware  #10
+          11: 0.367105115664 # for sum / '($$^2)' / execution  #11
+          13: 0.605892 # for min / '$$' / function  #13
+          14: 0.605892 # for min / '$$' / lex_aware  #14
+          15: 0.605892 # for min / '$$' / execution  #15
+          17: 0.605892 # for max / '$$' / function  #17
+          18: 0.605892 # for max / '$$' / lex_aware  #18
+          19: 0.605892 # for max / '$$' / execution  #19
+        4: # for -call> [function] main  #4
+          3: 1.0  # for sum / '1' / execution  #3
+          7: 1.211497 # for sum / '$$' / execution  #7
+          11: 1.467724981009 # for sum / '($$^2)' / execution  #11
+          15: 1.211497 # for min / '$$' / execution  #15
+          19: 1.211497 # for max / '$$' / execution  #19
         5:
-          3: 0.605368  # for sum / '$$' / execution  #3
+          0: 1.0  # for sum / '1' / point  #0
+          1: 1.0 # for sum / '1' / function  #1
+          2: 1.0 # for sum / '1' / lex_aware  #2
+          3: 1.0 # for sum / '1' / execution  #3
+          4: 0.10099 # for sum / '$$' / point  #4
+          5: 0.10099 # for sum / '$$' / function  #5
+          6: 0.10099 # for sum / '$$' / lex_aware  #6
+          7: 0.10099 # for sum / '$$' / execution  #7
+          8: 0.0101989801 # for sum / '($$^2)' / point  #8
+          9: 0.0101989801 # for sum / '($$^2)' / function  #9
+          10: 0.0101989801 # for sum / '($$^2)' / lex_aware  #10
+          11: 0.0101989801 # for sum / '($$^2)' / execution  #11
+          12: 0.10099 # for min / '$$' / point  #12
+          13: 0.10099 # for min / '$$' / function  #13
+          14: 0.10099 # for min / '$$' / lex_aware  #14
+          15: 0.10099 # for min / '$$' / execution  #15
+          16: 0.10099 # for max / '$$' / point  #16
+          17: 0.10099 # for max / '$$' / function  #17
+          18: 0.10099 # for max / '$$' / lex_aware  #18
+          19: 0.10099 # for max / '$$' / execution  #19
         6: # for -lexical> [loop] /small.c:7 /testmeas-small+0x1169  #6 ^M[0]
-          1: 0.605766  # for sum / '$$' / function  #1
-          2: 0.605766 # for sum / '$$' / lex_aware  #2
-          3: 0.605766 # for sum / '$$' / execution  #3
-        7:
-          3: 0.605766  # for sum / '$$' / execution  #3
-        8:
-          0: 0.201858  # for sum / '$$' / point  #0
-          1: 0.201858 # for sum / '$$' / function  #1
-          2: 0.201858 # for sum / '$$' / lex_aware  #2
-          3: 0.201858 # for sum / '$$' / execution  #3
-        9: # for -call> [function] main  #9
-          3: 1.211134  # for sum / '$$' / execution  #3
-        10: # for -lexical> [loop] /small.c:7 /testmeas-small+0x1169  #10 ^M[0]
-          1: 0.605368  # for sum / '$$' / function  #1
-          2: 0.605368 # for sum / '$$' / lex_aware  #2
-          3: 0.605368 # for sum / '$$' / execution  #3
-        11: # for -lexical> [line] /small.c:14  #11 ^M[0]
-          3: 0.605368  # for sum / '$$' / execution  #3
+          1: 1.0  # for sum / '1' / function  #1
+          2: 1.0 # for sum / '1' / lex_aware  #2
+          3: 1.0 # for sum / '1' / execution  #3
+          5: 0.605605 # for sum / '$$' / function  #5
+          6: 0.605605 # for sum / '$$' / lex_aware  #6
+          7: 0.605605 # for sum / '$$' / execution  #7
+          9: 0.36675741602499995 # for sum / '($$^2)' / function  #9
+          10: 0.36675741602499995 # for sum / '($$^2)' / lex_aware  #10
+          11: 0.36675741602499995 # for sum / '($$^2)' / execution  #11
+          13: 0.605605 # for min / '$$' / function  #13
+          14: 0.605605 # for min / '$$' / lex_aware  #14
+          15: 0.605605 # for min / '$$' / execution  #15
+          17: 0.605605 # for max / '$$' / function  #17
+          18: 0.605605 # for max / '$$' / lex_aware  #18
+          19: 0.605605 # for max / '$$' / execution  #19
+        7: # for -lexical> [line] /small.c:15  #7 ^M[0]
+          3: 1.0  # for sum / '1' / execution  #3
+          7: 0.605892 # for sum / '$$' / execution  #7
+          11: 0.367105115664 # for sum / '($$^2)' / execution  #11
+          15: 0.605892 # for min / '$$' / execution  #15
+          19: 0.605892 # for max / '$$' / execution  #19
+        8: # for -lexical> [line] /small.c:14  #8 ^M[0]
+          3: 1.0  # for sum / '1' / execution  #3
+          7: 0.605605 # for sum / '$$' / execution  #7
+          11: 0.36675741602499995 # for sum / '($$^2)' / execution  #11
+          15: 0.605605 # for min / '$$' / execution  #15
+          19: 0.605605 # for max / '$$' / execution  #19
+        9:
+          3: 1.0  # for sum / '1' / execution  #3
+          7: 0.605892 # for sum / '$$' / execution  #7
+          11: 0.367105115664 # for sum / '($$^2)' / execution  #11
+          15: 0.605892 # for min / '$$' / execution  #15
+          19: 0.605892 # for max / '$$' / execution  #19
+        10: # for -call> [function] caller  #10
+          3: 1.0  # for sum / '1' / execution  #3
+          7: 0.605892 # for sum / '$$' / execution  #7
+          11: 0.367105115664 # for sum / '($$^2)' / execution  #11
+          15: 0.605892 # for min / '$$' / execution  #15
+          19: 0.605892 # for max / '$$' / execution  #19
+        11:
+          3: 1.0  # for sum / '1' / execution  #3
+          7: 0.605605 # for sum / '$$' / execution  #7
+          11: 0.36675741602499995 # for sum / '($$^2)' / execution  #11
+          15: 0.605605 # for min / '$$' / execution  #15
+          19: 0.605605 # for max / '$$' / execution  #19
         12:
-          0: 0.201918  # for sum / '$$' / point  #0
-          1: 0.201918 # for sum / '$$' / function  #1
-          2: 0.201918 # for sum / '$$' / lex_aware  #2
-          3: 0.201918 # for sum / '$$' / execution  #3
+          0: 1.0  # for sum / '1' / point  #0
+          1: 1.0 # for sum / '1' / function  #1
+          2: 1.0 # for sum / '1' / lex_aware  #2
+          3: 1.0 # for sum / '1' / execution  #3
+          4: 0.403904 # for sum / '$$' / point  #4
+          5: 0.403904 # for sum / '$$' / function  #5
+          6: 0.403904 # for sum / '$$' / lex_aware  #6
+          7: 0.403904 # for sum / '$$' / execution  #7
+          8: 0.163138441216 # for sum / '($$^2)' / point  #8
+          9: 0.163138441216 # for sum / '($$^2)' / function  #9
+          10: 0.163138441216 # for sum / '($$^2)' / lex_aware  #10
+          11: 0.163138441216 # for sum / '($$^2)' / execution  #11
+          12: 0.403904 # for min / '$$' / point  #12
+          13: 0.403904 # for min / '$$' / function  #13
+          14: 0.403904 # for min / '$$' / lex_aware  #14
+          15: 0.403904 # for min / '$$' / execution  #15
+          16: 0.403904 # for max / '$$' / point  #16
+          17: 0.403904 # for max / '$$' / function  #17
+          18: 0.403904 # for max / '$$' / lex_aware  #18
+          19: 0.403904 # for max / '$$' / execution  #19
         13: # for -call> [function] spinsleep  #13
-          1: 0.605368  # for sum / '$$' / function  #1
-          2: 0.605368 # for sum / '$$' / lex_aware  #2
-          3: 0.605368 # for sum / '$$' / execution  #3
-        14: # for -call> [function] caller  #14
-          3: 0.605766  # for sum / '$$' / execution  #3
+          1: 1.0  # for sum / '1' / function  #1
+          2: 1.0 # for sum / '1' / lex_aware  #2
+          3: 1.0 # for sum / '1' / execution  #3
+          5: 0.605605 # for sum / '$$' / function  #5
+          6: 0.605605 # for sum / '$$' / lex_aware  #6
+          7: 0.605605 # for sum / '$$' / execution  #7
+          9: 0.36675741602499995 # for sum / '($$^2)' / function  #9
+          10: 0.36675741602499995 # for sum / '($$^2)' / lex_aware  #10
+          11: 0.36675741602499995 # for sum / '($$^2)' / execution  #11
+          13: 0.605605 # for min / '$$' / function  #13
+          14: 0.605605 # for min / '$$' / lex_aware  #14
+          15: 0.605605 # for min / '$$' / execution  #15
+          17: 0.605605 # for max / '$$' / function  #17
+          18: 0.605605 # for max / '$$' / lex_aware  #18
+          19: 0.605605 # for max / '$$' / execution  #19
+        14:
+          0: 1.0  # for sum / '1' / point  #0
+          1: 1.0 # for sum / '1' / function  #1
+          2: 1.0 # for sum / '1' / lex_aware  #2
+          3: 1.0 # for sum / '1' / execution  #3
+          4: 0.100998 # for sum / '$$' / point  #4
+          5: 0.100998 # for sum / '$$' / function  #5
+          6: 0.100998 # for sum / '$$' / lex_aware  #6
+          7: 0.100998 # for sum / '$$' / execution  #7
+          8: 0.010200596004000001 # for sum / '($$^2)' / point  #8
+          9: 0.010200596004000001 # for sum / '($$^2)' / function  #9
+          10: 0.010200596004000001 # for sum / '($$^2)' / lex_aware  #10
+          11: 0.010200596004000001 # for sum / '($$^2)' / execution  #11
+          12: 0.100998 # for min / '$$' / point  #12
+          13: 0.100998 # for min / '$$' / function  #13
+          14: 0.100998 # for min / '$$' / lex_aware  #14
+          15: 0.100998 # for min / '$$' / execution  #15
+          16: 0.100998 # for max / '$$' / point  #16
+          17: 0.100998 # for max / '$$' / function  #17
+          18: 0.100998 # for max / '$$' / lex_aware  #18
+          19: 0.100998 # for max / '$$' / execution  #19
         15:
-          0: 0.201886  # for sum / '$$' / point  #0
-          1: 0.201886 # for sum / '$$' / function  #1
-          2: 0.201886 # for sum / '$$' / lex_aware  #2
-          3: 0.201886 # for sum / '$$' / execution  #3
-        16: # for -lexical> [line] /small.c:11  #16 ^M[0]
-          3: 0.605766  # for sum / '$$' / execution  #3
+          0: 1.0  # for sum / '1' / point  #0
+          1: 1.0 # for sum / '1' / function  #1
+          2: 1.0 # for sum / '1' / lex_aware  #2
+          3: 1.0 # for sum / '1' / execution  #3
+          4: 0.100977 # for sum / '$$' / point  #4
+          5: 0.100977 # for sum / '$$' / function  #5
+          6: 0.100977 # for sum / '$$' / lex_aware  #6
+          7: 0.100977 # for sum / '$$' / execution  #7
+          8: 0.010196354529 # for sum / '($$^2)' / point  #8
+          9: 0.010196354529 # for sum / '($$^2)' / function  #9
+          10: 0.010196354529 # for sum / '($$^2)' / lex_aware  #10
+          11: 0.010196354529 # for sum / '($$^2)' / execution  #11
+          12: 0.100977 # for min / '$$' / point  #12
+          13: 0.100977 # for min / '$$' / function  #13
+          14: 0.100977 # for min / '$$' / lex_aware  #14
+          15: 0.100977 # for min / '$$' / execution  #15
+          16: 0.100977 # for max / '$$' / point  #16
+          17: 0.100977 # for max / '$$' / function  #17
+          18: 0.100977 # for max / '$$' / lex_aware  #18
+          19: 0.100977 # for max / '$$' / execution  #19
+        16:
+          0: 1.0  # for sum / '1' / point  #0
+          1: 1.0 # for sum / '1' / function  #1
+          2: 1.0 # for sum / '1' / lex_aware  #2
+          3: 1.0 # for sum / '1' / execution  #3
+          4: 0.100786 # for sum / '$$' / point  #4
+          5: 0.100786 # for sum / '$$' / function  #5
+          6: 0.100786 # for sum / '$$' / lex_aware  #6
+          7: 0.100786 # for sum / '$$' / execution  #7
+          8: 0.010157817796 # for sum / '($$^2)' / point  #8
+          9: 0.010157817796 # for sum / '($$^2)' / function  #9
+          10: 0.010157817796 # for sum / '($$^2)' / lex_aware  #10
+          11: 0.010157817796 # for sum / '($$^2)' / execution  #11
+          12: 0.100786 # for min / '$$' / point  #12
+          13: 0.100786 # for min / '$$' / function  #13
+          14: 0.100786 # for min / '$$' / lex_aware  #14
+          15: 0.100786 # for min / '$$' / execution  #15
+          16: 0.100786 # for max / '$$' / point  #16
+          17: 0.100786 # for max / '$$' / function  #17
+          18: 0.100786 # for max / '$$' / lex_aware  #18
+          19: 0.100786 # for max / '$$' / execution  #19
         17:
-          3: 0.605766  # for sum / '$$' / execution  #3
-        18: # for -lexical> [line] /small.c:15  #18 ^M[0]
-          3: 0.605766  # for sum / '$$' / execution  #3
+          0: 1.0  # for sum / '1' / point  #0
+          1: 1.0 # for sum / '1' / function  #1
+          2: 1.0 # for sum / '1' / lex_aware  #2
+          3: 1.0 # for sum / '1' / execution  #3
+          4: 0.201888 # for sum / '$$' / point  #4
+          5: 0.201888 # for sum / '$$' / function  #5
+          6: 0.201888 # for sum / '$$' / lex_aware  #6
+          7: 0.201888 # for sum / '$$' / execution  #7
+          8: 0.04075876454400001 # for sum / '($$^2)' / point  #8
+          9: 0.04075876454400001 # for sum / '($$^2)' / function  #9
+          10: 0.04075876454400001 # for sum / '($$^2)' / lex_aware  #10
+          11: 0.04075876454400001 # for sum / '($$^2)' / execution  #11
+          12: 0.201888 # for min / '$$' / point  #12
+          13: 0.201888 # for min / '$$' / function  #13
+          14: 0.201888 # for min / '$$' / lex_aware  #14
+          15: 0.201888 # for min / '$$' / execution  #15
+          16: 0.201888 # for max / '$$' / point  #16
+          17: 0.201888 # for max / '$$' / function  #17
+          18: 0.201888 # for max / '$$' / lex_aware  #18
+          19: 0.201888 # for max / '$$' / execution  #19
+        18: # for main thread (= main_thread)  #18
+          3: 1.0  # for sum / '1' / execution  #3
+          7: 1.211497 # for sum / '$$' / execution  #7
+          11: 1.467724981009 # for sum / '($$^2)' / execution  #11
+          15: 1.211497 # for min / '$$' / execution  #15
+          19: 1.211497 # for max / '$$' / execution  #19
         19:
-          0: 0.201962  # for sum / '$$' / point  #0
-          1: 0.201962 # for sum / '$$' / function  #1
-          2: 0.201962 # for sum / '$$' / lex_aware  #2
-          3: 0.201962 # for sum / '$$' / execution  #3
-        20:
-          0: 0.40351  # for sum / '$$' / point  #0
-          1: 0.40351 # for sum / '$$' / function  #1
-          2: 0.40351 # for sum / '$$' / lex_aware  #2
-          3: 0.40351 # for sum / '$$' / execution  #3
-        21: # for -call> [function] spinsleep  #21
-          1: 0.605766  # for sum / '$$' / function  #1
-          2: 0.605766 # for sum / '$$' / lex_aware  #2
-          3: 0.605766 # for sum / '$$' / execution  #3
+          0: 1.0  # for sum / '1' / point  #0
+          1: 1.0 # for sum / '1' / function  #1
+          2: 1.0 # for sum / '1' / lex_aware  #2
+          3: 1.0 # for sum / '1' / execution  #3
+          4: 0.20195400000000002 # for sum / '$$' / point  #4
+          5: 0.20195400000000002 # for sum / '$$' / function  #5
+          6: 0.20195400000000002 # for sum / '$$' / lex_aware  #6
+          7: 0.20195400000000002 # for sum / '$$' / execution  #7
+          8: 0.04078541811600001 # for sum / '($$^2)' / point  #8
+          9: 0.04078541811600001 # for sum / '($$^2)' / function  #9
+          10: 0.04078541811600001 # for sum / '($$^2)' / lex_aware  #10
+          11: 0.04078541811600001 # for sum / '($$^2)' / execution  #11
+          12: 0.20195400000000002 # for min / '$$' / point  #12
+          13: 0.20195400000000002 # for min / '$$' / function  #13
+          14: 0.20195400000000002 # for min / '$$' / lex_aware  #14
+          15: 0.20195400000000002 # for min / '$$' / execution  #15
+          16: 0.20195400000000002 # for max / '$$' / point  #16
+          17: 0.20195400000000002 # for max / '$$' / function  #17
+          18: 0.20195400000000002 # for max / '$$' / lex_aware  #18
+          19: 0.20195400000000002 # for max / '$$' / execution  #19
+        20: # for -lexical> [line] /small.c:11  #20 ^M[0]
+          3: 1.0  # for sum / '1' / execution  #3
+          7: 0.605892 # for sum / '$$' / execution  #7
+          11: 0.367105115664 # for sum / '($$^2)' / execution  #11
+          15: 0.605892 # for min / '$$' / execution  #15
+          19: 0.605892 # for max / '$$' / execution  #19
+        21:
+          3: 1.0  # for sum / '1' / execution  #3
+          7: 0.605892 # for sum / '$$' / execution  #7
+          11: 0.367105115664 # for sum / '($$^2)' / execution  #11
+          15: 0.605892 # for min / '$$' / execution  #15
+          19: 0.605892 # for max / '$$' / execution  #19
+        22: # for -lexical> [loop] /small.c:7 /testmeas-small+0x1169  #22 ^M[0]
+          1: 1.0  # for sum / '1' / function  #1
+          2: 1.0 # for sum / '1' / lex_aware  #2
+          3: 1.0 # for sum / '1' / execution  #3
+          5: 0.605892 # for sum / '$$' / function  #5
+          6: 0.605892 # for sum / '$$' / lex_aware  #6
+          7: 0.605892 # for sum / '$$' / execution  #7
+          9: 0.367105115664 # for sum / '($$^2)' / function  #9
+          10: 0.367105115664 # for sum / '($$^2)' / lex_aware  #10
+          11: 0.367105115664 # for sum / '($$^2)' / execution  #11
+          13: 0.605892 # for min / '$$' / function  #13
+          14: 0.605892 # for min / '$$' / lex_aware  #14
+          15: 0.605892 # for min / '$$' / execution  #15
+          17: 0.605892 # for max / '$$' / function  #17
+          18: 0.605892 # for max / '$$' / lex_aware  #18
+          19: 0.605892 # for max / '$$' / execution  #19
+        23: # for -call> [function] spinsleep  #23
+          1: 1.0  # for sum / '1' / function  #1
+          2: 1.0 # for sum / '1' / lex_aware  #2
+          3: 1.0 # for sum / '1' / execution  #3
+          5: 0.605892 # for sum / '$$' / function  #5
+          6: 0.605892 # for sum / '$$' / lex_aware  #6
+          7: 0.605892 # for sum / '$$' / execution  #7
+          9: 0.367105115664 # for sum / '($$^2)' / function  #9
+          10: 0.367105115664 # for sum / '($$^2)' / lex_aware  #10
+          11: 0.367105115664 # for sum / '($$^2)' / execution  #11
+          13: 0.605892 # for min / '$$' / function  #13
+          14: 0.605892 # for min / '$$' / lex_aware  #14
+          15: 0.605892 # for min / '$$' / execution  #15
+          17: 0.605892 # for max / '$$' / function  #17
+          18: 0.605892 # for max / '$$' / lex_aware  #18
+          19: 0.605892 # for max / '$$' / execution  #19
     - !profile.db/v4/Profile # {NODE 0 [0x11ac0300] / THREAD 0} []
       id_tuple: !profile.db/v4/IdentifierTuple  # NODE 0 [0x11ac0300] / THREAD 0
         ids:
@@ -348,272 +674,302 @@ profile: !profile.db/v4
       flags: !profile.db/v4/Profile.Flags []
       values:
         0:  # for <root>
-          3: 1.211134  # for execution  #3
+          3: 1.211497  # for execution  #3
         1: # for -lexical> [line] /small.c:8  #1 ^M[0]
-          1: 0.605368  # for function  #1
-          2: 0.605368 # for lex_aware  #2
-          3: 0.605368 # for execution  #3
+          1: 0.403717  # for function  #1
+          2: 0.403717 # for lex_aware  #2
+          3: 0.403717 # for execution  #3
         2: # for -lexical> [line] /small.c:7  #2 ^M[0]
-          1: 0.201886  # for function  #1
-          2: 0.201886 # for lex_aware  #2
-          3: 0.201886 # for execution  #3
+          1: 0.201888  # for function  #1
+          2: 0.201888 # for lex_aware  #2
+          3: 0.201888 # for execution  #3
         3: # for -lexical> [line] /small.c:8  #3 ^M[0]
-          1: 0.40388  # for function  #1
-          2: 0.40388 # for lex_aware  #2
-          3: 0.40388 # for execution  #3
-        4: # for main thread (= main_thread)  #4
-          3: 1.211134  # for execution  #3
+          1: 0.605892  # for function  #1
+          2: 0.605892 # for lex_aware  #2
+          3: 0.605892 # for execution  #3
+        4: # for -call> [function] main  #4
+          3: 1.211497  # for execution  #3
         5:
-          3: 0.605368  # for execution  #3
+          0: 0.10099  # for point  #0
+          1: 0.10099 # for function  #1
+          2: 0.10099 # for lex_aware  #2
+          3: 0.10099 # for execution  #3
         6: # for -lexical> [loop] /small.c:7 /testmeas-small+0x1169  #6 ^M[0]
-          1: 0.605766  # for function  #1
-          2: 0.605766 # for lex_aware  #2
-          3: 0.605766 # for execution  #3
-        7:
-          3: 0.605766  # for execution  #3
-        8:
-          0: 0.201858  # for point  #0
-          1: 0.201858 # for function  #1
-          2: 0.201858 # for lex_aware  #2
-          3: 0.201858 # for execution  #3
-        9: # for -call> [function] main  #9
-          3: 1.211134  # for execution  #3
-        10: # for -lexical> [loop] /small.c:7 /testmeas-small+0x1169  #10 ^M[0]
-          1: 0.605368  # for function  #1
-          2: 0.605368 # for lex_aware  #2
-          3: 0.605368 # for execution  #3
-        11: # for -lexical> [line] /small.c:14  #11 ^M[0]
-          3: 0.605368  # for execution  #3
+          1: 0.605605  # for function  #1
+          2: 0.605605 # for lex_aware  #2
+          3: 0.605605 # for execution  #3
+        7: # for -lexical> [line] /small.c:15  #7 ^M[0]
+          3: 0.605892  # for execution  #3
+        8: # for -lexical> [line] /small.c:14  #8 ^M[0]
+          3: 0.605605  # for execution  #3
+        9:
+          3: 0.605892  # for execution  #3
+        10: # for -call> [function] caller  #10
+          3: 0.605892  # for execution  #3
+        11:
+          3: 0.605605  # for execution  #3
         12:
-          0: 0.201918  # for point  #0
-          1: 0.201918 # for function  #1
-          2: 0.201918 # for lex_aware  #2
-          3: 0.201918 # for execution  #3
+          0: 0.403904  # for point  #0
+          1: 0.403904 # for function  #1
+          2: 0.403904 # for lex_aware  #2
+          3: 0.403904 # for execution  #3
         13: # for -call> [function] spinsleep  #13
-          1: 0.605368  # for function  #1
-          2: 0.605368 # for lex_aware  #2
-          3: 0.605368 # for execution  #3
-        14: # for -call> [function] caller  #14
-          3: 0.605766  # for execution  #3
+          1: 0.605605  # for function  #1
+          2: 0.605605 # for lex_aware  #2
+          3: 0.605605 # for execution  #3
+        14:
+          0: 0.100998  # for point  #0
+          1: 0.100998 # for function  #1
+          2: 0.100998 # for lex_aware  #2
+          3: 0.100998 # for execution  #3
         15:
-          0: 0.201886  # for point  #0
-          1: 0.201886 # for function  #1
-          2: 0.201886 # for lex_aware  #2
-          3: 0.201886 # for execution  #3
-        16: # for -lexical> [line] /small.c:11  #16 ^M[0]
-          3: 0.605766  # for execution  #3
+          0: 0.100977  # for point  #0
+          1: 0.100977 # for function  #1
+          2: 0.100977 # for lex_aware  #2
+          3: 0.100977 # for execution  #3
+        16:
+          0: 0.100786  # for point  #0
+          1: 0.100786 # for function  #1
+          2: 0.100786 # for lex_aware  #2
+          3: 0.100786 # for execution  #3
         17:
-          3: 0.605766  # for execution  #3
-        18: # for -lexical> [line] /small.c:15  #18 ^M[0]
-          3: 0.605766  # for execution  #3
+          0: 0.201888  # for point  #0
+          1: 0.201888 # for function  #1
+          2: 0.201888 # for lex_aware  #2
+          3: 0.201888 # for execution  #3
+        18: # for main thread (= main_thread)  #18
+          3: 1.211497  # for execution  #3
         19:
-          0: 0.201962  # for point  #0
-          1: 0.201962 # for function  #1
-          2: 0.201962 # for lex_aware  #2
-          3: 0.201962 # for execution  #3
-        20:
-          0: 0.40351  # for point  #0
-          1: 0.40351 # for function  #1
-          2: 0.40351 # for lex_aware  #2
-          3: 0.40351 # for execution  #3
-        21: # for -call> [function] spinsleep  #21
-          1: 0.605766  # for function  #1
-          2: 0.605766 # for lex_aware  #2
-          3: 0.605766 # for execution  #3
+          0: 0.20195400000000002  # for point  #0
+          1: 0.20195400000000002 # for function  #1
+          2: 0.20195400000000002 # for lex_aware  #2
+          3: 0.20195400000000002 # for execution  #3
+        20: # for -lexical> [line] /small.c:11  #20 ^M[0]
+          3: 0.605892  # for execution  #3
+        21:
+          3: 0.605892  # for execution  #3
+        22: # for -lexical> [loop] /small.c:7 /testmeas-small+0x1169  #22 ^M[0]
+          1: 0.605892  # for function  #1
+          2: 0.605892 # for lex_aware  #2
+          3: 0.605892 # for execution  #3
+        23: # for -call> [function] spinsleep  #23
+          1: 0.605892  # for function  #1
+          2: 0.605892 # for lex_aware  #2
+          3: 0.605892 # for execution  #3
 context: !cct.db/v4
   ctx_infos: !cct.db/v4/ContextInfos
     contexts:
     - !cct.db/v4/PerContext  # for <root>
       values:
         3:  # for execution  #3
-          1: 1.211134  # for {NODE 0 [0x11ac0300] / THREAD 0}
+          1: 1.211497  # for {NODE 0 [0x11ac0300] / THREAD 0}
     - !cct.db/v4/PerContext # for -lexical> [line] /small.c:8  #1 ^M[0]
       values:
         1:  # for function  #1
-          1: 0.605368  # for {NODE 0 [0x11ac0300] / THREAD 0}
+          1: 0.403717  # for {NODE 0 [0x11ac0300] / THREAD 0}
         2: # for lex_aware  #2
-          1: 0.605368  # for {NODE 0 [0x11ac0300] / THREAD 0}
+          1: 0.403717  # for {NODE 0 [0x11ac0300] / THREAD 0}
         3: # for execution  #3
-          1: 0.605368  # for {NODE 0 [0x11ac0300] / THREAD 0}
+          1: 0.403717  # for {NODE 0 [0x11ac0300] / THREAD 0}
     - !cct.db/v4/PerContext # for -lexical> [line] /small.c:7  #2 ^M[0]
       values:
         1:  # for function  #1
-          1: 0.201886  # for {NODE 0 [0x11ac0300] / THREAD 0}
+          1: 0.201888  # for {NODE 0 [0x11ac0300] / THREAD 0}
         2: # for lex_aware  #2
-          1: 0.201886  # for {NODE 0 [0x11ac0300] / THREAD 0}
+          1: 0.201888  # for {NODE 0 [0x11ac0300] / THREAD 0}
         3: # for execution  #3
-          1: 0.201886  # for {NODE 0 [0x11ac0300] / THREAD 0}
+          1: 0.201888  # for {NODE 0 [0x11ac0300] / THREAD 0}
     - !cct.db/v4/PerContext # for -lexical> [line] /small.c:8  #3 ^M[0]
       values:
         1:  # for function  #1
-          1: 0.40388  # for {NODE 0 [0x11ac0300] / THREAD 0}
+          1: 0.605892  # for {NODE 0 [0x11ac0300] / THREAD 0}
         2: # for lex_aware  #2
-          1: 0.40388  # for {NODE 0 [0x11ac0300] / THREAD 0}
+          1: 0.605892  # for {NODE 0 [0x11ac0300] / THREAD 0}
         3: # for execution  #3
-          1: 0.40388  # for {NODE 0 [0x11ac0300] / THREAD 0}
-    - !cct.db/v4/PerContext # for main thread (= main_thread)  #4
+          1: 0.605892  # for {NODE 0 [0x11ac0300] / THREAD 0}
+    - !cct.db/v4/PerContext # for -call> [function] main  #4
       values:
         3:  # for execution  #3
-          1: 1.211134  # for {NODE 0 [0x11ac0300] / THREAD 0}
+          1: 1.211497  # for {NODE 0 [0x11ac0300] / THREAD 0}
     - !cct.db/v4/PerContext # for [5]
       values:
-        3:  # for execution  #3
-          1: 0.605368  # for {NODE 0 [0x11ac0300] / THREAD 0}
+        0:  # for point  #0
+          1: 0.10099  # for {NODE 0 [0x11ac0300] / THREAD 0}
+        1: # for function  #1
+          1: 0.10099  # for {NODE 0 [0x11ac0300] / THREAD 0}
+        2: # for lex_aware  #2
+          1: 0.10099  # for {NODE 0 [0x11ac0300] / THREAD 0}
+        3: # for execution  #3
+          1: 0.10099  # for {NODE 0 [0x11ac0300] / THREAD 0}
     - !cct.db/v4/PerContext # for -lexical> [loop] /small.c:7 /testmeas-small+0x1169  #6 ^M[0]
       values:
         1:  # for function  #1
-          1: 0.605766  # for {NODE 0 [0x11ac0300] / THREAD 0}
+          1: 0.605605  # for {NODE 0 [0x11ac0300] / THREAD 0}
         2: # for lex_aware  #2
-          1: 0.605766  # for {NODE 0 [0x11ac0300] / THREAD 0}
+          1: 0.605605  # for {NODE 0 [0x11ac0300] / THREAD 0}
         3: # for execution  #3
-          1: 0.605766  # for {NODE 0 [0x11ac0300] / THREAD 0}
-    - !cct.db/v4/PerContext # for [7]
+          1: 0.605605  # for {NODE 0 [0x11ac0300] / THREAD 0}
+    - !cct.db/v4/PerContext # for -lexical> [line] /small.c:15  #7 ^M[0]
       values:
         3:  # for execution  #3
-          1: 0.605766  # for {NODE 0 [0x11ac0300] / THREAD 0}
-    - !cct.db/v4/PerContext # for [8]
-      values:
-        0:  # for point  #0
-          1: 0.201858  # for {NODE 0 [0x11ac0300] / THREAD 0}
-        1: # for function  #1
-          1: 0.201858  # for {NODE 0 [0x11ac0300] / THREAD 0}
-        2: # for lex_aware  #2
-          1: 0.201858  # for {NODE 0 [0x11ac0300] / THREAD 0}
-        3: # for execution  #3
-          1: 0.201858  # for {NODE 0 [0x11ac0300] / THREAD 0}
-    - !cct.db/v4/PerContext # for -call> [function] main  #9
+          1: 0.605892  # for {NODE 0 [0x11ac0300] / THREAD 0}
+    - !cct.db/v4/PerContext # for -lexical> [line] /small.c:14  #8 ^M[0]
       values:
         3:  # for execution  #3
-          1: 1.211134  # for {NODE 0 [0x11ac0300] / THREAD 0}
-    - !cct.db/v4/PerContext # for -lexical> [loop] /small.c:7 /testmeas-small+0x1169  #10 ^M[0]
-      values:
-        1:  # for function  #1
-          1: 0.605368  # for {NODE 0 [0x11ac0300] / THREAD 0}
-        2: # for lex_aware  #2
-          1: 0.605368  # for {NODE 0 [0x11ac0300] / THREAD 0}
-        3: # for execution  #3
-          1: 0.605368  # for {NODE 0 [0x11ac0300] / THREAD 0}
-    - !cct.db/v4/PerContext # for -lexical> [line] /small.c:14  #11 ^M[0]
+          1: 0.605605  # for {NODE 0 [0x11ac0300] / THREAD 0}
+    - !cct.db/v4/PerContext # for [9]
       values:
         3:  # for execution  #3
-          1: 0.605368  # for {NODE 0 [0x11ac0300] / THREAD 0}
+          1: 0.605892  # for {NODE 0 [0x11ac0300] / THREAD 0}
+    - !cct.db/v4/PerContext # for -call> [function] caller  #10
+      values:
+        3:  # for execution  #3
+          1: 0.605892  # for {NODE 0 [0x11ac0300] / THREAD 0}
+    - !cct.db/v4/PerContext # for [11]
+      values:
+        3:  # for execution  #3
+          1: 0.605605  # for {NODE 0 [0x11ac0300] / THREAD 0}
     - !cct.db/v4/PerContext # for [12]
       values:
         0:  # for point  #0
-          1: 0.201918  # for {NODE 0 [0x11ac0300] / THREAD 0}
+          1: 0.403904  # for {NODE 0 [0x11ac0300] / THREAD 0}
         1: # for function  #1
-          1: 0.201918  # for {NODE 0 [0x11ac0300] / THREAD 0}
+          1: 0.403904  # for {NODE 0 [0x11ac0300] / THREAD 0}
         2: # for lex_aware  #2
-          1: 0.201918  # for {NODE 0 [0x11ac0300] / THREAD 0}
+          1: 0.403904  # for {NODE 0 [0x11ac0300] / THREAD 0}
         3: # for execution  #3
-          1: 0.201918  # for {NODE 0 [0x11ac0300] / THREAD 0}
+          1: 0.403904  # for {NODE 0 [0x11ac0300] / THREAD 0}
     - !cct.db/v4/PerContext # for -call> [function] spinsleep  #13
       values:
         1:  # for function  #1
-          1: 0.605368  # for {NODE 0 [0x11ac0300] / THREAD 0}
+          1: 0.605605  # for {NODE 0 [0x11ac0300] / THREAD 0}
         2: # for lex_aware  #2
-          1: 0.605368  # for {NODE 0 [0x11ac0300] / THREAD 0}
+          1: 0.605605  # for {NODE 0 [0x11ac0300] / THREAD 0}
         3: # for execution  #3
-          1: 0.605368  # for {NODE 0 [0x11ac0300] / THREAD 0}
-    - !cct.db/v4/PerContext # for -call> [function] caller  #14
+          1: 0.605605  # for {NODE 0 [0x11ac0300] / THREAD 0}
+    - !cct.db/v4/PerContext # for [14]
       values:
-        3:  # for execution  #3
-          1: 0.605766  # for {NODE 0 [0x11ac0300] / THREAD 0}
+        0:  # for point  #0
+          1: 0.100998  # for {NODE 0 [0x11ac0300] / THREAD 0}
+        1: # for function  #1
+          1: 0.100998  # for {NODE 0 [0x11ac0300] / THREAD 0}
+        2: # for lex_aware  #2
+          1: 0.100998  # for {NODE 0 [0x11ac0300] / THREAD 0}
+        3: # for execution  #3
+          1: 0.100998  # for {NODE 0 [0x11ac0300] / THREAD 0}
     - !cct.db/v4/PerContext # for [15]
       values:
         0:  # for point  #0
-          1: 0.201886  # for {NODE 0 [0x11ac0300] / THREAD 0}
+          1: 0.100977  # for {NODE 0 [0x11ac0300] / THREAD 0}
         1: # for function  #1
-          1: 0.201886  # for {NODE 0 [0x11ac0300] / THREAD 0}
+          1: 0.100977  # for {NODE 0 [0x11ac0300] / THREAD 0}
         2: # for lex_aware  #2
-          1: 0.201886  # for {NODE 0 [0x11ac0300] / THREAD 0}
+          1: 0.100977  # for {NODE 0 [0x11ac0300] / THREAD 0}
         3: # for execution  #3
-          1: 0.201886  # for {NODE 0 [0x11ac0300] / THREAD 0}
-    - !cct.db/v4/PerContext # for -lexical> [line] /small.c:11  #16 ^M[0]
+          1: 0.100977  # for {NODE 0 [0x11ac0300] / THREAD 0}
+    - !cct.db/v4/PerContext # for [16]
       values:
-        3:  # for execution  #3
-          1: 0.605766  # for {NODE 0 [0x11ac0300] / THREAD 0}
+        0:  # for point  #0
+          1: 0.100786  # for {NODE 0 [0x11ac0300] / THREAD 0}
+        1: # for function  #1
+          1: 0.100786  # for {NODE 0 [0x11ac0300] / THREAD 0}
+        2: # for lex_aware  #2
+          1: 0.100786  # for {NODE 0 [0x11ac0300] / THREAD 0}
+        3: # for execution  #3
+          1: 0.100786  # for {NODE 0 [0x11ac0300] / THREAD 0}
     - !cct.db/v4/PerContext # for [17]
       values:
-        3:  # for execution  #3
-          1: 0.605766  # for {NODE 0 [0x11ac0300] / THREAD 0}
-    - !cct.db/v4/PerContext # for -lexical> [line] /small.c:15  #18 ^M[0]
+        0:  # for point  #0
+          1: 0.201888  # for {NODE 0 [0x11ac0300] / THREAD 0}
+        1: # for function  #1
+          1: 0.201888  # for {NODE 0 [0x11ac0300] / THREAD 0}
+        2: # for lex_aware  #2
+          1: 0.201888  # for {NODE 0 [0x11ac0300] / THREAD 0}
+        3: # for execution  #3
+          1: 0.201888  # for {NODE 0 [0x11ac0300] / THREAD 0}
+    - !cct.db/v4/PerContext # for main thread (= main_thread)  #18
       values:
         3:  # for execution  #3
-          1: 0.605766  # for {NODE 0 [0x11ac0300] / THREAD 0}
+          1: 1.211497  # for {NODE 0 [0x11ac0300] / THREAD 0}
     - !cct.db/v4/PerContext # for [19]
       values:
         0:  # for point  #0
-          1: 0.201962  # for {NODE 0 [0x11ac0300] / THREAD 0}
+          1: 0.20195400000000002  # for {NODE 0 [0x11ac0300] / THREAD 0}
         1: # for function  #1
-          1: 0.201962  # for {NODE 0 [0x11ac0300] / THREAD 0}
+          1: 0.20195400000000002  # for {NODE 0 [0x11ac0300] / THREAD 0}
         2: # for lex_aware  #2
-          1: 0.201962  # for {NODE 0 [0x11ac0300] / THREAD 0}
+          1: 0.20195400000000002  # for {NODE 0 [0x11ac0300] / THREAD 0}
         3: # for execution  #3
-          1: 0.201962  # for {NODE 0 [0x11ac0300] / THREAD 0}
-    - !cct.db/v4/PerContext # for [20]
+          1: 0.20195400000000002  # for {NODE 0 [0x11ac0300] / THREAD 0}
+    - !cct.db/v4/PerContext # for -lexical> [line] /small.c:11  #20 ^M[0]
       values:
-        0:  # for point  #0
-          1: 0.40351  # for {NODE 0 [0x11ac0300] / THREAD 0}
-        1: # for function  #1
-          1: 0.40351  # for {NODE 0 [0x11ac0300] / THREAD 0}
-        2: # for lex_aware  #2
-          1: 0.40351  # for {NODE 0 [0x11ac0300] / THREAD 0}
-        3: # for execution  #3
-          1: 0.40351  # for {NODE 0 [0x11ac0300] / THREAD 0}
-    - !cct.db/v4/PerContext # for -call> [function] spinsleep  #21
+        3:  # for execution  #3
+          1: 0.605892  # for {NODE 0 [0x11ac0300] / THREAD 0}
+    - !cct.db/v4/PerContext # for [21]
+      values:
+        3:  # for execution  #3
+          1: 0.605892  # for {NODE 0 [0x11ac0300] / THREAD 0}
+    - !cct.db/v4/PerContext # for -lexical> [loop] /small.c:7 /testmeas-small+0x1169  #22 ^M[0]
       values:
         1:  # for function  #1
-          1: 0.605766  # for {NODE 0 [0x11ac0300] / THREAD 0}
+          1: 0.605892  # for {NODE 0 [0x11ac0300] / THREAD 0}
         2: # for lex_aware  #2
-          1: 0.605766  # for {NODE 0 [0x11ac0300] / THREAD 0}
+          1: 0.605892  # for {NODE 0 [0x11ac0300] / THREAD 0}
         3: # for execution  #3
-          1: 0.605766  # for {NODE 0 [0x11ac0300] / THREAD 0}
+          1: 0.605892  # for {NODE 0 [0x11ac0300] / THREAD 0}
+    - !cct.db/v4/PerContext # for -call> [function] spinsleep  #23
+      values:
+        1:  # for function  #1
+          1: 0.605892  # for {NODE 0 [0x11ac0300] / THREAD 0}
+        2: # for lex_aware  #2
+          1: 0.605892  # for {NODE 0 [0x11ac0300] / THREAD 0}
+        3: # for execution  #3
+          1: 0.605892  # for {NODE 0 [0x11ac0300] / THREAD 0}
 trace: !trace.db/v4
   ctx_traces: !trace.db/v4/ContextTraceHeaders
     timestamp_range:
-      min: 1764606490927448000
-      max: 1764606492139064000
+      min: 1764945433463602000
+      max: 1764945434675418000
     traces:
-    - !trace.db/v4/ContextTrace  # 1.211616000s (1764606490.927448034-1764606492.139064074) for {NODE 0 [0x11ac0300] / THREAD 0}
+    - !trace.db/v4/ContextTrace  # 1.211816000s (1764945433.463602066-1764945434.675417900) for {NODE 0 [0x11ac0300] / THREAD 0}
       prof_index: 1
       line:
       - !trace.db/v4/ContextTraceElement  # +0.000000000s at <root>
-        timestamp: 1764606490927448000
+        timestamp: 1764945433463602000
         ctx_id: 0
-      - !trace.db/v4/ContextTraceElement # +0.100715000s at -lexical> [line] /small.c:8  #1 ^M[0]
-        timestamp: 1764606491028163000
+      - !trace.db/v4/ContextTraceElement # +0.100917000s at -lexical> [line] /small.c:8  #1 ^M[0]
+        timestamp: 1764945433564519000
         ctx_id: 1
-      - !trace.db/v4/ContextTraceElement # +0.201625000s at -lexical> [line] /small.c:8  #1 ^M[0]
-        timestamp: 1764606491129073000
-        ctx_id: 1
-      - !trace.db/v4/ContextTraceElement # +0.302616000s at -lexical> [line] /small.c:8  #1 ^M[0]
-        timestamp: 1764606491230064000
-        ctx_id: 1
-      - !trace.db/v4/ContextTraceElement # +0.403634000s at -lexical> [line] /small.c:8  #1 ^M[0]
-        timestamp: 1764606491331082000
-        ctx_id: 1
-      - !trace.db/v4/ContextTraceElement # +0.504621000s at -lexical> [line] /small.c:8  #1 ^M[0]
-        timestamp: 1764606491432069000
-        ctx_id: 1
-      - !trace.db/v4/ContextTraceElement # +0.605620000s at -lexical> [line] /small.c:8  #1 ^M[0]
-        timestamp: 1764606491533068000
-        ctx_id: 1
-      - !trace.db/v4/ContextTraceElement # +0.706662000s at -lexical> [line] /small.c:7  #2 ^M[0]
-        timestamp: 1764606491634110000
+      - !trace.db/v4/ContextTraceElement # +0.201834000s at -lexical> [line] /small.c:7  #2 ^M[0]
+        timestamp: 1764945433665436000
         ctx_id: 2
-      - !trace.db/v4/ContextTraceElement # +0.807613000s at -lexical> [line] /small.c:8  #3 ^M[0]
-        timestamp: 1764606491735061000
-        ctx_id: 3
-      - !trace.db/v4/ContextTraceElement # +0.908613000s at -lexical> [line] /small.c:8  #3 ^M[0]
-        timestamp: 1764606491836061000
-        ctx_id: 3
-      - !trace.db/v4/ContextTraceElement # +1.009614000s at -lexical> [line] /small.c:7  #2 ^M[0]
-        timestamp: 1764606491937062000
+      - !trace.db/v4/ContextTraceElement # +0.302821000s at -lexical> [line] /small.c:8  #1 ^M[0]
+        timestamp: 1764945433766423000
+        ctx_id: 1
+      - !trace.db/v4/ContextTraceElement # +0.403816000s at -lexical> [line] /small.c:8  #1 ^M[0]
+        timestamp: 1764945433867418000
+        ctx_id: 1
+      - !trace.db/v4/ContextTraceElement # +0.504826000s at -lexical> [line] /small.c:7  #2 ^M[0]
+        timestamp: 1764945433968428000
         ctx_id: 2
-      - !trace.db/v4/ContextTraceElement # +1.110611000s at -lexical> [line] /small.c:8  #3 ^M[0]
-        timestamp: 1764606492038059000
+      - !trace.db/v4/ContextTraceElement # +0.605819000s at -lexical> [line] /small.c:8  #1 ^M[0]
+        timestamp: 1764945434069421000
+        ctx_id: 1
+      - !trace.db/v4/ContextTraceElement # +0.706843000s at -lexical> [line] /small.c:8  #3 ^M[0]
+        timestamp: 1764945434170445000
         ctx_id: 3
-      - !trace.db/v4/ContextTraceElement # +1.211616000s at -lexical> [line] /small.c:8  #3 ^M[0]
-        timestamp: 1764606492139064000
+      - !trace.db/v4/ContextTraceElement # +0.807816000s at -lexical> [line] /small.c:8  #3 ^M[0]
+        timestamp: 1764945434271418000
+        ctx_id: 3
+      - !trace.db/v4/ContextTraceElement # +0.908820000s at -lexical> [line] /small.c:8  #3 ^M[0]
+        timestamp: 1764945434372422000
+        ctx_id: 3
+      - !trace.db/v4/ContextTraceElement # +1.009813000s at -lexical> [line] /small.c:8  #3 ^M[0]
+        timestamp: 1764945434473415000
+        ctx_id: 3
+      - !trace.db/v4/ContextTraceElement # +1.110829000s at -lexical> [line] /small.c:8  #3 ^M[0]
+        timestamp: 1764945434574431000
+        ctx_id: 3
+      - !trace.db/v4/ContextTraceElement # +1.211816000s at -lexical> [line] /small.c:8  #3 ^M[0]
+        timestamp: 1764945434675418000
         ctx_id: 3
