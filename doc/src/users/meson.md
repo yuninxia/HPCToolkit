@@ -4,7 +4,7 @@ SPDX-FileCopyrightText: Contributors to the HPCToolkit Project
 SPDX-License-Identifier: CC-BY-4.0
 -->
 
-# Building from Source with Meson
+# Meson Builds for Developers
 
 This chapter describes how to build HPCToolkit from source using [Meson](https://mesonbuild.com). This approach is recommended for HPCToolkit developers.
 
@@ -256,7 +256,7 @@ $ meson setup --native-file …/my-elf-dyn.ini builddir/
 
 See \[`doc/developers/meson.ini`\] for a more complete template listing the settings available in a native file.
 
-## Meson Documentation References
+## Links to Meson Documentation
 
 - [Meson](https://mesonbuild.com)
 

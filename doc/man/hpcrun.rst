@@ -100,17 +100,49 @@ OPTIONS: PROFILING
 
   - See the "Sample sources" under **NOTES** for additional details.
 
--e <gpu=nvidia[,pc]>, --event <gpu=nvidia[,pc]>
-  Collect comprehensive operation-level measurements for CUDA programs on NVIDIA GPUs, including timing of GPU kernel invocations, memory copies (implicit and explicit), driver and runtime activity, and overhead.
+-e gpu=cuda[,pc[@k]], --event gpu=cuda[,pc[@k]]
+  Collect comprehensive operation-level measurements for CUDA/OpenMP programs on NVIDIA GPUs, including timing of GPU kernel invocations, memory copies (implicit and explicit), driver and runtime activity, and overhead.
   If the optional argument ``pc`` is used, the GPU will collect instruction-level measurements of GPU kernels using Program Counter (PC) sampling in addition to the operation-level data.
-  PC sampling attributes STALL reasons to individual GPU instructions.
+  On NVIDIA GPUs, PC sampling collects the program counter value (an instruction address), whether the
+  instruction issued or not, and the kind of stall (if any) blocking the instruction from being issued.
 
--e <gpu=amd>, --event <gpu=amd>
-  Collect comprehensive operation-level measurements for HIP programs on AMD GPUs, including timing of GPU kernel invocations, memory copies (implicit and explicit), driver and runtime activity, and overhead.
+  One can specify a value 'k', which will set the PC sampling period to 2^k ns for PC sampling.
+  The default sampling period is 2^20 cycles (k=20).
 
--e <gpu=opencl>, --event <gpu=opencl>
+-e gpu=level0[,pc[@k]], --event gpu=level0[,pc[@k]]
+  Collect comprehensive operation-level measurements for SYCL/DPC++/OpenMP programs on Intel GPUs using Intel's Level Zero runtime library, including timing of GPU kernel invocations and memory copies.
+  If the optional argument ``pc`` is used, the GPU will collect instruction-level measurements of GPU kernels using hardware-supported Program Counter (PC) sampling in addition to the operation-level data.
+  On Intel GPUs, PC sampling collects the program counter value (an instruction address), whether the
+  instruction issued or not, and the kind of stall (if any) blocking the instruction from being issued.
+
+  One can specify a value 'k', which will set the PC sampling period to 2^k ns for PC sampling.
+  The default sampling period is 2^20 ns (k=20).
+
+-e gpu=level0,inst=count, --event gpu=level0,inst=count
+  Collect comprehensive operation-level measurements for SYCL/DPC++/OpenMP programs on Intel GPUs using Intel's Level Zero runtime library, including timing of GPU kernel invocations and memory copies.
+  At runtime, instrument GPU kernels with Intel's GTPin binary instrumentation library to collect basic-block counts. At program termination,
+  propagate basic-block execution counts to individual instructions for instruction counts.
+
+-e gpu=rocm[,pc[={sw,hw}][@k]], --event gpu=rocm[,pc[={sw,hw}][@k]]
+  Collect comprehensive operation-level measurements for HIP/OpenMP programs on AMD GPUs, including timing of GPU kernel invocations, memory copies (implicit and explicit), driver and runtime activity, and overhead.
+  If the optional argument ``pc`` is used, the GPU will collect instruction-level measurements of GPU kernels using Program Counter (PC) sampling in addition to the operation-level data. An AMD GPU may support
+  one or more kinds of PC sampling, which are performed either by software ('sw') or hardware ('hw').
+
+  Software PC sampling, available on MI200+ GPUs, halts a GPU, extracts the program counter for each active GPU wave,
+  and reports the set of program counter values it observed. Unless 'hw' is specified, software PC sampling is the default because it is more widely available.
+
+  Hardware PC sampling, available on MI300+ GPUs, collects much richer information.
+  Each PC sample includes the program counter value (an instruction address), kind of instruction at that address, whether the
+  instruction issued or not, kind of stall (if any) blocking the instruction from being issued, what pipelines issued in the
+  sampled cycle, what pipelines stalled in the sampled cycle, the utilization of available wave slots, and the utilization of
+  available SIMD lanes.
+
+  One can specify a value 'k', which will set the PC sampling period to 2^k cycles for hardware PC sampling and 2^k ns for software PC sampling.
+  The default sampling periods are 2^20 cycles for hardware PC sampling and 2^20 ns for software PC sampling (k=20).
+
+-e gpu=opencl, --event gpu=opencl
   Collect comprehensive operation-level measurements for OpenCL programs on AMD, Intel, or NVIDIA GPUs, including timing of GPU kernel invocations, memory copies (implicit and explicit), driver and runtime activity, and overhead.
-  The opencl measurement mode may also be used to measure executions of DPC++ programs compiled to Intel's OpenCL backend.
+  The OpenCL measurement mode may also be used to measure executions of DPC++ programs compiled to Intel's OpenCL backend.
 
 -c howoften, --count howoften
   Only available for events managed by Linux perf.
@@ -181,14 +213,23 @@ OPTIONS: PROFILING
   If this option is given, hpcrun collect only flat profiles, attributing metrics directly to functions without any information about the contexts in which they are called.
 
 -t, --trace
-  Generate a call path trace in addition to a call path profile.
-  This option will enable tracing for CPUs if a time-based metric, such as ``CPUTIME``, ``REALTIME``, or ``cycles`` is used.
-  This option will enable tracing for GPU operations if a ``-e gpu=*`` option is used to enable measurement of GPU activities.
+  Record a call path trace based on asynchronous sampling of each CPU thread if a time-based sampling metric,
+  such as ``CPUTIME``, ``REALTIME``, or ``cycles`` is used, in addition to a call path profile based on this metric.
+
+  This option also  traces any GPU operations if a ``-e gpu=*`` option is used to enable measurement of GPU activities.
+
+  Note: ``-tt`` is recommended instead of ``-t`` if your program frequently launches GPU operations.
 
 ``-tt``, ``--ttrace``
-  Generate a call path trace that includes both sample and kernel launches on the CPU in addition to a call path profile.
-  Since additional non-sample elements are added, any statistical properties of the CPU traces are disturbed.
-  Also see ``--trace``.
+  Like the ``-t`` option, record a call path trace based on asynchronous sampling of each CPU thread if a time-based sampling metric,
+  such as ``CPUTIME``, ``REALTIME``, or ``cycles`` is used, in addition to a call path profile based on this metric.
+  This option also traces any GPU operations if a ``-e gpu=*`` option is used to enable measurement of GPU activities.
+  Unlike ``-t``, this flag causes a sample to be recorded for a thread as it launches each GPU operation, if any. This option is recommended
+  instead of ``-t`` when monitoring GPU-accelerated programs that launch many GPU operations per second.
+  Without ``-tt``, the activity seen on a CPU trace line at the time it launches a GPU operation
+  is often from far earlier in the execution, which can make it difficult to relate to concurrent CPU and GPU activity.
+  However, since ``-tt`` collects samples at an irregular rate, statistical properties of the CPU traces are disturbed and cannot be trusted when this flag is used.
+  Also see ``-t``.
 
 OPTIONS: HPCTOOLKIT DEVELOPMENT
 -------------------------------
@@ -220,10 +261,9 @@ Under most circumstances, hpcrun requires no special environment variable settin
 
 There are two situations, however, where hpcrun *must* consult the ``HPCTOOLKIT`` environment variable to determine the location of the top-level installation directory:
 
-- On some systems, parallel job launchers (e.g., Cray's ``aprun``) *copy* the hpcrun script to a different location.
-  For hpcrun to know the location of its top-level installation directory, you must set the ``HPCTOOLKIT`` environment variable to the top-level installation directory.
+- On some systems, parallel job launchers may *copy* HPCToolkit's hpcrun launcher to a different location.
+  For hpcrun to find its monitoring library, you may need to set the ``HPCTOOLKIT`` environment variable to point to HPCToolkit's top-level installation directory.
 
-- If you launch hpcrun script via a file system link, you must set ``HPCTOOLKIT`` for the same reason.
 
 LAUNCHING
 =========
@@ -444,40 +484,6 @@ One can configure the kernel to use a value as small as 1 millisecond, but it is
 
 However, on Linux one can get quite close to the kernel Hz rate by setting the itimer interval to something less than the Hz rate.
 For example, if the Hz rate is 1000 microseconds, one can use 500 microseconds (or just 1) and obtain about 999 interrupts per second.
-
-PLATFORM-SPECIFIC NOTES
------------------------
-
-Cray Systems
-------------
-
-When using dynamically linked binaries on Cray systems, you should add the ``HPCTOOLKIT`` environment variable to your launch script.
-Set ``HPCTOOLKIT`` to the top-level HPCToolkit install prefix (the directory containing the ``bin/``, ``lib/`` and ``libexec/`` subdirectories) and export it to the environment.
-This is only needed for running dynamically linked binaries.
-For example:
-
-.. code:: bash
-
-  #!/bin/sh
-  #PBS -l mppwidth=#nodes
-  #PBS -l walltime=00:30:00
-  #PBS -V
-
-  export HPCTOOLKIT=/path/to/hpctoolkit/install/directory
-
-  # ...Rest of Script...
-
-If ``HPCTOOLKIT`` is not set, you may see errors such as the following in
-your job's error log.
-
-::
-
-   /var/spool/alps/103526/hpcrun: Unable to find HPCTOOLKIT root directory.
-   Please set HPCTOOLKIT to the install prefix, either in this script, or in your environment, and try again.
-
-The problem is that the Cray ALPS job launcher copies the hpcrun script to a directory somewhere below ``/var/spool/alps/`` and runs it from there.
-By moving hpcrun to a different directory, this breaks hpcrun's default method for finding HPCToolkit's top-level installation directory.
-The solution is to add ``HPCTOOLKIT`` to your environment so that hpcrun can find HPCToolkit's top-level installation directory.
 
 MISCELLANEOUS
 -------------

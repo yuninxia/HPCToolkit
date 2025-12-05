@@ -58,6 +58,13 @@
 #define DEBUG_CFG                  0
 #define DEBUG_INSTRUCTION_STAT     0
 #define DEBUG_INSTRUCTION_ANALYZER 0
+#define DEBUG_TARGETS              0
+
+#if DEBUG_TARGETS
+#define PRINT printf
+#else
+#define PRINT(...)
+#endif
 
 #define MAX_STR_SIZE 1024
 #define INTEL_GPU_DEBUG_SECTION_NAME "Intel(R) OpenCL Device Debug"
@@ -738,25 +745,25 @@ getJumpTargetOffsets
   KernelView &kv,
   int32_t offset,
   Address function_start,
-  std::vector<uint32_t> &jump_target_offsets
+  std::vector<int32_t> &jump_target_offsets
 )
 {
   int32_t targets[KV_MAX_TARGETS_PER_INSTRUCTION];
   //----------------------------------------------------------------------
   // Intel claims to be returning absolute addresses for jump target PCs.
   // However, we have observed zeBinaries with function symbols
-  // that have 48 bit addresses. Thus, absolute addresses for jump targets
-  // in such functions won't fit into 32 bits!!! Nor is it appropriate to
+  // that have 48 bit addresses. Absolute addresses for jump targets
+  // in such functions won't fit into 32 bits! Nor is it appropriate to
   // use SIGNED numbers for jump target absolute addresses.
   //
-  // Note: despite what Intel's documentation says, the targets are 32-bit
-  // unsigned values
+  // Targets seem to be 32-bit signed offsets
   //----------------------------------------------------------------------
   size_t count = kv.getInstTargets(offset, targets);
 
   // convert 32-bit absolute unsigned addresses into relative offsets from
   // function_start for convenience
   for (unsigned int i = 0; i < count; i++) {
+    PRINT("function %p target index %d, push_back offset %d\n", (void *) function_start, i, targets[i]);
     jump_target_offsets.push_back(targets[i]);
   }
 }
@@ -828,6 +835,7 @@ recoverIntelCFG
     block_id++;
 
     function.blocks.push_back(block);
+    PRINT("function %p block offset 0x%lx block %p\n", (void *) fn_start, offset, block);
     block_offset_map[offset] = block;
 
     auto size = kv.getInstSize(offset);
@@ -870,7 +878,7 @@ recoverIntelCFG
     auto inst_offset = addrToOffset(function.address, inst->offset);
 
     // obtain offsets of jump targets, if any
-    std::vector<uint32_t> jump_target_offsets;
+    std::vector<int32_t> jump_target_offsets;
     getJumpTargetOffsets(kv, inst_offset, function.address, jump_target_offsets);
 
     auto opCodeGroup = kv.getOpcodeGroup(inst_offset);
@@ -895,12 +903,34 @@ recoverIntelCFG
     }
 
     for (size_t j = 0; j < jump_target_offsets.size(); j++) {
-      auto *target_block = block_offset_map.at(jump_target_offsets[j]);
+      PRINT("function %p target index %ld, target offset %d\n", (void *) fn_start, j, jump_target_offsets[j]);
+      auto found_target = block_offset_map.find(jump_target_offsets[j]);
+      if (found_target == block_offset_map.end()) continue;
+
+      auto *target_block = found_target->second;
+      PRINT("function %p target_block %p\n", (void *) fn_start, target_block);
 
       TargetType type = TargetType::COND_TAKEN;
       if (inst->is_call) {
-        // call fall through edge to next instruction
-        type = TargetType::CALL_FT;
+#define ENABLE_STATIC_CALLSITE_RECOVERY 0
+#if ENABLE_STATIC_CALLSITE_RECOVERY
+        type = TargetType::CALL;
+#else
+        // hpcprof is currently unable to deal with overlapping code regions
+        // for functions. Overlapping code has been observed in Intel GPU
+        // binaries. Coping with overlapping code only becomes a problem
+        // when static callsite recovery is enabled. Disable recovery of
+        // call instructions for now.
+        static bool not_warned = true;
+        if (not_warned) {
+          DIAG_WMsgIf(not_warned,
+            "Recovery of call sites in Intel GPU binaries is disabled in "
+            "this release. As a result, hpcprof won't be able to reconstruct "
+            "dynamic calling contexts within Intel GPU kernels.");
+          not_warned = false;
+        }
+        continue;
+#endif
       } else if (target_block->insts.front()->offset == inst->offset + inst->size) {
         // fall through edge to target_block, which immediately follows instruction inst
         type = TargetType::DIRECT;

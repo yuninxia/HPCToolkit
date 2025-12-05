@@ -1,5 +1,12 @@
 <?xml version="1.0"?>
 <!DOCTYPE HPCToolkitStructure [
+<!-- SPDX-SnippetBegin -->
+<!--
+SPDX-FileCopyrightText: Contributors to the HPCToolkit Project
+
+SPDX-License-Identifier: CC-BY-4.0
+-->
+
 <!-- ******************************************************************** -->
 <!-- HPCToolkit Structure DTD                                             -->
 <!-- Version 4.9                                                          -->
@@ -67,72 +74,73 @@
         v CDATA #IMPLIED
         t CDATA #IMPLIED
         d CDATA #IMPLIED>
+<!-- SPDX-SnippetEnd -->
 ]>
 <HPCToolkitStructure i="0" version="4.9" n="">
 <LM i="2" n="/builds/hpctoolkit/hpctoolkit/builddir/tests/data/meas/testmeas-loops" has-calls="0" v="{}">
 <F i="3" n="/builds/hpctoolkit/hpctoolkit/tests/data/meas/loops.c">
-<P i="4" n="clock_diff" l="7" v="{[0x11c9-0x11ca)}">
-<S i="5" l="7" v="{[0x11c9-0x11f0)}"/>
-<S i="6" l="8" v="{[0x11f0-0x1226)}"/>
-<S i="7" l="9" v="{[0x1226-0x1228)}"/>
+<P i="4" n="clock_diff" l="11" v="{[0x11c9-0x11ca)}">
+<S i="5" l="11" v="{[0x11c9-0x11f0)}"/>
+<S i="6" l="12" v="{[0x11f0-0x1226)}"/>
+<S i="7" l="13" v="{[0x1226-0x1228)}"/>
 </P>
-<P i="8" n="gettime" l="11" v="{[0x1228-0x1229)}">
-<S i="9" l="11" v="{[0x1228-0x1243)}"/>
-<S i="10" l="13" v="{[0x1243-0x1258)}"/>
-<S i="11" l="14" v="{[0x1258-0x1274)}"/>
-<S i="12" l="15" v="{[0x128d-0x1295)}"/>
-<S i="13" l="16" v="{[0x1295-0x12ab)}"/>
-<A i="14" l="14" f="/builds/hpctoolkit/hpctoolkit/tests/data/meas/loops.c" n="" v="{}">
+<P i="8" n="gettime" l="15" v="{[0x1228-0x1229)}">
+<S i="9" l="15" v="{[0x1228-0x1243)}"/>
+<S i="10" l="17" v="{[0x1243-0x1258)}"/>
+<S i="11" l="18" v="{[0x1258-0x1274)}"/>
+<S i="12" l="19" v="{[0x128d-0x1295)}"/>
+<S i="13" l="20" v="{[0x1295-0x12ab)}"/>
+<A i="14" l="18" f="/builds/hpctoolkit/hpctoolkit/tests/data/meas/loops.c" n="" v="{}">
 <A i="15" l="42" f="/usr/include/x86_64-linux-gnu/bits/error.h" n="error" v="{}">
 <S i="16" l="42" v="{[0x1274-0x128c)}"/>
 <S i="17" l="43" v="{[0x128c-0x128d)}"/>
 </A>
 </A>
 </P>
-<P i="18" n="func1" l="18" v="{[0x12ab-0x12ac)}">
-<S i="19" l="18" v="{[0x12ab-0x12b7)}"/>
-<S i="20" l="19" v="{[0x12b7-0x12c0)}"/>
-<S i="21" l="21" v="{[0x12ee-0x1312)}"/>
-<S i="22" l="22" v="{[0x1312-0x1315)}"/>
-<L i="23" l="19" f="/builds/hpctoolkit/hpctoolkit/tests/data/meas/loops.c" v="{[0x12e8-0x12e9)}">
-<S i="24" l="19" v="{[0x12e4-0x12ee)}"/>
-<S i="25" l="20" v="{[0x12c0-0x12e4)}"/>
+<P i="18" n="func1" l="22" v="{[0x12ab-0x12ac)}">
+<S i="19" l="22" v="{[0x12ab-0x12b7)}"/>
+<S i="20" l="23" v="{[0x12b7-0x12c0)}"/>
+<S i="21" l="25" v="{[0x12ee-0x1312)}"/>
+<S i="22" l="26" v="{[0x1312-0x1315)}"/>
+<L i="23" l="23" f="/builds/hpctoolkit/hpctoolkit/tests/data/meas/loops.c" v="{[0x12e8-0x12e9)}">
+<S i="24" l="23" v="{[0x12e4-0x12ee)}"/>
+<S i="25" l="24" v="{[0x12c0-0x12e4)}"/>
 </L>
 </P>
-<P i="26" n="func2" l="24" v="{[0x1315-0x1316)}">
-<S i="27" l="24" v="{[0x1315-0x1321)}"/>
-<S i="28" l="25" v="{[0x1321-0x132a)}"/>
-<S i="29" l="30" v="{[0x138f-0x13b3)}"/>
-<S i="30" l="31" v="{[0x13b3-0x13b6)}"/>
-<L i="31" l="25" f="/builds/hpctoolkit/hpctoolkit/tests/data/meas/loops.c" v="{[0x1389-0x138a)}">
-<S i="32" l="25" v="{[0x1385-0x138f)}"/>
-<S i="33" l="26" v="{[0x132a-0x1333)}"/>
-<S i="34" l="28" v="{[0x1361-0x1385)}"/>
-<L i="35" l="26" f="/builds/hpctoolkit/hpctoolkit/tests/data/meas/loops.c" v="{[0x135b-0x135c)}">
-<S i="36" l="26" v="{[0x1357-0x1361)}"/>
-<S i="37" l="27" v="{[0x1333-0x1357)}"/>
+<P i="26" n="func2" l="28" v="{[0x1315-0x1316)}">
+<S i="27" l="28" v="{[0x1315-0x1321)}"/>
+<S i="28" l="29" v="{[0x1321-0x132a)}"/>
+<S i="29" l="34" v="{[0x138f-0x13b3)}"/>
+<S i="30" l="35" v="{[0x13b3-0x13b6)}"/>
+<L i="31" l="29" f="/builds/hpctoolkit/hpctoolkit/tests/data/meas/loops.c" v="{[0x1389-0x138a)}">
+<S i="32" l="29" v="{[0x1385-0x138f)}"/>
+<S i="33" l="30" v="{[0x132a-0x1333)}"/>
+<S i="34" l="32" v="{[0x1361-0x1385)}"/>
+<L i="35" l="30" f="/builds/hpctoolkit/hpctoolkit/tests/data/meas/loops.c" v="{[0x135b-0x135c)}">
+<S i="36" l="30" v="{[0x1357-0x1361)}"/>
+<S i="37" l="31" v="{[0x1333-0x1357)}"/>
 </L>
 </L>
 </P>
-<P i="38" n="test_separated_loops" l="38" v="{[0x13b6-0x13b7)}">
-<S i="39" l="38" v="{[0x13b6-0x13c2)}"/>
+<P i="38" n="test_separated_loops" l="42" v="{[0x13b6-0x13b7)}">
+<S i="39" l="42" v="{[0x13b6-0x13c2)}"/>
 <S i="40" l="1000" v="{[0x13c2-0x13cb) [0x1409-0x1412)}"/>
 <S i="41" l="1002" v="{[0x144f-0x1453)}"/>
 <L i="42" l="1000" f="/builds/hpctoolkit/hpctoolkit/tests/data/meas/loops.c" v="{[0x1401-0x1402)}">
 <S i="43" l="1000" v="{[0x13cb-0x13d3) [0x13f8-0x1409)}"/>
 <A i="44" l="1001" f="/builds/hpctoolkit/hpctoolkit/tests/data/meas/loops.c" n="" v="{}">
-<A i="45" l="35" f="/builds/hpctoolkit/hpctoolkit/tests/data/meas/loops.c" n="test_separated_loops_helper" v="{}">
-<S i="46" l="35" v="{[0x13d3-0x13f7)}"/>
-<S i="47" l="36" v="{[0x13f7-0x13f8)}"/>
+<A i="45" l="39" f="/builds/hpctoolkit/hpctoolkit/tests/data/meas/loops.c" n="test_separated_loops_helper" v="{}">
+<S i="46" l="39" v="{[0x13d3-0x13f7)}"/>
+<S i="47" l="40" v="{[0x13f7-0x13f8)}"/>
 </A>
 </A>
 </L>
 <L i="48" l="1000" f="/builds/hpctoolkit/hpctoolkit/tests/data/meas/loops.c" v="{[0x1448-0x1449)}">
 <S i="49" l="1000" v="{[0x1412-0x141a) [0x143f-0x144f)}"/>
 <A i="50" l="1001" f="/builds/hpctoolkit/hpctoolkit/tests/data/meas/loops.c" n="" v="{}">
-<A i="51" l="35" f="/builds/hpctoolkit/hpctoolkit/tests/data/meas/loops.c" n="test_separated_loops_helper" v="{}">
-<S i="52" l="35" v="{[0x141a-0x143e)}"/>
-<S i="53" l="36" v="{[0x143e-0x143f)}"/>
+<A i="51" l="39" f="/builds/hpctoolkit/hpctoolkit/tests/data/meas/loops.c" n="test_separated_loops_helper" v="{}">
+<S i="52" l="39" v="{[0x141a-0x143e)}"/>
+<S i="53" l="40" v="{[0x143e-0x143f)}"/>
 </A>
 </A>
 </L>

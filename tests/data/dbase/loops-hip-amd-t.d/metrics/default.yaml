@@ -1,197 +1,272 @@
 version: 0
 inputs:
-  - &GSYNCx3a_STRx20_x28_secx29_-sum-x5b_0x0x5d_-execution
-    metric: GSYNC:STR (sec)
+  - &GKERx3a_COUNT-sum-x5b_0x0x5d_-execution
+    metric: GKER:COUNT
     scope: execution
     formula: $$
     combine: sum
-  - &GSYNCx3a_STRx20_x28_secx29_-sum-x5b_0x0x5d_-lex_aware
-    metric: GSYNC:STR (sec)
+  - &GKERx3a_COUNT-sum-x5b_0x0x5d_-lex_aware
+    metric: GKER:COUNT
     scope: lex_aware
     formula: $$
     combine: sum
-  - &GSYNCx3a_STRx20_x28_secx29_-sum-x5b_0x0x5d_-function
-    metric: GSYNC:STR (sec)
+  - &GKERx3a_COUNT-sum-x5b_0x0x5d_-function
+    metric: GKER:COUNT
     scope: function
     formula: $$
     combine: sum
-  - &GSYNCx3a_UNKx20_x28_secx29_-sum-x5b_0x0x5d_-execution
-    metric: GSYNC:UNK (sec)
+  - &GKERx3a_BLKS_ACUMU-sum-x5b_0x0x5d_-execution
+    metric: GKER:BLKS_ACUMU
     scope: execution
     formula: $$
     combine: sum
-  - &GSYNCx3a_UNKx20_x28_secx29_-sum-x5b_0x0x5d_-lex_aware
-    metric: GSYNC:UNK (sec)
+  - &GKERx3a_BLKS_ACUMU-sum-x5b_0x0x5d_-lex_aware
+    metric: GKER:BLKS_ACUMU
     scope: lex_aware
     formula: $$
     combine: sum
-  - &GSYNCx3a_UNKx20_x28_secx29_-sum-x5b_0x0x5d_-function
-    metric: GSYNC:UNK (sec)
+  - &GKERx3a_BLKS_ACUMU-sum-x5b_0x0x5d_-function
+    metric: GKER:BLKS_ACUMU
     scope: function
     formula: $$
     combine: sum
-  - &GXCOPYx3a_D2Ax20_x28_Bx29_-sum-x5b_0x0x5d_-execution
-    metric: GXCOPY:D2A (B)
+  - &GKERx3a_BLK_SM_ACUMU-sum-x5b_0x0x5d_-execution
+    metric: GKER:BLK_SM_ACUMU
     scope: execution
     formula: $$
     combine: sum
-  - &GXCOPYx3a_D2Ax20_x28_Bx29_-sum-x5b_0x0x5d_-lex_aware
-    metric: GXCOPY:D2A (B)
+  - &GKERx3a_BLK_SM_ACUMU-sum-x5b_0x0x5d_-lex_aware
+    metric: GKER:BLK_SM_ACUMU
     scope: lex_aware
     formula: $$
     combine: sum
-  - &GXCOPYx3a_D2Ax20_x28_Bx29_-sum-x5b_0x0x5d_-function
-    metric: GXCOPY:D2A (B)
+  - &GKERx3a_BLK_SM_ACUMU-sum-x5b_0x0x5d_-function
+    metric: GKER:BLK_SM_ACUMU
     scope: function
     formula: $$
     combine: sum
-  - &GXCOPYx3a_A2Dx20_x28_Bx29_-sum-x5b_0x0x5d_-execution
-    metric: GXCOPY:A2D (B)
+  - &GKERx3a_BLK_THR_ACUMU-sum-x5b_0x0x5d_-execution
+    metric: GKER:BLK_THR_ACUMU
     scope: execution
     formula: $$
     combine: sum
-  - &GXCOPYx3a_A2Dx20_x28_Bx29_-sum-x5b_0x0x5d_-lex_aware
-    metric: GXCOPY:A2D (B)
+  - &GKERx3a_BLK_THR_ACUMU-sum-x5b_0x0x5d_-lex_aware
+    metric: GKER:BLK_THR_ACUMU
     scope: lex_aware
     formula: $$
     combine: sum
-  - &GXCOPYx3a_A2Dx20_x28_Bx29_-sum-x5b_0x0x5d_-function
-    metric: GXCOPY:A2D (B)
+  - &GKERx3a_BLK_THR_ACUMU-sum-x5b_0x0x5d_-function
+    metric: GKER:BLK_THR_ACUMU
     scope: function
     formula: $$
     combine: sum
-  - &GXCOPYx3a_A2Ax20_x28_Bx29_-sum-x5b_0x0x5d_-execution
-    metric: GXCOPY:A2A (B)
+  - &GXCOPYx3a_D2Hx20_x28_bx29_-sum-x5b_0x0x5d_-execution
+    metric: GXCOPY:D2H (b)
     scope: execution
     formula: $$
     combine: sum
-  - &GXCOPYx3a_A2Ax20_x28_Bx29_-sum-x5b_0x0x5d_-lex_aware
-    metric: GXCOPY:A2A (B)
+  - &GXCOPYx3a_D2Hx20_x28_bx29_-sum-x5b_0x0x5d_-lex_aware
+    metric: GXCOPY:D2H (b)
     scope: lex_aware
     formula: $$
     combine: sum
-  - &GXCOPYx3a_A2Ax20_x28_Bx29_-sum-x5b_0x0x5d_-function
-    metric: GXCOPY:A2A (B)
+  - &GXCOPYx3a_D2Hx20_x28_bx29_-sum-x5b_0x0x5d_-function
+    metric: GXCOPY:D2H (b)
     scope: function
     formula: $$
     combine: sum
-  - &GXCOPYx3a_A2Hx20_x28_Bx29_-sum-x5b_0x0x5d_-execution
-    metric: GXCOPY:A2H (B)
+  - &GMSETx3a_DSTx20_x28_bx29_-sum-x5b_0x0x5d_-execution
+    metric: GMSET:DST (b)
     scope: execution
     formula: $$
     combine: sum
-  - &GXCOPYx3a_A2Hx20_x28_Bx29_-sum-x5b_0x0x5d_-lex_aware
-    metric: GXCOPY:A2H (B)
+  - &GMSETx3a_DSTx20_x28_bx29_-sum-x5b_0x0x5d_-lex_aware
+    metric: GMSET:DST (b)
     scope: lex_aware
     formula: $$
     combine: sum
-  - &GXCOPYx3a_A2Hx20_x28_Bx29_-sum-x5b_0x0x5d_-function
-    metric: GXCOPY:A2H (B)
+  - &GMSETx3a_DSTx20_x28_bx29_-sum-x5b_0x0x5d_-function
+    metric: GMSET:DST (b)
     scope: function
     formula: $$
     combine: sum
-  - &GSYNCx3a_STREx20_x28_secx29_-sum-x5b_0x0x5d_-execution
-    metric: GSYNC:STRE (sec)
+  - &GMSETx3a_ARYx20_x28_bx29_-sum-x5b_0x0x5d_-execution
+    metric: GMSET:ARY (b)
     scope: execution
     formula: $$
     combine: sum
-  - &GSYNCx3a_STREx20_x28_secx29_-sum-x5b_0x0x5d_-lex_aware
-    metric: GSYNC:STRE (sec)
+  - &GMSETx3a_ARYx20_x28_bx29_-sum-x5b_0x0x5d_-lex_aware
+    metric: GMSET:ARY (b)
     scope: lex_aware
     formula: $$
     combine: sum
-  - &GSYNCx3a_STREx20_x28_secx29_-sum-x5b_0x0x5d_-function
-    metric: GSYNC:STRE (sec)
+  - &GMSETx3a_ARYx20_x28_bx29_-sum-x5b_0x0x5d_-function
+    metric: GMSET:ARY (b)
     scope: function
     formula: $$
     combine: sum
-  - &GMEMx3a_ARYx20_x28_Bx29_-sum-x5b_0x0x5d_-execution
-    metric: GMEM:ARY (B)
+  - &GMSETx3a_MSTx20_x28_bx29_-sum-x5b_0x0x5d_-execution
+    metric: GMSET:MST (b)
     scope: execution
     formula: $$
     combine: sum
-  - &GMEMx3a_ARYx20_x28_Bx29_-sum-x5b_0x0x5d_-lex_aware
-    metric: GMEM:ARY (B)
+  - &GMSETx3a_MSTx20_x28_bx29_-sum-x5b_0x0x5d_-lex_aware
+    metric: GMSET:MST (b)
     scope: lex_aware
     formula: $$
     combine: sum
-  - &GMEMx3a_ARYx20_x28_Bx29_-sum-x5b_0x0x5d_-function
-    metric: GMEM:ARY (B)
+  - &GMSETx3a_MSTx20_x28_bx29_-sum-x5b_0x0x5d_-function
+    metric: GMSET:MST (b)
     scope: function
     formula: $$
     combine: sum
-  - &GMSETx3a_DSTx20_x28_Bx29_-sum-x5b_0x0x5d_-execution
-    metric: GMSET:DST (B)
+  - &GMEMx3a_PINx20_x28_bx29_-sum-x5b_0x0x5d_-execution
+    metric: GMEM:PIN (b)
     scope: execution
     formula: $$
     combine: sum
-  - &GMSETx3a_DSTx20_x28_Bx29_-sum-x5b_0x0x5d_-lex_aware
-    metric: GMSET:DST (B)
+  - &GMEMx3a_PINx20_x28_bx29_-sum-x5b_0x0x5d_-lex_aware
+    metric: GMEM:PIN (b)
     scope: lex_aware
     formula: $$
     combine: sum
-  - &GMSETx3a_DSTx20_x28_Bx29_-sum-x5b_0x0x5d_-function
-    metric: GMSET:DST (B)
+  - &GMEMx3a_PINx20_x28_bx29_-sum-x5b_0x0x5d_-function
+    metric: GMEM:PIN (b)
     scope: function
     formula: $$
     combine: sum
-  - &GSYNCx3a_COUNT-sum-x5b_0x0x5d_-execution
-    metric: GSYNC:COUNT
+  - &GKERx3a_THR_VREG_ACUMU-sum-x5b_0x0x5d_-execution
+    metric: GKER:THR_VREG_ACUMU
     scope: execution
     formula: $$
     combine: sum
-  - &GSYNCx3a_COUNT-sum-x5b_0x0x5d_-lex_aware
-    metric: GSYNC:COUNT
+  - &GKERx3a_THR_VREG_ACUMU-sum-x5b_0x0x5d_-lex_aware
+    metric: GKER:THR_VREG_ACUMU
     scope: lex_aware
     formula: $$
     combine: sum
-  - &GSYNCx3a_COUNT-sum-x5b_0x0x5d_-function
-    metric: GSYNC:COUNT
+  - &GKERx3a_THR_VREG_ACUMU-sum-x5b_0x0x5d_-function
+    metric: GKER:THR_VREG_ACUMU
     scope: function
     formula: $$
     combine: sum
-  - &GMEMx3a_MANx20_x28_Bx29_-sum-x5b_0x0x5d_-execution
-    metric: GMEM:MAN (B)
+  - &GMEMx3a_DSTx20_x28_bx29_-sum-x5b_0x0x5d_-execution
+    metric: GMEM:DST (b)
     scope: execution
     formula: $$
     combine: sum
-  - &GMEMx3a_MANx20_x28_Bx29_-sum-x5b_0x0x5d_-lex_aware
-    metric: GMEM:MAN (B)
+  - &GMEMx3a_DSTx20_x28_bx29_-sum-x5b_0x0x5d_-lex_aware
+    metric: GMEM:DST (b)
     scope: lex_aware
     formula: $$
     combine: sum
-  - &GMEMx3a_MANx20_x28_Bx29_-sum-x5b_0x0x5d_-function
-    metric: GMEM:MAN (B)
+  - &GMEMx3a_DSTx20_x28_bx29_-sum-x5b_0x0x5d_-function
+    metric: GMEM:DST (b)
     scope: function
     formula: $$
     combine: sum
-  - &GMEMx20_x28_secx29_-sum-x5b_0x0x5d_-execution
-    metric: GMEM (sec)
+  - &GMSETx3a_PAGx20_x28_bx29_-sum-x5b_0x0x5d_-execution
+    metric: GMSET:PAG (b)
     scope: execution
     formula: $$
     combine: sum
-  - &GMEMx20_x28_secx29_-sum-x5b_0x0x5d_-lex_aware
-    metric: GMEM (sec)
+  - &GMSETx3a_PAGx20_x28_bx29_-sum-x5b_0x0x5d_-lex_aware
+    metric: GMSET:PAG (b)
     scope: lex_aware
     formula: $$
     combine: sum
-  - &GMEMx20_x28_secx29_-sum-x5b_0x0x5d_-function
-    metric: GMEM (sec)
+  - &GMSETx3a_PAGx20_x28_bx29_-sum-x5b_0x0x5d_-function
+    metric: GMSET:PAG (b)
     scope: function
     formula: $$
     combine: sum
-  - &GXCOPYx3a_COUNT-sum-x5b_0x0x5d_-execution
-    metric: GXCOPY:COUNT
+  - &GXCOPYx20_x28_sx29_-sum-x5b_0x0x5d_-execution
+    metric: GXCOPY (s)
     scope: execution
     formula: $$
     combine: sum
-  - &GXCOPYx3a_COUNT-sum-x5b_0x0x5d_-lex_aware
-    metric: GXCOPY:COUNT
+  - &GXCOPYx20_x28_sx29_-sum-x5b_0x0x5d_-lex_aware
+    metric: GXCOPY (s)
     scope: lex_aware
     formula: $$
     combine: sum
-  - &GXCOPYx3a_COUNT-sum-x5b_0x0x5d_-function
-    metric: GXCOPY:COUNT
+  - &GXCOPYx20_x28_sx29_-sum-x5b_0x0x5d_-function
+    metric: GXCOPY (s)
+    scope: function
+    formula: $$
+    combine: sum
+  - &GXCOPYx3a_H2Ax20_x28_bx29_-sum-x5b_0x0x5d_-execution
+    metric: GXCOPY:H2A (b)
+    scope: execution
+    formula: $$
+    combine: sum
+  - &GXCOPYx3a_H2Ax20_x28_bx29_-sum-x5b_0x0x5d_-lex_aware
+    metric: GXCOPY:H2A (b)
+    scope: lex_aware
+    formula: $$
+    combine: sum
+  - &GXCOPYx3a_H2Ax20_x28_bx29_-sum-x5b_0x0x5d_-function
+    metric: GXCOPY:H2A (b)
+    scope: function
+    formula: $$
+    combine: sum
+  - &GSYNCx3a_EVTx20_x28_sx29_-sum-x5b_0x0x5d_-execution
+    metric: GSYNC:EVT (s)
+    scope: execution
+    formula: $$
+    combine: sum
+  - &GSYNCx3a_EVTx20_x28_sx29_-sum-x5b_0x0x5d_-lex_aware
+    metric: GSYNC:EVT (s)
+    scope: lex_aware
+    formula: $$
+    combine: sum
+  - &GSYNCx3a_EVTx20_x28_sx29_-sum-x5b_0x0x5d_-function
+    metric: GSYNC:EVT (s)
+    scope: function
+    formula: $$
+    combine: sum
+  - &GMSETx3a_UNKx20_x28_bx29_-sum-x5b_0x0x5d_-execution
+    metric: GMSET:UNK (b)
+    scope: execution
+    formula: $$
+    combine: sum
+  - &GMSETx3a_UNKx20_x28_bx29_-sum-x5b_0x0x5d_-lex_aware
+    metric: GMSET:UNK (b)
+    scope: lex_aware
+    formula: $$
+    combine: sum
+  - &GMSETx3a_UNKx20_x28_bx29_-sum-x5b_0x0x5d_-function
+    metric: GMSET:UNK (b)
+    scope: function
+    formula: $$
+    combine: sum
+  - &GPAGEx3a_UMPSZx20_x28_bx29_-sum-x5b_0x0x5d_-execution
+    metric: GPAGE:UMPSZ (b)
+    scope: execution
+    formula: $$
+    combine: sum
+  - &GPAGEx3a_UMPSZx20_x28_bx29_-sum-x5b_0x0x5d_-lex_aware
+    metric: GPAGE:UMPSZ (b)
+    scope: lex_aware
+    formula: $$
+    combine: sum
+  - &GPAGEx3a_UMPSZx20_x28_bx29_-sum-x5b_0x0x5d_-function
+    metric: GPAGE:UMPSZ (b)
+    scope: function
+    formula: $$
+    combine: sum
+  - &GKERx3a_FGP_ACT_ACUMU-sum-x5b_0x0x5d_-execution
+    metric: GKER:FGP_ACT_ACUMU
+    scope: execution
+    formula: $$
+    combine: sum
+  - &GKERx3a_FGP_ACT_ACUMU-sum-x5b_0x0x5d_-lex_aware
+    metric: GKER:FGP_ACT_ACUMU
+    scope: lex_aware
+    formula: $$
+    combine: sum
+  - &GKERx3a_FGP_ACT_ACUMU-sum-x5b_0x0x5d_-function
+    metric: GKER:FGP_ACT_ACUMU
     scope: function
     formula: $$
     combine: sum
@@ -210,93 +285,258 @@ inputs:
     scope: function
     formula: $$
     combine: sum
-  - &GXCOPYx3a_P2Px20_x28_Bx29_-sum-x5b_0x0x5d_-execution
-    metric: GXCOPY:P2P (B)
+  - &GXCOPYx3a_COUNT-sum-x5b_0x0x5d_-execution
+    metric: GXCOPY:COUNT
     scope: execution
     formula: $$
     combine: sum
-  - &GXCOPYx3a_P2Px20_x28_Bx29_-sum-x5b_0x0x5d_-lex_aware
-    metric: GXCOPY:P2P (B)
+  - &GXCOPYx3a_COUNT-sum-x5b_0x0x5d_-lex_aware
+    metric: GXCOPY:COUNT
     scope: lex_aware
     formula: $$
     combine: sum
-  - &GXCOPYx3a_P2Px20_x28_Bx29_-sum-x5b_0x0x5d_-function
-    metric: GXCOPY:P2P (B)
+  - &GXCOPYx3a_COUNT-sum-x5b_0x0x5d_-function
+    metric: GXCOPY:COUNT
     scope: function
     formula: $$
     combine: sum
-  - &GMEMx3a_PINx20_x28_Bx29_-sum-x5b_0x0x5d_-execution
-    metric: GMEM:PIN (B)
+  - &GMEMx3a_MSTx20_x28_bx29_-sum-x5b_0x0x5d_-execution
+    metric: GMEM:MST (b)
     scope: execution
     formula: $$
     combine: sum
-  - &GMEMx3a_PINx20_x28_Bx29_-sum-x5b_0x0x5d_-lex_aware
-    metric: GMEM:PIN (B)
+  - &GMEMx3a_MSTx20_x28_bx29_-sum-x5b_0x0x5d_-lex_aware
+    metric: GMEM:MST (b)
     scope: lex_aware
     formula: $$
     combine: sum
-  - &GMEMx3a_PINx20_x28_Bx29_-sum-x5b_0x0x5d_-function
-    metric: GMEM:PIN (B)
+  - &GMEMx3a_MSTx20_x28_bx29_-sum-x5b_0x0x5d_-function
+    metric: GMEM:MST (b)
     scope: function
     formula: $$
     combine: sum
-  - &GMEMx3a_PAGx20_x28_Bx29_-sum-x5b_0x0x5d_-execution
-    metric: GMEM:PAG (B)
+  - &GMEMx3a_MANx20_x28_bx29_-sum-x5b_0x0x5d_-execution
+    metric: GMEM:MAN (b)
     scope: execution
     formula: $$
     combine: sum
-  - &GMEMx3a_PAGx20_x28_Bx29_-sum-x5b_0x0x5d_-lex_aware
-    metric: GMEM:PAG (B)
+  - &GMEMx3a_MANx20_x28_bx29_-sum-x5b_0x0x5d_-lex_aware
+    metric: GMEM:MAN (b)
     scope: lex_aware
     formula: $$
     combine: sum
-  - &GMEMx3a_PAGx20_x28_Bx29_-sum-x5b_0x0x5d_-function
-    metric: GMEM:PAG (B)
+  - &GMEMx3a_MANx20_x28_bx29_-sum-x5b_0x0x5d_-function
+    metric: GMEM:MAN (b)
     scope: function
     formula: $$
     combine: sum
-  - &GMEMx3a_UNKx20_x28_Bx29_-sum-x5b_0x0x5d_-execution
-    metric: GMEM:UNK (B)
+  - &GMSETx3a_DEVx20_x28_bx29_-sum-x5b_0x0x5d_-execution
+    metric: GMSET:DEV (b)
     scope: execution
     formula: $$
     combine: sum
-  - &GMEMx3a_UNKx20_x28_Bx29_-sum-x5b_0x0x5d_-lex_aware
-    metric: GMEM:UNK (B)
+  - &GMSETx3a_DEVx20_x28_bx29_-sum-x5b_0x0x5d_-lex_aware
+    metric: GMSET:DEV (b)
     scope: lex_aware
     formula: $$
     combine: sum
-  - &GMEMx3a_UNKx20_x28_Bx29_-sum-x5b_0x0x5d_-function
-    metric: GMEM:UNK (B)
+  - &GMSETx3a_DEVx20_x28_bx29_-sum-x5b_0x0x5d_-function
+    metric: GMSET:DEV (b)
     scope: function
     formula: $$
     combine: sum
-  - &GICOPYx20_x28_secx29_-sum-x5b_0x0x5d_-execution
-    metric: GICOPY (sec)
+  - &GMEMx20_x28_sx29_-sum-x5b_0x0x5d_-execution
+    metric: GMEM (s)
     scope: execution
     formula: $$
     combine: sum
-  - &GICOPYx20_x28_secx29_-sum-x5b_0x0x5d_-lex_aware
-    metric: GICOPY (sec)
+  - &GMEMx20_x28_sx29_-sum-x5b_0x0x5d_-lex_aware
+    metric: GMEM (s)
     scope: lex_aware
     formula: $$
     combine: sum
-  - &GICOPYx20_x28_secx29_-sum-x5b_0x0x5d_-function
-    metric: GICOPY (sec)
+  - &GMEMx20_x28_sx29_-sum-x5b_0x0x5d_-function
+    metric: GMEM (s)
     scope: function
     formula: $$
     combine: sum
-  - &GXCOPYx20_x28_secx29_-sum-x5b_0x0x5d_-execution
-    metric: GXCOPY (sec)
+  - &GPAGEx3a_FLTCNT-sum-x5b_0x0x5d_-execution
+    metric: GPAGE:FLTCNT
     scope: execution
     formula: $$
     combine: sum
-  - &GXCOPYx20_x28_secx29_-sum-x5b_0x0x5d_-lex_aware
-    metric: GXCOPY (sec)
+  - &GPAGEx3a_FLTCNT-sum-x5b_0x0x5d_-lex_aware
+    metric: GPAGE:FLTCNT
     scope: lex_aware
     formula: $$
     combine: sum
-  - &GXCOPYx20_x28_secx29_-sum-x5b_0x0x5d_-function
-    metric: GXCOPY (sec)
+  - &GPAGEx3a_FLTCNT-sum-x5b_0x0x5d_-function
+    metric: GPAGE:FLTCNT
+    scope: function
+    formula: $$
+    combine: sum
+  - &GMSETx20_x28_sx29_-sum-x5b_0x0x5d_-execution
+    metric: GMSET (s)
+    scope: execution
+    formula: $$
+    combine: sum
+  - &GMSETx20_x28_sx29_-sum-x5b_0x0x5d_-lex_aware
+    metric: GMSET (s)
+    scope: lex_aware
+    formula: $$
+    combine: sum
+  - &GMSETx20_x28_sx29_-sum-x5b_0x0x5d_-function
+    metric: GMSET (s)
+    scope: function
+    formula: $$
+    combine: sum
+  - &GXCOPYx3a_A2Dx20_x28_bx29_-sum-x5b_0x0x5d_-execution
+    metric: GXCOPY:A2D (b)
+    scope: execution
+    formula: $$
+    combine: sum
+  - &GXCOPYx3a_A2Dx20_x28_bx29_-sum-x5b_0x0x5d_-lex_aware
+    metric: GXCOPY:A2D (b)
+    scope: lex_aware
+    formula: $$
+    combine: sum
+  - &GXCOPYx3a_A2Dx20_x28_bx29_-sum-x5b_0x0x5d_-function
+    metric: GXCOPY:A2D (b)
+    scope: function
+    formula: $$
+    combine: sum
+  - &GPAGEx3a_MIGSZx20_x28_bx29_-sum-x5b_0x0x5d_-execution
+    metric: GPAGE:MIGSZ (b)
+    scope: execution
+    formula: $$
+    combine: sum
+  - &GPAGEx3a_MIGSZx20_x28_bx29_-sum-x5b_0x0x5d_-lex_aware
+    metric: GPAGE:MIGSZ (b)
+    scope: lex_aware
+    formula: $$
+    combine: sum
+  - &GPAGEx3a_MIGSZx20_x28_bx29_-sum-x5b_0x0x5d_-function
+    metric: GPAGE:MIGSZ (b)
+    scope: function
+    formula: $$
+    combine: sum
+  - &GKERx20_x28_sx29_-sum-x5b_0x0x5d_-execution
+    metric: GKER (s)
+    scope: execution
+    formula: $$
+    combine: sum
+  - &GKERx20_x28_sx29_-sum-x5b_0x0x5d_-lex_aware
+    metric: GKER (s)
+    scope: lex_aware
+    formula: $$
+    combine: sum
+  - &GKERx20_x28_sx29_-sum-x5b_0x0x5d_-function
+    metric: GKER (s)
+    scope: function
+    formula: $$
+    combine: sum
+  - &GMEMx3a_PAGx20_x28_bx29_-sum-x5b_0x0x5d_-execution
+    metric: GMEM:PAG (b)
+    scope: execution
+    formula: $$
+    combine: sum
+  - &GMEMx3a_PAGx20_x28_bx29_-sum-x5b_0x0x5d_-lex_aware
+    metric: GMEM:PAG (b)
+    scope: lex_aware
+    formula: $$
+    combine: sum
+  - &GMEMx3a_PAGx20_x28_bx29_-sum-x5b_0x0x5d_-function
+    metric: GMEM:PAG (b)
+    scope: function
+    formula: $$
+    combine: sum
+  - &GICOPYx20_x28_sx29_-sum-x5b_0x0x5d_-execution
+    metric: GICOPY (s)
+    scope: execution
+    formula: $$
+    combine: sum
+  - &GICOPYx20_x28_sx29_-sum-x5b_0x0x5d_-lex_aware
+    metric: GICOPY (s)
+    scope: lex_aware
+    formula: $$
+    combine: sum
+  - &GICOPYx20_x28_sx29_-sum-x5b_0x0x5d_-function
+    metric: GICOPY (s)
+    scope: function
+    formula: $$
+    combine: sum
+  - &GPUOPx20_x28_sx29_-sum-x5b_0x0x5d_-execution
+    metric: GPUOP (s)
+    scope: execution
+    formula: $$
+    combine: sum
+  - &GPUOPx20_x28_sx29_-sum-x5b_0x0x5d_-lex_aware
+    metric: GPUOP (s)
+    scope: lex_aware
+    formula: $$
+    combine: sum
+  - &GPUOPx20_x28_sx29_-sum-x5b_0x0x5d_-function
+    metric: GPUOP (s)
+    scope: function
+    formula: $$
+    combine: sum
+  - &GMEMx3a_ARYx20_x28_bx29_-sum-x5b_0x0x5d_-execution
+    metric: GMEM:ARY (b)
+    scope: execution
+    formula: $$
+    combine: sum
+  - &GMEMx3a_ARYx20_x28_bx29_-sum-x5b_0x0x5d_-lex_aware
+    metric: GMEM:ARY (b)
+    scope: lex_aware
+    formula: $$
+    combine: sum
+  - &GMEMx3a_ARYx20_x28_bx29_-sum-x5b_0x0x5d_-function
+    metric: GMEM:ARY (b)
+    scope: function
+    formula: $$
+    combine: sum
+  - &GSYNCx20_x28_sx29_-sum-x5b_0x0x5d_-execution
+    metric: GSYNC (s)
+    scope: execution
+    formula: $$
+    combine: sum
+  - &GSYNCx20_x28_sx29_-sum-x5b_0x0x5d_-lex_aware
+    metric: GSYNC (s)
+    scope: lex_aware
+    formula: $$
+    combine: sum
+  - &GSYNCx20_x28_sx29_-sum-x5b_0x0x5d_-function
+    metric: GSYNC (s)
+    scope: function
+    formula: $$
+    combine: sum
+  - &GXCOPYx3a_H2Dx20_x28_bx29_-sum-x5b_0x0x5d_-execution
+    metric: GXCOPY:H2D (b)
+    scope: execution
+    formula: $$
+    combine: sum
+  - &GXCOPYx3a_H2Dx20_x28_bx29_-sum-x5b_0x0x5d_-lex_aware
+    metric: GXCOPY:H2D (b)
+    scope: lex_aware
+    formula: $$
+    combine: sum
+  - &GXCOPYx3a_H2Dx20_x28_bx29_-sum-x5b_0x0x5d_-function
+    metric: GXCOPY:H2D (b)
+    scope: function
+    formula: $$
+    combine: sum
+  - &GMEMx3a_UNKx20_x28_bx29_-sum-x5b_0x0x5d_-execution
+    metric: GMEM:UNK (b)
+    scope: execution
+    formula: $$
+    combine: sum
+  - &GMEMx3a_UNKx20_x28_bx29_-sum-x5b_0x0x5d_-lex_aware
+    metric: GMEM:UNK (b)
+    scope: lex_aware
+    formula: $$
+    combine: sum
+  - &GMEMx3a_UNKx20_x28_bx29_-sum-x5b_0x0x5d_-function
+    metric: GMEM:UNK (b)
     scope: function
     formula: $$
     combine: sum
@@ -315,502 +555,600 @@ inputs:
     scope: function
     formula: $$
     combine: sum
-  - &GXCOPYx3a_H2Dx20_x28_Bx29_-sum-x5b_0x0x5d_-execution
-    metric: GXCOPY:H2D (B)
+  - &GMEMx3a_DEVx20_x28_bx29_-sum-x5b_0x0x5d_-execution
+    metric: GMEM:DEV (b)
     scope: execution
     formula: $$
     combine: sum
-  - &GXCOPYx3a_H2Dx20_x28_Bx29_-sum-x5b_0x0x5d_-lex_aware
-    metric: GXCOPY:H2D (B)
+  - &GMEMx3a_DEVx20_x28_bx29_-sum-x5b_0x0x5d_-lex_aware
+    metric: GMEM:DEV (b)
     scope: lex_aware
     formula: $$
     combine: sum
-  - &GXCOPYx3a_H2Dx20_x28_Bx29_-sum-x5b_0x0x5d_-function
-    metric: GXCOPY:H2D (B)
+  - &GMEMx3a_DEVx20_x28_bx29_-sum-x5b_0x0x5d_-function
+    metric: GMEM:DEV (b)
     scope: function
     formula: $$
     combine: sum
-  - &GMEMx3a_DEVx20_x28_Bx29_-sum-x5b_0x0x5d_-execution
-    metric: GMEM:DEV (B)
+  - &GSYNCx3a_COUNT-sum-x5b_0x0x5d_-execution
+    metric: GSYNC:COUNT
     scope: execution
     formula: $$
     combine: sum
-  - &GMEMx3a_DEVx20_x28_Bx29_-sum-x5b_0x0x5d_-lex_aware
-    metric: GMEM:DEV (B)
+  - &GSYNCx3a_COUNT-sum-x5b_0x0x5d_-lex_aware
+    metric: GSYNC:COUNT
     scope: lex_aware
     formula: $$
     combine: sum
-  - &GMEMx3a_DEVx20_x28_Bx29_-sum-x5b_0x0x5d_-function
-    metric: GMEM:DEV (B)
+  - &GSYNCx3a_COUNT-sum-x5b_0x0x5d_-function
+    metric: GSYNC:COUNT
     scope: function
     formula: $$
     combine: sum
-  - &GMSETx3a_MSTx20_x28_Bx29_-sum-x5b_0x0x5d_-execution
-    metric: GMSET:MST (B)
+  - &GXCOPYx3a_A2Hx20_x28_bx29_-sum-x5b_0x0x5d_-execution
+    metric: GXCOPY:A2H (b)
     scope: execution
     formula: $$
     combine: sum
-  - &GMSETx3a_MSTx20_x28_Bx29_-sum-x5b_0x0x5d_-lex_aware
-    metric: GMSET:MST (B)
+  - &GXCOPYx3a_A2Hx20_x28_bx29_-sum-x5b_0x0x5d_-lex_aware
+    metric: GXCOPY:A2H (b)
     scope: lex_aware
     formula: $$
     combine: sum
-  - &GMSETx3a_MSTx20_x28_Bx29_-sum-x5b_0x0x5d_-function
-    metric: GMSET:MST (B)
+  - &GXCOPYx3a_A2Hx20_x28_bx29_-sum-x5b_0x0x5d_-function
+    metric: GXCOPY:A2H (b)
     scope: function
     formula: $$
     combine: sum
-  - &GMSETx20_x28_secx29_-sum-x5b_0x0x5d_-execution
-    metric: GMSET (sec)
+  - &GSYNCx3a_STRx20_x28_sx29_-sum-x5b_0x0x5d_-execution
+    metric: GSYNC:STR (s)
     scope: execution
     formula: $$
     combine: sum
-  - &GMSETx20_x28_secx29_-sum-x5b_0x0x5d_-lex_aware
-    metric: GMSET (sec)
+  - &GSYNCx3a_STRx20_x28_sx29_-sum-x5b_0x0x5d_-lex_aware
+    metric: GSYNC:STR (s)
     scope: lex_aware
     formula: $$
     combine: sum
-  - &GMSETx20_x28_secx29_-sum-x5b_0x0x5d_-function
-    metric: GMSET (sec)
+  - &GSYNCx3a_STRx20_x28_sx29_-sum-x5b_0x0x5d_-function
+    metric: GSYNC:STR (s)
     scope: function
     formula: $$
     combine: sum
-  - &GKERx20_x28_secx29_-sum-x5b_0x0x5d_-execution
-    metric: GKER (sec)
+  - &GXCOPYx3a_A2Ax20_x28_bx29_-sum-x5b_0x0x5d_-execution
+    metric: GXCOPY:A2A (b)
     scope: execution
     formula: $$
     combine: sum
-  - &GKERx20_x28_secx29_-sum-x5b_0x0x5d_-lex_aware
-    metric: GKER (sec)
+  - &GXCOPYx3a_A2Ax20_x28_bx29_-sum-x5b_0x0x5d_-lex_aware
+    metric: GXCOPY:A2A (b)
     scope: lex_aware
     formula: $$
     combine: sum
-  - &GKERx20_x28_secx29_-sum-x5b_0x0x5d_-function
-    metric: GKER (sec)
+  - &GXCOPYx3a_A2Ax20_x28_bx29_-sum-x5b_0x0x5d_-function
+    metric: GXCOPY:A2A (b)
     scope: function
     formula: $$
     combine: sum
-  - &GXCOPYx3a_D2Dx20_x28_Bx29_-sum-x5b_0x0x5d_-execution
-    metric: GXCOPY:D2D (B)
+  - &GXCOPYx3a_D2Dx20_x28_bx29_-sum-x5b_0x0x5d_-execution
+    metric: GXCOPY:D2D (b)
     scope: execution
     formula: $$
     combine: sum
-  - &GXCOPYx3a_D2Dx20_x28_Bx29_-sum-x5b_0x0x5d_-lex_aware
-    metric: GXCOPY:D2D (B)
+  - &GXCOPYx3a_D2Dx20_x28_bx29_-sum-x5b_0x0x5d_-lex_aware
+    metric: GXCOPY:D2D (b)
     scope: lex_aware
     formula: $$
     combine: sum
-  - &GXCOPYx3a_D2Dx20_x28_Bx29_-sum-x5b_0x0x5d_-function
-    metric: GXCOPY:D2D (B)
+  - &GXCOPYx3a_D2Dx20_x28_bx29_-sum-x5b_0x0x5d_-function
+    metric: GXCOPY:D2D (b)
     scope: function
     formula: $$
     combine: sum
-  - &GSYNCx20_x28_secx29_-sum-x5b_0x0x5d_-execution
-    metric: GSYNC (sec)
+  - &GXCOPYx3a_H2Hx20_x28_bx29_-sum-x5b_0x0x5d_-execution
+    metric: GXCOPY:H2H (b)
     scope: execution
     formula: $$
     combine: sum
-  - &GSYNCx20_x28_secx29_-sum-x5b_0x0x5d_-lex_aware
-    metric: GSYNC (sec)
+  - &GXCOPYx3a_H2Hx20_x28_bx29_-sum-x5b_0x0x5d_-lex_aware
+    metric: GXCOPY:H2H (b)
     scope: lex_aware
     formula: $$
     combine: sum
-  - &GSYNCx20_x28_secx29_-sum-x5b_0x0x5d_-function
-    metric: GSYNC (sec)
+  - &GXCOPYx3a_H2Hx20_x28_bx29_-sum-x5b_0x0x5d_-function
+    metric: GXCOPY:H2H (b)
     scope: function
     formula: $$
     combine: sum
-  - &GMSETx3a_ARYx20_x28_Bx29_-sum-x5b_0x0x5d_-execution
-    metric: GMSET:ARY (B)
+  - &GXCOPYx3a_P2Px20_x28_bx29_-sum-x5b_0x0x5d_-execution
+    metric: GXCOPY:P2P (b)
     scope: execution
     formula: $$
     combine: sum
-  - &GMSETx3a_ARYx20_x28_Bx29_-sum-x5b_0x0x5d_-lex_aware
-    metric: GMSET:ARY (B)
+  - &GXCOPYx3a_P2Px20_x28_bx29_-sum-x5b_0x0x5d_-lex_aware
+    metric: GXCOPY:P2P (b)
     scope: lex_aware
     formula: $$
     combine: sum
-  - &GMSETx3a_ARYx20_x28_Bx29_-sum-x5b_0x0x5d_-function
-    metric: GMSET:ARY (B)
+  - &GXCOPYx3a_P2Px20_x28_bx29_-sum-x5b_0x0x5d_-function
+    metric: GXCOPY:P2P (b)
     scope: function
     formula: $$
     combine: sum
-  - &GSYNCx3a_EVTx20_x28_secx29_-sum-x5b_0x0x5d_-execution
-    metric: GSYNC:EVT (sec)
+  - &GSYNCx3a_UNKx20_x28_sx29_-sum-x5b_0x0x5d_-execution
+    metric: GSYNC:UNK (s)
     scope: execution
     formula: $$
     combine: sum
-  - &GSYNCx3a_EVTx20_x28_secx29_-sum-x5b_0x0x5d_-lex_aware
-    metric: GSYNC:EVT (sec)
+  - &GSYNCx3a_UNKx20_x28_sx29_-sum-x5b_0x0x5d_-lex_aware
+    metric: GSYNC:UNK (s)
     scope: lex_aware
     formula: $$
     combine: sum
-  - &GSYNCx3a_EVTx20_x28_secx29_-sum-x5b_0x0x5d_-function
-    metric: GSYNC:EVT (sec)
+  - &GSYNCx3a_UNKx20_x28_sx29_-sum-x5b_0x0x5d_-function
+    metric: GSYNC:UNK (s)
     scope: function
     formula: $$
     combine: sum
-  - &GPUOPx20_x28_secx29_-sum-x5b_0x0x5d_-execution
-    metric: GPUOP (sec)
+  - &GSYNCx3a_STREx20_x28_sx29_-sum-x5b_0x0x5d_-execution
+    metric: GSYNC:STRE (s)
     scope: execution
     formula: $$
     combine: sum
-  - &GPUOPx20_x28_secx29_-sum-x5b_0x0x5d_-lex_aware
-    metric: GPUOP (sec)
+  - &GSYNCx3a_STREx20_x28_sx29_-sum-x5b_0x0x5d_-lex_aware
+    metric: GSYNC:STRE (s)
     scope: lex_aware
     formula: $$
     combine: sum
-  - &GPUOPx20_x28_secx29_-sum-x5b_0x0x5d_-function
-    metric: GPUOP (sec)
+  - &GSYNCx3a_STREx20_x28_sx29_-sum-x5b_0x0x5d_-function
+    metric: GSYNC:STRE (s)
     scope: function
     formula: $$
     combine: sum
-  - &GMSETx3a_DEVx20_x28_Bx29_-sum-x5b_0x0x5d_-execution
-    metric: GMSET:DEV (B)
+  - &GSYNCx3a_CTXx20_x28_sx29_-sum-x5b_0x0x5d_-execution
+    metric: GSYNC:CTX (s)
     scope: execution
     formula: $$
     combine: sum
-  - &GMSETx3a_DEVx20_x28_Bx29_-sum-x5b_0x0x5d_-lex_aware
-    metric: GMSET:DEV (B)
+  - &GSYNCx3a_CTXx20_x28_sx29_-sum-x5b_0x0x5d_-lex_aware
+    metric: GSYNC:CTX (s)
     scope: lex_aware
     formula: $$
     combine: sum
-  - &GMSETx3a_DEVx20_x28_Bx29_-sum-x5b_0x0x5d_-function
-    metric: GMSET:DEV (B)
+  - &GSYNCx3a_CTXx20_x28_sx29_-sum-x5b_0x0x5d_-function
+    metric: GSYNC:CTX (s)
     scope: function
     formula: $$
     combine: sum
-  - &GMSETx3a_UNKx20_x28_Bx29_-sum-x5b_0x0x5d_-execution
-    metric: GMSET:UNK (B)
+  - &GSCRx20_x28_sx29_-sum-x5b_0x0x5d_-execution
+    metric: GSCR (s)
     scope: execution
     formula: $$
     combine: sum
-  - &GMSETx3a_UNKx20_x28_Bx29_-sum-x5b_0x0x5d_-lex_aware
-    metric: GMSET:UNK (B)
+  - &GSCRx20_x28_sx29_-sum-x5b_0x0x5d_-lex_aware
+    metric: GSCR (s)
     scope: lex_aware
     formula: $$
     combine: sum
-  - &GMSETx3a_UNKx20_x28_Bx29_-sum-x5b_0x0x5d_-function
-    metric: GMSET:UNK (B)
+  - &GSCRx20_x28_sx29_-sum-x5b_0x0x5d_-function
+    metric: GSCR (s)
     scope: function
     formula: $$
     combine: sum
-  - &GMEMx3a_DSTx20_x28_Bx29_-sum-x5b_0x0x5d_-execution
-    metric: GMEM:DST (B)
+  - &GPAGEx3a_MIGx20_x28_sx29_-sum-x5b_0x0x5d_-execution
+    metric: GPAGE:MIG (s)
     scope: execution
     formula: $$
     combine: sum
-  - &GMEMx3a_DSTx20_x28_Bx29_-sum-x5b_0x0x5d_-lex_aware
-    metric: GMEM:DST (B)
+  - &GPAGEx3a_MIGx20_x28_sx29_-sum-x5b_0x0x5d_-lex_aware
+    metric: GPAGE:MIG (s)
     scope: lex_aware
     formula: $$
     combine: sum
-  - &GMEMx3a_DSTx20_x28_Bx29_-sum-x5b_0x0x5d_-function
-    metric: GMEM:DST (B)
+  - &GPAGEx3a_MIGx20_x28_sx29_-sum-x5b_0x0x5d_-function
+    metric: GPAGE:MIG (s)
     scope: function
     formula: $$
     combine: sum
-  - &GMSETx3a_PAGx20_x28_Bx29_-sum-x5b_0x0x5d_-execution
-    metric: GMSET:PAG (B)
+  - &GMSETx3a_PINx20_x28_bx29_-sum-x5b_0x0x5d_-execution
+    metric: GMSET:PIN (b)
     scope: execution
     formula: $$
     combine: sum
-  - &GMSETx3a_PAGx20_x28_Bx29_-sum-x5b_0x0x5d_-lex_aware
-    metric: GMSET:PAG (B)
+  - &GMSETx3a_PINx20_x28_bx29_-sum-x5b_0x0x5d_-lex_aware
+    metric: GMSET:PIN (b)
     scope: lex_aware
     formula: $$
     combine: sum
-  - &GMSETx3a_PAGx20_x28_Bx29_-sum-x5b_0x0x5d_-function
-    metric: GMSET:PAG (B)
+  - &GMSETx3a_PINx20_x28_bx29_-sum-x5b_0x0x5d_-function
+    metric: GMSET:PIN (b)
     scope: function
     formula: $$
     combine: sum
-  - &GMEMx3a_MSTx20_x28_Bx29_-sum-x5b_0x0x5d_-execution
-    metric: GMEM:MST (B)
+  - &GPAGEx3a_FLTx20_x28_sx29_-sum-x5b_0x0x5d_-execution
+    metric: GPAGE:FLT (s)
     scope: execution
     formula: $$
     combine: sum
-  - &GMEMx3a_MSTx20_x28_Bx29_-sum-x5b_0x0x5d_-lex_aware
-    metric: GMEM:MST (B)
+  - &GPAGEx3a_FLTx20_x28_sx29_-sum-x5b_0x0x5d_-lex_aware
+    metric: GPAGE:FLT (s)
     scope: lex_aware
     formula: $$
     combine: sum
-  - &GMEMx3a_MSTx20_x28_Bx29_-sum-x5b_0x0x5d_-function
-    metric: GMEM:MST (B)
+  - &GPAGEx3a_FLTx20_x28_sx29_-sum-x5b_0x0x5d_-function
+    metric: GPAGE:FLT (s)
     scope: function
     formula: $$
     combine: sum
-  - &GMSETx3a_MANx20_x28_Bx29_-sum-x5b_0x0x5d_-execution
-    metric: GMSET:MAN (B)
+  - &GXCOPYx3a_UNKx20_x28_bx29_-sum-x5b_0x0x5d_-execution
+    metric: GXCOPY:UNK (b)
     scope: execution
     formula: $$
     combine: sum
-  - &GMSETx3a_MANx20_x28_Bx29_-sum-x5b_0x0x5d_-lex_aware
-    metric: GMSET:MAN (B)
+  - &GXCOPYx3a_UNKx20_x28_bx29_-sum-x5b_0x0x5d_-lex_aware
+    metric: GXCOPY:UNK (b)
     scope: lex_aware
     formula: $$
     combine: sum
-  - &GMSETx3a_MANx20_x28_Bx29_-sum-x5b_0x0x5d_-function
-    metric: GMSET:MAN (B)
+  - &GXCOPYx3a_UNKx20_x28_bx29_-sum-x5b_0x0x5d_-function
+    metric: GXCOPY:UNK (b)
     scope: function
     formula: $$
     combine: sum
-  - &GXCOPYx3a_H2Hx20_x28_Bx29_-sum-x5b_0x0x5d_-execution
-    metric: GXCOPY:H2H (B)
+  - &GXCOPYx3a_D2Ax20_x28_bx29_-sum-x5b_0x0x5d_-execution
+    metric: GXCOPY:D2A (b)
     scope: execution
     formula: $$
     combine: sum
-  - &GXCOPYx3a_H2Hx20_x28_Bx29_-sum-x5b_0x0x5d_-lex_aware
-    metric: GXCOPY:H2H (B)
+  - &GXCOPYx3a_D2Ax20_x28_bx29_-sum-x5b_0x0x5d_-lex_aware
+    metric: GXCOPY:D2A (b)
     scope: lex_aware
     formula: $$
     combine: sum
-  - &GXCOPYx3a_H2Hx20_x28_Bx29_-sum-x5b_0x0x5d_-function
-    metric: GXCOPY:H2H (B)
+  - &GXCOPYx3a_D2Ax20_x28_bx29_-sum-x5b_0x0x5d_-function
+    metric: GXCOPY:D2A (b)
     scope: function
     formula: $$
     combine: sum
-  - &GMSETx3a_PINx20_x28_Bx29_-sum-x5b_0x0x5d_-execution
-    metric: GMSET:PIN (B)
+  - &GKERx3a_DYMEM_ACUMUx20_x28_bx29_-sum-x5b_0x0x5d_-execution
+    metric: GKER:DYMEM_ACUMU (b)
     scope: execution
     formula: $$
     combine: sum
-  - &GMSETx3a_PINx20_x28_Bx29_-sum-x5b_0x0x5d_-lex_aware
-    metric: GMSET:PIN (B)
+  - &GKERx3a_DYMEM_ACUMUx20_x28_bx29_-sum-x5b_0x0x5d_-lex_aware
+    metric: GKER:DYMEM_ACUMU (b)
     scope: lex_aware
     formula: $$
     combine: sum
-  - &GMSETx3a_PINx20_x28_Bx29_-sum-x5b_0x0x5d_-function
-    metric: GMSET:PIN (B)
+  - &GKERx3a_DYMEM_ACUMUx20_x28_bx29_-sum-x5b_0x0x5d_-function
+    metric: GKER:DYMEM_ACUMU (b)
     scope: function
     formula: $$
     combine: sum
-  - &GXCOPYx3a_UNKx20_x28_Bx29_-sum-x5b_0x0x5d_-execution
-    metric: GXCOPY:UNK (B)
+  - &GMSETx3a_MANx20_x28_bx29_-sum-x5b_0x0x5d_-execution
+    metric: GMSET:MAN (b)
     scope: execution
     formula: $$
     combine: sum
-  - &GXCOPYx3a_UNKx20_x28_Bx29_-sum-x5b_0x0x5d_-lex_aware
-    metric: GXCOPY:UNK (B)
+  - &GMSETx3a_MANx20_x28_bx29_-sum-x5b_0x0x5d_-lex_aware
+    metric: GMSET:MAN (b)
     scope: lex_aware
     formula: $$
     combine: sum
-  - &GXCOPYx3a_UNKx20_x28_Bx29_-sum-x5b_0x0x5d_-function
-    metric: GXCOPY:UNK (B)
+  - &GMSETx3a_MANx20_x28_bx29_-sum-x5b_0x0x5d_-function
+    metric: GMSET:MAN (b)
     scope: function
     formula: $$
     combine: sum
-  - &GXCOPYx3a_D2Hx20_x28_Bx29_-sum-x5b_0x0x5d_-execution
-    metric: GXCOPY:D2H (B)
+  - &GPAGEx3a_FLTSZx20_x28_bx29_-sum-x5b_0x0x5d_-execution
+    metric: GPAGE:FLTSZ (b)
     scope: execution
     formula: $$
     combine: sum
-  - &GXCOPYx3a_D2Hx20_x28_Bx29_-sum-x5b_0x0x5d_-lex_aware
-    metric: GXCOPY:D2H (B)
+  - &GPAGEx3a_FLTSZx20_x28_bx29_-sum-x5b_0x0x5d_-lex_aware
+    metric: GPAGE:FLTSZ (b)
     scope: lex_aware
     formula: $$
     combine: sum
-  - &GXCOPYx3a_D2Hx20_x28_Bx29_-sum-x5b_0x0x5d_-function
-    metric: GXCOPY:D2H (B)
+  - &GPAGEx3a_FLTSZx20_x28_bx29_-sum-x5b_0x0x5d_-function
+    metric: GPAGE:FLTSZ (b)
     scope: function
     formula: $$
     combine: sum
-  - &GSYNCx3a_CTXx20_x28_secx29_-sum-x5b_0x0x5d_-execution
-    metric: GSYNC:CTX (sec)
+  - &GPAGEx3a_UMPCNTx20_x28_bytesx29_-sum-x5b_0x0x5d_-execution
+    metric: GPAGE:UMPCNT (bytes)
     scope: execution
     formula: $$
     combine: sum
-  - &GSYNCx3a_CTXx20_x28_secx29_-sum-x5b_0x0x5d_-lex_aware
-    metric: GSYNC:CTX (sec)
+  - &GPAGEx3a_UMPCNTx20_x28_bytesx29_-sum-x5b_0x0x5d_-lex_aware
+    metric: GPAGE:UMPCNT (bytes)
     scope: lex_aware
     formula: $$
     combine: sum
-  - &GSYNCx3a_CTXx20_x28_secx29_-sum-x5b_0x0x5d_-function
-    metric: GSYNC:CTX (sec)
+  - &GPAGEx3a_UMPCNTx20_x28_bytesx29_-sum-x5b_0x0x5d_-function
+    metric: GPAGE:UMPCNT (bytes)
     scope: function
     formula: $$
     combine: sum
-  - &GXCOPYx3a_H2Ax20_x28_Bx29_-sum-x5b_0x0x5d_-execution
-    metric: GXCOPY:H2A (B)
+  - &GPAGEx3a_MIGCNT-sum-x5b_0x0x5d_-execution
+    metric: GPAGE:MIGCNT
     scope: execution
     formula: $$
     combine: sum
-  - &GXCOPYx3a_H2Ax20_x28_Bx29_-sum-x5b_0x0x5d_-lex_aware
-    metric: GXCOPY:H2A (B)
+  - &GPAGEx3a_MIGCNT-sum-x5b_0x0x5d_-lex_aware
+    metric: GPAGE:MIGCNT
     scope: lex_aware
     formula: $$
     combine: sum
-  - &GXCOPYx3a_H2Ax20_x28_Bx29_-sum-x5b_0x0x5d_-function
-    metric: GXCOPY:H2A (B)
+  - &GPAGEx3a_MIGCNT-sum-x5b_0x0x5d_-function
+    metric: GPAGE:MIGCNT
+    scope: function
+    formula: $$
+    combine: sum
+  - &GPAGEx3a_QSVCNT-sum-x5b_0x0x5d_-execution
+    metric: GPAGE:QSVCNT
+    scope: execution
+    formula: $$
+    combine: sum
+  - &GPAGEx3a_QSVCNT-sum-x5b_0x0x5d_-lex_aware
+    metric: GPAGE:QSVCNT
+    scope: lex_aware
+    formula: $$
+    combine: sum
+  - &GPAGEx3a_QSVCNT-sum-x5b_0x0x5d_-function
+    metric: GPAGE:QSVCNT
+    scope: function
+    formula: $$
+    combine: sum
+  - &GKERx3a_FGP_MAX_ACUMU-sum-x5b_0x0x5d_-execution
+    metric: GKER:FGP_MAX_ACUMU
+    scope: execution
+    formula: $$
+    combine: sum
+  - &GKERx3a_FGP_MAX_ACUMU-sum-x5b_0x0x5d_-lex_aware
+    metric: GKER:FGP_MAX_ACUMU
+    scope: lex_aware
+    formula: $$
+    combine: sum
+  - &GKERx3a_FGP_MAX_ACUMU-sum-x5b_0x0x5d_-function
+    metric: GKER:FGP_MAX_ACUMU
+    scope: function
+    formula: $$
+    combine: sum
+  - &GPAGEx3a_DRPCNT-sum-x5b_0x0x5d_-execution
+    metric: GPAGE:DRPCNT
+    scope: execution
+    formula: $$
+    combine: sum
+  - &GPAGEx3a_DRPCNT-sum-x5b_0x0x5d_-lex_aware
+    metric: GPAGE:DRPCNT
+    scope: lex_aware
+    formula: $$
+    combine: sum
+  - &GPAGEx3a_DRPCNT-sum-x5b_0x0x5d_-function
+    metric: GPAGE:DRPCNT
+    scope: function
+    formula: $$
+    combine: sum
+  - &GKERx3a_THR_SREG_ACUMU-sum-x5b_0x0x5d_-execution
+    metric: GKER:THR_SREG_ACUMU
+    scope: execution
+    formula: $$
+    combine: sum
+  - &GKERx3a_THR_SREG_ACUMU-sum-x5b_0x0x5d_-lex_aware
+    metric: GKER:THR_SREG_ACUMU
+    scope: lex_aware
+    formula: $$
+    combine: sum
+  - &GKERx3a_THR_SREG_ACUMU-sum-x5b_0x0x5d_-function
+    metric: GKER:THR_SREG_ACUMU
+    scope: function
+    formula: $$
+    combine: sum
+  - &GKERx3a_STMEM_ACUMUx20_x28_bx29_-sum-x5b_0x0x5d_-execution
+    metric: GKER:STMEM_ACUMU (b)
+    scope: execution
+    formula: $$
+    combine: sum
+  - &GKERx3a_STMEM_ACUMUx20_x28_bx29_-sum-x5b_0x0x5d_-lex_aware
+    metric: GKER:STMEM_ACUMU (b)
+    scope: lex_aware
+    formula: $$
+    combine: sum
+  - &GKERx3a_STMEM_ACUMUx20_x28_bx29_-sum-x5b_0x0x5d_-function
+    metric: GKER:STMEM_ACUMU (b)
+    scope: function
+    formula: $$
+    combine: sum
+  - &GKERx3a_LMEM_ACUMUx20_x28_bx29_-sum-x5b_0x0x5d_-execution
+    metric: GKER:LMEM_ACUMU (b)
+    scope: execution
+    formula: $$
+    combine: sum
+  - &GKERx3a_LMEM_ACUMUx20_x28_bx29_-sum-x5b_0x0x5d_-lex_aware
+    metric: GKER:LMEM_ACUMU (b)
+    scope: lex_aware
+    formula: $$
+    combine: sum
+  - &GKERx3a_LMEM_ACUMUx20_x28_bx29_-sum-x5b_0x0x5d_-function
+    metric: GKER:LMEM_ACUMU (b)
     scope: function
     formula: $$
     combine: sum
 roots:
-  - name: GPUOP (sec)
+  - name: GPUOP (s)
     description: "GPU time: all operations (seconds)"
     variants:
       Sum:
         render: [number, percent]
         formula:
           inclusive:
-            standard: *GPUOPx20_x28_secx29_-sum-x5b_0x0x5d_-execution
+            standard: *GPUOPx20_x28_sx29_-sum-x5b_0x0x5d_-execution
           exclusive:
-            custom: *GPUOPx20_x28_secx29_-sum-x5b_0x0x5d_-lex_aware
-            standard: *GPUOPx20_x28_secx29_-sum-x5b_0x0x5d_-function
-  - name: GKER (sec)
+            custom: *GPUOPx20_x28_sx29_-sum-x5b_0x0x5d_-lex_aware
+            standard: *GPUOPx20_x28_sx29_-sum-x5b_0x0x5d_-function
+  - name: GKER (s)
     description: "GPU time: kernel execution (seconds)"
     variants:
       Sum:
         render: [number, percent]
         formula:
           inclusive:
-            standard: *GKERx20_x28_secx29_-sum-x5b_0x0x5d_-execution
+            standard: *GKERx20_x28_sx29_-sum-x5b_0x0x5d_-execution
           exclusive:
-            custom: *GKERx20_x28_secx29_-sum-x5b_0x0x5d_-lex_aware
-            standard: *GKERx20_x28_secx29_-sum-x5b_0x0x5d_-function
-  - name: GMEM (sec)
+            custom: *GKERx20_x28_sx29_-sum-x5b_0x0x5d_-lex_aware
+            standard: *GKERx20_x28_sx29_-sum-x5b_0x0x5d_-function
+  - name: GMEM (s)
     description: "GPU time: memory allocation/deallocation (seconds)"
     variants:
       Sum:
         render: [number, percent]
         formula:
           inclusive:
-            standard: *GMEMx20_x28_secx29_-sum-x5b_0x0x5d_-execution
+            standard: *GMEMx20_x28_sx29_-sum-x5b_0x0x5d_-execution
           exclusive:
-            custom: *GMEMx20_x28_secx29_-sum-x5b_0x0x5d_-lex_aware
-            standard: *GMEMx20_x28_secx29_-sum-x5b_0x0x5d_-function
-  - name: GMSET (sec)
+            custom: *GMEMx20_x28_sx29_-sum-x5b_0x0x5d_-lex_aware
+            standard: *GMEMx20_x28_sx29_-sum-x5b_0x0x5d_-function
+  - name: GMSET (s)
     description: "GPU time: memory set (seconds)"
     variants:
       Sum:
         render: [number, percent]
         formula:
           inclusive:
-            standard: *GMSETx20_x28_secx29_-sum-x5b_0x0x5d_-execution
+            standard: *GMSETx20_x28_sx29_-sum-x5b_0x0x5d_-execution
           exclusive:
-            custom: *GMSETx20_x28_secx29_-sum-x5b_0x0x5d_-lex_aware
-            standard: *GMSETx20_x28_secx29_-sum-x5b_0x0x5d_-function
-  - name: GXCOPY (sec)
+            custom: *GMSETx20_x28_sx29_-sum-x5b_0x0x5d_-lex_aware
+            standard: *GMSETx20_x28_sx29_-sum-x5b_0x0x5d_-function
+  - name: GXCOPY (s)
     description: "GPU time: explicit data copy (seconds)"
     variants:
       Sum:
         render: [number, percent]
         formula:
           inclusive:
-            standard: *GXCOPYx20_x28_secx29_-sum-x5b_0x0x5d_-execution
+            standard: *GXCOPYx20_x28_sx29_-sum-x5b_0x0x5d_-execution
           exclusive:
-            custom: *GXCOPYx20_x28_secx29_-sum-x5b_0x0x5d_-lex_aware
-            standard: *GXCOPYx20_x28_secx29_-sum-x5b_0x0x5d_-function
-  - name: GICOPY (sec)
+            custom: *GXCOPYx20_x28_sx29_-sum-x5b_0x0x5d_-lex_aware
+            standard: *GXCOPYx20_x28_sx29_-sum-x5b_0x0x5d_-function
+  - name: GICOPY (s)
     description: "GPU time: implicit data copy (seconds)"
     variants:
       Sum:
         render: [number, percent]
         formula:
           inclusive:
-            standard: *GICOPYx20_x28_secx29_-sum-x5b_0x0x5d_-execution
+            standard: *GICOPYx20_x28_sx29_-sum-x5b_0x0x5d_-execution
           exclusive:
-            custom: *GICOPYx20_x28_secx29_-sum-x5b_0x0x5d_-lex_aware
-            standard: *GICOPYx20_x28_secx29_-sum-x5b_0x0x5d_-function
-  - name: GSYNC (sec)
+            custom: *GICOPYx20_x28_sx29_-sum-x5b_0x0x5d_-lex_aware
+            standard: *GICOPYx20_x28_sx29_-sum-x5b_0x0x5d_-function
+  - name: GSYNC (s)
     description: "GPU time: synchronization (seconds)"
     variants:
       Sum:
         render: [number, percent]
         formula:
           inclusive:
-            standard: *GSYNCx20_x28_secx29_-sum-x5b_0x0x5d_-execution
+            standard: *GSYNCx20_x28_sx29_-sum-x5b_0x0x5d_-execution
           exclusive:
-            custom: *GSYNCx20_x28_secx29_-sum-x5b_0x0x5d_-lex_aware
-            standard: *GSYNCx20_x28_secx29_-sum-x5b_0x0x5d_-function
-  - name: GMEM:UNK (B)
+            custom: *GSYNCx20_x28_sx29_-sum-x5b_0x0x5d_-lex_aware
+            standard: *GSYNCx20_x28_sx29_-sum-x5b_0x0x5d_-function
+  - name: GMEM:UNK (b)
     description: "GPU memory alloc/free: unknown memory kind (bytes)"
+    visible by default: false
     variants:
       Sum:
         render: [number, percent]
         formula:
           inclusive:
-            standard: *GMEMx3a_UNKx20_x28_Bx29_-sum-x5b_0x0x5d_-execution
+            standard: *GMEMx3a_UNKx20_x28_bx29_-sum-x5b_0x0x5d_-execution
           exclusive:
-            custom: *GMEMx3a_UNKx20_x28_Bx29_-sum-x5b_0x0x5d_-lex_aware
-            standard: *GMEMx3a_UNKx20_x28_Bx29_-sum-x5b_0x0x5d_-function
-  - name: GMEM:PAG (B)
+            custom: *GMEMx3a_UNKx20_x28_bx29_-sum-x5b_0x0x5d_-lex_aware
+            standard: *GMEMx3a_UNKx20_x28_bx29_-sum-x5b_0x0x5d_-function
+  - name: GMEM:PAG (b)
     description: "GPU memory alloc/free: pageable memory (bytes)"
+    visible by default: false
     variants:
       Sum:
         render: [number, percent]
         formula:
           inclusive:
-            standard: *GMEMx3a_PAGx20_x28_Bx29_-sum-x5b_0x0x5d_-execution
+            standard: *GMEMx3a_PAGx20_x28_bx29_-sum-x5b_0x0x5d_-execution
           exclusive:
-            custom: *GMEMx3a_PAGx20_x28_Bx29_-sum-x5b_0x0x5d_-lex_aware
-            standard: *GMEMx3a_PAGx20_x28_Bx29_-sum-x5b_0x0x5d_-function
-  - name: GMEM:PIN (B)
+            custom: *GMEMx3a_PAGx20_x28_bx29_-sum-x5b_0x0x5d_-lex_aware
+            standard: *GMEMx3a_PAGx20_x28_bx29_-sum-x5b_0x0x5d_-function
+  - name: GMEM:PIN (b)
     description: "GPU memory alloc/free: pinned memory (bytes)"
+    visible by default: false
     variants:
       Sum:
         render: [number, percent]
         formula:
           inclusive:
-            standard: *GMEMx3a_PINx20_x28_Bx29_-sum-x5b_0x0x5d_-execution
+            standard: *GMEMx3a_PINx20_x28_bx29_-sum-x5b_0x0x5d_-execution
           exclusive:
-            custom: *GMEMx3a_PINx20_x28_Bx29_-sum-x5b_0x0x5d_-lex_aware
-            standard: *GMEMx3a_PINx20_x28_Bx29_-sum-x5b_0x0x5d_-function
-  - name: GMEM:DEV (B)
+            custom: *GMEMx3a_PINx20_x28_bx29_-sum-x5b_0x0x5d_-lex_aware
+            standard: *GMEMx3a_PINx20_x28_bx29_-sum-x5b_0x0x5d_-function
+  - name: GMEM:DEV (b)
     description: "GPU memory alloc/free: device memory (bytes)"
+    visible by default: false
     variants:
       Sum:
         render: [number, percent]
         formula:
           inclusive:
-            standard: *GMEMx3a_DEVx20_x28_Bx29_-sum-x5b_0x0x5d_-execution
+            standard: *GMEMx3a_DEVx20_x28_bx29_-sum-x5b_0x0x5d_-execution
           exclusive:
-            custom: *GMEMx3a_DEVx20_x28_Bx29_-sum-x5b_0x0x5d_-lex_aware
-            standard: *GMEMx3a_DEVx20_x28_Bx29_-sum-x5b_0x0x5d_-function
-  - name: GMEM:ARY (B)
+            custom: *GMEMx3a_DEVx20_x28_bx29_-sum-x5b_0x0x5d_-lex_aware
+            standard: *GMEMx3a_DEVx20_x28_bx29_-sum-x5b_0x0x5d_-function
+  - name: GMEM:ARY (b)
     description: "GPU memory alloc/free: array memory (bytes)"
+    visible by default: false
     variants:
       Sum:
         render: [number, percent]
         formula:
           inclusive:
-            standard: *GMEMx3a_ARYx20_x28_Bx29_-sum-x5b_0x0x5d_-execution
+            standard: *GMEMx3a_ARYx20_x28_bx29_-sum-x5b_0x0x5d_-execution
           exclusive:
-            custom: *GMEMx3a_ARYx20_x28_Bx29_-sum-x5b_0x0x5d_-lex_aware
-            standard: *GMEMx3a_ARYx20_x28_Bx29_-sum-x5b_0x0x5d_-function
-  - name: GMEM:MAN (B)
+            custom: *GMEMx3a_ARYx20_x28_bx29_-sum-x5b_0x0x5d_-lex_aware
+            standard: *GMEMx3a_ARYx20_x28_bx29_-sum-x5b_0x0x5d_-function
+  - name: GMEM:MAN (b)
     description: "GPU memory alloc/free: managed memory (bytes)"
+    visible by default: false
     variants:
       Sum:
         render: [number, percent]
         formula:
           inclusive:
-            standard: *GMEMx3a_MANx20_x28_Bx29_-sum-x5b_0x0x5d_-execution
+            standard: *GMEMx3a_MANx20_x28_bx29_-sum-x5b_0x0x5d_-execution
           exclusive:
-            custom: *GMEMx3a_MANx20_x28_Bx29_-sum-x5b_0x0x5d_-lex_aware
-            standard: *GMEMx3a_MANx20_x28_Bx29_-sum-x5b_0x0x5d_-function
-  - name: GMEM:DST (B)
+            custom: *GMEMx3a_MANx20_x28_bx29_-sum-x5b_0x0x5d_-lex_aware
+            standard: *GMEMx3a_MANx20_x28_bx29_-sum-x5b_0x0x5d_-function
+  - name: GMEM:DST (b)
     description: "GPU memory alloc/free: device static memory (bytes)"
+    visible by default: false
     variants:
       Sum:
         render: [number, percent]
         formula:
           inclusive:
-            standard: *GMEMx3a_DSTx20_x28_Bx29_-sum-x5b_0x0x5d_-execution
+            standard: *GMEMx3a_DSTx20_x28_bx29_-sum-x5b_0x0x5d_-execution
           exclusive:
-            custom: *GMEMx3a_DSTx20_x28_Bx29_-sum-x5b_0x0x5d_-lex_aware
-            standard: *GMEMx3a_DSTx20_x28_Bx29_-sum-x5b_0x0x5d_-function
-  - name: GMEM:MST (B)
+            custom: *GMEMx3a_DSTx20_x28_bx29_-sum-x5b_0x0x5d_-lex_aware
+            standard: *GMEMx3a_DSTx20_x28_bx29_-sum-x5b_0x0x5d_-function
+  - name: GMEM:MST (b)
     description: "GPU memory alloc/free: managed static memory (bytes)"
+    visible by default: false
     variants:
       Sum:
         render: [number, percent]
         formula:
           inclusive:
-            standard: *GMEMx3a_MSTx20_x28_Bx29_-sum-x5b_0x0x5d_-execution
+            standard: *GMEMx3a_MSTx20_x28_bx29_-sum-x5b_0x0x5d_-execution
           exclusive:
-            custom: *GMEMx3a_MSTx20_x28_Bx29_-sum-x5b_0x0x5d_-lex_aware
-            standard: *GMEMx3a_MSTx20_x28_Bx29_-sum-x5b_0x0x5d_-function
+            custom: *GMEMx3a_MSTx20_x28_bx29_-sum-x5b_0x0x5d_-lex_aware
+            standard: *GMEMx3a_MSTx20_x28_bx29_-sum-x5b_0x0x5d_-function
   - name: GMEM:COUNT
     description: "GPU memory alloc/free: count"
     variants:
@@ -822,94 +1160,102 @@ roots:
           exclusive:
             custom: *GMEMx3a_COUNT-sum-x5b_0x0x5d_-lex_aware
             standard: *GMEMx3a_COUNT-sum-x5b_0x0x5d_-function
-  - name: GMSET:UNK (B)
+  - name: GMSET:UNK (b)
     description: "GPU memory set: unknown memory kind (bytes)"
+    visible by default: false
     variants:
       Sum:
         render: [number, percent]
         formula:
           inclusive:
-            standard: *GMSETx3a_UNKx20_x28_Bx29_-sum-x5b_0x0x5d_-execution
+            standard: *GMSETx3a_UNKx20_x28_bx29_-sum-x5b_0x0x5d_-execution
           exclusive:
-            custom: *GMSETx3a_UNKx20_x28_Bx29_-sum-x5b_0x0x5d_-lex_aware
-            standard: *GMSETx3a_UNKx20_x28_Bx29_-sum-x5b_0x0x5d_-function
-  - name: GMSET:PAG (B)
+            custom: *GMSETx3a_UNKx20_x28_bx29_-sum-x5b_0x0x5d_-lex_aware
+            standard: *GMSETx3a_UNKx20_x28_bx29_-sum-x5b_0x0x5d_-function
+  - name: GMSET:PAG (b)
     description: "GPU memory set: pageable memory (bytes)"
+    visible by default: false
     variants:
       Sum:
         render: [number, percent]
         formula:
           inclusive:
-            standard: *GMSETx3a_PAGx20_x28_Bx29_-sum-x5b_0x0x5d_-execution
+            standard: *GMSETx3a_PAGx20_x28_bx29_-sum-x5b_0x0x5d_-execution
           exclusive:
-            custom: *GMSETx3a_PAGx20_x28_Bx29_-sum-x5b_0x0x5d_-lex_aware
-            standard: *GMSETx3a_PAGx20_x28_Bx29_-sum-x5b_0x0x5d_-function
-  - name: GMSET:PIN (B)
+            custom: *GMSETx3a_PAGx20_x28_bx29_-sum-x5b_0x0x5d_-lex_aware
+            standard: *GMSETx3a_PAGx20_x28_bx29_-sum-x5b_0x0x5d_-function
+  - name: GMSET:PIN (b)
     description: "GPU memory set: pinned memory (bytes)"
+    visible by default: false
     variants:
       Sum:
         render: [number, percent]
         formula:
           inclusive:
-            standard: *GMSETx3a_PINx20_x28_Bx29_-sum-x5b_0x0x5d_-execution
+            standard: *GMSETx3a_PINx20_x28_bx29_-sum-x5b_0x0x5d_-execution
           exclusive:
-            custom: *GMSETx3a_PINx20_x28_Bx29_-sum-x5b_0x0x5d_-lex_aware
-            standard: *GMSETx3a_PINx20_x28_Bx29_-sum-x5b_0x0x5d_-function
-  - name: GMSET:DEV (B)
+            custom: *GMSETx3a_PINx20_x28_bx29_-sum-x5b_0x0x5d_-lex_aware
+            standard: *GMSETx3a_PINx20_x28_bx29_-sum-x5b_0x0x5d_-function
+  - name: GMSET:DEV (b)
     description: "GPU memory set: device memory (bytes)"
+    visible by default: false
     variants:
       Sum:
         render: [number, percent]
         formula:
           inclusive:
-            standard: *GMSETx3a_DEVx20_x28_Bx29_-sum-x5b_0x0x5d_-execution
+            standard: *GMSETx3a_DEVx20_x28_bx29_-sum-x5b_0x0x5d_-execution
           exclusive:
-            custom: *GMSETx3a_DEVx20_x28_Bx29_-sum-x5b_0x0x5d_-lex_aware
-            standard: *GMSETx3a_DEVx20_x28_Bx29_-sum-x5b_0x0x5d_-function
-  - name: GMSET:ARY (B)
+            custom: *GMSETx3a_DEVx20_x28_bx29_-sum-x5b_0x0x5d_-lex_aware
+            standard: *GMSETx3a_DEVx20_x28_bx29_-sum-x5b_0x0x5d_-function
+  - name: GMSET:ARY (b)
     description: "GPU memory set: array memory (bytes)"
+    visible by default: false
     variants:
       Sum:
         render: [number, percent]
         formula:
           inclusive:
-            standard: *GMSETx3a_ARYx20_x28_Bx29_-sum-x5b_0x0x5d_-execution
+            standard: *GMSETx3a_ARYx20_x28_bx29_-sum-x5b_0x0x5d_-execution
           exclusive:
-            custom: *GMSETx3a_ARYx20_x28_Bx29_-sum-x5b_0x0x5d_-lex_aware
-            standard: *GMSETx3a_ARYx20_x28_Bx29_-sum-x5b_0x0x5d_-function
-  - name: GMSET:MAN (B)
+            custom: *GMSETx3a_ARYx20_x28_bx29_-sum-x5b_0x0x5d_-lex_aware
+            standard: *GMSETx3a_ARYx20_x28_bx29_-sum-x5b_0x0x5d_-function
+  - name: GMSET:MAN (b)
     description: "GPU memory set: managed memory (bytes)"
+    visible by default: false
     variants:
       Sum:
         render: [number, percent]
         formula:
           inclusive:
-            standard: *GMSETx3a_MANx20_x28_Bx29_-sum-x5b_0x0x5d_-execution
+            standard: *GMSETx3a_MANx20_x28_bx29_-sum-x5b_0x0x5d_-execution
           exclusive:
-            custom: *GMSETx3a_MANx20_x28_Bx29_-sum-x5b_0x0x5d_-lex_aware
-            standard: *GMSETx3a_MANx20_x28_Bx29_-sum-x5b_0x0x5d_-function
-  - name: GMSET:DST (B)
+            custom: *GMSETx3a_MANx20_x28_bx29_-sum-x5b_0x0x5d_-lex_aware
+            standard: *GMSETx3a_MANx20_x28_bx29_-sum-x5b_0x0x5d_-function
+  - name: GMSET:DST (b)
     description: "GPU memory set: device static memory (bytes)"
+    visible by default: false
     variants:
       Sum:
         render: [number, percent]
         formula:
           inclusive:
-            standard: *GMSETx3a_DSTx20_x28_Bx29_-sum-x5b_0x0x5d_-execution
+            standard: *GMSETx3a_DSTx20_x28_bx29_-sum-x5b_0x0x5d_-execution
           exclusive:
-            custom: *GMSETx3a_DSTx20_x28_Bx29_-sum-x5b_0x0x5d_-lex_aware
-            standard: *GMSETx3a_DSTx20_x28_Bx29_-sum-x5b_0x0x5d_-function
-  - name: GMSET:MST (B)
+            custom: *GMSETx3a_DSTx20_x28_bx29_-sum-x5b_0x0x5d_-lex_aware
+            standard: *GMSETx3a_DSTx20_x28_bx29_-sum-x5b_0x0x5d_-function
+  - name: GMSET:MST (b)
     description: "GPU memory set: managed static memory (bytes)"
+    visible by default: false
     variants:
       Sum:
         render: [number, percent]
         formula:
           inclusive:
-            standard: *GMSETx3a_MSTx20_x28_Bx29_-sum-x5b_0x0x5d_-execution
+            standard: *GMSETx3a_MSTx20_x28_bx29_-sum-x5b_0x0x5d_-execution
           exclusive:
-            custom: *GMSETx3a_MSTx20_x28_Bx29_-sum-x5b_0x0x5d_-lex_aware
-            standard: *GMSETx3a_MSTx20_x28_Bx29_-sum-x5b_0x0x5d_-function
+            custom: *GMSETx3a_MSTx20_x28_bx29_-sum-x5b_0x0x5d_-lex_aware
+            standard: *GMSETx3a_MSTx20_x28_bx29_-sum-x5b_0x0x5d_-function
   - name: GMSET:COUNT
     description: "GPU memory set: count"
     variants:
@@ -921,127 +1267,138 @@ roots:
           exclusive:
             custom: *GMSETx3a_COUNT-sum-x5b_0x0x5d_-lex_aware
             standard: *GMSETx3a_COUNT-sum-x5b_0x0x5d_-function
-  - name: GXCOPY:UNK (B)
+  - name: GXCOPY:UNK (b)
     description: "GPU explicit memory copy: unknown kind (bytes)"
+    visible by default: false
     variants:
       Sum:
         render: [number, percent]
         formula:
           inclusive:
-            standard: *GXCOPYx3a_UNKx20_x28_Bx29_-sum-x5b_0x0x5d_-execution
+            standard: *GXCOPYx3a_UNKx20_x28_bx29_-sum-x5b_0x0x5d_-execution
           exclusive:
-            custom: *GXCOPYx3a_UNKx20_x28_Bx29_-sum-x5b_0x0x5d_-lex_aware
-            standard: *GXCOPYx3a_UNKx20_x28_Bx29_-sum-x5b_0x0x5d_-function
-  - name: GXCOPY:H2D (B)
+            custom: *GXCOPYx3a_UNKx20_x28_bx29_-sum-x5b_0x0x5d_-lex_aware
+            standard: *GXCOPYx3a_UNKx20_x28_bx29_-sum-x5b_0x0x5d_-function
+  - name: GXCOPY:H2D (b)
     description: "GPU explicit memory copy: host to device (bytes)"
+    visible by default: false
     variants:
       Sum:
         render: [number, percent]
         formula:
           inclusive:
-            standard: *GXCOPYx3a_H2Dx20_x28_Bx29_-sum-x5b_0x0x5d_-execution
+            standard: *GXCOPYx3a_H2Dx20_x28_bx29_-sum-x5b_0x0x5d_-execution
           exclusive:
-            custom: *GXCOPYx3a_H2Dx20_x28_Bx29_-sum-x5b_0x0x5d_-lex_aware
-            standard: *GXCOPYx3a_H2Dx20_x28_Bx29_-sum-x5b_0x0x5d_-function
-  - name: GXCOPY:D2H (B)
+            custom: *GXCOPYx3a_H2Dx20_x28_bx29_-sum-x5b_0x0x5d_-lex_aware
+            standard: *GXCOPYx3a_H2Dx20_x28_bx29_-sum-x5b_0x0x5d_-function
+  - name: GXCOPY:D2H (b)
     description: "GPU explicit memory copy: device to host (bytes)"
+    visible by default: false
     variants:
       Sum:
         render: [number, percent]
         formula:
           inclusive:
-            standard: *GXCOPYx3a_D2Hx20_x28_Bx29_-sum-x5b_0x0x5d_-execution
+            standard: *GXCOPYx3a_D2Hx20_x28_bx29_-sum-x5b_0x0x5d_-execution
           exclusive:
-            custom: *GXCOPYx3a_D2Hx20_x28_Bx29_-sum-x5b_0x0x5d_-lex_aware
-            standard: *GXCOPYx3a_D2Hx20_x28_Bx29_-sum-x5b_0x0x5d_-function
-  - name: GXCOPY:H2A (B)
+            custom: *GXCOPYx3a_D2Hx20_x28_bx29_-sum-x5b_0x0x5d_-lex_aware
+            standard: *GXCOPYx3a_D2Hx20_x28_bx29_-sum-x5b_0x0x5d_-function
+  - name: GXCOPY:H2A (b)
     description: "GPU explicit memory copy: host to array (bytes)"
+    visible by default: false
     variants:
       Sum:
         render: [number, percent]
         formula:
           inclusive:
-            standard: *GXCOPYx3a_H2Ax20_x28_Bx29_-sum-x5b_0x0x5d_-execution
+            standard: *GXCOPYx3a_H2Ax20_x28_bx29_-sum-x5b_0x0x5d_-execution
           exclusive:
-            custom: *GXCOPYx3a_H2Ax20_x28_Bx29_-sum-x5b_0x0x5d_-lex_aware
-            standard: *GXCOPYx3a_H2Ax20_x28_Bx29_-sum-x5b_0x0x5d_-function
-  - name: GXCOPY:A2H (B)
+            custom: *GXCOPYx3a_H2Ax20_x28_bx29_-sum-x5b_0x0x5d_-lex_aware
+            standard: *GXCOPYx3a_H2Ax20_x28_bx29_-sum-x5b_0x0x5d_-function
+  - name: GXCOPY:A2H (b)
     description: "GPU explicit memory copy: array to host (bytes)"
+    visible by default: false
     variants:
       Sum:
         render: [number, percent]
         formula:
           inclusive:
-            standard: *GXCOPYx3a_A2Hx20_x28_Bx29_-sum-x5b_0x0x5d_-execution
+            standard: *GXCOPYx3a_A2Hx20_x28_bx29_-sum-x5b_0x0x5d_-execution
           exclusive:
-            custom: *GXCOPYx3a_A2Hx20_x28_Bx29_-sum-x5b_0x0x5d_-lex_aware
-            standard: *GXCOPYx3a_A2Hx20_x28_Bx29_-sum-x5b_0x0x5d_-function
-  - name: GXCOPY:A2A (B)
+            custom: *GXCOPYx3a_A2Hx20_x28_bx29_-sum-x5b_0x0x5d_-lex_aware
+            standard: *GXCOPYx3a_A2Hx20_x28_bx29_-sum-x5b_0x0x5d_-function
+  - name: GXCOPY:A2A (b)
     description: "GPU explicit memory copy: array to array (bytes)"
+    visible by default: false
     variants:
       Sum:
         render: [number, percent]
         formula:
           inclusive:
-            standard: *GXCOPYx3a_A2Ax20_x28_Bx29_-sum-x5b_0x0x5d_-execution
+            standard: *GXCOPYx3a_A2Ax20_x28_bx29_-sum-x5b_0x0x5d_-execution
           exclusive:
-            custom: *GXCOPYx3a_A2Ax20_x28_Bx29_-sum-x5b_0x0x5d_-lex_aware
-            standard: *GXCOPYx3a_A2Ax20_x28_Bx29_-sum-x5b_0x0x5d_-function
-  - name: GXCOPY:A2D (B)
+            custom: *GXCOPYx3a_A2Ax20_x28_bx29_-sum-x5b_0x0x5d_-lex_aware
+            standard: *GXCOPYx3a_A2Ax20_x28_bx29_-sum-x5b_0x0x5d_-function
+  - name: GXCOPY:A2D (b)
     description: "GPU explicit memory copy: array to device (bytes)"
+    visible by default: false
     variants:
       Sum:
         render: [number, percent]
         formula:
           inclusive:
-            standard: *GXCOPYx3a_A2Dx20_x28_Bx29_-sum-x5b_0x0x5d_-execution
+            standard: *GXCOPYx3a_A2Dx20_x28_bx29_-sum-x5b_0x0x5d_-execution
           exclusive:
-            custom: *GXCOPYx3a_A2Dx20_x28_Bx29_-sum-x5b_0x0x5d_-lex_aware
-            standard: *GXCOPYx3a_A2Dx20_x28_Bx29_-sum-x5b_0x0x5d_-function
-  - name: GXCOPY:D2A (B)
+            custom: *GXCOPYx3a_A2Dx20_x28_bx29_-sum-x5b_0x0x5d_-lex_aware
+            standard: *GXCOPYx3a_A2Dx20_x28_bx29_-sum-x5b_0x0x5d_-function
+  - name: GXCOPY:D2A (b)
     description: "GPU explicit memory copy: device to array (bytes)"
+    visible by default: false
     variants:
       Sum:
         render: [number, percent]
         formula:
           inclusive:
-            standard: *GXCOPYx3a_D2Ax20_x28_Bx29_-sum-x5b_0x0x5d_-execution
+            standard: *GXCOPYx3a_D2Ax20_x28_bx29_-sum-x5b_0x0x5d_-execution
           exclusive:
-            custom: *GXCOPYx3a_D2Ax20_x28_Bx29_-sum-x5b_0x0x5d_-lex_aware
-            standard: *GXCOPYx3a_D2Ax20_x28_Bx29_-sum-x5b_0x0x5d_-function
-  - name: GXCOPY:D2D (B)
+            custom: *GXCOPYx3a_D2Ax20_x28_bx29_-sum-x5b_0x0x5d_-lex_aware
+            standard: *GXCOPYx3a_D2Ax20_x28_bx29_-sum-x5b_0x0x5d_-function
+  - name: GXCOPY:D2D (b)
     description: "GPU explicit memory copy: device to device (bytes)"
+    visible by default: false
     variants:
       Sum:
         render: [number, percent]
         formula:
           inclusive:
-            standard: *GXCOPYx3a_D2Dx20_x28_Bx29_-sum-x5b_0x0x5d_-execution
+            standard: *GXCOPYx3a_D2Dx20_x28_bx29_-sum-x5b_0x0x5d_-execution
           exclusive:
-            custom: *GXCOPYx3a_D2Dx20_x28_Bx29_-sum-x5b_0x0x5d_-lex_aware
-            standard: *GXCOPYx3a_D2Dx20_x28_Bx29_-sum-x5b_0x0x5d_-function
-  - name: GXCOPY:H2H (B)
+            custom: *GXCOPYx3a_D2Dx20_x28_bx29_-sum-x5b_0x0x5d_-lex_aware
+            standard: *GXCOPYx3a_D2Dx20_x28_bx29_-sum-x5b_0x0x5d_-function
+  - name: GXCOPY:H2H (b)
     description: "GPU explicit memory copy: host to host (bytes)"
+    visible by default: false
     variants:
       Sum:
         render: [number, percent]
         formula:
           inclusive:
-            standard: *GXCOPYx3a_H2Hx20_x28_Bx29_-sum-x5b_0x0x5d_-execution
+            standard: *GXCOPYx3a_H2Hx20_x28_bx29_-sum-x5b_0x0x5d_-execution
           exclusive:
-            custom: *GXCOPYx3a_H2Hx20_x28_Bx29_-sum-x5b_0x0x5d_-lex_aware
-            standard: *GXCOPYx3a_H2Hx20_x28_Bx29_-sum-x5b_0x0x5d_-function
-  - name: GXCOPY:P2P (B)
+            custom: *GXCOPYx3a_H2Hx20_x28_bx29_-sum-x5b_0x0x5d_-lex_aware
+            standard: *GXCOPYx3a_H2Hx20_x28_bx29_-sum-x5b_0x0x5d_-function
+  - name: GXCOPY:P2P (b)
     description: "GPU explicit memory copy: peer to peer (bytes)"
+    visible by default: false
     variants:
       Sum:
         render: [number, percent]
         formula:
           inclusive:
-            standard: *GXCOPYx3a_P2Px20_x28_Bx29_-sum-x5b_0x0x5d_-execution
+            standard: *GXCOPYx3a_P2Px20_x28_bx29_-sum-x5b_0x0x5d_-execution
           exclusive:
-            custom: *GXCOPYx3a_P2Px20_x28_Bx29_-sum-x5b_0x0x5d_-lex_aware
-            standard: *GXCOPYx3a_P2Px20_x28_Bx29_-sum-x5b_0x0x5d_-function
+            custom: *GXCOPYx3a_P2Px20_x28_bx29_-sum-x5b_0x0x5d_-lex_aware
+            standard: *GXCOPYx3a_P2Px20_x28_bx29_-sum-x5b_0x0x5d_-function
   - name: GXCOPY:COUNT
     description: "GPU explicit memory copy: count"
     variants:
@@ -1053,68 +1410,68 @@ roots:
           exclusive:
             custom: *GXCOPYx3a_COUNT-sum-x5b_0x0x5d_-lex_aware
             standard: *GXCOPYx3a_COUNT-sum-x5b_0x0x5d_-function
-  - name: GSYNC:UNK (sec)
-    description: "GPU synchronizations: unknown kind"
+  - name: GSYNC:UNK (s)
+    description: "GPU synchronizations: unknown kind (seconds)"
     visible by default: false
     variants:
       Sum:
         render: [number, percent]
         formula:
           inclusive:
-            standard: *GSYNCx3a_UNKx20_x28_secx29_-sum-x5b_0x0x5d_-execution
+            standard: *GSYNCx3a_UNKx20_x28_sx29_-sum-x5b_0x0x5d_-execution
           exclusive:
-            custom: *GSYNCx3a_UNKx20_x28_secx29_-sum-x5b_0x0x5d_-lex_aware
-            standard: *GSYNCx3a_UNKx20_x28_secx29_-sum-x5b_0x0x5d_-function
-  - name: GSYNC:EVT (sec)
-    description: "GPU synchronizations: event"
+            custom: *GSYNCx3a_UNKx20_x28_sx29_-sum-x5b_0x0x5d_-lex_aware
+            standard: *GSYNCx3a_UNKx20_x28_sx29_-sum-x5b_0x0x5d_-function
+  - name: GSYNC:EVT (s)
+    description: "GPU synchronizations: event (seconds)"
     visible by default: false
     variants:
       Sum:
         render: [number, percent]
         formula:
           inclusive:
-            standard: *GSYNCx3a_EVTx20_x28_secx29_-sum-x5b_0x0x5d_-execution
+            standard: *GSYNCx3a_EVTx20_x28_sx29_-sum-x5b_0x0x5d_-execution
           exclusive:
-            custom: *GSYNCx3a_EVTx20_x28_secx29_-sum-x5b_0x0x5d_-lex_aware
-            standard: *GSYNCx3a_EVTx20_x28_secx29_-sum-x5b_0x0x5d_-function
-  - name: GSYNC:STRE (sec)
-    description: "GPU synchronizations: stream event wait"
+            custom: *GSYNCx3a_EVTx20_x28_sx29_-sum-x5b_0x0x5d_-lex_aware
+            standard: *GSYNCx3a_EVTx20_x28_sx29_-sum-x5b_0x0x5d_-function
+  - name: GSYNC:STRE (s)
+    description: "GPU synchronizations: stream event wait (seconds)"
     visible by default: false
     variants:
       Sum:
         render: [number, percent]
         formula:
           inclusive:
-            standard: *GSYNCx3a_STREx20_x28_secx29_-sum-x5b_0x0x5d_-execution
+            standard: *GSYNCx3a_STREx20_x28_sx29_-sum-x5b_0x0x5d_-execution
           exclusive:
-            custom: *GSYNCx3a_STREx20_x28_secx29_-sum-x5b_0x0x5d_-lex_aware
-            standard: *GSYNCx3a_STREx20_x28_secx29_-sum-x5b_0x0x5d_-function
-  - name: GSYNC:STR (sec)
-    description: "GPU synchronizations: stream"
+            custom: *GSYNCx3a_STREx20_x28_sx29_-sum-x5b_0x0x5d_-lex_aware
+            standard: *GSYNCx3a_STREx20_x28_sx29_-sum-x5b_0x0x5d_-function
+  - name: GSYNC:STR (s)
+    description: "GPU synchronizations: stream (seconds)"
     visible by default: false
     variants:
       Sum:
         render: [number, percent]
         formula:
           inclusive:
-            standard: *GSYNCx3a_STRx20_x28_secx29_-sum-x5b_0x0x5d_-execution
+            standard: *GSYNCx3a_STRx20_x28_sx29_-sum-x5b_0x0x5d_-execution
           exclusive:
-            custom: *GSYNCx3a_STRx20_x28_secx29_-sum-x5b_0x0x5d_-lex_aware
-            standard: *GSYNCx3a_STRx20_x28_secx29_-sum-x5b_0x0x5d_-function
-  - name: GSYNC:CTX (sec)
-    description: "GPU synchronizations: context"
+            custom: *GSYNCx3a_STRx20_x28_sx29_-sum-x5b_0x0x5d_-lex_aware
+            standard: *GSYNCx3a_STRx20_x28_sx29_-sum-x5b_0x0x5d_-function
+  - name: GSYNC:CTX (s)
+    description: "GPU synchronizations: context (seconds)"
     visible by default: false
     variants:
       Sum:
         render: [number, percent]
         formula:
           inclusive:
-            standard: *GSYNCx3a_CTXx20_x28_secx29_-sum-x5b_0x0x5d_-execution
+            standard: *GSYNCx3a_CTXx20_x28_sx29_-sum-x5b_0x0x5d_-execution
           exclusive:
-            custom: *GSYNCx3a_CTXx20_x28_secx29_-sum-x5b_0x0x5d_-lex_aware
-            standard: *GSYNCx3a_CTXx20_x28_secx29_-sum-x5b_0x0x5d_-function
+            custom: *GSYNCx3a_CTXx20_x28_sx29_-sum-x5b_0x0x5d_-lex_aware
+            standard: *GSYNCx3a_CTXx20_x28_sx29_-sum-x5b_0x0x5d_-function
   - name: GSYNC:COUNT
-    description: "GPU synchronizations: count"
+    description: "GPU synchronizations: count (seconds)"
     visible by default: false
     variants:
       Sum:
@@ -1125,3 +1482,245 @@ roots:
           exclusive:
             custom: *GSYNCx3a_COUNT-sum-x5b_0x0x5d_-lex_aware
             standard: *GSYNCx3a_COUNT-sum-x5b_0x0x5d_-function
+  - name: GPAGE:MIG (s)
+    description: "GPU runtime paging: migration time (seconds)"
+    variants:
+      Sum:
+        render: [number, percent]
+        formula:
+          inclusive:
+            standard: *GPAGEx3a_MIGx20_x28_sx29_-sum-x5b_0x0x5d_-execution
+          exclusive:
+            custom: *GPAGEx3a_MIGx20_x28_sx29_-sum-x5b_0x0x5d_-lex_aware
+            standard: *GPAGEx3a_MIGx20_x28_sx29_-sum-x5b_0x0x5d_-function
+  - name: GPAGE:FLT (s)
+    description: "GPU runtime paging: page fault time (seconds)"
+    variants:
+      Sum:
+        render: [number, percent]
+        formula:
+          inclusive:
+            standard: *GPAGEx3a_FLTx20_x28_sx29_-sum-x5b_0x0x5d_-execution
+          exclusive:
+            custom: *GPAGEx3a_FLTx20_x28_sx29_-sum-x5b_0x0x5d_-lex_aware
+            standard: *GPAGEx3a_FLTx20_x28_sx29_-sum-x5b_0x0x5d_-function
+  - name: GPAGE:MIGSZ (b)
+    description: "GPU runtime paging: migration bytes"
+    variants:
+      Sum:
+        render: [number, percent]
+        formula:
+          inclusive:
+            standard: *GPAGEx3a_MIGSZx20_x28_bx29_-sum-x5b_0x0x5d_-execution
+          exclusive:
+            custom: *GPAGEx3a_MIGSZx20_x28_bx29_-sum-x5b_0x0x5d_-lex_aware
+            standard: *GPAGEx3a_MIGSZx20_x28_bx29_-sum-x5b_0x0x5d_-function
+  - name: GPAGE:FLTSZ (b)
+    description: "GPU runtime paging: page fault bytes"
+    variants:
+      Sum:
+        render: [number, percent]
+        formula:
+          inclusive:
+            standard: *GPAGEx3a_FLTSZx20_x28_bx29_-sum-x5b_0x0x5d_-execution
+          exclusive:
+            custom: *GPAGEx3a_FLTSZx20_x28_bx29_-sum-x5b_0x0x5d_-lex_aware
+            standard: *GPAGEx3a_FLTSZx20_x28_bx29_-sum-x5b_0x0x5d_-function
+  - name: GPAGE:UMPSZ (b)
+    description: "GPU runtime paging: unmap"
+    variants:
+      Sum:
+        render: [number, percent]
+        formula:
+          inclusive:
+            standard: *GPAGEx3a_UMPSZx20_x28_bx29_-sum-x5b_0x0x5d_-execution
+          exclusive:
+            custom: *GPAGEx3a_UMPSZx20_x28_bx29_-sum-x5b_0x0x5d_-lex_aware
+            standard: *GPAGEx3a_UMPSZx20_x28_bx29_-sum-x5b_0x0x5d_-function
+  - name: GPAGE:MIGCNT
+    description: "GPU runtime paging: migration count"
+    variants:
+      Sum:
+        render: [number, percent]
+        formula:
+          inclusive:
+            standard: *GPAGEx3a_MIGCNT-sum-x5b_0x0x5d_-execution
+          exclusive:
+            custom: *GPAGEx3a_MIGCNT-sum-x5b_0x0x5d_-lex_aware
+            standard: *GPAGEx3a_MIGCNT-sum-x5b_0x0x5d_-function
+  - name: GPAGE:FLTCNT
+    description: "GPU runtime paging: page fault count"
+    variants:
+      Sum:
+        render: [number, percent]
+        formula:
+          inclusive:
+            standard: *GPAGEx3a_FLTCNT-sum-x5b_0x0x5d_-execution
+          exclusive:
+            custom: *GPAGEx3a_FLTCNT-sum-x5b_0x0x5d_-lex_aware
+            standard: *GPAGEx3a_FLTCNT-sum-x5b_0x0x5d_-function
+  - name: GPAGE:QSVCNT
+    description: "GPU runtime paging: queue eviction count"
+    variants:
+      Sum:
+        render: [number, percent]
+        formula:
+          inclusive:
+            standard: *GPAGEx3a_QSVCNT-sum-x5b_0x0x5d_-execution
+          exclusive:
+            custom: *GPAGEx3a_QSVCNT-sum-x5b_0x0x5d_-lex_aware
+            standard: *GPAGEx3a_QSVCNT-sum-x5b_0x0x5d_-function
+  - name: GPAGE:UMPCNT (bytes)
+    description: "GPU runtime paging: unmap"
+    variants:
+      Sum:
+        render: [number, percent]
+        formula:
+          inclusive:
+            standard: *GPAGEx3a_UMPCNTx20_x28_bytesx29_-sum-x5b_0x0x5d_-execution
+          exclusive:
+            custom: *GPAGEx3a_UMPCNTx20_x28_bytesx29_-sum-x5b_0x0x5d_-lex_aware
+            standard: *GPAGEx3a_UMPCNTx20_x28_bytesx29_-sum-x5b_0x0x5d_-function
+  - name: GPAGE:DRPCNT
+    description: "GPU runtime paging: dropped records count"
+    variants:
+      Sum:
+        render: [number, percent]
+        formula:
+          inclusive:
+            standard: *GPAGEx3a_DRPCNT-sum-x5b_0x0x5d_-execution
+          exclusive:
+            custom: *GPAGEx3a_DRPCNT-sum-x5b_0x0x5d_-lex_aware
+            standard: *GPAGEx3a_DRPCNT-sum-x5b_0x0x5d_-function
+  - name: GSCR (s)
+    description: GPU scratch operation time (seconds)
+    variants:
+      Sum:
+        render: [number, percent]
+        formula:
+          inclusive:
+            standard: *GSCRx20_x28_sx29_-sum-x5b_0x0x5d_-execution
+          exclusive:
+            custom: *GSCRx20_x28_sx29_-sum-x5b_0x0x5d_-lex_aware
+            standard: *GSCRx20_x28_sx29_-sum-x5b_0x0x5d_-function
+  - name: GKER:STMEM (b)
+    description: "GPU kernel: static memory (bytes)"
+    format: "%6.0f"
+    variants:
+      "":
+        render: [number]
+        formula:
+          exclusive:
+            custom: {/: [*GKERx3a_STMEM_ACUMUx20_x28_bx29_-sum-x5b_0x0x5d_-lex_aware, *GKERx3a_COUNT-sum-x5b_0x0x5d_-lex_aware]}
+            standard: {/: [*GKERx3a_STMEM_ACUMUx20_x28_bx29_-sum-x5b_0x0x5d_-function, *GKERx3a_COUNT-sum-x5b_0x0x5d_-function]}
+  - name: GKER:DYMEM (b)
+    description: "GPU kernel: dynamic memory (bytes)"
+    format: "%6.0f"
+    variants:
+      "":
+        render: [number]
+        formula:
+          exclusive:
+            custom: {/: [*GKERx3a_DYMEM_ACUMUx20_x28_bx29_-sum-x5b_0x0x5d_-lex_aware, *GKERx3a_COUNT-sum-x5b_0x0x5d_-lex_aware]}
+            standard: {/: [*GKERx3a_DYMEM_ACUMUx20_x28_bx29_-sum-x5b_0x0x5d_-function, *GKERx3a_COUNT-sum-x5b_0x0x5d_-function]}
+  - name: GKER:LMEM (b)
+    description: "GPU kernel: local memory (bytes)"
+    format: "%6.0f"
+    variants:
+      "":
+        render: [number]
+        formula:
+          exclusive:
+            custom: {/: [*GKERx3a_LMEM_ACUMUx20_x28_bx29_-sum-x5b_0x0x5d_-lex_aware, *GKERx3a_COUNT-sum-x5b_0x0x5d_-lex_aware]}
+            standard: {/: [*GKERx3a_LMEM_ACUMUx20_x28_bx29_-sum-x5b_0x0x5d_-function, *GKERx3a_COUNT-sum-x5b_0x0x5d_-function]}
+  - name: GKER:FGP_ACT
+    description: "GPU kernel: fine-grain parallelism, actual"
+    format: "%6.0f"
+    variants:
+      "":
+        render: [number]
+        formula:
+          exclusive:
+            custom: {/: [*GKERx3a_FGP_ACT_ACUMU-sum-x5b_0x0x5d_-lex_aware, *GKERx3a_COUNT-sum-x5b_0x0x5d_-lex_aware]}
+            standard: {/: [*GKERx3a_FGP_ACT_ACUMU-sum-x5b_0x0x5d_-function, *GKERx3a_COUNT-sum-x5b_0x0x5d_-function]}
+  - name: GKER:FGP_MAX
+    description: "GPU kernel: fine-grain parallelism, maximum"
+    format: "%6.0f"
+    variants:
+      "":
+        render: [number]
+        formula:
+          exclusive:
+            custom: {/: [*GKERx3a_FGP_MAX_ACUMU-sum-x5b_0x0x5d_-lex_aware, *GKERx3a_COUNT-sum-x5b_0x0x5d_-lex_aware]}
+            standard: {/: [*GKERx3a_FGP_MAX_ACUMU-sum-x5b_0x0x5d_-function, *GKERx3a_COUNT-sum-x5b_0x0x5d_-function]}
+  - name: GKER:SREG
+    description: "GPU kernel: scalar register count"
+    format: "%6.0f"
+    variants:
+      "":
+        render: [number]
+        formula:
+          exclusive:
+            custom: {/: [*GKERx3a_THR_SREG_ACUMU-sum-x5b_0x0x5d_-lex_aware, *GKERx3a_COUNT-sum-x5b_0x0x5d_-lex_aware]}
+            standard: {/: [*GKERx3a_THR_SREG_ACUMU-sum-x5b_0x0x5d_-function, *GKERx3a_COUNT-sum-x5b_0x0x5d_-function]}
+  - name: GKER:VREG
+    description: "GPU kernel: vector register count"
+    format: "%6.0f"
+    variants:
+      "":
+        render: [number]
+        formula:
+          exclusive:
+            custom: {/: [*GKERx3a_THR_VREG_ACUMU-sum-x5b_0x0x5d_-lex_aware, *GKERx3a_COUNT-sum-x5b_0x0x5d_-lex_aware]}
+            standard: {/: [*GKERx3a_THR_VREG_ACUMU-sum-x5b_0x0x5d_-function, *GKERx3a_COUNT-sum-x5b_0x0x5d_-function]}
+  - name: GKER:BLK_THR
+    description: "GPU kernel: thread count"
+    format: "%6.0f"
+    variants:
+      "":
+        render: [number]
+        formula:
+          exclusive:
+            custom: {/: [*GKERx3a_BLK_THR_ACUMU-sum-x5b_0x0x5d_-lex_aware, *GKERx3a_COUNT-sum-x5b_0x0x5d_-lex_aware]}
+            standard: {/: [*GKERx3a_BLK_THR_ACUMU-sum-x5b_0x0x5d_-function, *GKERx3a_COUNT-sum-x5b_0x0x5d_-function]}
+  - name: GKER:BLK_SM (b)
+    description: "GPU kernel: block local memory (bytes)"
+    format: "%6.0f"
+    variants:
+      "":
+        render: [number]
+        formula:
+          exclusive:
+            custom: {/: [*GKERx3a_BLK_SM_ACUMU-sum-x5b_0x0x5d_-lex_aware, *GKERx3a_COUNT-sum-x5b_0x0x5d_-lex_aware]}
+            standard: {/: [*GKERx3a_BLK_SM_ACUMU-sum-x5b_0x0x5d_-function, *GKERx3a_COUNT-sum-x5b_0x0x5d_-function]}
+  - name: GKER:BLKS
+    description: "GPU kernel: block count"
+    format: "%6.0f"
+    variants:
+      "":
+        render: [number]
+        formula:
+          exclusive:
+            custom: {/: [*GKERx3a_BLKS_ACUMU-sum-x5b_0x0x5d_-lex_aware, *GKERx3a_COUNT-sum-x5b_0x0x5d_-lex_aware]}
+            standard: {/: [*GKERx3a_BLKS_ACUMU-sum-x5b_0x0x5d_-function, *GKERx3a_COUNT-sum-x5b_0x0x5d_-function]}
+  - name: GKER:COUNT
+    description: "GPU kernel: launch count"
+    variants:
+      Sum:
+        render: [number, percent]
+        formula:
+          inclusive:
+            standard: *GKERx3a_COUNT-sum-x5b_0x0x5d_-execution
+          exclusive:
+            custom: *GKERx3a_COUNT-sum-x5b_0x0x5d_-lex_aware
+            standard: *GKERx3a_COUNT-sum-x5b_0x0x5d_-function
+  - name: GKER:OCC_THR
+    description: "GPU kernel: theoretical occupancy (FGP_ACT / FGP_MAX)"
+    format: "%6.1f%%"
+    variants:
+      "":
+        render: [number]
+        formula:
+          exclusive:
+            custom: {"*": [100, {/: [*GKERx3a_FGP_ACT_ACUMU-sum-x5b_0x0x5d_-lex_aware, *GKERx3a_FGP_MAX_ACUMU-sum-x5b_0x0x5d_-lex_aware]}]}
+            standard: {"*": [100, {/: [*GKERx3a_FGP_ACT_ACUMU-sum-x5b_0x0x5d_-function, *GKERx3a_FGP_MAX_ACUMU-sum-x5b_0x0x5d_-function]}]}

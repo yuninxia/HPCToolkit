@@ -13,6 +13,7 @@ HPCToolkit's measurements provide support for analyzing a program execution cost
 
 ```{toctree}
 ---
+numbered:
 maxdepth: 2
 ---
 users/index.md

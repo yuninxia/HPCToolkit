@@ -6,7 +6,7 @@ SPDX-License-Identifier: CC-BY-4.0
 
 (sec:profile)=
 
-# Profile View
+## Profile View
 
 Profile view is the default view, and it interactively presents context-sensitive performance metrics correlated to program structure and mapped to a program's source code, if available. It can show an arbitrary collection of performance metrics gathered during one or more runs.
 
@@ -54,19 +54,19 @@ We briefly describe the three views and their corresponding purposes.
 
 (sec:hpcviewer:panes)=
 
-## Panes
+### Panes
 
 `hpcviewer`'s browser window is divided into three panes: the *Source pane*, *Navigation pane*, and the *Metrics pane*.
 We briefly describe the role of each pane.
 
-### Source Pane
+#### Source Pane
 
 The source pane displays the source code associated with the current entity selected in the navigation pane.
 When a performance database is first opened with `hpcviewer`, the source pane is initially blank because no entity has been selected in the navigation pane.
 Selecting any entity in the navigation pane will cause the source pane to load the corresponding file and highlight the line corresponding to the selection.
 Switching the source pane to display a different source file is accomplished by making another selection in the navigation pane.
 
-### Navigation Pane
+#### Navigation Pane
 
 The navigation pane presents a hierarchical tree-based structure used to organize the presentation of an applications's performance data.
 Entities in the navigation pane's tree include load modules, files, procedures, procedure activations, inlined code, loops, and source lines.
@@ -100,7 +100,7 @@ The nature of the entities in the navigation pane's tree structure depends upon 
 
 (sec:control-panel)=
 
-#### Control Panel
+##### Control Panel
 
 The header above the navigation pane contains some controls for the navigation and metric view.
 In Figure [Profile View](#fig:hpcviewer-legend), they are labeled as "navigation control."
@@ -151,7 +151,7 @@ In Figure [Profile View](#fig:hpcviewer-legend), they are labeled as "navigation
 - **Show the metrics of a set of threads** ![image](icons/tab-new-filled-symbolic.png) (Top-down view only):
   Show the CCT and the metrics of a selected threads (Section [Thread View](#sec:thread-level-table)).
 
-#### Context menus
+##### Context menus
 
 Navigation control also provides several context menus by clicking the right-button of the mouse.
 
@@ -160,7 +160,7 @@ Navigation control also provides several context menus by clicking the right-but
 
 (sec:pane-metric)=
 
-### Metric Pane
+#### Metric Pane
 
 The metric pane displays one or more performance metrics associated with entities to the left in the navigation pane.
 Entities in the tree view of the navigation pane are sorted at each level of the hierarchy by the metric in the selected column.
@@ -174,7 +174,7 @@ One can change the order of columns in the metric pane by selecting the column h
 The metric pane also includes scroll bars for horizontal scrolling (to reveal other metrics) and vertical scrolling (to reveal other scopes).
 Vertical scrolling of the metric and navigation panes is synchronized.
 
-## Understanding Metrics
+### Understanding Metrics
 
 `hpcviewer` can present an arbitrary collection of performance metrics gathered during one or more runs, or compute derived metrics expressed as formulae. A derived metric may be specified with a formula that typically uses one or more existing metrics as terms in an expression.
 
@@ -188,7 +188,7 @@ For all other scopes, exclusive metrics reflect costs for the scope itself; i.e.
 The Bottom-up and Flat Views contain inclusive and exclusive metric values relative to the Top-down View.
 This means, e.g., that inclusive metrics for a particular scope in the Bottom-up or Flat View are with respect to that scope's subtree in the Top-down View.
 
-### How Metrics are Computed
+#### How Metrics are Computed
 
 Call path profile measurements collected by `hpcrun` correspond directly to the Top-down View.
 `hpcviewer` derives all other views from exclusive metric costs in the Top-down View.
@@ -199,7 +199,7 @@ For each function, `hpcviewer` apportions its costs among each of the calling co
 The Flat View presents a hierarchy of nested scopes for load modules, files, procedures, loops, inlined code, and statements.
 
 
-### Example
+#### Example
 
 Assume one has a simple recursive program divided into two source files  `file1.c` and `file2.c` as follows:
 
@@ -273,7 +273,7 @@ The advantage of attributing different costs for each instance of `g` is that it
 
 (sec:hpcviewer:derived-metrics)=
 
-## Derived Metrics
+### Derived Metrics
 
 Frequently, the data become useful only when combined with other information such as the number of instructions executed or the total number of cache accesses.
 While users don't mind a bit of mental arithmetic and frequently compare values in different columns to see how they relate to a scope, doing this for many scopes is exhausting.
@@ -281,12 +281,12 @@ To address this problem, `hpcviewer` provides a mechanism for defining metrics.
 A user-defined metric is called a "derived metric."
 A derived metric is defined by specifying a spreadsheet-like mathematical formula that refers to data in other columns in the metric table by using `$n` to refer to the value in the `n`th column.
 
-### Formulae
+#### Formulae
 
 The formula syntax supported by `hpcviewer` is inspired by spreadsheet-like in-fix mathematical formulae.
 Operators have standard algebraic precedence.
 
-### Examples
+#### Examples
 
 Suppose the database contains information from five executions, where the same two metrics were recorded for each:
 
@@ -298,7 +298,7 @@ To compute the average number of cycles per floating point operation across all 
 avg($0, $2, $4. $6. $8) / avg($1, $3, $5, $7, $9)
 ```
 
-### Creating Derived Metrics
+#### Creating Derived Metrics
 
 A derived metric can be created by clicking the **Derived metric** tool item in the navigation/control pane.
 A derived metric window will then appear as shown in Figure [Derived Metric](#fig:hpcviewer-derived-dialog-box) below.
@@ -342,7 +342,7 @@ One can then review again the formula (or metric name) by clicking the small tri
 
 (sec:hpcviewer:thread-level)=
 
-## Metrics in Execution-context level
+### Metrics in Execution-context level
 
 **Execution context** is an abstract concept of a measurable code execution.
 For example, in a pure MPI application, an execution context is an MPI rank,
@@ -363,7 +363,7 @@ There are two types of execution context:
 
 (sec:hpcviewer:plots)=
 
-### Plot Graphs
+#### Plot Graphs
 
 | Plot graph |
 | :--------: |
@@ -413,7 +413,7 @@ In the Profile view, metrics for a GPU operation are attributed to either the ma
 
 (sec:thread-level-table)=
 
-### Thread View
+#### Thread View
 
 `hpcviewer` can also displays the metrics of certain execution contexts (threads and/or processes) named **Thread View**.
 To select a set of execution contexts, one needs to use the execution-context selection window by clicking ![image](icons/tab-new-filled-symbolic.png) button from the [control panel](#sec:control-panel) in the Top-down view.
@@ -445,7 +445,7 @@ If there is more than one execution context, the metric value is the sum of the 
 |Example of Thread View which displays a set of execution contexts. The first column is a calling-context tree (CCT) equivalent to the CCT in the Top-down View. The next columns represent the metrics from the selected execution contexts (in this case, they are the sum of metrics from rank 0 threads 0 to rank 3 thread 0)|
 
 
-## Filtering Tree Nodes
+### Filtering Tree Nodes
 
 (sec:filter)=
 
@@ -516,11 +516,11 @@ Furthermore, if the filtered nodes are children of a "root" node (such as `<prog
 Note that the filter set is global: it affects all open databases in all windows, and it is persistent that it will also affect across `hpcviewer` sessions.
 
 
-## Convenience Features
+### Convenience Features
 
 In this section we describe some features of `hpcviewer` that help improve productivity.
 
-### Source Code Pane
+#### Source Code Pane
 
 The pane is used to display *a copy* of your program's source code or HPCToolkit's performance data in XML format; for this reason, it does not support editing of the pane's contents.
 To edit a program source code, one should use a favorite editor to edit *the* original copy of the source, not the one stored in HPCToolkit's performance database.
@@ -534,7 +534,7 @@ Thanks to built-in capabilities in Eclipse, `hpcviewer` supports some useful sho
 
 (sec:hpcviewer:metric-pane)=
 
-### Metric Pane
+#### Metric Pane
 
 For the metric pane, `hpcviewer` has some convenient features:
 

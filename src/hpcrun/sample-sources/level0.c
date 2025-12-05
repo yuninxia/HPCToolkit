@@ -78,8 +78,8 @@
 #define INTEL_LEVEL0 "gpu=level0"
 #define INTEL_LEVEL0_PC_SAMPLING "gpu=level0,pc"
 
-// PC sample one of every 2^19 ns
-#define LEVEL0_PC_SAMPLING_PERIOD_LOG_DEFAULT 19
+// PC sample one of every 2^20 ns
+#define LEVEL0_PC_SAMPLING_PERIOD_LOG_DEFAULT 20
 
 
 
@@ -192,6 +192,7 @@ METHOD_FN(process_event_list)
 
     gpu_monitoring_instruction_sampling_period_set(1 << sampling_period_log);
 
+    gpu_metrics_GPU_CYCLES_TYPE_enable();
     gpu_metrics_GPU_INST_enable(); // instruction counts
     gpu_metrics_GPU_INST_TYPE_enable();
     gpu_metrics_GPU_INST_STALL_enable();

@@ -72,7 +72,7 @@ static long trace_period_default = -1;
 // -1: disabled, 5-31: period = 2^(period_log)
 static long pc_sampling_period = -1;
 static long pc_sampling_period_log = -1;
-static long pc_sampling_period_log_default = 12;
+static long pc_sampling_period_log_default = 20;
 #endif
 
 static int cupti_enabled_activities = 0;
@@ -252,6 +252,7 @@ METHOD_FN(process_event_list)
 
       gpu_monitoring_instruction_sampling_period_set(pc_sampling_period);
 
+      gpu_metrics_GPU_CYCLES_TYPE_enable(); // gpu cycles
       gpu_metrics_GPU_INST_enable(); // instruction counts
       gpu_metrics_GPU_INST_TYPE_enable(); // instruction type metrics
       gpu_metrics_GPU_INST_STALL_enable(); // stall metrics

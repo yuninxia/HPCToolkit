@@ -4,30 +4,30 @@ SPDX-FileCopyrightText: Contributors to the HPCToolkit Project
 SPDX-License-Identifier: CC-BY-4.0
 -->
 
-# Monitoring Dynamically-linked Applications with `hpcrun`
+# Monitoring Processes
 
 This chapter describes the mechanics of using `hpcrun`
-to profile an application and collect performance data. For advice on
+to profile a single process application and collect performance data. For advice on
 how to choose events, perform scaling studies, etc., see
 Chapter [4](#chpt:effective-performance-analysis) *Effective
 Strategies for Analyzing Program Performance*.
 
 ## Using `hpcrun`
 
-The `hpcrun` launch script is used to run an application and collect
+The `hpcrun` launcher is used to run an application and collect
 call path profiles and call path traces data for *dynamically linked* binaries. For
 dynamically linked programs, this requires no change to the program
 source and no change to the build procedure. You should build your
 application natively with full optimization. `hpcrun` inserts its
-profiling code into the application at runtime via `LD_PRELOAD`.
+profiling code into the application at runtime via `LD_AUDIT` (preferred in most situations) or `LD_PRELOAD` (still available since most versions of glibc `LD_AUDIT` have significant bugs in corner cases).
 
-`hpcrun` monitors the execution of applications on a CPU using asynchronous sampling. If `hpcrun` is used without any arguments to measure a program
+`hpcrun` monitors the execution of applications on a CPU using asynchronous sampling and, upon request, monitors GPU activity using vendor runtime capabilities. If `hpcrun` is used without any arguments to measure a program
 
 ```
 hpcrun app arg ...
 ```
 
-it will the measure the program's execution by sampling its CPUTIME and collect a call path profile for each thread in the execution. More about the CPUTIME metric can be found in Section [5.3.3](#linux-timers).
+it will the measure the program's execution by sampling its CPUTIME and collect a call path profile for each thread in the execution. More about the CPUTIME metric can be found in Section [6.3.3](#linux-timers).
 
 In addition to a call path profile, `hpcrun` can collect a call path trace of an execution if the `-t` (or `--trace`) option is used
 turn on tracing. The following use of `hpcrun` will collect both a call path profile and a call path trace of CPU execution using the default CPUTIME sample source.
@@ -36,7 +36,17 @@ turn on tracing. The following use of `hpcrun` will collect both a call path pro
 hpcrun -t app arg ...
 ```
 
+The `-t` will collect a call path trace based on asynchronous sampling of each CPU thread using a time-based sampling metric. Besides the default `CPUTIME` metric, other time-based metrics include `REALTIME` and `CYCLES`. How to use these metrics is described a bit later.
+
+The `-t` option also traces any GPU operations if a `-e gpu=*` option is used to enable measurement of GPU activities.
+
 Traces are most useful for understanding the execution dynamics of multithreaded or multi-process applications; however, you may find a trace of a single-threaded application to be useful to understand how an execution unfolds over time.
+
+For programs that launch many GPU operations per second, the `-tt` will collect a more useful trace than `-t`.
+Like the `-t` option, `-tt` records a call path trace based on asynchronous sampling of each CPU thread using a time-based sampling metric. Unlike `-t`, `-tt` also records a sample for a thread as it launches each GPU operation, if any.
+Without `-tt`, the activity seen on a CPU trace line at the time it launches a GPU operation
+is often from far earlier in the execution, which can make it difficult to relate to concurrent CPU and GPU activity.
+Since additional non-sample elements are added, any statistical properties of the CPU traces are disturbed.
 
 While CPUTIME is used as the default sample source if no other sample source is specified, many other sample sources are available.
 Typically, one uses the `-e` (or `--event`) to
@@ -57,7 +67,7 @@ hpcrun -t -e event@howoften ... app arg ...
 ```
 
 For example, to profile an application using hardware counter sample sources
-provided by Linux `perf_events` and sample cycles at 300 times/second (the default sampling frequency) and sample every 4,000,000 instructions,
+provided by Linux `perf_events` and sample cycles 300 times/second (the default sampling frequency) and sample every 4,000,000 instructions,
 you would use:
 
 ```
@@ -206,7 +216,7 @@ An event name is case insensitive and is defined as followed:
   - **hardware event modifiers**. Some hardware events support one or more modifiers that restrict counting to a subset of events. For instance, on an Intel Broadwell EP, one can add a modifier to `MEM_LOAD_UOPS_RETIRED` to count only load operations that are
     an `L2_HIT` or an `L2_MISS`. For information about all modifiers for hardware events,
     one can direct HPCToolkit's measurement subsystem to list all native events and their modifiers
-    as described in Section [5.3](#sample-sources).
+    as described in Section [6.3](#sample-sources).
 
   - **precise_ip**. For some events, it is possible to control the amount of skid.
     Skid is a measure of how many instructions may execute between an event and the PC where the event is reported.
@@ -246,9 +256,9 @@ completed, cache misses, and stall cycles. Using instrumentation built in to the
 the `perf_events` interface can measure software events. Examples of software events include page
 faults, context switches, and CPU migrations.
 
-#### Capabilities of HPCToolkit's `perf_events` Interface
+#### Capabilities of `perf_events`
 
-##### Frequency-based sampling.
+##### Frequency-based sampling
 
 The Linux `perf_events` interface supports frequency-based sampling.
 With frequency-based sampling, the kernel automatically selects and adjusts an event period with the
@@ -266,9 +276,9 @@ When measuring a dynamically-linked executable using `hpcrun`, one can change th
 The section below entitled *Launching* provides
 examples of how to monitor an execution using frequency-based sampling.
 
-##### Multiplexing.
+##### Multiplexing
 
-Using multiplexing enables one to monitor more events
+Multiplexing enables one to monitor more events
 in a single execution than the number of hardware counters a processor
 can support for each thread. The number of events that can be monitored in
 a single execution is only limited by the maximum number of concurrent
@@ -292,7 +302,7 @@ each run collect a subset of events that can be measured without multiplexing.
 Results from several such executions can be imported into HPCToolkit's `hpcviewer`
 and analyzed together.
 
-##### Thread blocking.
+##### Thread blocking
 
 When a program executes,
 a thread may block waiting for the kernel to complete some operation on its behalf.
@@ -301,12 +311,12 @@ can complete. On systems running Linux 4.3 or newer, one can use the `perf_event
 the time a thread spends blocked, one can profile with `BLOCKTIME` event and
 another time-based event, such as `CYCLES`. The `BLOCKTIME` event shouldn't have any frequency or period specified, whereas `CYCLES` may have a frequency or period specified.
 
-#### Launching
+#### Profiling with `perf_events`
 
-When sampling with native events, by default hpcrun will profile using `perf_events`.
-To force HPCToolkit to use PAPI rather than `perf_events` to oversee monitoring of a PMU event
+When profiling with native events, by default hpcrun will access them directly using the `perf_events` API.
+To force HPCToolkit to use PAPI to manage monitoring of a native event rather than using `perf_events` directly
 (assuming that HPCToolkit has been configured to include support for PAPI),
-one must prefix the event with '`papi::`' as follows:
+one must prefix the native event name with '`papi::`' as follows:
 
 ```
 hpcrun -e papi::CYCLES
@@ -314,7 +324,7 @@ hpcrun -e papi::CYCLES
 
 For PAPI presets, there is no need to prefix the event with
 '`papi::`'. For instance it is sufficient to specify `PAPI_TOT_CYC` event
-without any prefix to profile using PAPI. For more information about using PAPI, see Section [5.3.2](#section:papi).
+without any prefix to profile using PAPI. For more information about using PAPI, see Section [6.3.2](#section:papi).
 
 Below, we provide some examples of various ways to measure `CYCLES`
 and `INSTRUCTIONS` using HPCToolkit's `perf_events` measurement substrate:
@@ -544,7 +554,7 @@ hpcrun -e REALTIME@5000 app arg ...
 do not use more than one timer-based sample source to monitor a program execution.
 When using a sample source such as `CPUTIME` or `REALTIME`,
 we recommend not using another time-based sampling source such as
-Linux `perf_events` CYCLES or PAPI's `PAPI_TOT_CYC`.
+Linux `perf_events` `CYCLES` or PAPI's `PAPI_TOT_CYC`.
 Technically, this is feasible and `hpcrun` won't die.
 However, multiple time-based sample sources would compete with one another to measure the
 execution and likely lead to dropped samples and possibly distorted results.
@@ -820,55 +830,6 @@ corresponding situations are:
 software packages, then constructing
 a module for HPCToolkit to initialize these environment variables to appropriate settings
 would be convenient for users.
-
-(sec:platform-specific)=
-
-## Cray System Specific Notes
-
-If you are trying to profile a dynamically-linked executable on a Cray that is still using the ALPS job launcher and you see an error like the following
-
-```
-/var/spool/alps/103526/hpcrun: Unable to find HPCTOOLKIT root directory.
-Please set HPCTOOLKIT to the install prefix, either in this script, or in your environment, and try again.
-```
-
-in your job's error log then read on. Otherwise, skip this section.
-
-The problem is that the Cray job launcher copies HPCToolkit's `hpcrun`
-script to a directory somewhere below `/var/spool/alps/` and runs
-it from there. By moving `hpcrun` to a different directory, this
-breaks `hpcrun`'s method for finding HPCToolkit's install directory.
-
-To fix this problem, in your job script, set `HPCTOOLKIT` to the top-level HPCToolkit installation directory
-(the directory containing the `bin`, `lib` and
-`libexec` subdirectories) and export it to the environment.
-Figure [5.2](#cray-alps) show a skeletal job script that sets the `HPCTOOLKIT` environment variable before monitoring
-a dynamically-linked executable with `hpcrun`:
-
-````{note}
----
-name: cray-alps
----
-```
-#!/bin/sh
-#PBS -l mppwidth=#nodes
-#PBS -l walltime=00:30:00
-#PBS -V
-
-export HPCTOOLKIT=/path/to/hpctoolkit/install/directory
-export CRAY_ROOTFS=DSL
-
-cd \$PBS_O_WORKDIR
-aprun -n #nodes hpcrun -e event@howoften dynamic-app arg ...</code></pre>
-```
-
-A sketch of how to help HPCToolkit find its dynamic libraries when using Cray's ALPS job launcher.
-````
-
-Your system may have a module installed for `hpctoolkit` with the
-correct settings for `PATH`, `HPCTOOLKIT`, etc. In that case,
-the easiest solution is to load the `hpctoolkit` module. Try
-"`module show hpctoolkit`" to see if it sets `HPCTOOLKIT`.
 
 [^7]: GPU and OpenMP measurement events don't accept a rate.
 

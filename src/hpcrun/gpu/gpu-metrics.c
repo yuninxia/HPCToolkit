@@ -60,10 +60,12 @@
   macro(GSCR, 19)
 
 #define FORALL_SINGLETON_METRIC_KINDS(macro)                     \
+  macro(GPU_CYCLES_TYPE, 0)                                      \
   macro(GPU_INST_TYPE, 1)                                        \
-  macro(GPU_PIPE_TYPE_ISS, 2)                                    \
+  macro(GPU_PIPE_TYPE_ISU, 2)                                    \
   macro(GPU_PIPE_TYPE_STL, 3)                                    \
   macro(GPU_UTIL_METRICS, 4)
+
 
 #define FORALL_METRIC_KINDS(macro)   \
   FORALL_INDEXED_METRIC_KINDS(macro) \
@@ -195,7 +197,7 @@
   hpcrun_set_display(METRIC_ID(name), HPCRUN_FMT_METRIC_SHOW_EXCLUSIVE);                                         \
   reg_metric = hpcrun_id2metric_linked(METRIC_ID(name));                                                         \
   reg_formula = hpcrun_malloc_safe(sizeof(char) * MAX_CHAR_FORMULA);                                             \
-  sprintf(reg_formula, "100*(#%d/#%d)", METRIC_ID(GPU_KINFO_FGP_ACT_ACUMU), METRIC_ID(GPU_KINFO_FGP_MAX_ACUMU)); \
+  sprintf(reg_formula, "100*(#%d/#%d)", METRIC_ID(GPU_KINFO_WARP_ACT_ACUMU), METRIC_ID(GPU_KINFO_WARP_AVL_ACUMU)); \
   reg_metric->formula = reg_formula;                                                                             \
   reg_metric->format = FORMAT_DISPLAY_PERCENTAGE
 
@@ -316,7 +318,7 @@ gpu_metrics_attribute_inst_type
 
   int metric_id = METRIC_ID_NONE;
   switch(sinfo->inst_type) {
-    CASE(GPU_INST_TYPE_NONE)
+    case GPU_INST_TYPE_ANY: break; // not a specific metric to attribute
     CASE(GPU_INST_TYPE_VECTOR)
     CASE(GPU_INST_TYPE_VECTOR_DUAL)
     CASE(GPU_INST_TYPE_SCALAR)
@@ -332,8 +334,7 @@ gpu_metrics_attribute_inst_type
     CASE(GPU_INST_TYPE_BRANCH_NOT_TAKEN)
     CASE(GPU_INST_TYPE_JUMP)
     CASE(GPU_INST_TYPE_OTHER)
-    case GPU_INST_TYPE_UNUSED: break;
-    case GPU_INST_TYPE_ISSUED: break;
+    CASE(GPU_INST_TYPE_UNKNOWN)
   }
 #undef CASE
 
@@ -462,7 +463,7 @@ gpu_metrics_attribute_pipe_issue_status
 #endif
 
 #define IF(type, field) if (status.field) {                  \
-  int metric_id = APPLY(METRIC_ID, GPU_PIPE_TYPE_ISS)[type]; \
+  int metric_id = APPLY(METRIC_ID, GPU_PIPE_TYPE_ISU)[type]; \
   attribute_pipe_metric(cct_node, metric_id, sample_count);  \
 }
 
@@ -484,18 +485,24 @@ gpu_metrics_attribute_pc_sampling
   cct_node_t *cct_node = activity->cct_node;
 
   uint64_t issue_count = sinfo->issues * sample_period;
+  uint64_t stall_count = sinfo->non_issues * sample_period;
+  uint64_t all_count = issue_count + stall_count;
+
+  int cycles_metric_id = APPLY(METRIC_ID, GPU_CYCLES_TYPE)[GPU_CYCLES_TYPE_ANY];
+  metric_data_list_t *cycles_metric =
+    hpcrun_reify_metric_set(cct_node, cycles_metric_id);
+  // cycles metric
+  gpu_metrics_attribute_metric_int(cycles_metric, cycles_metric_id, all_count);
 
   if (issue_count) {
-    int issue_metric_id = APPLY(METRIC_ID, GPU_INST_TYPE)[GPU_INST_TYPE_ISSUED];
+    int issue_metric_id = APPLY(METRIC_ID, GPU_INST_TYPE)[GPU_INST_TYPE_ANY];
     metric_data_list_t *issue_metric =
       hpcrun_reify_metric_set(cct_node, issue_metric_id);
 
-    // instruction execution metric
+    // attribute general instruction issue metric
     gpu_metrics_attribute_metric_int(issue_metric, issue_metric_id, issue_count);
-  }
 
-  // record sampled instruction issue (if any)
-  if (sinfo->inst_type != GPU_INST_TYPE_UNUSED) {
+    // attribute specific instruction issue metric
     gpu_metrics_attribute_inst_type(cct_node, sinfo, issue_count);
   }
 
@@ -509,7 +516,8 @@ gpu_metrics_attribute_pc_sampling
     gpu_metrics_attribute_pipe_stall_status(cct_node, sinfo, sample_period);
   }
 
-  if (sinfo->issue_stall_reason != GPU_INST_STALL_INVALID) {
+  if (sinfo->issue_stall_reason != GPU_INST_STALL_HIDDEN &&
+      sinfo->issue_stall_reason != GPU_INST_STALL_INVALID) {
     int stall_summary_metric_index =
       METRIC_ID(GPU_INST_STALL)[GPU_INST_STALL_ANY];
 
@@ -517,8 +525,6 @@ gpu_metrics_attribute_pc_sampling
 
     metric_data_list_t *stall_metrics =
       hpcrun_reify_metric_set(cct_node, stall_kind_metric_index);
-
-    uint64_t stall_count = sinfo->non_issues * sample_period;
 
     if (sinfo->non_issues > 0) {
       gpu_metrics_attribute_metric_int(stall_metrics,
@@ -670,10 +676,10 @@ gpu_metrics_attribute_kernel(
     gpu_metrics_attribute_metric_int(metrics, METRIC_ID(GPU_KINFO_LMEM_ACUMU),
                                      k->localMemoryTotal);
 
-    gpu_metrics_attribute_metric_int(metrics, METRIC_ID(GPU_KINFO_FGP_ACT_ACUMU),
+    gpu_metrics_attribute_metric_int(metrics, METRIC_ID(GPU_KINFO_WARP_ACT_ACUMU),
                                      k->activeWarpsPerSM);
 
-    gpu_metrics_attribute_metric_int(metrics, METRIC_ID(GPU_KINFO_FGP_MAX_ACUMU),
+    gpu_metrics_attribute_metric_int(metrics, METRIC_ID(GPU_KINFO_WARP_AVL_ACUMU),
                                      k->maxActiveWarpsPerSM);
 
     gpu_metrics_attribute_metric_int(metrics, METRIC_ID(GPU_KINFO_SREG_ACUMU),
@@ -688,7 +694,7 @@ gpu_metrics_attribute_kernel(
     gpu_metrics_attribute_metric_int(metrics, METRIC_ID(GPU_KINFO_BLK_SMEM_ACUMU),
                                      k->blockSharedMemory);
 
-    gpu_metrics_attribute_metric_int(metrics, METRIC_ID(GPU_KINFO_BLKS_ACUMU),
+    gpu_metrics_attribute_metric_int(metrics, METRIC_ID(GPU_KINFO_BLKS_AVG_ACUMU),
                                      k->blocks);
   }
 
@@ -1161,6 +1167,11 @@ gpu_metrics_default_enable
 
   FORALL_GMEM(INITIALIZE_INDEXED_METRIC_INT)
 
+  FORALL_GMEM(HIDE_INDEXED_METRIC);
+
+  SET_DISPLAY_INDEXED_METRIC(GMEM, GPU_MEM_COUNT,
+                             HPCRUN_FMT_METRIC_SHOW);
+
   FINALIZE_METRIC_KIND();
 
 // Memset metrics
@@ -1171,6 +1182,11 @@ gpu_metrics_default_enable
 
   FORALL_GMSET(INITIALIZE_INDEXED_METRIC_INT)
 
+  FORALL_GMSET(HIDE_INDEXED_METRIC);
+
+  SET_DISPLAY_INDEXED_METRIC(GMSET, GPU_MEM_COUNT,
+                             HPCRUN_FMT_METRIC_SHOW);
+
   FINALIZE_METRIC_KIND();
 
 // GPU explicit copy merics
@@ -1180,6 +1196,11 @@ gpu_metrics_default_enable
   INITIALIZE_METRIC_KIND();
 
   FORALL_GXCOPY(INITIALIZE_INDEXED_METRIC_INT)
+
+  FORALL_GXCOPY(HIDE_INDEXED_METRIC);
+
+  SET_DISPLAY_INDEXED_METRIC(GXCOPY, GPU_MEMCPY_COUNT,
+                             HPCRUN_FMT_METRIC_SHOW);
 
   FINALIZE_METRIC_KIND();
 
@@ -1234,13 +1255,13 @@ gpu_metrics_KINFO_enable
   DIVISION_FORMULA(GPU_KINFO_STMEM);
   DIVISION_FORMULA(GPU_KINFO_DYMEM);
   DIVISION_FORMULA(GPU_KINFO_LMEM);
-  DIVISION_FORMULA(GPU_KINFO_FGP_ACT);
-  DIVISION_FORMULA(GPU_KINFO_FGP_MAX);
+  DIVISION_FORMULA(GPU_KINFO_WARP_ACT);
+  DIVISION_FORMULA(GPU_KINFO_WARP_AVL);
   DIVISION_FORMULA(GPU_KINFO_SREG);
   DIVISION_FORMULA(GPU_KINFO_VREG);
   DIVISION_FORMULA(GPU_KINFO_BLK_THREADS);
   DIVISION_FORMULA(GPU_KINFO_BLK_SMEM);
-  DIVISION_FORMULA(GPU_KINFO_BLKS);
+  DIVISION_FORMULA(GPU_KINFO_BLKS_AVG);
   OCCUPANCY_FORMULA(GPU_KINFO_OCCUPANCY_THR);
 }
 
@@ -1326,6 +1347,17 @@ gpu_metrics_GPU_INST_enable
 
 
 void
+gpu_metrics_GPU_CYCLES_TYPE_enable
+(
+  void
+)
+{
+#undef CURRENT_METRIC
+#define CURRENT_METRIC GPU_CYCLES_TYPE
+  FORALL_GPU_CYCLES_TYPE(INITIALIZE_SINGLETON_METRIC_INT);
+}
+
+void
 gpu_metrics_GPU_INST_TYPE_enable
 (
   void
@@ -1334,6 +1366,11 @@ gpu_metrics_GPU_INST_TYPE_enable
 #undef CURRENT_METRIC
 #define CURRENT_METRIC GPU_INST_TYPE
   FORALL_GPU_INST_TYPE(INITIALIZE_SINGLETON_METRIC_INT);
+
+  FORALL_GPU_INST_TYPE(HIDE_INDEXED_METRIC);
+
+  SET_DISPLAY_INDEXED_METRIC(GPU_INST_TYPE, GPU_INST_TYPE_ANY,
+                             HPCRUN_FMT_METRIC_SHOW);
 }
 
 
@@ -1353,6 +1390,7 @@ set_ratio_percent_metric
   reg_metric->formula = reg_formula;
   reg_metric->format = FORMAT_DISPLAY_PERCENTAGE;
 }
+
 
 void
 gpu_metrics_GPU_UTIL_METRICS_enable
@@ -1383,12 +1421,12 @@ gpu_metrics_GPU_PIPE_enable
 )
 {
 #undef CURRENT_METRIC
-#define CURRENT_METRIC GPU_PIPE_TYPE_ISS
-  FORALL_GPU_PIPE_TYPE(INITIALIZE_SINGLETON_METRIC_INT, "ISS");
+#define CURRENT_METRIC GPU_PIPE_TYPE_ISU
+  FORALL_GPU_PIPE_TYPE_ISU(INITIALIZE_SINGLETON_METRIC_INT);
 
 #undef CURRENT_METRIC
 #define CURRENT_METRIC GPU_PIPE_TYPE_STL
-  FORALL_GPU_PIPE_TYPE(INITIALIZE_SINGLETON_METRIC_INT, "STL");
+  FORALL_GPU_PIPE_TYPE_STL(INITIALIZE_SINGLETON_METRIC_INT);
 }
 
 void

@@ -6,7 +6,7 @@ SPDX-License-Identifier: CC-BY-4.0
 
 (sec:trace)=
 
-# Trace view
+## Trace view
 
 Trace view ([Tallent et al. 2011](https://doi.acm.org/10.1145/1995896.1995908)) is a time-centric user interface for interactive examination of a sample-based time series (hereafter referred to as a trace) view of a program execution.
 Trace view can interactively present a large-scale execution trace without concern for the scale of parallelism it represents.
@@ -110,7 +110,7 @@ while the [Trace view](#fig:hpctraceviewer-stat) figure below shows two addition
 
 (sec:mainview)=
 
-## Action and Information Pane
+### Action and Information Pane
 
 Main View is divided into two parts: the top part, which contains *action* and *information* panes, and the main canvas, which displays the traces.
 
@@ -139,7 +139,7 @@ At the top of an execution's Main View pane is information about the data shown 
 
 (sec:color-map)=
 
-## Customizing the Color Map
+### Customizing the Color Map
 
 Trace view allows users to customize the color of a specific procedure or a group of procedures.
 To do that, one can select the `View - Color map` menu, and `Color Map` window will appear as shown below:
@@ -158,7 +158,7 @@ Clicking `OK` will close the window and add the new color map to the global list
 Note that this map is persistent across sessions, and will apply to other databases as well.
 
 
-## Filtering Execution Contexts
+### Filtering Execution Contexts
 
 One can select which execution contexts (ranks, threads or GPU streams) to be displayed in Trace View, by selecting the `Filter - execution contexts` menu.
 This will display a filter window that allows to select which execution contexts to show/hide:
@@ -171,7 +171,7 @@ This will display a filter window that allows to select which execution contexts
 Similar to [Profile View's thread selection](sec:thread-level-table), one can narrow the list by specifying the name of the execution context on the filter part of the window.
 In addition, one can also narrow the list based on the minimum number of trace samples (the third column of the table), as shown by the above figure.
 
-### Filtering Suggestions
+#### Filtering Suggestions
 - Sometimes, it is helpful to associate a group of procedures (such as `MPI_*`) to a specific color to approximate its statistic percentage.
 - Filtering GPU traces: use the filter menu to select what execution traces to see
   - CPU only, GPU, or a mix: type a string or a regular expression in the chooser to select or unselect the a set of execution contexts

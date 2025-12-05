@@ -80,7 +80,7 @@ convert_stall_type
 {
   switch(reason) {
   case CUPTI_ACTIVITY_PC_SAMPLING_STALL_NONE:
-    return GPU_INST_STALL_NONE;
+    return GPU_INST_STALL_HIDDEN;
   case CUPTI_ACTIVITY_PC_SAMPLING_STALL_INST_FETCH:
     return GPU_INST_STALL_IFETCH;
   case CUPTI_ACTIVITY_PC_SAMPLING_STALL_EXEC_DEPENDENCY:
@@ -98,7 +98,7 @@ convert_stall_type
   case CUPTI_ACTIVITY_PC_SAMPLING_STALL_MEMORY_THROTTLE:
     return GPU_INST_STALL_MEM_THROTTLE;
   case CUPTI_ACTIVITY_PC_SAMPLING_STALL_NOT_SELECTED:
-    return GPU_INST_STALL_NOT_SELECTED;
+    return GPU_INST_STALL_HIDDEN;
   case CUPTI_ACTIVITY_PC_SAMPLING_STALL_OTHER:
     return GPU_INST_STALL_OTHER;
   case CUPTI_ACTIVITY_PC_SAMPLING_STALL_SLEEPING:
@@ -244,11 +244,11 @@ convert_pcsampling
 
   // stall reason only matters if latency is exposed (activity->latencySamples > 0)
   ga->details.pc_sampling.issue_stall_reason = activity->latencySamples > 0 ?
-    convert_stall_type(activity->stallReason) : GPU_INST_STALL_DONTCARE;
+    convert_stall_type(activity->stallReason) : GPU_INST_STALL_HIDDEN;
   ga->details.pc_sampling.issues = activity->samples;
   ga->details.pc_sampling.non_issues = activity->latencySamples;
   ga->details.pc_sampling.issue_stall_exposed = activity->latencySamples > 0;
-  ga->details.pc_sampling.inst_type = GPU_INST_TYPE_ISSUED;
+  ga->details.pc_sampling.inst_type = GPU_INST_TYPE_UNKNOWN;
 
   cuda_correlation_id_map_entry_t *correlation_entry =
     cuda_correlation_id_map_lookup(activity->correlationId);
@@ -415,7 +415,12 @@ convert_kernel
   ga->details.kernel.device_id = activity->deviceId;
   ga->details.kernel.context_id = activity->contextId;
   ga->details.kernel.stream_id = activity->streamId;
-  ga->details.kernel.blocks = activity->blockX * activity->blockY * activity->blockZ;
+
+  unsigned long block_elements = activity->blockX * activity->blockY * activity->blockZ;
+  unsigned long grid_elements = activity->gridX * activity->gridY * activity->gridZ;
+
+  // ceiling of grid_elements / block_elements
+  ga->details.kernel.blocks = (grid_elements + block_elements - 1) / block_elements;
 
   gpu_interval_set(&ga->details.interval, activity->start, activity->end);
 

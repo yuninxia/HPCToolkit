@@ -1,5 +1,12 @@
 <?xml version="1.0"?>
 <!DOCTYPE HPCToolkitStructure [
+<!-- SPDX-SnippetBegin -->
+<!--
+SPDX-FileCopyrightText: Contributors to the HPCToolkit Project
+
+SPDX-License-Identifier: CC-BY-4.0
+-->
+
 <!-- ******************************************************************** -->
 <!-- HPCToolkit Structure DTD                                             -->
 <!-- Version 4.9                                                          -->
@@ -67,93 +74,88 @@
         v CDATA #IMPLIED
         t CDATA #IMPLIED
         d CDATA #IMPLIED>
+<!-- SPDX-SnippetEnd -->
 ]>
 <HPCToolkitStructure i="0" version="4.9" n="">
 <LM i="2" n="/builds/hpctoolkit/hpctoolkit/builddir/tests/data/meas/testmeas-loops-hip" has-calls="0" v="{}">
 <F i="3" n="[testmeas-loops-hip]">
-<P i="4" n="_start" l="0" v="{[0x2054f0-0x2054f1)}">
-<S i="5" l="0" v="{[0x2054f0-0x205516)}"/>
+<P i="4" n="_start" l="0" v="{[0x2056b0-0x2056b1)}">
+<S i="5" l="0" v="{[0x2056b0-0x2056d6)}"/>
 </P>
-<P i="6" n="_dl_relocate_static_pie" l="0" v="{[0x205520-0x205521)}">
-<S i="7" l="0" v="{[0x205520-0x205525)}"/>
+<P i="6" n="_dl_relocate_static_pie" l="0" v="{[0x2056e0-0x2056e1)}">
+<S i="7" l="0" v="{[0x2056e0-0x2056e5)}"/>
 </P>
-<P i="8" n="__do_init" l="0" v="{[0x205525-0x205526)}">
-<S i="9" l="0" v="{[0x205525-0x20556d)}"/>
+<P i="8" n="__do_init" l="0" v="{[0x2056f0-0x2056f1)}">
+<S i="9" l="0" v="{[0x2056f0-0x205737)}"/>
 </P>
-<P i="10" n="__do_fini" l="0" v="{[0x20556d-0x20556e)}">
-<S i="11" l="0" v="{[0x20556d-0x2055c6)}"/>
+<P i="10" n="__do_fini" l="0" v="{[0x205740-0x205741)}">
+<S i="11" l="0" v="{[0x205740-0x2057a1)}"/>
 </P>
-<P i="12" n="main" l="0" v="{[0x2055d0-0x2055d1)}">
-<S i="13" l="0" v="{[0x2055d0-0x205630) [0x2056a4-0x2056fc)}"/>
-<L i="14" l="0" f="[testmeas-loops-hip]" v="{[0x205630-0x205631)}">
-<S i="15" l="0" v="{[0x205630-0x2056a4)}"/>
+<P i="12" n="main" l="0" v="{[0x2057b0-0x2057b1)}">
+<S i="13" l="0" v="{[0x2057b0-0x205810) [0x205884-0x2058dc)}"/>
+<L i="14" l="0" f="[testmeas-loops-hip]" v="{[0x205810-0x205811)}">
+<S i="15" l="0" v="{[0x205810-0x205884)}"/>
 </L>
 </P>
-<P i="16" n="__device_stub__kernmain()" ln="_ZL23__device_stub__kernmainv" l="0" v="{[0x205700-0x205701)}">
-<S i="17" l="0" v="{[0x205700-0x205749)}"/>
+<P i="16" n="__device_stub__kernmain()" ln="_ZL23__device_stub__kernmainv" l="0" v="{[0x2058e0-0x2058e1)}">
+<S i="17" l="0" v="{[0x2058e0-0x205929)}"/>
 </P>
-<P i="18" n="__hip_module_ctor" l="0" v="{[0x205750-0x205751)}">
-<S i="19" l="0" v="{[0x205750-0x2057ab)}"/>
+<P i="18" n="__hip_module_ctor" l="0" v="{[0x205930-0x205931)}">
+<S i="19" l="0" v="{[0x205930-0x20598b)}"/>
 </P>
-<P i="20" n="__hip_module_dtor" l="0" v="{[0x2057b0-0x2057b1)}">
-<S i="21" l="0" v="{[0x2057b0-0x2057cf)}"/>
+<P i="20" n="__hip_module_dtor" l="0" v="{[0x205990-0x205991)}">
+<S i="21" l="0" v="{[0x205990-0x2059b2)}"/>
 </P>
-<P i="22" n="_GLOBAL__sub_I_loops.hip.cpp" l="0" v="{[0x2057d0-0x2057d1)}">
-<S i="23" l="0" v="{[0x2057d0-0x2057f0)}"/>
+<P i="22" n="atexit" l="0" v="{[0x2059c0-0x2059c1)}">
+<S i="23" l="0" v="{[0x2059c0-0x2059d2)}"/>
 </P>
-<P i="24" n="atexit" l="0" v="{[0x2057f0-0x2057f1)}">
-<S i="25" l="0" v="{[0x2057f0-0x205802)}"/>
+<P i="24" n="_init" l="0" v="{[0x2059d4-0x2059d5)}">
+<S i="25" l="0" v="{[0x2059d4-0x2059ef)}"/>
 </P>
-<P i="26" n="_init" l="0" v="{[0x205804-0x205805)}">
-<S i="27" l="0" v="{[0x205804-0x20581f)}"/>
+<P i="26" n="_fini" l="0" v="{[0x2059f0-0x2059f1)}">
+<S i="27" l="0" v="{[0x2059f0-0x2059fd)}"/>
 </P>
-<P i="28" n="_fini" l="0" v="{[0x205820-0x205821)}">
-<S i="29" l="0" v="{[0x205820-0x20582d)}"/>
+<P i="28" n="__register_frame_info@plt" l="0" v="{[0x205a10-0x205a11)}">
+<S i="29" l="0" v="{[0x205a10-0x205a20)}"/>
 </P>
-<P i="30" n="__register_frame_info@plt" l="0" v="{[0x205840-0x205841)}">
-<S i="31" l="0" v="{[0x205840-0x205850)}"/>
+<P i="30" n="__cxa_finalize@plt" l="0" v="{[0x205a20-0x205a21)}">
+<S i="31" l="0" v="{[0x205a20-0x205a30)}"/>
 </P>
-<P i="32" n="__cxa_finalize@plt" l="0" v="{[0x205850-0x205851)}">
-<S i="33" l="0" v="{[0x205850-0x205860)}"/>
+<P i="32" n="__deregister_frame_info@plt" l="0" v="{[0x205a30-0x205a31)}">
+<S i="33" l="0" v="{[0x205a30-0x205a40)}"/>
 </P>
-<P i="34" n="__deregister_frame_info@plt" l="0" v="{[0x205860-0x205861)}">
-<S i="35" l="0" v="{[0x205860-0x205870)}"/>
+<P i="34" n="hipGetDeviceCount@plt" l="0" v="{[0x205a40-0x205a41)}">
+<S i="35" l="0" v="{[0x205a40-0x205a50)}"/>
 </P>
-<P i="36" n="hipGetDeviceCount@plt" l="0" v="{[0x205870-0x205871)}">
-<S i="37" l="0" v="{[0x205870-0x205880)}"/>
+<P i="36" n="__hipPushCallConfiguration@plt" l="0" v="{[0x205a50-0x205a51)}">
+<S i="37" l="0" v="{[0x205a50-0x205a60)}"/>
 </P>
-<P i="38" n="__hipPushCallConfiguration@plt" l="0" v="{[0x205880-0x205881)}">
-<S i="39" l="0" v="{[0x205880-0x205890)}"/>
+<P i="38" n="__hipPopCallConfiguration@plt" l="0" v="{[0x205a60-0x205a61)}">
+<S i="39" l="0" v="{[0x205a60-0x205a70)}"/>
 </P>
-<P i="40" n="__hipPopCallConfiguration@plt" l="0" v="{[0x205890-0x205891)}">
-<S i="41" l="0" v="{[0x205890-0x2058a0)}"/>
+<P i="40" n="hipLaunchKernel@plt" l="0" v="{[0x205a70-0x205a71)}">
+<S i="41" l="0" v="{[0x205a70-0x205a80)}"/>
 </P>
-<P i="42" n="hipLaunchKernel@plt" l="0" v="{[0x2058a0-0x2058a1)}">
-<S i="43" l="0" v="{[0x2058a0-0x2058b0)}"/>
+<P i="42" n="hipGetLastError@plt" l="0" v="{[0x205a80-0x205a81)}">
+<S i="43" l="0" v="{[0x205a80-0x205a90)}"/>
 </P>
-<P i="44" n="hipGetLastError@plt" l="0" v="{[0x2058b0-0x2058b1)}">
-<S i="45" l="0" v="{[0x2058b0-0x2058c0)}"/>
+<P i="44" n="hipDeviceSynchronize@plt" l="0" v="{[0x205a90-0x205a91)}">
+<S i="45" l="0" v="{[0x205a90-0x205aa0)}"/>
 </P>
-<P i="46" n="hipDeviceSynchronize@plt" l="0" v="{[0x2058c0-0x2058c1)}">
-<S i="47" l="0" v="{[0x2058c0-0x2058d0)}"/>
+<P i="46" n="std::__ostream_insert&lt;char, std::char_traits&lt;char&gt; &gt;(std::basic_ostream&lt;char, std::char_traits&lt;char&gt; &gt;&amp;, char const*, long)@plt" ln="_ZSt16__ostream_insertIcSt11char_traitsIcEERSt13basic_ostreamIT_T0_ES6_PKS3_l@plt" l="0" v="{[0x205aa0-0x205aa1)}">
+<S i="47" l="0" v="{[0x205aa0-0x205ab0)}"/>
 </P>
-<P i="48" n="std::__ostream_insert&lt;char, std::char_traits&lt;char&gt; &gt;(std::basic_ostream&lt;char, std::char_traits&lt;char&gt; &gt;&amp;, char const*, long)@plt" ln="_ZSt16__ostream_insertIcSt11char_traitsIcEERSt13basic_ostreamIT_T0_ES6_PKS3_l@plt" l="0" v="{[0x2058d0-0x2058d1)}">
-<S i="49" l="0" v="{[0x2058d0-0x2058e0)}"/>
+<P i="48" n="__hipRegisterFatBinary@plt" l="0" v="{[0x205ab0-0x205ab1)}">
+<S i="49" l="0" v="{[0x205ab0-0x205ac0)}"/>
 </P>
-<P i="50" n="std::ios_base::Init::Init()@plt" ln="_ZNSt8ios_base4InitC1Ev@plt" l="0" v="{[0x2058e0-0x2058e1)}">
-<S i="51" l="0" v="{[0x2058e0-0x205900)}"/>
+<P i="50" n="__hipRegisterFunction@plt" l="0" v="{[0x205ac0-0x205ac1)}">
+<S i="51" l="0" v="{[0x205ac0-0x205ad0)}"/>
 </P>
-<P i="52" n="__cxa_atexit@plt" l="0" v="{[0x205900-0x205901)}">
-<S i="53" l="0" v="{[0x205900-0x205910)}"/>
+<P i="52" n="__hipUnregisterFatBinary@plt" l="0" v="{[0x205ad0-0x205ad1)}">
+<S i="53" l="0" v="{[0x205ad0-0x205ae0)}"/>
 </P>
-<P i="54" n="__hipRegisterFatBinary@plt" l="0" v="{[0x205910-0x205911)}">
-<S i="55" l="0" v="{[0x205910-0x205920)}"/>
-</P>
-<P i="56" n="__hipRegisterFunction@plt" l="0" v="{[0x205920-0x205921)}">
-<S i="57" l="0" v="{[0x205920-0x205930)}"/>
-</P>
-<P i="58" n="__hipUnregisterFatBinary@plt" l="0" v="{[0x205930-0x205931)}">
-<S i="59" l="0" v="{[0x205930-0x205940)}"/>
+<P i="54" n="__cxa_atexit@plt" l="0" v="{[0x205ae0-0x205ae1)}">
+<S i="55" l="0" v="{[0x205ae0-0x205af0)}"/>
 </P>
 </F>
 </LM>

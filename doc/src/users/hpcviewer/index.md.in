@@ -6,7 +6,7 @@ SPDX-License-Identifier: CC-BY-4.0
 
 <a name="sec:overview" />
 
-# Overview
+## Overview
 
 
 HPCToolkit provides the `hpcviewer` ([Adhianto, Mellor-Crummey, and Tallent 2010](https://doi.org/10.1109/ICPPW.2010.35); [Tallent et al. 2011](https://doi.acm.org/10.1145/1995896.1995908)) graphical user interface for interactive examination of performance databases.
@@ -30,16 +30,16 @@ The table below summarizes views supported by `hpcviewer`.
 
 | View                  | Dimension                    | Note                                                                |
 | :-------------------- | :--------------------------- | :------------------------------------------------------------------ |
-| Profile - [Metric view](#sec:pane-metric)            | Call-path x Metrics  | display the tree and its associated metrics                         |
-| Profile - [Thread view](#sec:hpcviewer:thread-level) | Call-path x Metrics  | display the tree and its metrics for a set of execution contexts    |
-| Profile - [Graph view](#sec:hpcviewer:plots)         | Execution contexts x Metric | display a metric of a specific tree node for all execution contexts |
-| Trace - [Main view](#sec:mainview)                     | Execution contexts x Time   | display execution context behavior over time                        |
-| Trace - [Depth view](#sec:depthview)    | Call-path x Time     | display call stacks over time of an execution context               |
+| Profile - [Metric view](#sec:pane-metric)            | Call-path x Metrics  | display the tree and its associated metrics                         |
+| Profile - [Thread view](#sec:hpcviewer:thread-level) | Call-path x Metrics  | display the tree and its metrics for a set of execution contexts    |
+| Profile - [Graph view](#sec:hpcviewer:plots)         | Execution contexts x Metric | display a metric of a specific tree node for all execution contexts |
+| Trace - [Main view](#sec:mainview)                     | Execution contexts x Time   | display execution context behavior over time                        |
+| Trace - [Depth view](#sec:depthview)    | Call-path x Time     | display call stacks over time of an execution context               |
 
 Note that in the [Profile view](#sec:profile), GPU stream execution contexts are not shown in this view; metrics for a GPU operation are associated with the calling context in the thread that initiated the GPU operation (Section [Thread View](sec:hpcviewer:thread-level)).
 In the [Trace view](sec:trace), GPU streams have their trace lines independently from their host, allowing for the traces between hosts and devices to be separated.
 
-## Downloading
+### Downloading
 
 While you can build your own copy of HPCToolkit's `hpcviewer` graphical user interface,
 we recommend downloading a binary release  at <https://hpctoolkit.org/download.html>.
@@ -50,14 +50,14 @@ Trace views previously provided by HPCToolkit's `hpctraceviewer` interface have 
 ```
 
 
-## Building from Source
+### Building from Source
 
 Source code for HPCToolkit's `hpcviewer` graphical user interface is available at <https://gitlab.com/hpctoolkit/hpcviewer.git>. Clone a copy with `git`.
 Building `hpcviewer` requires `maven`.
 You can download a copy of `maven` with Spack.
 To build `hpcviewer` on your platform of choice, follow the directions in its `README.md` on Gitlab.
 
-## Launching
+### Launching
 
 Requirements to launch `hpcviewer`:
 
@@ -89,11 +89,11 @@ On macOs and Windows, the value of JVM maximum heap size is stored in `hpcviewer
 On macOS, this file is located at `hpcviewer.app/Contents/Eclipse/hpcviewer.ini`.
 
 
-## Menus
+### Menus
 
 `hpcviewer` provides four main menus: **File**, **Filter**, **View**, and **Help**.
 
-### File
+#### File
 
 This menu includes several menu items for controlling basic viewer operations.
 
@@ -122,7 +122,7 @@ This menu includes several menu items for controlling basic viewer operations.
 - **Exit** \
   Quit the `hpcviewer` application.
 
-### Filter
+#### Filter
 
 This menu only contains one submenu:
 
@@ -131,7 +131,7 @@ This menu only contains one submenu:
 - **Filter execution contexts** (Trace view only) \
   Open a window to hide or show trace lines.
 
-### View
+#### View
 
 This menu is only visible if at least one database is loaded.
 
@@ -146,14 +146,14 @@ This menu is only visible if at least one database is loaded.
     Display of HPCToolkit's raw XML representation for performance data. This menu is only available for old HPCToolkit databases.
 
 
-### Help
+#### Help
 
 This menu displays information about the viewer. The menu contains only one menu item:
 
 - **About** \
   Displays brief information about the viewer, including JVM and Eclipse variables, and error log files.
 
-## Limitations
+### Limitations
 
 Some important `hpcviewer` limitations are listed below:
 

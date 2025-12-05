@@ -1,0 +1,207 @@
+<?xml version="1.0"?>
+<!DOCTYPE HPCToolkitStructure [
+<!-- SPDX-SnippetBegin -->
+<!--
+SPDX-FileCopyrightText: Contributors to the HPCToolkit Project
+
+SPDX-License-Identifier: CC-BY-4.0
+-->
+
+<!-- ******************************************************************** -->
+<!-- HPCToolkit Structure DTD                                             -->
+<!-- Version 4.9                                                          -->
+<!-- ******************************************************************** -->
+
+<!ELEMENT HPCToolkitStructure (LM)*>
+<!ATTLIST HPCToolkitStructure
+        version CDATA #REQUIRED
+        i       CDATA #REQUIRED
+        n       CDATA #IMPLIED>
+  <!-- Load module: -->
+  <!--   (i)d: unique identifier for cross referencing -->
+  <!--   (n)ame -->
+  <!--   (l)ine range: "beg-end" (inclusive range) -->
+  <!--   (v)ma-range-set: "{[beg-end), [beg-end)...}" -->
+  <!--   (t)arget: target function address -->
+  <!--   (d)evice: device name -->
+  <!ELEMENT LM (F|P)*>
+  <!ATTLIST LM
+        i CDATA #REQUIRED
+        n CDATA #REQUIRED
+        has-calls CDATA #REQUIRED
+        v CDATA #IMPLIED>
+  <!-- File: -->
+  <!ELEMENT F (P|L|S)*>
+  <!ATTLIST F
+        i CDATA #REQUIRED
+        n CDATA #REQUIRED>
+  <!-- Procedure: ln=link name (if different than name) -->
+  <!ELEMENT P (P|A|L|S|C)*>
+  <!ATTLIST P
+        i  CDATA #REQUIRED
+        n  CDATA #REQUIRED
+        ln CDATA #IMPLIED
+        l  CDATA #IMPLIED
+        s  CDATA #IMPLIED
+        v  CDATA #IMPLIED>
+  <!-- Alien: (f)ilename -->
+  <!ELEMENT A (A|L|S|C)*>
+  <!ATTLIST A
+        i CDATA #REQUIRED
+        f CDATA #IMPLIED
+        n CDATA #IMPLIED
+        ln CDATA #IMPLIED
+        l CDATA #IMPLIED
+        v CDATA #IMPLIED>
+  <!-- Loop -->
+  <!ELEMENT L (A|L|S|C)*>
+  <!ATTLIST L
+        i CDATA #REQUIRED
+        l CDATA #REQUIRED
+        f CDATA #IMPLIED
+        v CDATA #IMPLIED>
+  <!-- Statement -->
+  <!ELEMENT S EMPTY>
+  <!ATTLIST S
+        i CDATA #REQUIRED
+        l CDATA #REQUIRED
+        v CDATA #IMPLIED>
+  <!-- Callsite (a special Statement) -->
+  <!ELEMENT C (C)*>
+  <!ATTLIST C
+        i CDATA #REQUIRED
+        l CDATA #REQUIRED
+        v CDATA #IMPLIED
+        t CDATA #IMPLIED
+        d CDATA #IMPLIED>
+<!-- SPDX-SnippetEnd -->
+]>
+<HPCToolkitStructure i="0" version="4.9" n="">
+<LM i="2" n="gpubins/baaf46d88dfe143e4f97818eb3334f95.gpubin" has-calls="1" v="{}">
+<F i="3" n="[baaf46d88dfe143e4f97818eb3334f95.gpubin]">
+<P i="4" n="__amd_rocclr_fillBufferAligned [baaf46d88dfe143e4f97818eb3334f95.gpubin]" ln="__amd_rocclr_fillBufferAligned" l="0" v="{[0x6c00-0x6c01)}">
+<S i="5" l="0" v="{[0x6c00-0x6cd0) [0x6d4c-0x6dc0) [0x6e34-0x6eb4) [0x6f24-0x6f9c) [0x7000-0x7064) [0x70d0-0x70d4)}"/>
+<L i="6" l="0" f="[baaf46d88dfe143e4f97818eb3334f95.gpubin]" v="{[0x6cec-0x6ced)}">
+<S i="7" l="0" v="{[0x6cd0-0x6cfc) [0x6d48-0x6d4c)}"/>
+<L i="8" l="0" f="[baaf46d88dfe143e4f97818eb3334f95.gpubin]" v="{[0x6cfc-0x6cfd)}">
+<S i="9" l="0" v="{[0x6cfc-0x6d48)}"/>
+</L>
+</L>
+<L i="10" l="0" f="[baaf46d88dfe143e4f97818eb3334f95.gpubin]" v="{[0x6ddc-0x6ddd)}">
+<S i="11" l="0" v="{[0x6dc0-0x6dec) [0x6e30-0x6e34)}"/>
+<L i="12" l="0" f="[baaf46d88dfe143e4f97818eb3334f95.gpubin]" v="{[0x6dec-0x6ded)}">
+<S i="13" l="0" v="{[0x6dec-0x6e30)}"/>
+</L>
+</L>
+<L i="14" l="0" f="[baaf46d88dfe143e4f97818eb3334f95.gpubin]" v="{[0x6ed0-0x6ed1)}">
+<S i="15" l="0" v="{[0x6eb4-0x6ee0) [0x6f20-0x6f24)}"/>
+<L i="16" l="0" f="[baaf46d88dfe143e4f97818eb3334f95.gpubin]" v="{[0x6ee0-0x6ee1)}">
+<S i="17" l="0" v="{[0x6ee0-0x6f20)}"/>
+</L>
+</L>
+<L i="18" l="0" f="[baaf46d88dfe143e4f97818eb3334f95.gpubin]" v="{[0x6fb8-0x6fb9)}">
+<S i="19" l="0" v="{[0x6f9c-0x6fc4) [0x6ffc-0x7000)}"/>
+<L i="20" l="0" f="[baaf46d88dfe143e4f97818eb3334f95.gpubin]" v="{[0x6fc4-0x6fc5)}">
+<S i="21" l="0" v="{[0x6fc4-0x6ffc)}"/>
+</L>
+</L>
+<L i="22" l="0" f="[baaf46d88dfe143e4f97818eb3334f95.gpubin]" v="{[0x7080-0x7081)}">
+<S i="23" l="0" v="{[0x7064-0x7090) [0x70cc-0x70d0)}"/>
+<L i="24" l="0" f="[baaf46d88dfe143e4f97818eb3334f95.gpubin]" v="{[0x7090-0x7091)}">
+<S i="25" l="0" v="{[0x7090-0x70cc)}"/>
+</L>
+</L>
+</P>
+<P i="26" n="__amd_rocclr_fillBufferAligned2D [baaf46d88dfe143e4f97818eb3334f95.gpubin]" ln="__amd_rocclr_fillBufferAligned2D" l="0" v="{[0x7100-0x7101)}">
+<S i="27" l="0" v="{[0x7100-0x71e8) [0x7220-0x7260) [0x7294-0x72d8) [0x7308-0x734c) [0x737c-0x7380)}"/>
+<L i="28" l="0" f="[baaf46d88dfe143e4f97818eb3334f95.gpubin]" v="{[0x71e8-0x71e9)}">
+<S i="29" l="0" v="{[0x71e8-0x7220)}"/>
+</L>
+<L i="30" l="0" f="[baaf46d88dfe143e4f97818eb3334f95.gpubin]" v="{[0x7260-0x7261)}">
+<S i="31" l="0" v="{[0x7260-0x7294)}"/>
+</L>
+<L i="32" l="0" f="[baaf46d88dfe143e4f97818eb3334f95.gpubin]" v="{[0x72d8-0x72d9)}">
+<S i="33" l="0" v="{[0x72d8-0x7308)}"/>
+</L>
+<L i="34" l="0" f="[baaf46d88dfe143e4f97818eb3334f95.gpubin]" v="{[0x734c-0x734d)}">
+<S i="35" l="0" v="{[0x734c-0x737c)}"/>
+</L>
+</P>
+<P i="36" n="__amd_rocclr_copyBuffer [baaf46d88dfe143e4f97818eb3334f95.gpubin]" ln="__amd_rocclr_copyBuffer" l="0" v="{[0x7400-0x7401)}">
+<S i="37" l="0" v="{[0x7400-0x74a0) [0x7504-0x7560) [0x75c4-0x7618) [0x7654-0x7658)}"/>
+<L i="38" l="0" f="[baaf46d88dfe143e4f97818eb3334f95.gpubin]" v="{[0x74a0-0x74a1)}">
+<S i="39" l="0" v="{[0x74a0-0x7504)}"/>
+</L>
+<L i="40" l="0" f="[baaf46d88dfe143e4f97818eb3334f95.gpubin]" v="{[0x7560-0x7561)}">
+<S i="41" l="0" v="{[0x7560-0x75c4)}"/>
+</L>
+<L i="42" l="0" f="[baaf46d88dfe143e4f97818eb3334f95.gpubin]" v="{[0x7618-0x7619)}">
+<S i="43" l="0" v="{[0x7618-0x7654)}"/>
+</L>
+</P>
+<P i="44" n="__amd_rocclr_copyBufferAligned [baaf46d88dfe143e4f97818eb3334f95.gpubin]" ln="__amd_rocclr_copyBufferAligned" l="0" v="{[0x7700-0x7701)}">
+<S i="45" l="0" v="{[0x7700-0x7808)}"/>
+</P>
+<P i="46" n="__amd_rocclr_copyBufferRect [baaf46d88dfe143e4f97818eb3334f95.gpubin]" ln="__amd_rocclr_copyBufferRect" l="0" v="{[0x7900-0x7901)}">
+<S i="47" l="0" v="{[0x7900-0x7a74)}"/>
+</P>
+<P i="48" n="__amd_rocclr_copyBufferRectAligned [baaf46d88dfe143e4f97818eb3334f95.gpubin]" ln="__amd_rocclr_copyBufferRectAligned" l="0" v="{[0x7b00-0x7b01)}">
+<S i="49" l="0" v="{[0x7b00-0x7ce8)}"/>
+</P>
+<P i="50" n="__amd_rocclr_fillImage [baaf46d88dfe143e4f97818eb3334f95.gpubin]" ln="__amd_rocclr_fillImage" l="0" v="{[0x7d00-0x7d01)}">
+<S i="51" l="0" v="{[0x7d00-0x7dd4) [0x7ef0-0x7ef4)}"/>
+<L i="52" l="0" f="[baaf46d88dfe143e4f97818eb3334f95.gpubin]" v="{[0x7e04-0x7e05)}">
+<S i="53" l="0" v="{[0x7dd4-0x7ef0)}"/>
+</L>
+</P>
+<P i="54" n="__amd_rocclr_copyImage [baaf46d88dfe143e4f97818eb3334f95.gpubin]" ln="__amd_rocclr_copyImage" l="0" v="{[0x7f00-0x7f01)}">
+<S i="55" l="0" v="{[0x7f00-0x7fdc)}"/>
+</P>
+<P i="56" n="__amd_rocclr_copyImage1DA [baaf46d88dfe143e4f97818eb3334f95.gpubin]" ln="__amd_rocclr_copyImage1DA" l="0" v="{[0x8000-0x8001)}">
+<S i="57" l="0" v="{[0x8000-0x80fc)}"/>
+</P>
+<P i="58" n="__amd_rocclr_copyBufferToImage [baaf46d88dfe143e4f97818eb3334f95.gpubin]" ln="__amd_rocclr_copyBufferToImage" l="0" v="{[0x8100-0x8101)}">
+<S i="59" l="0" v="{[0x8100-0x84e0)}"/>
+</P>
+<P i="60" n="__amd_rocclr_copyImageToBuffer [baaf46d88dfe143e4f97818eb3334f95.gpubin]" ln="__amd_rocclr_copyImageToBuffer" l="0" v="{[0x8500-0x8501)}">
+<S i="61" l="0" v="{[0x8500-0x8894)}"/>
+</P>
+<P i="62" n="__amd_rocclr_streamOpsWrite [baaf46d88dfe143e4f97818eb3334f95.gpubin]" ln="__amd_rocclr_streamOpsWrite" l="0" v="{[0x8900-0x8901)}">
+<S i="63" l="0" v="{[0x8900-0x8954)}"/>
+</P>
+<P i="64" n="__amd_rocclr_streamOpsWait [baaf46d88dfe143e4f97818eb3334f95.gpubin]" ln="__amd_rocclr_streamOpsWait" l="0" v="{[0x8a00-0x8a01)}">
+<S i="65" l="0" v="{[0x8a00-0x8a4c) [0x8a74-0x8a84) [0x8ab0-0x8acc) [0x8aec-0x8af8) [0x8b1c-0x8b48) [0x8b68-0x8b78) [0x8b9c-0x8bbc) [0x8bdc-0x8be8) [0x8c0c-0x8c10)}"/>
+<L i="66" l="0" f="[baaf46d88dfe143e4f97818eb3334f95.gpubin]" v="{[0x8a4c-0x8a4d)}">
+<S i="67" l="0" v="{[0x8a4c-0x8a74)}"/>
+</L>
+<L i="68" l="0" f="[baaf46d88dfe143e4f97818eb3334f95.gpubin]" v="{[0x8a84-0x8a85)}">
+<S i="69" l="0" v="{[0x8a84-0x8ab0)}"/>
+</L>
+<L i="70" l="0" f="[baaf46d88dfe143e4f97818eb3334f95.gpubin]" v="{[0x8acc-0x8acd)}">
+<S i="71" l="0" v="{[0x8acc-0x8aec)}"/>
+</L>
+<L i="72" l="0" f="[baaf46d88dfe143e4f97818eb3334f95.gpubin]" v="{[0x8af8-0x8af9)}">
+<S i="73" l="0" v="{[0x8af8-0x8b1c)}"/>
+</L>
+<L i="74" l="0" f="[baaf46d88dfe143e4f97818eb3334f95.gpubin]" v="{[0x8b48-0x8b49)}">
+<S i="75" l="0" v="{[0x8b48-0x8b68)}"/>
+</L>
+<L i="76" l="0" f="[baaf46d88dfe143e4f97818eb3334f95.gpubin]" v="{[0x8b78-0x8b79)}">
+<S i="77" l="0" v="{[0x8b78-0x8b9c)}"/>
+</L>
+<L i="78" l="0" f="[baaf46d88dfe143e4f97818eb3334f95.gpubin]" v="{[0x8bbc-0x8bbd)}">
+<S i="79" l="0" v="{[0x8bbc-0x8bdc)}"/>
+</L>
+<L i="80" l="0" f="[baaf46d88dfe143e4f97818eb3334f95.gpubin]" v="{[0x8be8-0x8be9)}">
+<S i="81" l="0" v="{[0x8be8-0x8c0c)}"/>
+</L>
+</P>
+<P i="82" n="__amd_rocclr_initHeap [baaf46d88dfe143e4f97818eb3334f95.gpubin]" ln="__amd_rocclr_initHeap" l="0" v="{[0x8d00-0x8d01)}">
+<S i="83" l="0" v="{[0x8d00-0x9018)}"/>
+</P>
+<P i="84" n="__amd_rocclr_gwsInit [baaf46d88dfe143e4f97818eb3334f95.gpubin]" ln="__amd_rocclr_gwsInit" l="0" v="{[0x9100-0x9101)}">
+<S i="85" l="0" v="{[0x9100-0x9124)}"/>
+</P>
+</F>
+</LM>
+</HPCToolkitStructure>

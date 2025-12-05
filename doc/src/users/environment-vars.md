@@ -117,7 +117,7 @@ report when problems arise.
   | Name                                |   Default Value | Description |
   | :---------------------------------- | ------: | :---------- |
   | `MAX_COMPLETION_CALLBACK_THREADS`   |    1000 | See Note 1. |
-  | `STREAMS_PER_TRACING_THREAD`        |       4 | See Note 2. |
+  | `STREAMS_PER_TRACING_THREAD`        |     256 | See Note 2. |
   | `HPCRUN_CUDA_DEVICE_BUFFER_SIZE`    | 8388608 | See Note 3. |
   | `HPCRUN_CUDA_DEVICE_SEMAPHORE_SIZE` |   65536 | See Note 4. |
   ```
