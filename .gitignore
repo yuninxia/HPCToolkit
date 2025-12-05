@@ -6,6 +6,7 @@ __pycache__/
 .cache/
 compile_commands.json
 compile_commands.json~
+tmp/
 
 !.editorconfig
 !.gitlab-ci.yml

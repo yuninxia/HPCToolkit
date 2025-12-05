@@ -5,27 +5,31 @@
 .ubuntu24.04:compile:
   extends: .compile
   script:
-    - meson setup builddir/ -Dwerror=true -Doptimization=2 -Ddebug=false -Db_ndebug=false
-    - cd builddir/
+    - mkdir tmp/
+    - meson setup tmp/builddir-${BUILD_SLUG}/ -Dwerror=true -Doptimization=2 -Ddebug=false -Db_ndebug=false
+    - cd tmp/builddir-${BUILD_SLUG}/
     - meson test --print-errorlogs 'hpctoolkit:*'
     - meson compile
 
 .ubuntu24.04:test cpu:
   extends: .test
   script:
-    - cd builddir/
+    - cd tmp/builddir-${BUILD_SLUG}/
     - meson test --print-errorlogs 'hpctoolkit:*'
 
 .ubuntu24.04:compile+test:
   extends: .compile+test
   script:
-    - meson setup builddir/ -Dwerror=true -Dbuildtype=debugoptimized
-    - cd builddir/
+    - mkdir tmp/
+    - meson setup tmp/builddir-${BUILD_SLUG}/ -Dwerror=true -Dbuildtype=debugoptimized
+    - cd tmp/builddir-${BUILD_SLUG}/
     - meson test --print-errorlogs 'hpctoolkit:*'
     - meson compile
 
 ubuntu24.04 amd64:compile:
   extends: .ubuntu24.04:compile
+  variables:
+    BUILD_SLUG: ubuntu24.04-amd64
   rules:
     - if: &on_gitlab $CI_SERVER_FQDN == "gitlab.com"
   tags: [$GITLAB_SAAS_LINUX_MAX_AMD64]
@@ -36,6 +40,8 @@ ubuntu24.04 amd64:compile:
 
 ubuntu24.04 amd64:test cpu:
   extends: .ubuntu24.04:test cpu
+  variables:
+    BUILD_SLUG: ubuntu24.04-amd64
   needs: [ubuntu24.04 amd64:compile]
   rules:
     - if: *on_gitlab
@@ -44,6 +50,8 @@ ubuntu24.04 amd64:test cpu:
 
 ubuntu24.04 arm64:compile:
   extends: .ubuntu24.04:compile
+  variables:
+    BUILD_SLUG: ubuntu24.04-arm64
   rules:
     - if: *on_gitlab
   tags: [$GITLAB_SAAS_LINUX_MAX_ARM64]
@@ -52,21 +60,24 @@ ubuntu24.04 arm64:compile:
     docker:
       platform: linux/arm64
   script:
-    - meson setup builddir/ -Dwerror=true -Doptimization=2 -Ddebug=false -Db_ndebug=false
-    - cd builddir/
+    - mkdir tmp/
+    - meson setup tmp/builddir-${BUILD_SLUG}/ -Dwerror=true -Doptimization=2 -Ddebug=false -Db_ndebug=false
+    - cd tmp/builddir-${BUILD_SLUG}/
     # FIXME: Dodge undiagnosed bugs in the OpenMP threading and Python support in this image specifically, in CI
     - meson test --print-errorlogs 'hpctoolkit:*' --no-suite hpcrun --no-suite python
     - meson compile
 
 ubuntu24.04 arm64:test cpu:
   extends: .ubuntu24.04:test cpu
+  variables:
+    BUILD_SLUG: ubuntu24.04-arm64
   needs: [ubuntu24.04 arm64:compile]
   rules:
     - if: *on_gitlab
   tags: [$GITLAB_SAAS_LINUX_MAX_ARM64]
   image: *image_arm64
   script:
-    - cd builddir/
+    - cd tmp/builddir-${BUILD_SLUG}/
     # FIXME: Dodge undiagnosed bugs in the OpenMP threading and Python support in this image specifically, in CI
     - meson test --print-errorlogs 'hpctoolkit:*' --no-suite hpcrun --no-suite python
 
@@ -74,6 +85,8 @@ ubuntu24.04 arm64:test cpu:
 # architecture for better performance.
 ubuntu24.04 ppc64le:test:
   extends: .ubuntu24.04:compile+test
+  variables:
+    BUILD_SLUG: ubuntu24.04-ppc64le
   rules:
     - if: $HPCTOOLKIT_LINUX_MAX_PPC64LE
   tags: [$HPCTOOLKIT_LINUX_MAX_PPC64LE]
@@ -82,8 +95,9 @@ ubuntu24.04 ppc64le:test:
     docker:
       platform: linux/ppc64le
   script:
-    - meson setup builddir/ -Dwerror=true -Dbuildtype=debugoptimized
-    - cd builddir/
+    - mkdir tmp/
+    - meson setup tmp/builddir-${BUILD_SLUG}/ -Dwerror=true -Dbuildtype=debugoptimized
+    - cd tmp/builddir-${BUILD_SLUG}/
     # FIXME: For unknown reasons, the Python support doesn't work in this version of Python.
     # Not sure why. Disable it for now. https://gitlab.com/hpctoolkit/hpctoolkit/-/issues/847
     - meson test --print-errorlogs 'hpctoolkit:*' --no-suite python
@@ -91,6 +105,8 @@ ubuntu24.04 ppc64le:test:
 
 ubuntu24.04 ppc64le:test:hpsf:
   extends: ubuntu24.04 ppc64le:test
+  variables:
+    BUILD_SLUG: ubuntu24.04-ppc64le-hpsf
   rules:
     - if: &on_hpsf $CI_SERVER_FQDN == "gitlab.spack.io"
   tags: [hpsf-ppc64le]

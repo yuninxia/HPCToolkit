@@ -8,13 +8,14 @@
     - if: &on_gitlab $CI_SERVER_FQDN == "gitlab.com"
   tags: [$GITLAB_SAAS_LINUX_MAX_AMD64]
   script:
+    - mkdir tmp/
     # NB: We compile for MI100, MI210, and MI300. More GPUs may become relevant later, but for now this
     # set covers what we have available in CI.
     - >-
-      meson setup builddir/ -Dwerror=true -Doptimization=2 -Ddebug=false -Db_ndebug=false
+      meson setup tmp/builddir-${BUILD_SLUG}/ -Dwerror=true -Doptimization=2 -Ddebug=false -Db_ndebug=false
       -Dhip_args="['--offload-arch=gfx908,gfx90a,gfx942']"
       -Drocm=enabled
-    - cd builddir/
+    - cd tmp/builddir-${BUILD_SLUG}/
     # FIXME: Tests that use Level Zero fail on systems that don't have a suitable GPU attached.
     # This should be fixed, but for now don't try to run any of the affected tests.
     # FIXME: The ROCm-enabled tests FAIL instead of SKIP if there is no AMD hardware available to run the test.
@@ -28,7 +29,7 @@
     - if: $HPCTOOLKIT_LINUX_MAX_AMD64_GPU_AMD
   tags: [$HPCTOOLKIT_LINUX_MAX_AMD64_GPU_AMD]
   script:
-    - cd builddir/
+    - cd tmp/builddir-${BUILD_SLUG}/
     - meson test --print-errorlogs 'hpctoolkit:*' --suite opencl --suite rocm
 
 # NB: HPSF CI uses a merged compile/test architecture. Unlike GitLab.com, there are
@@ -42,10 +43,11 @@
     matrix:
       - AMD_GPU_ARCH: [mi210, mi300]
   script:
+    - mkdir tmp/
     - >-
-      meson setup builddir/ -Dwerror=true -Dbuildtype=debugoptimized
+      meson setup tmp/builddir-${BUILD_SLUG}/ -Dwerror=true -Dbuildtype=debugoptimized
       -Drocm=enabled
-    - cd builddir/
+    - cd tmp/builddir-${BUILD_SLUG}/
     # FIXME: Tests that use Level Zero fail on systems that don't have a suitable GPU attached.
     # This should be fixed, but for now don't try to run any of the affected tests.
     # FIXME: The ROCm-enabled tests FAIL instead of SKIP if there is no AMD hardware available to run the test.
@@ -55,6 +57,8 @@
 
 rocm6.3 amd64:compile:
   extends: .rocm amd64:compile
+  variables:
+    BUILD_SLUG: rocm6.3-amd64
   image: &image_rocm6_3_amd64
     name: registry.gitlab.com/hpctoolkit/rtt-images:1.0.0-aio@sha256:aed3071b8690dbdf3e2b4fec2071b47680c0be171e1a5613e43f425b55b67c2c
     docker:
@@ -62,9 +66,13 @@ rocm6.3 amd64:compile:
 
 rocm6.3 amd64:test amd gpu:
   extends: .rocm amd64:test amd gpu
+  variables:
+    BUILD_SLUG: rocm6.3-amd64
   needs: [rocm6.3 amd64:compile]
   image: *image_rocm6_3_amd64
 
 rocm6.3 amd64:test:hpsf:
   extends: .rocm amd64:test:hpsf
+  variables:
+    BUILD_SLUG: rocm6.3-amd64-hpsf
   image: *image_rocm6_3_amd64

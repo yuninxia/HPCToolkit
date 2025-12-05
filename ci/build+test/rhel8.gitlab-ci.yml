@@ -5,19 +5,22 @@
 .rhel8:compile:
   extends: .compile
   script:
-    - meson setup builddir/ -Dwerror=true -Doptimization=2 -Ddebug=false -Db_ndebug=false
-    - cd builddir/
+    - mkdir tmp/
+    - meson setup tmp/builddir-${BUILD_SLUG}/ -Dwerror=true -Doptimization=2 -Ddebug=false -Db_ndebug=false
+    - cd tmp/builddir-${BUILD_SLUG}/
     - meson test --print-errorlogs 'hpctoolkit:*'
     - meson compile
 
 .rhel8:test cpu:
   extends: .test
   script:
-    - cd builddir/
+    - cd tmp/builddir-${BUILD_SLUG}/
     - meson test --print-errorlogs 'hpctoolkit:*'
 
 rhel8 amd64:compile:
   extends: .rhel8:compile
+  variables:
+    BUILD_SLUG: rhel8-amd64
   rules:
     - if: &on_gitlab $CI_SERVER_FQDN == "gitlab.com"
   tags: [$GITLAB_SAAS_LINUX_MAX_AMD64]
@@ -28,6 +31,8 @@ rhel8 amd64:compile:
 
 rhel8 amd64:test cpu:
   extends: .rhel8:test cpu
+  variables:
+    BUILD_SLUG: rhel8-amd64
   needs: [rhel8 amd64:compile]
   rules:
     - if: *on_gitlab
