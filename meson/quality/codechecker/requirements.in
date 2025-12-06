@@ -1,0 +1,8 @@
+# SPDX-FileCopyrightText: Contributors to the HPCToolkit Project
+#
+# SPDX-License-Identifier: Apache-2.0
+
+# NB: After updating this file always recompile the sibling requirements.txt, using
+# the command listed at the top of that file.
+
+codechecker>=6.25.0

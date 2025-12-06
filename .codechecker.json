@@ -1,0 +1,11 @@
+{
+  "analyze": [
+    "--analyzers",
+    "clang-tidy",
+    "clangsa",
+    "--report-hash=context-free-v2",
+    "--analyzer-config=clang-tidy:take-config-from-directory=true",
+    "--ctu",
+    "--ctu-reanalyze-on-failure"
+  ]
+}

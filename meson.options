@@ -46,6 +46,12 @@ option('opencl', type: 'feature', description: 'Enable OpenCL metrics')
 option('rocm', type: 'feature', description: 'Enable ROCm metrics')
 
 option(
+  'dev_quality',
+  type: 'feature',
+  description: 'Enable tools/targets for static code quality (meson compile quality)',
+)
+
+option(
   'hpcrun_use_auditor_by_default',
   type: 'boolean',
   value: true,

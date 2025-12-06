@@ -73,7 +73,6 @@ default:
 include:
   - local: ci/verify.gitlab-ci.yml
   - local: ci/build+test/.gitlab-ci.yml
-  - local: ci/audit.gitlab-ci.yml
   - local: ci/artifacts.gitlab-ci.yml
 
 ci performance report:
