@@ -356,13 +356,14 @@ static void METHOD_FN(display_events) {
     "activity, and overhead.");
 
 #ifdef ENABLE_CUDA_PC_SAMPLING
-  display_event_info(stdout, NVIDIA_CUDA_PC_SAMPLING,
+  display_event_info(stdout, NVIDIA_CUDA_PC_SAMPLING "[@k]",
     "Comprehensive monitoring on an NVIDIA GPU as described above"
-    "with the addition of PC sampling. PC sampling attributes "
-    "STALL reasons to individual GPU instructions. PC sampling also "
+    "with the addition of PC sampling. NVIDIA's hardware support for "
+    "PC sampling measures instruction issues, stalls, and stall reasons. "
+    "The sampling period is 2^k instructions [Default k=20]. NVIDIA's PC sampling also "
     "records aggregate statistics about the TOTAL number of samples measured, "
     "the number of samples EXPECTED, and the number of samples DROPPED. "
-    "GPU utilization for a kernel may be computed as (TOTAL+DROPPED)/EXPECTED.");
+    "GPU utilization for a kernel is computed as 100*(TOTAL+DROPPED)/EXPECTED.");
 #else
   printf("Note: '%s' is not supported on CUDA >= 13\n\n", NVIDIA_CUDA_PC_SAMPLING);
 #endif

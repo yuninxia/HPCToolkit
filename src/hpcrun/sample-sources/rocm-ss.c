@@ -191,7 +191,9 @@ METHOD_FN(process_event_list)
       trace_period =
           (value == GPU_SAMPLING_PERIOD_UNSPECIFIED) ? trace_period_default : value;
       gpu_monitoring_trace_sampling_period_set(trace_period);
-    } else if (strncmp(event, AMD_ROCM_GPU_INSTRUCTION_SAMPLING,
+    }
+#if (AMD_PC_SAMPLING_SW == 1 || AMD_PC_SAMPLING_HW == 1)
+    else if (strncmp(event, AMD_ROCM_GPU_INSTRUCTION_SAMPLING,
                        strlen(AMD_ROCM_GPU_INSTRUCTION_SAMPLING)) == 0) {
       // attempt to set flags and period
       gpu_monitoring_instruction_sampling_flags_set(event, AMD_ROCM);
@@ -206,6 +208,15 @@ METHOD_FN(process_event_list)
 
         // for stochastic sampling, the period unit is GPU cycles (minimum = 256)
         // for host-trap sampling, the unit is an unspecified time unit (minimum = 1)
+        bool hw_sampling =
+          gpu_monitoring_instruction_sampling_is_enabled(GPU_INSTRUCTION_SAMPLING_HW);
+
+#if (AMD_PC_SAMPLING_HW == 0)
+        if (hw_sampling) {
+          fprintf(stderr, "ERROR: hpcrun: 'hw' PC sampling requested but unavailable\n");
+          exit(-1);
+        }
+#endif
 
         long sampling_period_log;
 
@@ -214,7 +225,7 @@ METHOD_FN(process_event_list)
             (value > MINIMUM_PC_SAMPLING_PERIOD) ? value : MINIMUM_PC_SAMPLING_PERIOD;
         } else {
           sampling_period_log =
-            gpu_monitoring_instruction_sampling_is_enabled(GPU_INSTRUCTION_SAMPLING_HW) ?
+            hw_sampling ?
             ROCM_PC_SAMPLING_STOCHASTIC_PERIOD_LOG_DEFAULT_INST :
             ROCM_PC_SAMPLING_HOST_TRAP_PERIOD_LOG_DEFAULT_NS;
         }
@@ -232,7 +243,9 @@ METHOD_FN(process_event_list)
           gpu_metrics_GPU_UTIL_METRICS_enable(); // wave and SIMD utilization
         }
       }
-    } else if (strncmp(rocm_event_name, ROCM_CTR_PREFIX, strlen(ROCM_CTR_PREFIX)) == 0) {
+    }
+#endif
+    else if (strncmp(rocm_event_name, ROCM_CTR_PREFIX, strlen(ROCM_CTR_PREFIX)) == 0) {
         hardware_counters_requested = true;
         gpu_counter_set_insert(rocm_counter_names, rocm_event_name + strlen(ROCM_CTR_PREFIX));
     } else {
@@ -304,22 +317,34 @@ METHOD_FN(display_events)
     "Collect timing information on GPU kernel invocations, "
     "memory copies, etc..");
 
-  display_event_info(stdout, AMD_ROCM_GPU_INSTRUCTION_SAMPLING "[={hw,sw}][@k]",
+#if (AMD_PC_SAMPLING_SW == 1 || AMD_PC_SAMPLING_HW == 1)
+#if (AMD_PC_SAMPLING_HW == 1)
+#define AMD_PC_ARGS "{sw,hw}"
+#else
+#define AMD_PC_ARGS "sw"
+#endif
+  display_event_info(stdout, AMD_ROCM_GPU_INSTRUCTION_SAMPLING "[=" AMD_PC_ARGS "][@k]",
     "Comprehensive operation-level monitoring on an AMD GPU "
     "as described above with the addition of PC sampling. "
     "\n\nMI200+ GPUs may provide software ('sw') support for PC sampling, "
     "referred to by AMD as 'HOST_TRAP' sampling. If 'sw' sampling is "
-    "selected, the period will be set to 2^k ns [Default k=17]. "
+    "selected ('sw' is the default), the sampling period is 2^k ns [Default k=20]. "
     "For 'sw' sampling, the minimum value for k=10. "
-    "Software support for PC sampling will only profile instructions sampled. "
+    "Software support for PC sampling measures ns but reports instruction cycles. "
+    "Since the default GPU clock frequency is 1GHz, this should be close enough "
+    "for performance analysis and tuning. "
+#if AMD_PC_SAMPLING_HW
     "\n\nMI300+ GPUs may provide hardware ('hw') support for PC sampling, "
     "referred to by AMD as 'STOCHASTIC' sampling. If 'hw' sampling is "
-    "selected, the period will be set to 2^k instructions [Default k=20]. "
+    "selected, the sampling period is 2^k instructions [Default k=20]. "
     "The minimum value of k=8. (WARNING: small values of k cause HSA/ROCm errors.) "
     "Hardware support for PC sampling "
-    "will profile instruction issues, non-issues, instruction types, "
+    "reports instruction cycles, issues, issued instruction types, "
     "issue stalls, pipeline issues, pipeline stalls, wave utilization, and "
-    "thread utilization.");
+    "thread utilization."
+#endif
+    );
+#endif
 
   display_header(stdout, "Available hardware counters for monitoring GPU kernels on AMD GPUs");
 

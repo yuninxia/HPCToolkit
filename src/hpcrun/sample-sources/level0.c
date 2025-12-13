@@ -246,8 +246,11 @@ METHOD_FN(display_events)
   display_event_info(stdout, "gpu=level0,pc[@k]",
         "Comprehensive monitoring of operations on an Intel GPU as described above "
          "with the addition of PC sampling. "
-         "The sample period will be 2^k ns. [Default: k=19]. Intel's hardware support "
-         "for PC sampling profiles instruction issues, stalls, and stall reasons.");
+         "The sampling period is 2^k ns. [Default: k=20]. Intel's hardware support "
+         "for PC sampling measures ns but reports cycles, along with instruction issues, stalls, "
+         "and stall reasons. Since the default GPU clock frequency is 1GHz, this should "
+         "be close enough for performance analysis and tuning.");
+
 #ifdef ENABLE_GTPIN
   display_event_info(stdout, "gpu=level0,inst=<comma-separated list of options>",
          "Operation-level monitoring for GPU-accelerated applications "
