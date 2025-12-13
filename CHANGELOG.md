@@ -57,6 +57,7 @@ Recent releases are formatted loosely based on [Common Changelog](https://common
 - Baked external tool paths (`grep`, `awk`, `sed`, `make`) into the `hpcstruct` Makefile at setup time to ensure they are installed and allow overrides. ([!1358](https://gitlab.com/hpctoolkit/hpctoolkit/-/merge_requests/1358)) (Jonathon Anderson)
 - Updated Continuous Integration (CI) jobs to use optimized allocations, including merging compile/test jobs for HPSF CI and ppc64le, and not including debug info for compile jobs. ([!1305](https://gitlab.com/hpctoolkit/hpctoolkit/-/merge_requests/1305)) (Jonathon Anderson)
 - Overhauled user manual by rewriting GPU measurement section, updating OpenMP section, removing outdated material, and adding section numbers ([!1371](https://gitlab.com/hpctoolkit/hpctoolkit/-/merge_requests/1371)) (John Mellor-Crummey)
+- Adjusted Sphinx dependency to no longer require Python and respect standard Meson fallback options ([!1343](https://gitlab.com/hpctoolkit/hpctoolkit/-/merge_requests/1343)) (Jonathon Anderson)
 
 ### Fixed
 
@@ -64,6 +65,7 @@ Recent releases are formatted loosely based on [Common Changelog](https://common
 - Fixed an issue where Level Zero PC sampling correlation channel hard-coding caused cross-device interference in multi-GPU systems, by implementing per-device channels. ([!1367](https://gitlab.com/hpctoolkit/hpctoolkit/-/merge_requests/1367)) (Yuning Xia)
 - Fixed an issue where setting `latencySamples` to 0 for Intel Level Zero PC sampling caused stall reasons to disappear in `hpcviewer`. ([!1350](https://gitlab.com/hpctoolkit/hpctoolkit/-/merge_requests/1350)) (Yuning Xia)
 - Fixed an issue to prevent `hpcrun`'s python foil from calling `dlclose(NULL)` if `dlopen` failed. ([!1352](https://gitlab.com/hpctoolkit/hpctoolkit/-/merge_requests/1352)) (John Mellor-Crummey)
+- Fixed a potentially problematic RPATH that can modify library search order when `hpcrun`'s `-e gpu=rocm` is enabled. ([!1388](https://gitlab.com/hpctoolkit/hpctoolkit/-/merge_requests/1388))
 - Removed the spinlock from `hpctoolkit_demangle()`, improving `hpcstruct` performance. ([!1355](https://gitlab.com/hpctoolkit/hpctoolkit/-/merge_requests/1355)) (John Mellor-Crummey)
 - Fixed issues with the auditor to ensure `hpcrun` dependencies that call `getenv` directly go through libc `getenv` during HPCToolkit initialization. ([!1333](https://gitlab.com/hpctoolkit/hpctoolkit/-/merge_requests/1236)) (John Mellor-Crummey)
 - Fixed warnings for CUDA >= 13.0 and ROCm when using Intel's `icx` compiler to build HPCToolkit. ([!1364](https://gitlab.com/hpctoolkit/hpctoolkit/-/merge_requests/1364)) (Jonathon Anderson)
@@ -73,6 +75,8 @@ Recent releases are formatted loosely based on [Common Changelog](https://common
 - Fixed a crash in `hpcprof-mpi` with `-M stats` where Partials were only added to rank 0, by extending Metrics in all ranks with the requested set of Statistics/Partials. ([!1350](https://gitlab.com/hpctoolkit/hpctoolkit/-/merge_requests/1365)) (Jonathon Anderson)
 - Fixed a numerical error in `hpcprof` when atomically combining non-zero data values (for `min()`/`max()` accumulators) by actively ignoring zeros. ([!1365](https://gitlab.com/hpctoolkit/hpctoolkit/-/merge_requests/1365)) (Jonathon Anderson)
 - Fixed Expression evaluation errors in `hpcprof` where some operators were evaluated incorrectly. ([!1350](https://gitlab.com/hpctoolkit/hpctoolkit/-/merge_requests/1365)) (Jonathon Anderson)
+- Fixed build failure with sphinx-book-theme 1.0 ([!1391](https://gitlab.com/hpctoolkit/hpctoolkit/-/merge_requests/1391)) (Jonathon Anderson)
+- Fixed an issue where the manual would fail to compile with file modification timestamps before 1980 ([!1391](https://gitlab.com/hpctoolkit/hpctoolkit/-/merge_requests/1391)) (Jonathon Anderson)
 
 ### Removed
 
