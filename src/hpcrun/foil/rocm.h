@@ -127,6 +127,22 @@ typedef uint64_t rocprofiler_pc_t;
 // #define ROCPROFILER_PAGE_MIGRATION_AVAILABLE
 #endif
 
+#if (ROCPROFILER_VERSION_MAJOR > 0)
+// support both SW and HW PC sampling for ROCM 7+
+#define AMD_PC_SAMPLING_SW 1
+#define AMD_PC_SAMPLING_HW 1
+#else
+#if (ROCPROFILER_VERSION_MAJOR == 0 && ROCPROFILER_VERSION_MINOR > 5)
+// support only SW and PC sampling for ROCM 6.4
+#define AMD_PC_SAMPLING_SW 1
+#define AMD_PC_SAMPLING_HW 0
+#else
+// no support for PC sampling for ROCM < 6.4
+#define AMD_PC_SAMPLING_SW 0
+#define AMD_PC_SAMPLING_HW 0
+#endif
+#endif
+
 //******************************************************************************
 // interface operations
 //******************************************************************************
