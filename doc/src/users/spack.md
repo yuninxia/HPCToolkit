@@ -262,36 +262,42 @@ at runtime which options to use.
 
 #### ROCm (`+rocm`)
 
-HPCToolkit supports profiling AMD GPUs through the ROCm interface.
-You can either use an existing ROCm module or let Spack build one.
+HPCToolkit supports profiling computations on AMD GPUs atop the ROCm runtime.
+HPCToolkit's support for ROCm can be built using an existing ROCm installation on your system or you can have Spack build a version of ROCm components that are compatible with firmware and kernel drivers installed on your system.
+
+```{important}
+This release of HPCToolkit is based on AMD's Rocprofiler-sdk library, which is available only for ROCm 6.2+.
+
+Support for older versions of ROCm requires a release of HPCToolkit prior to 2025.1.0.
+```
 
 For ROCm support, HPCToolkit uses two Spack packages:
-`hip` and `rocprofiler-sdk`.
-To use an existing ROCm module (recommended), load the `rocm` module
-and run `spack external find` on the two packages.
-For example:
+`hip` and `rocprofiler-sdk`. Rather than having Spack build these dependences, we recommend that you use an existing ROCm installation on your platform. These are typically found in paths like `/opt/rocm-x.y.z` where `x.y.z` represents the major version, minor version, and patch version.
 
-```
-module load rocm/7.1.1
-spack external find hip rocprofiler-sdk
-```
-
-This should create entries in `packages.yaml` similar to the following.
-If not, then add them manually.
+We recommend manually adding dependences on a particular version of `hip` and `rocprofiler-sdk` into your Spack `packages.yaml` file as shown below, where `7.1.0` in each of the dependencies would be replaced with a ROCm version installed on your platform.
 
 ```
 packages:
   hip:
+    buildable: false
     externals:
-    - spec: hip@7.1.1
-      prefix: /opt/rocm-7.1.1
+    - spec: hip@7.1.0
+      prefix: /opt/rocm-7.1.0
   rocprofiler-sdk:
+    buildable: false
     externals:
-    - spec: rocprofiler-sdk@7.1.1
-      prefix: /opt/rocm-7.1.1
+    - spec: rocprofiler-sdk@7.1.0
+      prefix: /opt/rocm-7.1.0
 ```
 
-Then, build `hpctoolkit` with `+rocm`.
+```{note}
+Recent versions of AMD's Rocprofiler-sdk library support instruction-level performance monitoring within GPU kernels using PC sampling. Rocprofiler-sdk supports two different implementations of PC sampling. One is software based; the other is hardware based. The availability of PC sampling on a platform depends on the GPU model, the GPU firmware versions installed, and the version of ROCm installed.
+
+Software-based PC sampling is only supported by HPCToolkit on MI200+ GPUs and APUs for ROCm 6.4+.
+Hardware-based PC sampling is only available on MI300+ GPUs and APUs for ROCm 7+.
+```
+
+With those dependencies in place, you can then build `hpctoolkit` with `+rocm`.
 
 ```
 spack install hpctoolkit +rocm
@@ -384,12 +390,11 @@ spack install hpcviewer
 We provide binary distributions for HPCToolkit's `hpcviewer` graphical user interface
 on Linux (x86_64, ppc64/le
 and aarch64), Windows (x86_64) and MacOS (x86_64 and Apple M-series processors).
-`Hpcviewer` uses Java 17 or later, but this is installed automatically by Spack as a dependency
-of `hpcviewer`.
+`Hpcviewer` is implemented using Java. Rather than requiring a compatible Java installation on a platform, `hpcviewer` is bundled with a Java runtime environment that meets its needs.
 
 ```{note}
-HPCToolkit databases are platform-independent and it is common to run
-`hpcrun` on one machine and then view the results on another machine.
+HPCToolkit databases are platform-independent. It is common to use
+`hpcrun` to measure an application's performance on one machine and then view performance analysis results with `hpcviewer` on another machine.
 ```
 
 (spack-first-time)=
