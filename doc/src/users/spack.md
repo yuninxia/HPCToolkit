@@ -113,14 +113,15 @@ reinstall `hpctoolkit`.
 Or, you could just hand edit the module file.
 ```
 
-## Installing a Basic HPCToolkit
+## Installing HPCToolkit
+
+### Basic Installation
 
 Here we explain how to install a basic version of HPCToolkit with Spack.
 The directions immediately below build and install a version of HPCToolkit
 that profiles only a program's CPU activity.
 To install a GPU-aware version of HPCToolkit or configure HPCToolkit for post-mortem
-analysis of thousands of profiles, see the [Configuration Options](#configuration-options)
-section on this page for a description of how to enable optional HPCToolkit features when building
+analysis of thousands of profiles, see Section [4.2.2](#configuration-options) for a description of how to enable optional HPCToolkit features when building
 with Spack.
 
 Although spack can install packages with a single `spack install`
@@ -189,33 +190,13 @@ If you encounter problems with the latest release of HPCToolkit, you might tryin
    `spack install hpctoolkit@develop ^dyninst@master`
 ```
 
-## Installing Hpcviewer
-
-HPCToolkit's `hpcviewer` user interface is installed by default when installing `hpctoolkit` with Spack.
-However, `hpcviewer` is also available as a separate package.
-If you want to run `hpcviewer` on a platform (eg, laptop) without installing
-all of `hpctoolkit`, then you can install just the `hpcviewer` package.
-
-```
-spack install hpcviewer
-```
-
-We provide binary distributions for HPCToolkit's `hpcviewer` graphical user interface
-on Linux (x86_64, ppc64/le
-and aarch64), Windows (x86_64) and MacOS (x86_64 and Apple M-series processors).
-`Hpcviewer` uses Java 17 or later, but this is installed automatically by Spack as a dependency
-of `hpcviewer`.
-
-```{note}
-HPCToolkit databases are platform-independent and it is common to run
-`hpcrun` on one machine and then view the results on another machine.
-```
-
 (configuration-options)=
 
-## Configuration Options
+### Configuration Options
 
-### CUDA (`+cuda`)
+HPCToolkit supports a variety of configuration options. Multiple (or even all) options can be enabled in a single installation of HPCToolkit on a platform with the necessary hardware and/or software prerequisites.
+
+#### CUDA (`+cuda`)
 
 HPCToolkit supports profiling nVidia GPUs through the CUDA interface.
 You can either use an existing CUDA module or let Spack build one.
@@ -246,7 +227,7 @@ Then, build `hpctoolkit` with `+cuda`.
 spack install hpctoolkit +cuda
 ```
 
-### Level Zero (`+level_zero`)
+#### Level Zero (`+level_zero`)
 
 Beginning with 2025.0, HPCToolkit has basic support for Intel GPUs
 (start and stop times for GPU kernels) through the Intel Level Zero interface.
@@ -279,52 +260,50 @@ spack install hpctoolkit +level_zero +gtpin
 We recommend always building with gtpin if possible and then deciding
 at runtime which options to use.
 
-### ROCm (`+rocm`)
+#### ROCm (`+rocm`)
 
-HPCToolkit supports profiling AMD GPUs through the ROCm interface.
-You can either use an existing ROCm module or let Spack build one.
+HPCToolkit supports profiling computations on AMD GPUs atop the ROCm runtime.
+HPCToolkit's support for ROCm can be built using an existing ROCm installation on your system or you can have Spack build a version of ROCm components that are compatible with firmware and kernel drivers installed on your system.
 
-For ROCm support, HPCToolkit uses four Spack packages:
-`hip`, `hsa-rocr-dev`, `roctracer-dev` and `rocprofiler-dev`.
-To use an existing ROCm module (recommended), load the `rocm` module
-and run `spack external find` on all four packages.
-For example:
+```{important}
+This release of HPCToolkit is based on AMD's Rocprofiler-sdk library, which is available only for ROCm 6.2+.
 
-```
-module load rocm/6.4.0
-spack external find hip hsa-rocr-dev roctracer-dev rocprofiler-dev
+Support for older versions of ROCm requires a release of HPCToolkit prior to 2025.1.0.
 ```
 
-This should create entries in `packages.yaml` similar to the following.
-If not, then add them manually.
+For ROCm support, HPCToolkit uses two Spack packages:
+`hip` and `rocprofiler-sdk`. Rather than having Spack build these dependences, we recommend that you use an existing ROCm installation on your platform. These are typically found in paths like `/opt/rocm-x.y.z` where `x.y.z` represents the major version, minor version, and patch version.
+
+We recommend manually adding dependences on a particular version of `hip` and `rocprofiler-sdk` into your Spack `packages.yaml` file as shown below, where `7.1.0` in each of the dependencies would be replaced with a ROCm version installed on your platform.
 
 ```
 packages:
   hip:
+    buildable: false
     externals:
-    - spec: hip@6.4.0
-      prefix: /opt/rocm-6.4.0
-  roctracer-dev:
+    - spec: hip@7.1.0
+      prefix: /opt/rocm-7.1.0
+  rocprofiler-sdk:
+    buildable: false
     externals:
-    - spec: roctracer-dev@6.4.0
-      prefix: /opt/rocm-6.4.0
-  hsa-rocr-dev:
-    externals:
-    - spec: hsa-rocr-dev@6.4.0
-      prefix: /opt/rocm-6.4.0
-  rocprofiler-dev:
-    externals:
-    - spec: rocprofiler-dev@6.4.0
-      prefix: /opt/rocm-6.4.0
+    - spec: rocprofiler-sdk@7.1.0
+      prefix: /opt/rocm-7.1.0
 ```
 
-Then, build `hpctoolkit` with `+rocm`.
+```{note}
+Recent versions of AMD's Rocprofiler-sdk library support instruction-level performance monitoring within GPU kernels using PC sampling. Rocprofiler-sdk supports two different implementations of PC sampling. One is software based; the other is hardware based. The availability of PC sampling on a platform depends on the GPU model, the GPU firmware versions installed, and the version of ROCm installed.
+
+Software-based PC sampling is only supported by HPCToolkit on MI200+ GPUs and APUs for ROCm 6.4+.
+Hardware-based PC sampling is only available on MI300+ GPUs and APUs for ROCm 7+.
+```
+
+With those dependencies in place, you can then build `hpctoolkit` with `+rocm`.
 
 ```
 spack install hpctoolkit +rocm
 ```
 
-### OpenCL (`+opencl`)
+#### OpenCL (`+opencl`)
 
 For all three GPU types, an application can access the GPU through the
 native interface (CUDA, ROCm, Level Zero) or through the OpenCL interface.
@@ -339,7 +318,7 @@ spack install hpctoolkit +cuda +opencl
 
 We recommend adding opencl support for all GPU types.
 
-### MPI (`+mpi`)
+#### MPI (`+mpi`)
 
 HPCToolkit always supports profiling MPI applications.
 The Spack variant `+mpi` is for building `hpcprof-mpi`, the MPI version of `hpcprof`.
@@ -371,23 +350,21 @@ This version of MPI is for `hpcprof-mpi` only and is entirely separate from
 any MPI in your application.
 ```
 
-### PAPI vs Perfmon (`+papi`)
+#### PAPI (`+papi`)
 
-HPCToolkit can access the Hardware Performance Counters with either
-PAPI (default) or Perfmon (`libpfm4`).
-PAPI runs on top of the perfmon library and uses its own, internal
-(but slightly out of date) copy of perfmon.
-So, building with `+papi` allows accessing the counters with either
+HPCToolkit allows a developer to access a processor's Hardware Performance Counters with the University of Tennessee's Performance Application Programming Interface, known as PAPI.
+PAPI runs on top of the perfmon library (`libpfm4`) and uses its own, internal (but slightly out of date) copy of perfmon.
+Building with `+papi` (default) supports access to counters with either
 PAPI or perfmon events.
 
-If you want to disable PAPI and use the latest Perfmon instead, then
+If you want to disable PAPI and use the latest perfmon instead, then
 build hpctoolkit with `~papi`.
 
 ```
 spack install hpctoolkit ~papi
 ```
 
-### Python (`+python`)
+#### Python (`+python`)
 
 HPCToolkit supports profiling Python scripts and attributing samples
 to Python source functions and not the Python interpreter.
@@ -398,6 +375,27 @@ spack install hpctoolkit +python
 ```
 
 You should use python 3.10 or later and use the same version as the application.
+
+## Installing Hpcviewer
+
+HPCToolkit's `hpcviewer` user interface is installed by default when installing `hpctoolkit` with Spack.
+However, `hpcviewer` is also available as a separate package.
+If you want to run `hpcviewer` on a platform (e.g., a laptop) without installing
+all of `hpctoolkit`, then you can install just the `hpcviewer` package.
+
+```
+spack install hpcviewer
+```
+
+We provide binary distributions for HPCToolkit's `hpcviewer` graphical user interface
+on Linux (x86_64, ppc64/le
+and aarch64), Windows (x86_64) and MacOS (x86_64 and Apple M-series processors).
+`Hpcviewer` is implemented using Java. Rather than requiring a compatible Java installation on a platform, `hpcviewer` is bundled with a Java runtime environment that meets its needs.
+
+```{note}
+HPCToolkit databases are platform-independent. It is common to use
+`hpcrun` to measure an application's performance on one machine and then view performance analysis results with `hpcviewer` on another machine.
+```
 
 (spack-first-time)=
 
