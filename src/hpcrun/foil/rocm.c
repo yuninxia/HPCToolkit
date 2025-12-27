@@ -26,20 +26,38 @@
 
 static const struct hpcrun_foil_appdispatch_rocm* dispatch_var = NULL;
 
+static const char* dlmopen_error_format =
+    "ERROR: hpcrun failed to open a library needed to support ROCm monitoring\n"
+    "dlerror: '%s'\n"
+    "This version of HPCToolkit uses AMD's Rocprofiler-sdk, which is only\n"
+    "compatible with ROCm 6.2+. The error likely indicates an incompatibility\n"
+    "between the librocprofiler-sdk version linked into HPCToolkit and the ROCm\n"
+    "version used to compile the monitored application. librocprofiler-sdk from\n"
+    "ROCm 7 is known to be incompatible with ROCM 6.2. Check the version of\n"
+    "ROCm libraries linked into your application by running\n"
+    "'ldd <your-application>'. The surest way to avoid this problem is to link\n"
+    "your application and HPCToolkit with the same ROCm version. See the\n"
+    "HPCToolkit user's manual about how to use Spack to build HPCToolkit with\n"
+    "the ROCm version you need.\n";
+
+static const char* dlsym_error_format =
+    "ERROR: hpcrun failed to find a symbol needed to support ROCm monitoring: %s\n";
+
 //******************************************************************************
 // private operations
 //******************************************************************************
 
 static void init_dispatch(void) {
-  void* handle = dlmopen(LM_ID_BASE, HPCRUN_DLOPEN_ROCM_SO, RTLD_NOW | RTLD_DEEPBIND);
+  void* handle = dlmopen(LM_ID_BASE, HPCRUN_DLOPEN_ROCM_SO,
+                         RTLD_NOW | RTLD_GLOBAL | RTLD_DEEPBIND);
   if (handle == NULL) {
-    assert(false && "Failed to load foil_rocm.so");
-    abort();
+    fprintf(stderr, dlmopen_error_format, dlerror());
+    exit(-1);
   }
   dispatch_var = dlsym(handle, "hpcrun_dispatch_rocm");
   if (dispatch_var == NULL) {
-    assert(false && "Failed to fetch dispatch from foil_rocm.so");
-    abort();
+    fprintf(stderr, dlsym_error_format, dlerror());
+    exit(-1);
   }
 }
 
