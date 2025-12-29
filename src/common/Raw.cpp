@@ -563,11 +563,17 @@ Analysis::Raw::writeAsText_tracedb(const char* filenm)
         DIAG_Throw("eof reading trace.db context trace data segment");
 
       std::cout << std::hex << "(0x" << ct.pStart << ") [context trace:\n" << std::dec;
+      unsigned long long previous = 0;
       for(char* cur = buf.data(), *end = cur + buf.size(); cur < end;
           cur += FMT_TRACEDB_SZ_CtxSample) {
         fmt_tracedb_ctxSample_t elem;
         fmt_tracedb_ctxSample_read(&elem, cur);
-        std::cout << "  (timestamp: " << elem.timestamp << ", ctxId: " << elem.ctxId << ")\n";
+        std::cout << "  ( timestamp: " << elem.timestamp << " ctxId: " << elem.ctxId << " )";
+        if(previous != 0) {
+          std::cout << " deltaTime: " << (elem.timestamp - previous);
+        }
+        std::cout << "\n";
+        previous = elem.timestamp;
       }
       std::cout << "]\n";
     }

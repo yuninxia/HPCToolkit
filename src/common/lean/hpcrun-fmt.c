@@ -1502,14 +1502,22 @@ int
 hpctrace_fmt_datum_fprint(hpctrace_fmt_datum_t* x, hpctrace_hdr_flags_t flags,
                           FILE* fs)
 {
-  fprintf(fs, "(%llu, %u", HPCTRACE_FMT_GET_TIME(x->comp), x->cpId);
+  static unsigned long long previous_time = 0;
+  unsigned long long current_time = HPCTRACE_FMT_GET_TIME(x->comp);
+  fprintf(fs, "( timestamp: %llu ctxId: %u", current_time, x->cpId);
   if (HPCTRACE_HDR_FLAGS_GET_BIT(flags, HPCTRACE_HDR_FLAGS_LCA_RECORDED_BIT_POS)) {
-    fprintf(fs, ", %llu",  HPCTRACE_FMT_GET_DLCA(x->comp));
+    fprintf(fs, " LCA: %llu",  HPCTRACE_FMT_GET_DLCA(x->comp));
   }
   if (HPCTRACE_HDR_FLAGS_GET_BIT(flags, HPCTRACE_HDR_FLAGS_DATA_CENTRIC_BIT_POS)) {
-    fprintf(fs, ", %u",  x->metricId);
+    fprintf(fs, " metricId: %u",  x->metricId);
   }
-  fputs(")\n", fs);
+  if (previous_time != 0) {
+    fprintf(fs, " ) deltaTime: %lld\n", current_time - previous_time);
+  } else {
+    fputs(" ) \n", fs);
+  }
+  previous_time = current_time;
+
   return HPCFMT_OK;
 }
 
