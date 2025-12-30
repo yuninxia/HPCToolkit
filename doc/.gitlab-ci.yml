@@ -32,6 +32,9 @@
 # job artifacts, which are hosted on GitLab Pages (kinda).
 doc:
   extends: .doc
+  rules:
+    - if: &not_on_gitlab_com $CI_SERVER_FQDN != "gitlab.com"
+      when: never
   before_script:
     # NB: This pattern is reverse-engineered from the GitLab source:
     # https://gitlab.com/gitlab-org/gitlab/-/blob/aa7df73eeeabc9c584da6ad93a0fcfc900a9fc8a/lib/gitlab/pages/url_builder.rb#L9
@@ -46,7 +49,7 @@ doc:
 pages:
   extends: .doc
   rules:
-    - if: $CI_SERVER_FQDN != "gitlab.com"
+    - if: *not_on_gitlab_com
       when: never
     # The default branch deploys to the permanent no-prefix deployment
     - if: $CI_COMMIT_REF_PROTECTED == "true" && $CI_COMMIT_BRANCH == $CI_DEFAULT_BRANCH
