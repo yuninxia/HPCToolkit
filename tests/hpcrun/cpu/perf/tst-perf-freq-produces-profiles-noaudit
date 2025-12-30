@@ -4,14 +4,16 @@
 #
 # SPDX-License-Identifier: Apache-2.0
 
-hpctesttool="$1"
-hpcrun="$2"
-tstexe_1loop="$3"
+perf_check="$1"
+hpctesttool="$2"
+hpcrun="$3"
+tstexe_1loop="$4"
 
 trap 'rm -rf "$tmpdir"' EXIT
 tmpdir=$(mktemp --directory)
 
-if [ "$(cat /proc/sys/kernel/perf_event_paranoid)" -gt 1 ]; then exit 77; fi
+# Test if perf_event_open syscall is actually functional (handles container seccomp restrictions)
+if ! "$perf_check"; then exit 77; fi
 
 "$hpcrun" -o "$tmpdir"/m --disable-auditor -e perf::cpu-clock@f100 "$tstexe_1loop"
 "$hpctesttool" test produces-profiles "$tmpdir"/m \

@@ -4,14 +4,15 @@
 #
 # SPDX-License-Identifier: Apache-2.0
 
-hpcproftt="$1"
-hpcrun="$2"
-tstexe_1loop="$3"
+perf_check="$1"
+hpcproftt="$2"
+hpcrun="$3"
+tstexe_1loop="$4"
 
 trap 'rm -rf "$tmpdir"' EXIT
 tmpdir=$(mktemp --directory)
 
-if [ "$(cat /proc/sys/kernel/perf_event_paranoid)" -gt 1 ]; then exit 77; fi
+if ! "$perf_check"; then exit 77; fi
 
 "$hpcrun" -o "$tmpdir"/m -e '{perf::cpu-clock,perf::task-clock}'@f100 "$tstexe_1loop"
 
