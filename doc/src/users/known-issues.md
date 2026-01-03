@@ -13,6 +13,11 @@ Other known issues can be seen in the project's Gitlab issues pages:
 
 - For hpcviewer, see <https://gitlab.com/HPCToolkit/HPCViewer/issues>
 
+## Limited cross-version compatibility with ROCm
+
+While a build of HPCToolkit with ROCm 7.0+ has proven to be compatible with ROCm 6.3+, ROCm 6.2
+requires its own build of HPCToolkit 2025.1. ROCm versions prior to 6.2 don't support AMD's Rocprofiler-sdk used in HPCToolkit 2025.1+ and require an earlier release of HPCToolkit.
+
 ## No support for CUDA 13
 
 In CUDA 13.0, NVIDIA removed a deprecated API used by HPCToolkit for PC sampling, so HPCToolkit can't be compiled against CUDA 13. When compiled against CUDA 12 and run with CUDA 13, `hpcrun`'s calls to `cuFuncGetModule` fail. As a result, there is no way to use HPCToolkit with CUDA 13 at present. We recommend using CUDA 12 as a stopgap solution if you want to measure your program with HPCToolkit.
