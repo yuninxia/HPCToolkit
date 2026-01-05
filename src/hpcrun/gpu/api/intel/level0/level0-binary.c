@@ -219,6 +219,14 @@ level0_func_ip_resolve
 {
   ze_module_handle_t hModule = level0_kernel_module_map_lookup(hKernel);
 
+  // Handle case where kernel was not created via HPCToolkit's wrapped zeKernelCreate.
+  // This occurs when libraries like Intel MKL BLAS use pre-compiled binary kernels
+  // that bypass zeKernelCreate entirely. These kernels are launched via
+  // zeCommandListAppendLaunchKernel but were never registered in our kernel-module map.
+  if (hModule == NULL) {
+    return ip_normalized_NULL;
+  }
+
   ip_normalized_t ip_norm = zebin_id_transform(hModule, hKernel, 0, dispatch);
 
   return ip_norm;
