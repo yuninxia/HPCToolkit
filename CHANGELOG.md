@@ -10,6 +10,12 @@ All notable changes and releases to this project will be documented in this file
 
 Recent releases are formatted loosely based on [Common Changelog](https://common-changelog.org/), a more restrictive subset of [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [2025.1.1]
+
+### Changed
+
+- Improve compatibility across ROCm versions 6.3+ ([!1408](hpctoolkit/hpctoolkit!1408)) (John Mellor-Crummey)
+
 ## [2025.1.0]
 
 ### Added

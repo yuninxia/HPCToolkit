@@ -269,6 +269,12 @@ HPCToolkit's support for ROCm can be built using an existing ROCm installation o
 This release of HPCToolkit is based on AMD's Rocprofiler-sdk library, which is available only for ROCm 6.2+.
 
 Support for older versions of ROCm requires a release of HPCToolkit prior to 2025.1.0.
+
+Light testing of compatibility across ROCm versions indicates that a version of HPCToolkit built with Rocprofiler-sdk 7.0+ is usable with ROCm versions 6.3+.
+
+ROCm 6.2 needs its own build of HPCToolkit because of incompatible changes to Rocprofiler-sdk in later ROCm versions.
+
+If you encounter issues that seem related to cross-version compatibility, you can use Spack to build a copy of HPCToolkit with the same ROCm version as your application.
 ```
 
 For ROCm support, HPCToolkit uses two Spack packages:
