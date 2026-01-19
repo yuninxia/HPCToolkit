@@ -57,8 +57,15 @@ level0_kernel_module_map_lookup
   uint64_t key = (uint64_t)kernel;
   level0_handle_map_entry_t *entry =
     level0_handle_map_lookup(&kernel_module_map_root, key);
-  ze_module_handle_t result =
-    (ze_module_handle_t) (*level0_handle_map_entry_data_get(entry));
+
+  // Handle case where kernel was not created via HPCToolkit's wrapped zeKernelCreate.
+  // This occurs when libraries like Intel MKL BLAS use pre-compiled binary kernels
+  // that bypass zeKernelCreate entirely. These kernels are launched via
+  // zeCommandListAppendLaunchKernel but were never registered in our kernel-module map.
+  ze_module_handle_t result = NULL;
+  if (entry != NULL) {
+    result = (ze_module_handle_t) (*level0_handle_map_entry_data_get(entry));
+  }
 
   spinlock_unlock(&kernel_module_lock);
   return result;
